@@ -1,6 +1,10 @@
 add_library(cad_math STATIC
-        src/math.cpp
-        include/cad_math/math.h
+        include/cad_math/vec_base.h
+        include/cad_math/vec3.h
+        include/cad_math/vec4.h
+        include/cad_math/mat_base.h
+        include/cad_math/mat4.h
+        include/cad_math/common.h
 )
 
 target_include_directories(cad_math

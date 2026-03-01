@@ -1,8 +1,8 @@
 add_executable(cad main.cpp
         OpenGLWidget.cpp
         OpenGLWidget.h
-        ../cad_math/include/cad_math/math.h
-        ../cad_math/src/math.cpp
+        ../cad_math/include/cad_math/vec_base.h
+        ../../tests/test_math.cpp
 )
 
 target_link_libraries(cad
