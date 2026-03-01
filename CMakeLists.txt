@@ -15,15 +15,5 @@ find_package(Qt6 COMPONENTS
 
 find_package(OpenGL REQUIRED)
 
-add_executable(cad main.cpp
-        OpenGLWidget.cpp
-        OpenGLWidget.h
-)
-
-target_link_libraries(cad
-        Qt::Core
-        Qt::Gui
-        Qt::Widgets
-        Qt::OpenGLWidgets
-)
-
+add_subdirectory(src/cad_math)
+add_subdirectory(src/app)
