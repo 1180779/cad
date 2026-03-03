@@ -98,4 +98,41 @@ namespace
             REQUIRE_THAT(res.w, Catch::Matchers::WithinRel(58.0f));
         }
     }
+
+    TEST_CASE("mat4 inverse", "[math][mat4]")
+    {
+        SECTION("Identity Inverse")
+        {
+            mat4 m = mat4::identity();
+            mat4 inv = m.inverse();
+            REQUIRE(inv == m);
+        }
+
+        SECTION("Simple Inverse")
+        {
+            // Scale matrix
+            mat4 m = mat4::identity();
+            m(0, 0) = 2.0f;
+            m(1, 1) = 0.5f;
+
+            mat4 inv = m.inverse();
+            REQUIRE_THAT(inv(0, 0), Catch::Matchers::WithinRel(0.5f));
+            REQUIRE_THAT(inv(1, 1), Catch::Matchers::WithinRel(2.0f));
+            REQUIRE_THAT(inv(2, 2), Catch::Matchers::WithinRel(1.0f));
+            REQUIRE_THAT(inv(3, 3), Catch::Matchers::WithinRel(1.0f));
+        }
+
+        SECTION("General Inverse")
+        {
+            mat4 m = mat4::identity();
+            m(0, 0) = 1; m(0, 1) = 2;
+            m(1, 0) = 3; m(1, 1) = 4;
+
+            mat4 inv = m.inverse();
+
+            // Check A * A^-1 = I
+            mat4 res = m * inv;
+            REQUIRE(res == mat4::identity());
+        }
+    }
 }

@@ -18,6 +18,7 @@ namespace cadm
             {
                 cadf x, y, z;
             };
+
             std::array<cadf, 3> data;
         };
 

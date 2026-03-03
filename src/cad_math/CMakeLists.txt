@@ -5,6 +5,7 @@ add_library(cad_math STATIC
         include/cad_math/mat_base.h
         include/cad_math/mat4.h
         include/cad_math/common.h
+        include/cad_math/vec3i.h
 )
 
 target_include_directories(cad_math

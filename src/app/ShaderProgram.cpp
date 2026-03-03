@@ -99,7 +99,7 @@ void ShaderProgram::release() const
     gl->glUseProgram(0);
 }
 
-void ShaderProgram::setUniformValue(const std::string& name, int value)
+void ShaderProgram::setUniformValue(const std::string& name, const int value) const
 {
     const auto gl = GL();
     const GLint location = gl->glGetUniformLocation(m_program, name.c_str());

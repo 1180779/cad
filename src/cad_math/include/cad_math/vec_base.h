@@ -96,7 +96,7 @@ namespace cadm
             return lhs;
         }
 
-        friend constexpr Derived operator*(const cadf lhs, const Derived rhs) { return lhs * rhs; }
+        friend constexpr Derived operator*(const cadf lhs, const Derived rhs) { return rhs * lhs; }
 
         friend constexpr Derived operator/(Derived lhs, const cadf s)
         {
@@ -106,6 +106,38 @@ namespace cadm
         }
 
         // common methods
+
+        void normalize() noexcept
+        {
+            const auto lengthSq  = lengthSquared();
+            if (std::abs(lengthSquared() - 1.0) < eps)
+                return;
+
+            const auto length = std::sqrt(lengthSq);
+            for (int i = 0; i < N; ++i)
+                (*this)[i] /= length;
+        }
+
+        constexpr Derived normalized() const noexcept
+        {
+            Derived res = *this;
+            res.normalize();
+            return res;
+        }
+
+        constexpr T length() const noexcept
+        {
+            T res = lengthSquared();
+            return std::sqrt(res);
+        }
+
+        constexpr T lengthSquared() const noexcept
+        {
+            T res{};
+            for (int i = 0; i < N; ++i)
+                res += (*this)[i] * (*this)[i];
+            return res;
+        }
 
         constexpr T dot(const Derived& other) const noexcept
         {

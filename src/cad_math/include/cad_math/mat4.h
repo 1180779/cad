@@ -72,6 +72,74 @@ namespace cadm
             };
         }
 
+        static mat4 scale(const vec3& s) { return scale(s.x, s.y, s.z); }
+
+        static mat4 diag(const cadf m0, const cadf m1, const cadf m2, const cadf m3)
+        {
+            return mat4{
+                m0, 0, 0, 0,
+                0, m1, 0, 0,
+                0, 0, m2, 0,
+                0, 0, 0, m3
+            };
+        }
+
+        static mat4 scale(const cadf sx, const cadf sy, const cadf sz)
+        {
+            return diag(sx, sy, sz, 1.0);
+        }
+
+        static mat4 translation(const vec3& t) { return translation(t.x, t.y, t.z); }
+
+        static mat4 translation(const cadf tx, const cadf ty, const cadf tz)
+        {
+            return mat4{
+                1, 0, 0, tx,
+                0, 1, 0, ty,
+                0, 0, 1, tz,
+                0, 0, 0, 1
+            };
+        }
+
+        static mat4 rotX(const cadf alpha)
+        {
+            const cadf c = std::cos(alpha);
+            const cadf s = std::sin(alpha);
+
+            return mat4{
+                1, 0, 0, 0,
+                0, c, -s, 0,
+                0, s, c, 0,
+                0, 0, 0, 1
+            };
+        }
+
+        static mat4 rotY(const cadf alpha)
+        {
+            const cadf c = std::cos(alpha);
+            const cadf s = std::sin(alpha);
+
+            return mat4{
+                c, 0, s, 0,
+                0, 1, 0, 0,
+                -s, 0, c, 0,
+                0, 0, 0, 1
+            };
+        }
+
+        static mat4 rotZ(const cadf alpha)
+        {
+            const cadf c = std::cos(alpha);
+            const cadf s = std::sin(alpha);
+
+            return mat4{
+                c, -s, 0, 0,
+                s, c, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            };
+        }
+
         vec4 operator*(const vec4& v) const
         {
             return {

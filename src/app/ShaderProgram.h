@@ -23,7 +23,7 @@ public:
     void bind() const;
     void release() const;
 
-    void setUniformValue(const std::string& name, int value);
+    void setUniformValue(const std::string& name, int value) const;
 
 private:
     GLuint m_program;
