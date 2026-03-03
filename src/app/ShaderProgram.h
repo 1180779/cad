@@ -6,6 +6,8 @@
 #define CAD_SHADERPROGRAM_H
 
 #include "GL.h"
+#include <map>
+#include <string>
 
 class ShaderProgram
 {
@@ -20,6 +22,8 @@ public:
 
     void bind() const;
     void release() const;
+
+    void setUniformValue(const std::string& name, int value);
 
 private:
     GLuint m_program;

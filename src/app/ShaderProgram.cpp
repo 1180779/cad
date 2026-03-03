@@ -3,6 +3,7 @@
 //
 
 #include <fstream>
+#include <QDebug>
 
 #include "ShaderProgram.h"
 
@@ -96,6 +97,16 @@ void ShaderProgram::release() const
 {
     const auto gl = GL();
     gl->glUseProgram(0);
+}
+
+void ShaderProgram::setUniformValue(const std::string& name, int value)
+{
+    const auto gl = GL();
+    const GLint location = gl->glGetUniformLocation(m_program, name.c_str());
+    if (location != -1)
+    {
+        gl->glUniform1i(location, value);
+    }
 }
 
 ShaderProgram::ShaderProgram() : m_program(0)

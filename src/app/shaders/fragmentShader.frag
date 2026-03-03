@@ -1,14 +1,12 @@
 #version 430 core
 
-uniform vec3 color = vec3(1.0, 0.0, 1.0);
-uniform float alpha = 1.0;
+in vec2 TexCoord;
+
+uniform sampler2D screenTexture;
 
 out vec4 FragColor;
 
 void main()
 {
-    FragColor = vec4(color, alpha);
+    FragColor = texture(screenTexture, TexCoord);
 }
-
-
-
