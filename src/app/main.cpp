@@ -10,7 +10,7 @@
 
 #include "OpenGLWidget.h"
 
-void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, float initialValue, std::function<void(float)> setter)
+void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, const float initialValue, std::function<void(float)> setter)
 {
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
@@ -31,6 +31,31 @@ void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, floa
     layout->addWidget(label);
     layout->addWidget(edit);
     parentLayout->addLayout(layout);
+}
+
+void addIntColor8BitParameter(QVBoxLayout* parentLayout, const QString& labelText, const int initialValue, std::function<void(int)> setter)
+{
+    const auto layout = new QHBoxLayout;
+    const auto label = new QLabel(labelText);
+    const auto edit = new QLineEdit;
+
+    const auto validator = new QIntValidator(edit);
+    validator->setLocale(QLocale::C);
+    validator->setBottom(0);
+    validator->setTop(255);
+    edit->setValidator(validator);
+    edit->setText(QString::number(initialValue));
+
+    QObject::connect(edit, &QLineEdit::textChanged, [setter](const QString &text) {
+        bool ok;
+        const int val = text.toInt(&ok);
+        if (ok) setter(val);
+    });
+
+    layout->addWidget(label);
+    layout->addWidget(edit);
+    parentLayout->addLayout(layout);
+
 }
 
 int main(int argc, char* argv[])
@@ -59,9 +84,9 @@ int main(int argc, char* argv[])
     const auto ellipseParametersLayout = new QVBoxLayout;
     ellipseParametersGroup->setLayout(ellipseParametersLayout);
 
-    addFloatParameter(ellipseParametersLayout, "a", glWidget->getA(), [glWidget](float v){ glWidget->setA(v); });
-    addFloatParameter(ellipseParametersLayout, "b", glWidget->getB(), [glWidget](float v){ glWidget->setB(v); });
-    addFloatParameter(ellipseParametersLayout, "c", glWidget->getC(), [glWidget](float v){ glWidget->setC(v); });
+    addFloatParameter(ellipseParametersLayout, "a", glWidget->getA(), [glWidget](const float v){ glWidget->setA(v); });
+    addFloatParameter(ellipseParametersLayout, "b", glWidget->getB(), [glWidget](const float v){ glWidget->setB(v); });
+    addFloatParameter(ellipseParametersLayout, "c", glWidget->getC(), [glWidget](const float v){ glWidget->setC(v); });
 
     rightControlsLayout->addWidget(ellipseParametersGroup, 0, Qt::AlignTop);
 
@@ -82,10 +107,20 @@ int main(int argc, char* argv[])
     const auto phongParametersGroup = new QGroupBox("Phong parameters");
     phongParametersGroup->setMaximumWidth(rightWidgetsMaxSize);
     const auto phongParametersLayout = new QVBoxLayout;
-    addFloatParameter(phongParametersLayout, "m", glWidget->getM(), [glWidget](float v){ glWidget->setM(v); });
+    addFloatParameter(phongParametersLayout, "m", glWidget->getM(), [glWidget](const float v){ glWidget->setM(v); });
 
     phongParametersGroup->setLayout(phongParametersLayout);
     rightControlsLayout->addWidget(phongParametersGroup, 0, Qt::AlignTop);
+
+    const auto ambientColorGroup = new QGroupBox("Ambient color");
+    const auto ambientColorLayout = new QVBoxLayout();
+
+    addIntColor8BitParameter(ambientColorLayout, "r", glWidget->getAmbientR(), [glWidget](const int v){ glWidget->setAmbientR(v); });
+    addIntColor8BitParameter(ambientColorLayout, "g", glWidget->getAmbientG(), [glWidget](const int v){ glWidget->setAmbientG(v); });
+    addIntColor8BitParameter(ambientColorLayout, "b", glWidget->getAmbientB(), [glWidget](const int v){ glWidget->setAmbientB(v); });
+    ambientColorGroup->setLayout(ambientColorLayout);
+
+    phongParametersLayout->addWidget(ambientColorGroup);
 
     window.show();
     return QApplication::exec();

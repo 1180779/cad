@@ -48,6 +48,14 @@ public:
     [[nodiscard]] cadm::cadf getM() const { return m_m; }
     void setM(cadm::cadf m);
 
+    [[nodiscard]] int getAmbientR() const { return m_ambient.x; }
+    [[nodiscard]] int getAmbientG() const { return m_ambient.y; }
+    [[nodiscard]] int getAmbientB() const { return m_ambient.z; }
+
+    void setAmbientR(int r);
+    void setAmbientG(int g);
+    void setAmbientB(int b);
+
 private:
     void fillCpuBufferTest();
     void fillCpuBuffer();
@@ -64,10 +72,10 @@ private:
     cadm::vec3 m_scale{1, 1, 1};
     cadm::vec3 m_rotation{}; /* rotation around each of the main axes */
 
-    cadm::vec3 m_v { 0, 0, 1 };
-    cadm::vec3 m_specularColor { 1.0, 1.0, 0.0 };
-    cadm::vec3i m_ambient { 25, 25, 25 };
-    cadm::cadf m_m { 1 };
+    cadm::vec3 m_v{0, 0, 1};
+    cadm::vec3 m_specularColor{1.0, 1.0, 0.0};
+    cadm::vec3i m_ambient{25, 25, 25};
+    cadm::cadf m_m{1};
 };
 
 

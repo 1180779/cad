@@ -130,6 +130,30 @@ void OpenGLWidget::setM(cadm::cadf m)
     update();
 }
 
+void OpenGLWidget::setAmbientR(int r)
+{
+    if (m_ambient.x == r)
+        return;
+    m_ambient.x = r;
+    update();
+}
+
+void OpenGLWidget::setAmbientG(int g)
+{
+    if (m_ambient.y == g)
+        return;
+    m_ambient.y = g;
+    update();
+}
+
+void OpenGLWidget::setAmbientB(int b)
+{
+    if (m_ambient.z == b)
+        return;
+    m_ambient.z = b;
+    update();
+}
+
 void OpenGLWidget::fillCpuBufferTest()
 {
     const int w = width();
