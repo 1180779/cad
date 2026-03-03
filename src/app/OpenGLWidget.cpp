@@ -199,7 +199,8 @@ void OpenGLWidget::fillCpuBuffer()
 
     const auto D = cadm::mat4::diag(1.0 / (m_a * m_a), 1.0 / (m_b * m_b), 1.0 / (m_c * m_c), -1.0);
     const auto Minv = M.inverse();
-    const auto Dprim = Minv.transposed() * D * Minv;
+    const auto MinvT = Minv.transposed();
+    const auto Dprim = MinvT * D * Minv;
 
     const cadm::cadf aspect = static_cast<cadm::cadf>(w) / static_cast<cadm::cadf>(h);
 
@@ -225,10 +226,16 @@ void OpenGLWidget::fillCpuBuffer()
             }
             else
             {
-                // TODO: check if this is correct; specular looks suspicious
-                cadm::vec4 p(x, y, z.value(), 1.0);
-                cadm::vec4 g = 2.0 * (Dprim * p);
-                cadm::vec3 n(g.x, g.y, g.z);
+                cadm::vec4 pScreen(x, y, z.value(), 1.0);
+                cadm::vec4 pObject = Minv * pScreen;
+                cadm::vec4 nObject(
+                    2.0 * pObject.x / (m_a * m_a),
+                    2.0 * pObject.y / (m_b * m_b),
+                    2.0 * pObject.z / (m_c * m_c),
+                    0.0
+                );
+                cadm::vec4 nWorld4 = MinvT * nObject;
+                cadm::vec3 n(nWorld4.x, nWorld4.y, nWorld4.z);
                 n.normalize();
 
                 const auto specular = std::pow(std::max(static_cast<cadm::cadf>(0.0), m_v.dot(n)), m_m);
@@ -287,4 +294,21 @@ std::optional<cadm::cadf> OpenGLWidget::solveQuadratic(cadm::cadf a, cadm::cadf 
         return result2;
     }
     return std::nullopt;
+}
+
+void OpenGLWidget::mousePressEvent(QMouseEvent* event)
+{
+    m_lastMousePosition = event->pos();
+}
+
+void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
+{
+    // TODO: add time delta?
+    const auto currentPos = event->pos();
+    const auto delta = currentPos - m_lastMousePosition;
+    m_lastMousePosition = currentPos;
+    m_rotation.y += delta.x() * m_sensitivity;
+    m_rotation.x += delta.y() * m_sensitivity;
+
+    update();
 }
