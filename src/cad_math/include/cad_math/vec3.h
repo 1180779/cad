@@ -19,6 +19,11 @@ namespace cadm
                 cadf x, y, z;
             };
 
+            struct
+            {
+                cadf r, g, b;
+            };
+
             std::array<cadf, 3> data;
         };
 

@@ -20,6 +20,11 @@ namespace cadm
                 int x, y, z;
             };
 
+            struct
+            {
+                int r, g, b;
+            };
+
             std::array<int, 3> data;
         };
 

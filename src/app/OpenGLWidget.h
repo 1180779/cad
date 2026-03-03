@@ -49,9 +49,9 @@ public:
     [[nodiscard]] cadm::cadf getM() const { return m_m; }
     void setM(cadm::cadf m);
 
-    [[nodiscard]] int getAmbientR() const { return m_ambient.x; }
-    [[nodiscard]] int getAmbientG() const { return m_ambient.y; }
-    [[nodiscard]] int getAmbientB() const { return m_ambient.z; }
+    [[nodiscard]] int getAmbientR() const { return m_ambient.r; }
+    [[nodiscard]] int getAmbientG() const { return m_ambient.g; }
+    [[nodiscard]] int getAmbientB() const { return m_ambient.b; }
 
     void setAmbientR(int r);
     void setAmbientG(int g);

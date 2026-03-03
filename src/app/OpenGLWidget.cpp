@@ -132,25 +132,25 @@ void OpenGLWidget::setM(cadm::cadf m)
 
 void OpenGLWidget::setAmbientR(int r)
 {
-    if (m_ambient.x == r)
+    if (m_ambient.r == r)
         return;
-    m_ambient.x = r;
+    m_ambient.r = r;
     update();
 }
 
 void OpenGLWidget::setAmbientG(int g)
 {
-    if (m_ambient.y == g)
+    if (m_ambient.g == g)
         return;
-    m_ambient.y = g;
+    m_ambient.g = g;
     update();
 }
 
 void OpenGLWidget::setAmbientB(int b)
 {
-    if (m_ambient.z == b)
+    if (m_ambient.b == b)
         return;
-    m_ambient.z = b;
+    m_ambient.b = b;
     update();
 }
 
