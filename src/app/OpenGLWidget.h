@@ -71,13 +71,13 @@ private:
     std::unique_ptr<quad> m_quad;
     std::vector<unsigned char> m_cpuBuffer{};
 
-    cadm::cadf m_a{1}, m_b{1}, m_c{1};
+    cadm::cadf m_a{0.5}, m_b{0.2}, m_c{1};
     unsigned char m_adaptationSize{8};
     cadm::vec3 m_translation{};
     cadm::vec3 m_scale{1, 1, 1};
     cadm::vec3 m_rotation{}; /* rotation around each of the main axes */
 
-    cadm::vec3 m_v{0, 0, 1};
+    cadm::vec3 m_v{0, 0, -1};
     cadm::vec3 m_specularColor{1.0, 1.0, 0.0};
     cadm::vec3i m_ambient{25, 25, 25};
     cadm::cadf m_m{1};

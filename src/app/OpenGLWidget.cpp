@@ -238,15 +238,16 @@ void OpenGLWidget::fillCpuBuffer()
                 cadm::vec3 n(nWorld4.x, nWorld4.y, nWorld4.z);
                 n.normalize();
 
-                const auto specular = std::pow(std::max(static_cast<cadm::cadf>(0.0), m_v.dot(n)), m_m);
-                const auto color = 255 * specular * m_specularColor;
+                const cadm::cadf cos = std::max(static_cast<cadm::cadf>(0.0), m_v.dot(n));
+                const cadm::cadf intensity = std::pow(cos, m_m);
+                const cadm::vec3 specular = 255.0 * intensity * m_specularColor;
 
                 m_cpuBuffer[i + 0] = static_cast<unsigned char>(std::clamp<cadm::cadf>(
-                    static_cast<cadm::cadf>(m_ambient.x) + color.x, 0.0, 255.0));
+                    static_cast<cadm::cadf>(m_ambient.x) + specular.x, 0.0, 255.0));
                 m_cpuBuffer[i + 1] = static_cast<unsigned char>(std::clamp<cadm::cadf>(
-                    static_cast<cadm::cadf>(m_ambient.y) + color.y, 0.0, 255.0));
+                    static_cast<cadm::cadf>(m_ambient.y) + specular.y, 0.0, 255.0));
                 m_cpuBuffer[i + 2] = static_cast<unsigned char>(std::clamp<cadm::cadf>(
-                    static_cast<cadm::cadf>(m_ambient.z) + color.z, 0.0, 255.0));
+                    static_cast<cadm::cadf>(m_ambient.z) + specular.z, 0.0, 255.0));
             }
         }
     }
@@ -281,19 +282,7 @@ std::optional<cadm::cadf> OpenGLWidget::solveQuadratic(cadm::cadf a, cadm::cadf 
     const auto sqrt_discriminant = std::sqrt(discriminant);
     const auto result1 = (-b + sqrt_discriminant) / (2 * a);
     const auto result2 = (-b - sqrt_discriminant) / (2 * a);
-    if (result1 >= 0 && result2 >= 0)
-    {
-        return std::min(result1, result2);
-    }
-    if (result1 >= 0)
-    {
-        return result1;
-    }
-    if (result2 >= 0)
-    {
-        return result2;
-    }
-    return std::nullopt;
+    return std::min(result1, result2);
 }
 
 void OpenGLWidget::mousePressEvent(QMouseEvent* event)

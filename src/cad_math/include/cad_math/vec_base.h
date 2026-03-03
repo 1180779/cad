@@ -31,8 +31,8 @@ namespace cadm
         {
             for (int i = 0; i < N; ++i)
             {
-                auto diff = lhs[i] - rhs[i];
-                if (diff < -eps || diff > -eps)
+                auto diff = std::abs(lhs[i] - rhs[i]);
+                if (diff > eps)
                     return false;
             }
             return true;
