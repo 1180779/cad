@@ -16,6 +16,7 @@ find_package(Qt6 COMPONENTS
 find_package(OpenGL REQUIRED)
 
 add_subdirectory(src/cad_math)
+add_subdirectory(src/common)
 add_subdirectory(src/app)
 
 enable_testing()
