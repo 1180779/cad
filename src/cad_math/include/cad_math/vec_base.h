@@ -4,8 +4,11 @@
 
 #ifndef CAD_MATH_H
 #define CAD_MATH_H
+
 #include <cassert>
-#include <cad_math/common.h>
+#include <cmath>
+
+#include "common.h"
 
 namespace cadm
 {
@@ -23,6 +26,14 @@ namespace cadm
         {
             assert(i < N);
             return (*this)[i];
+        }
+
+        friend constexpr Derived operator-(const Derived& v) noexcept
+        {
+            Derived res = static_cast<const Derived&>(v);
+            for (int i = 0; i < N; ++i)
+                res[i] = -res[i];
+            return res;
         }
 
         // vector-vector operators
@@ -43,65 +54,113 @@ namespace cadm
             return !(lhs == rhs);
         }
 
-        friend constexpr Derived operator+(Derived lhs, const Derived& rhs)
+        constexpr Derived& operator+=(const Derived& rhs)
         {
             for (int i = 0; i < N; ++i)
-                lhs.data[i] += rhs.data[i];
+                (*this)[i] += rhs.data[i];
+            return static_cast<Derived&>(*this);
+        }
+
+        friend constexpr Derived operator+(Derived lhs, const Derived& rhs)
+        {
+            lhs += rhs;
             return lhs;
+        }
+
+        constexpr Derived& operator-=(const Derived& rhs)
+        {
+            for (int i = 0; i < N; ++i)
+                (*this)[i] -= rhs.data[i];
+            return static_cast<Derived&>(*this);
         }
 
         friend constexpr Derived operator-(Derived lhs, const Derived& rhs)
         {
-            for (int i = 0; i < N; ++i)
-                lhs.data[i] -= rhs.data[i];
+            lhs -= rhs;
             return lhs;
+        }
+
+        constexpr Derived& operator*=(const Derived& rhs)
+        {
+            for (int i = 0; i < N; ++i)
+                (*this)[i] *= rhs.data[i];
+            return static_cast<Derived&>(*this);
         }
 
         friend constexpr Derived operator*(Derived lhs, const Derived& rhs)
         {
-            for (int i = 0; i < N; ++i)
-                lhs.data[i] *= rhs.data[i];
+            lhs *= rhs;
             return lhs;
+        }
+
+        constexpr Derived& operator/=(const Derived& rhs)
+        {
+            for (int i = 0; i < N; ++i)
+                (*this)[i] /= rhs.data[i];
+            return static_cast<Derived&>(*this);
         }
 
         friend constexpr Derived operator/(Derived lhs, const Derived& rhs)
         {
-            for (int i = 0; i < N; ++i)
-                lhs.data[i] /= rhs.data[i];
+            lhs /= rhs;
             return lhs;
         }
 
         // vector-scalar operators
 
-        friend constexpr Derived operator+(Derived lhs, const cadf s)
+        constexpr Derived& operator+=(const cadf rhs)
         {
             for (int i = 0; i < N; ++i)
-                lhs[i] += s;
+                (*this)[i] += rhs;
+            return static_cast<Derived&>(*this);
+        }
+
+        friend constexpr Derived operator+(Derived lhs, const cadf s)
+        {
+            lhs += s;
             return lhs;
         }
 
         friend constexpr Derived operator+(const cadf lhs, Derived rhs) { return lhs + rhs; }
 
-        friend constexpr Derived operator-(Derived lhs, const cadf s)
+        constexpr Derived& operator-=(const cadf rhs)
         {
             for (int i = 0; i < N; ++i)
-                lhs[i] -= s;
+                (*this)[i] -= rhs;
+            return static_cast<Derived&>(*this);
+        }
+
+        friend constexpr Derived operator-(Derived lhs, const cadf s)
+        {
+            lhs -= s;
             return lhs;
+        }
+
+        constexpr Derived& operator*=(const cadf rhs)
+        {
+            for (int i = 0; i < N; ++i)
+                (*this)[i] *= rhs;
+            return static_cast<Derived&>(*this);
         }
 
         friend constexpr Derived operator*(Derived lhs, const cadf s)
         {
-            for (int i = 0; i < N; ++i)
-                lhs[i] *= s;
+            lhs *= s;
             return lhs;
         }
 
         friend constexpr Derived operator*(const cadf lhs, const Derived rhs) { return rhs * lhs; }
 
-        friend constexpr Derived operator/(Derived lhs, const cadf s)
+        constexpr Derived& operator/=(const cadf rhs)
         {
             for (int i = 0; i < N; ++i)
-                lhs[i] /= s;
+                (*this)[i] /= rhs;
+            return static_cast<Derived&>(*this);
+        }
+
+        friend constexpr Derived operator/(Derived lhs, const cadf s)
+        {
+            lhs /= s;
             return lhs;
         }
 
@@ -109,7 +168,7 @@ namespace cadm
 
         void normalize() noexcept
         {
-            const auto lengthSq  = lengthSquared();
+            const auto lengthSq = lengthSquared();
             if (std::abs(lengthSquared() - 1.0) < eps)
                 return;
 
@@ -120,7 +179,7 @@ namespace cadm
 
         constexpr Derived normalized() const noexcept
         {
-            Derived res = *this;
+            Derived res = static_cast<const Derived&>(*this);
             res.normalize();
             return res;
         }

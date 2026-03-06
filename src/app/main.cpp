@@ -83,6 +83,48 @@ void addIntColor8BitParameter(QVBoxLayout* parentLayout, const QString& labelTex
     parentLayout->addLayout(layout);
 }
 
+void addIntParameter(QVBoxLayout* parentLayout, const QString& labelText, const int initialValue,
+                              const std::function<void(int)>& setter, int minValue, int maxValue)
+{
+    const auto layout = new QHBoxLayout;
+    const auto label = new QLabel(labelText);
+    const auto edit = new QLineEdit;
+    const auto slider = new QSlider;
+    slider->setRange(minValue, maxValue);
+    slider->setOrientation(Qt::Orientation::Horizontal);
+
+    const auto validator = new QIntValidator(edit);
+    validator->setLocale(QLocale::C);
+    validator->setBottom(minValue);
+    validator->setTop(maxValue);
+    edit->setValidator(validator);
+    edit->setText(QString::number(initialValue));
+    slider->setValue(initialValue);
+
+    QObject::connect(edit, &QLineEdit::textEdited, [setter, slider](const QString& text)
+    {
+        bool ok;
+        const int val = static_cast<int>(text.toUInt(&ok));
+        if (ok)
+        {
+            setter(val);
+            const bool oldState = slider->blockSignals(true);
+            slider->setValue(val);
+            slider->blockSignals(oldState);
+        }
+    });
+    QObject::connect(slider, &QSlider::valueChanged, [setter, edit](int val)
+    {
+        setter(val);
+        edit->setText(QString::number(val));
+    });
+
+    layout->addWidget(label);
+    layout->addWidget(edit);
+    parentLayout->addLayout(layout);
+    parentLayout->addWidget(slider);
+}
+
 int main(int argc, char* argv[])
 {
     GLSetDefaults();
@@ -119,11 +161,8 @@ int main(int argc, char* argv[])
     const auto adaptiveRenderingGroup = new QGroupBox("Adaptive rendering");
     adaptiveRenderingGroup->setMaximumWidth(rightWidgetsMaxSize);
 
-    const auto adaptiveRenderingLayout = new QHBoxLayout;
-    const auto adaptiveRenderingSquareSize = new QLabel("square size");
-    const auto adaptiveRenderingSquareSizeEdit = new QLineEdit;
-    adaptiveRenderingLayout->addWidget(adaptiveRenderingSquareSize);
-    adaptiveRenderingLayout->addWidget(adaptiveRenderingSquareSizeEdit);
+    const auto adaptiveRenderingLayout = new QVBoxLayout;
+    addIntParameter(adaptiveRenderingLayout, "square size", glWidget->getAdaptationSize(), [glWidget](const int v) { glWidget->setAdaptationSize(v); }, 1, 15);
 
     adaptiveRenderingGroup->setLayout(adaptiveRenderingLayout);
     rightControlsLayout->addWidget(adaptiveRenderingGroup, 0, Qt::AlignTop);

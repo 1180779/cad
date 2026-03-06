@@ -6,7 +6,9 @@
 #define CAD_VEC4_H
 
 #include <array>
-#include <cad_math/vec_base.h>
+
+#include "vec_base.h"
+#include "vec3.h"
 
 namespace cadm
 {
@@ -35,10 +37,23 @@ namespace cadm
         {
         }
 
+        vec4(const vec3& v, const cadf w) : x(v.x), y(v.y), z(v.z), w(w)
+        {
+        }
+
+        vec4(const cadf x, const vec3& v) : x(x), y(v.x), z(v.y), w(v.z)
+        {
+        }
+
         vec4 cross(const vec4& other) const
         {
-            return vec4(x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0);
+            return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
         }
+
+        constexpr static vec4 unitX() noexcept { return {1.0, 0.0, 0.0, 0.0}; }
+        constexpr static vec4 unitY() noexcept { return {0.0, 1.0, 0.0, 0.0}; }
+        constexpr static vec4 unitZ() noexcept { return {0.0, 0.0, 1.0, 0.0}; }
+        constexpr static vec4 unitW() noexcept { return {0.0, 0.0, 1.0, 0.0}; }
     };
 }
 

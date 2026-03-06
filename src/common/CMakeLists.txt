@@ -3,6 +3,8 @@ add_library(common STATIC
         src/DoubleSlider.cpp
 )
 
+set_target_properties(common PROPERTIES AUTOMOC ON)
+
 target_include_directories(common
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include

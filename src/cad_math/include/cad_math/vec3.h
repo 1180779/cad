@@ -6,7 +6,8 @@
 #define CAD_VEC3_H
 
 #include <array>
-#include <cad_math/vec_base.h>
+
+#include "vec_base.h"
 
 namespace cadm
 {
@@ -34,6 +35,10 @@ namespace cadm
         vec3(const cadf x, const cadf y, const cadf z) : x(x), y(y), z(z)
         {
         }
+
+        constexpr static vec3 unitX() noexcept { return {1.0, 0.0, 0.0}; }
+        constexpr static vec3 unitY() noexcept { return {0.0, 1.0, 0.0}; }
+        constexpr static vec3 unitZ() noexcept { return {0.0, 0.0, 1.0}; }
 
         [[nodiscard]] vec3 cross(const vec3& other) const
         {

@@ -35,6 +35,10 @@ namespace cadm
         vec3i(const int x, const int y, const int z) : x(x), y(y), z(z)
         {
         }
+
+        constexpr static vec3i unitX() noexcept { return {1, 0, 0}; }
+        constexpr static vec3i unitY() noexcept { return {0, 1, 0}; }
+        constexpr static vec3i unitZ() noexcept { return {0, 0, 1}; }
     };
 }
 

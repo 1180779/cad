@@ -6,8 +6,9 @@
 #define CAD_MATBASE_H
 
 #include <cstddef>
-#include <cad_math/common.h>
 #include <cmath>
+
+#include "common.h"
 
 namespace cadm
 {
@@ -46,6 +47,13 @@ namespace cadm
         constexpr const T& operator[](const std::size_t i) const noexcept
         {
             return static_cast<const Derived*>(this)->data[i];
+        }
+
+        friend constexpr Derived operator-(Derived lhs)
+        {
+            for (std::size_t i = 0; i < R * C; ++i)
+                lhs[i] -= lhs[i];
+            return lhs;
         }
 
         friend constexpr bool operator==(const Derived& lhs, const Derived& rhs)

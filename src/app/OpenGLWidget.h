@@ -15,6 +15,22 @@
 #include "quad.h"
 #include "cad_math/vec3.h"
 #include "cad_math/vec3i.h"
+#include "Camera.h"
+
+struct RenderState {
+    int width = 0;
+    int height = 0;
+    cadm::mat4 invPV;
+    cadm::mat4 Minv;
+    cadm::mat4 MinvT;
+    cadm::mat4 Dprim;
+    cadm::vec3 cameraPos;
+    cadm::vec3 specularColor;
+    cadm::vec3i ambient;
+    cadm::cadf m;
+    cadm::cadf a, b, c;
+    unsigned char adaptationSize;
+};
 
 class OpenGLWidget : public QOpenGLWidget
 {
@@ -22,6 +38,7 @@ class OpenGLWidget : public QOpenGLWidget
 
 public:
     explicit OpenGLWidget(QWidget* parent = nullptr);
+    ~OpenGLWidget() override;
 
     void paintGL() override;
     void resizeGL(int width, int height) override;
@@ -65,9 +82,9 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 private:
-    void fillCpuBufferTest();
-    void fillCpuBuffer();
-    static std::optional<cadm::cadf> solveQuadratic(cadm::cadf a, cadm::cadf b, cadm::cadf c);
+    void updateRenderParams();
+    static void performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer, int adaptationStep);
+    static std::optional<cadm::cadf> solveQuadraticMinPositive(cadm::cadf a, cadm::cadf b, cadm::cadf c);
 
     GLuint m_texture{};
     std::unique_ptr<ShaderProgram> m_shaderProgram;
@@ -88,6 +105,11 @@ private:
     cadm::cadf m_translationStep{0.1};
 
     QPoint m_lastMousePosition;
+
+    Camera m_camera{cadm::vec3(0, 0, 15), cadm::vec3(0, 0, 0), cadm::vec3(0, 1, 0)};
+
+    RenderState m_renderState;
+    int m_currentAdaptationStep{1};
 };
 
 

@@ -7,6 +7,8 @@ add_executable(cad main.cpp
         GL.h
         ShaderProgram.cpp
         ShaderProgram.h
+        Camera.h
+        Camera.cpp
 )
 
 target_link_libraries(cad
