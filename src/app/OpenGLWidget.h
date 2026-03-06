@@ -6,7 +6,7 @@
 #define CAD_RENDERINGWINDOW_H
 
 #include <QtOpenGLWidgets/QOpenGLWidget>
-#include <QMouseEvent>
+#include <QKeyEvent>
 #include <memory>
 
 #include <cad_math/common.h>
@@ -57,9 +57,12 @@ public:
     void setAmbientG(int g);
     void setAmbientB(int b);
 
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     void fillCpuBufferTest();
@@ -82,7 +85,7 @@ private:
     cadm::vec3i m_ambient{25, 25, 25};
     cadm::cadf m_m{1};
     cadm::cadf m_sensitivity{0.001};
-
+    cadm::cadf m_translationStep{0.1};
 
     QPoint m_lastMousePosition;
 };

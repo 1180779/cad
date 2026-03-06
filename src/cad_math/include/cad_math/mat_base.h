@@ -8,7 +8,6 @@
 #include <cstddef>
 #include <cad_math/common.h>
 #include <cmath>
-#include <algorithm>
 
 namespace cadm
 {

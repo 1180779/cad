@@ -9,7 +9,6 @@
 #include <functional>
 
 #include "OpenGLWidget.h"
-#include <QSlider>
 #include <common/DoubleSlider.h>
 
 void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, const float initialValue,
@@ -150,6 +149,8 @@ int main(int argc, char* argv[])
     ambientColorGroup->setLayout(ambientColorLayout);
 
     phongParametersLayout->addWidget(ambientColorGroup);
+
+    window.installEventFilter(glWidget);
 
     window.show();
     return QApplication::exec();

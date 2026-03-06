@@ -8,6 +8,7 @@
 
 OpenGLWidget::OpenGLWidget(QWidget* parent) : QOpenGLWidget(parent)
 {
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 void OpenGLWidget::paintGL()
@@ -300,4 +301,43 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
     m_rotation.x += delta.y() * m_sensitivity;
 
     update();
+}
+
+void OpenGLWidget::keyPressEvent(QKeyEvent* event)
+{
+    switch (event->key())
+    {
+    case Qt::Key_W:
+        m_translation.y += m_translationStep;
+        break;
+    case Qt::Key_S:
+        m_translation.y -= m_translationStep;
+        break;
+    case Qt::Key_A:
+        m_translation.x -= m_translationStep;
+        break;
+    case Qt::Key_D:
+        m_translation.x += m_translationStep;
+        break;
+    case Qt::Key_Q:
+        m_translation.z -= m_translationStep;
+        break;
+    case Qt::Key_E:
+        m_translation.z += m_translationStep;
+        break;
+    default:
+        QOpenGLWidget::keyPressEvent(event);
+        return;
+    }
+    update();
+}
+
+bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress) {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        keyPressEvent(keyEvent);
+        return true;
+    }
+    return QObject::eventFilter(obj, event);
 }

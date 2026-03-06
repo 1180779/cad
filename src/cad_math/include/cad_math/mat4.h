@@ -8,8 +8,6 @@
 #include <cad_math/mat_base.h>
 #include <cad_math/vec4.h>
 
-#include "vec_base.h"
-
 namespace cadm
 {
     struct mat4 : public mat_base<mat4, 4, 4, cadf>
