@@ -74,6 +74,10 @@ public:
     void setAmbientG(int g);
     void setAmbientB(int b);
 
+    void resetScale();
+    void resetRotation();
+    void resetTranslation();
+
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 protected:

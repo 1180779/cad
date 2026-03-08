@@ -167,6 +167,30 @@ void OpenGLWidget::setAmbientB(const int b)
     updateRenderParams();
 }
 
+void OpenGLWidget::resetScale()
+{
+    if (m_scale == cadm::vec3(1.0, 1.0, 1.0))
+        return;
+    m_scale = cadm::vec3(1.0, 1.0, 1.0);
+    updateRenderParams();
+}
+
+void OpenGLWidget::resetRotation()
+{
+    if (m_rotation == cadm::vec3(0.0, 0.0, 0.0))
+        return;
+    m_rotation = cadm::vec3(0.0, 0.0, 0.0);
+    updateRenderParams();
+}
+
+void OpenGLWidget::resetTranslation()
+{
+    if (m_translation == cadm::vec3(0.0, 0.0, 0.0))
+        return;
+    m_translation = cadm::vec3(0.0, 0.0, 0.0);
+    updateRenderParams();
+}
+
 void OpenGLWidget::updateRenderParams()
 {
     m_renderState.width = width();

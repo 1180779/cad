@@ -10,6 +10,7 @@
 
 #include "OpenGLWidget.h"
 #include <common/DoubleSlider.h>
+#include <QPushButton>
 
 void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, const float initialValue,
                        const std::function<void(float)>& setter, const double mappingRangeStart = 0.0, const double mappingRangeEnd = 1.0)
@@ -189,8 +190,20 @@ int main(int argc, char* argv[])
 
     phongParametersLayout->addWidget(ambientColorGroup);
 
-    window.installEventFilter(glWidget);
+    // reset buttons
+    const auto resetScaleButton = new QPushButton("Reset Scale");
+    QObject::connect(resetScaleButton, &QPushButton::clicked, [&] { glWidget->resetScale(); });
+    rightControlsLayout->addWidget(resetScaleButton);
 
+    const auto resetRotationButton = new QPushButton("Reset Rotation");
+    QObject::connect(resetRotationButton, &QPushButton::clicked, [&] { glWidget->resetRotation(); });
+    rightControlsLayout->addWidget(resetRotationButton);
+
+    const auto resetTranslationButton = new QPushButton("Reset Translation");
+    QObject::connect(resetTranslationButton, &QPushButton::clicked, [&] { glWidget->resetTranslation(); });
+    rightControlsLayout->addWidget(resetTranslationButton);
+
+    window.installEventFilter(glWidget);
     window.show();
     return QApplication::exec();
 }
