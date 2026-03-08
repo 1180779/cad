@@ -83,6 +83,7 @@ public:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent* event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
 
@@ -116,6 +117,7 @@ private:
     RenderState m_renderState;
     int m_currentAdaptationStep{1};
     bool m_zPressed{false};
+    cadm::cadf m_zoomFactor{1.1};
 };
 
 

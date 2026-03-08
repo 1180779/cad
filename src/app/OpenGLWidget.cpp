@@ -4,6 +4,7 @@
 
 #include "OpenGLWidget.h"
 
+#include <QWheelEvent>
 #include "cad_math/helpers.h"
 #include "cad_math/mat4.h"
 
@@ -368,6 +369,21 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
         }
         updateRenderParams();
     }
+}
+
+void OpenGLWidget::wheelEvent(QWheelEvent* event)
+{
+    const int delta = event->angleDelta().y();
+    if (delta == 0)
+        return;
+
+    const cadm::cadf scaleMult = (delta > 0) ? m_zoomFactor : (1.0f / m_zoomFactor);
+
+    m_scale.x *= scaleMult;
+    m_scale.y *= scaleMult;
+    m_scale.z *= scaleMult;
+
+    updateRenderParams();
 }
 
 void OpenGLWidget::keyPressEvent(QKeyEvent* event)
