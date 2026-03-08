@@ -116,7 +116,7 @@ private:
 
     RenderState m_renderState;
     int m_currentAdaptationStep{1};
-    bool m_zPressed{false};
+    bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};
     cadm::cadf m_zoomFactor{1.1};
 };
 

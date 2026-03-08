@@ -360,12 +360,12 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
     {
         if (m_zPressed)
         {
-            m_rotation.z += delta.x() * m_sensitivity;
+            m_rotation.z += static_cast<cadm::cadf>(delta.x()) * m_sensitivity;
         }
         else
         {
-            m_rotation.y += delta.x() * m_sensitivity;
-            m_rotation.x += delta.y() * m_sensitivity;
+            m_rotation.y += static_cast<cadm::cadf>(delta.x()) * m_sensitivity;
+            m_rotation.x += static_cast<cadm::cadf>(delta.y()) * m_sensitivity;
         }
         updateRenderParams();
     }
@@ -377,11 +377,22 @@ void OpenGLWidget::wheelEvent(QWheelEvent* event)
     if (delta == 0)
         return;
 
-    const cadm::cadf scaleMult = (delta > 0) ? m_zoomFactor : (1.0f / m_zoomFactor);
+    const cadm::cadf scaleMult = delta > 0 ? m_zoomFactor : 1.0f / m_zoomFactor;
 
-    m_scale.x *= scaleMult;
-    m_scale.y *= scaleMult;
-    m_scale.z *= scaleMult;
+    if (m_xPressed || m_yPressed || m_zPressed)
+    {
+        if (m_xPressed)
+            m_scale.x *= scaleMult;
+        if (m_yPressed)
+            m_scale.y *= scaleMult;
+        if (m_zPressed)
+            m_scale.z *= scaleMult;
+    } else
+    {
+        m_scale.x *= scaleMult;
+        m_scale.y *= scaleMult;
+        m_scale.z *= scaleMult;
+    }
 
     updateRenderParams();
 }
@@ -412,9 +423,21 @@ void OpenGLWidget::keyPressEvent(QKeyEvent* event)
     case Qt::Key_E:
         m_translation.z += m_translationStep;
         break;
+    case Qt::Key_X:
+        if (event->isAutoRepeat())
+            return;
+        m_xPressed = true;
+        return;
+    case Qt::Key_Y:
+        if (event->isAutoRepeat())
+            return;
+        m_yPressed = true;
+        return;
     case Qt::Key_Z:
+        if (event->isAutoRepeat())
+            return;
         m_zPressed = true;
-        break;
+        return;
     default:
         QOpenGLWidget::keyPressEvent(event);
         return;
@@ -424,11 +447,23 @@ void OpenGLWidget::keyPressEvent(QKeyEvent* event)
 
 void OpenGLWidget::keyReleaseEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Z && !event->isAutoRepeat())
+    if (!event->isAutoRepeat())
     {
-        m_zPressed = false;
+        switch (event->key())
+        {
+        case Qt::Key_X:
+            m_xPressed = false;
+            break;
+        case Qt::Key_Y:
+            m_yPressed = false;
+            break;
+        case Qt::Key_Z:
+            m_zPressed = false;
+            break;
+        default:
+            QOpenGLWidget::keyReleaseEvent(event);
+        }
     }
-    QOpenGLWidget::keyReleaseEvent(event);
 }
 
 bool OpenGLWidget::eventFilter(QObject* obj, QEvent* event)

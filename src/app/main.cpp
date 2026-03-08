@@ -208,7 +208,12 @@ int main(int argc, char* argv[])
 
     // help text
     const auto helpText = new QLabel(
-        "Controls: \nTranslation: AWSD + QE\nRotation: move mouse to rotate around XY axis\n\tHold Z to rotate Z axis\nScale: use mouse wheel");
+        "Controls: \n"
+        "Translation: AWSD (XY) + QE (Z)\n"
+        "Rotation: move mouse to rotate around XY axis\n"
+            "\tHold Z to rotate around Z axis\n"
+        "Scale: use mouse wheel\n"
+            "\tHold X, Y, Z to scale only pressed axis");
     rightControlsLayout->addWidget(helpText);
 
     window.installEventFilter(glWidget);
