@@ -2,18 +2,19 @@
 #include <QVBoxLayout>
 #include <QGroupBox>
 #include <QLineEdit>
-#include <QLabel>
 #include <QDebug>
 #include <QDoubleValidator>
 #include <QLocale>
 #include <functional>
+#include <QLabel>
 
 #include "OpenGLWidget.h"
 #include <common/DoubleSlider.h>
 #include <QPushButton>
 
 void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, const float initialValue,
-                       const std::function<void(float)>& setter, const double mappingRangeStart = 0.0, const double mappingRangeEnd = 1.0)
+                       const std::function<void(float)>& setter, const double mappingRangeStart = 0.0,
+                       const double mappingRangeEnd = 1.0)
 {
     // allowed values for a slider should be from
     // 1 / (sliderScalingFactor + 1)
@@ -85,7 +86,7 @@ void addIntColor8BitParameter(QVBoxLayout* parentLayout, const QString& labelTex
 }
 
 void addIntParameter(QVBoxLayout* parentLayout, const QString& labelText, const int initialValue,
-                              const std::function<void(int)>& setter, int minValue, int maxValue)
+                     const std::function<void(int)>& setter, int minValue, int maxValue)
 {
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
@@ -163,7 +164,8 @@ int main(int argc, char* argv[])
     adaptiveRenderingGroup->setMaximumWidth(rightWidgetsMaxSize);
 
     const auto adaptiveRenderingLayout = new QVBoxLayout;
-    addIntParameter(adaptiveRenderingLayout, "square size", glWidget->getAdaptationSize(), [glWidget](const int v) { glWidget->setAdaptationSize(v); }, 1, 15);
+    addIntParameter(adaptiveRenderingLayout, "square size", glWidget->getAdaptationSize(),
+                    [glWidget](const int v) { glWidget->setAdaptationSize(v); }, 1, 15);
 
     adaptiveRenderingGroup->setLayout(adaptiveRenderingLayout);
     rightControlsLayout->addWidget(adaptiveRenderingGroup, 0, Qt::AlignTop);
@@ -172,7 +174,8 @@ int main(int argc, char* argv[])
     const auto phongParametersGroup = new QGroupBox("Phong parameters");
     phongParametersGroup->setMaximumWidth(rightWidgetsMaxSize);
     const auto phongParametersLayout = new QVBoxLayout;
-    addFloatParameter(phongParametersLayout, "m", glWidget->getM(), [glWidget](const float v) { glWidget->setM(v); }, 0.001, 10);
+    addFloatParameter(phongParametersLayout, "m", glWidget->getM(), [glWidget](const float v) { glWidget->setM(v); },
+                      0.001, 10);
 
     phongParametersGroup->setLayout(phongParametersLayout);
     rightControlsLayout->addWidget(phongParametersGroup, 0, Qt::AlignTop);
@@ -202,6 +205,11 @@ int main(int argc, char* argv[])
     const auto resetTranslationButton = new QPushButton("Reset Translation");
     QObject::connect(resetTranslationButton, &QPushButton::clicked, [&] { glWidget->resetTranslation(); });
     rightControlsLayout->addWidget(resetTranslationButton);
+
+    // help text
+    const auto helpText = new QLabel(
+        "Controls: \nTranslation: AWSD + QE\nRotation: move mouse to rotate around XY axis\n\tHold Z to rotate Z axis");
+    rightControlsLayout->addWidget(helpText);
 
     window.installEventFilter(glWidget);
     window.show();

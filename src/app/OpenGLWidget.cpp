@@ -354,10 +354,20 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
     const auto currentPos = event->pos();
     const auto delta = currentPos - m_lastMousePosition;
     m_lastMousePosition = currentPos;
-    m_rotation.y += delta.x() * m_sensitivity;
-    m_rotation.x += delta.y() * m_sensitivity;
 
-    updateRenderParams();
+    if (event->buttons() & Qt::LeftButton)
+    {
+        if (m_zPressed)
+        {
+            m_rotation.z += delta.x() * m_sensitivity;
+        }
+        else
+        {
+            m_rotation.y += delta.x() * m_sensitivity;
+            m_rotation.x += delta.y() * m_sensitivity;
+        }
+        updateRenderParams();
+    }
 }
 
 void OpenGLWidget::keyPressEvent(QKeyEvent* event)
@@ -386,11 +396,23 @@ void OpenGLWidget::keyPressEvent(QKeyEvent* event)
     case Qt::Key_E:
         m_translation.z += m_translationStep;
         break;
+    case Qt::Key_Z:
+        m_zPressed = true;
+        break;
     default:
         QOpenGLWidget::keyPressEvent(event);
         return;
     }
     updateRenderParams();
+}
+
+void OpenGLWidget::keyReleaseEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Z && !event->isAutoRepeat())
+    {
+        m_zPressed = false;
+    }
+    QOpenGLWidget::keyReleaseEvent(event);
 }
 
 bool OpenGLWidget::eventFilter(QObject* obj, QEvent* event)
@@ -399,6 +421,12 @@ bool OpenGLWidget::eventFilter(QObject* obj, QEvent* event)
     {
         const auto keyEvent = dynamic_cast<QKeyEvent*>(event);
         keyPressEvent(keyEvent);
+        return true;
+    }
+    if (event->type() == QEvent::KeyRelease)
+    {
+        const auto keyEvent = dynamic_cast<QKeyEvent*>(event);
+        keyReleaseEvent(keyEvent);
         return true;
     }
     return QObject::eventFilter(obj, event);

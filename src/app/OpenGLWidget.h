@@ -84,6 +84,7 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
 
 private:
     void updateRenderParams();
@@ -114,6 +115,7 @@ private:
 
     RenderState m_renderState;
     int m_currentAdaptationStep{1};
+    bool m_zPressed{false};
 };
 
 
