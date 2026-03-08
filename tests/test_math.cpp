@@ -75,10 +75,10 @@ namespace
     {
         mat4 m1 = mat4::identity();
         mat4 m2(
-            1, 2, 3, 4,
-            5, 6, 7, 8,
-            9, 10, 11, 12,
-            13, 14, 15, 16
+            vec4(1, 5, 9, 13),
+            vec4(2, 6, 10, 14),
+            vec4(3, 7, 11, 15),
+            vec4(4, 8, 12, 16)
         );
 
         SECTION("Identity Multiplication")
@@ -110,10 +110,7 @@ namespace
 
         SECTION("Simple Inverse")
         {
-            // Scale matrix
-            mat4 m = mat4::identity();
-            m(0, 0) = 2.0f;
-            m(1, 1) = 0.5f;
+            mat4 m = mat4::diag(2.0, 0.5, 1.0, 1.0);
 
             mat4 inv = m.inverse();
             REQUIRE_THAT(inv(0, 0), Catch::Matchers::WithinRel(0.5f));
@@ -125,14 +122,172 @@ namespace
         SECTION("General Inverse")
         {
             mat4 m = mat4::identity();
-            m(0, 0) = 1; m(0, 1) = 2;
-            m(1, 0) = 3; m(1, 1) = 4;
+            m(0, 0) = 1;
+            m(0, 1) = 2;
+            m(1, 0) = 3;
+            m(1, 1) = 4;
 
             mat4 inv = m.inverse();
 
-            // Check A * A^-1 = I
+            // check A * A^-1 = I
             mat4 res = m * inv;
             REQUIRE(res == mat4::identity());
+        }
+    }
+
+    TEST_CASE("mat4 inverseSafe", "[math][mat4]")
+    {
+        SECTION("Invertible Matrix")
+        {
+            mat4 m = mat4::identity();
+            m(0, 0) = 1;
+            m(0, 1) = 2;
+            m(1, 0) = 3;
+            m(1, 1) = 4;
+
+            auto inv_opt = m.inverseSafe();
+            REQUIRE(inv_opt.has_value());
+
+            // check A * A^-1 = I
+            mat4 res = m * inv_opt.value();
+            REQUIRE(res == mat4::identity());
+        }
+
+        SECTION("Singular Matrix")
+        {
+            mat4 m = mat4::identity();
+            m(0, 0) = 1;
+            m(0, 1) = 2;
+            m(1, 0) = 2;
+            m(1, 1) = 4;
+
+            auto inv_opt = m.inverseSafe();
+            REQUIRE_FALSE(inv_opt.has_value());
+        }
+
+        SECTION("Zero Matrix")
+        {
+            mat4 m{};
+
+            auto inv_opt = m.inverseSafe();
+            REQUIRE_FALSE(inv_opt.has_value());
+        }
+    }
+
+    TEST_CASE("mat_row_ref operator overloading", "[math][mat4][row_ref]")
+    {
+        SECTION("Compound assignment operators")
+        {
+            mat4 m = mat4::identity();
+
+            // test operator+=
+            auto row0 = m.makeRowRef(m, 0);
+            vec4 v(1.0f, 2.0f, 3.0f, 4.0f);
+            row0 += v;
+            REQUIRE_THAT(m(0, 0), Catch::Matchers::WithinRel(2.0f));
+            REQUIRE_THAT(m(0, 1), Catch::Matchers::WithinRel(2.0f));
+            REQUIRE_THAT(m(0, 2), Catch::Matchers::WithinRel(3.0f));
+            REQUIRE_THAT(m(0, 3), Catch::Matchers::WithinRel(4.0f));
+
+            // test operator-=
+            row0 -= v;
+            REQUIRE_THAT(m(0, 0), Catch::Matchers::WithinRel(1.0f));
+            REQUIRE_THAT(m(0, 1), Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(m(0, 2), Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(m(0, 3), Catch::Matchers::WithinRel(0.0f));
+
+            // test operator*=
+            row0 *= 2.0f;
+            REQUIRE_THAT(m(0, 0), Catch::Matchers::WithinRel(2.0f));
+            REQUIRE_THAT(m(0, 1), Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(m(0, 2), Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(m(0, 3), Catch::Matchers::WithinRel(0.0f));
+
+            // test operator/=
+            row0 /= 2.0f;
+            REQUIRE_THAT(m(0, 0), Catch::Matchers::WithinRel(1.0f));
+            REQUIRE_THAT(m(0, 1), Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(m(0, 2), Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(m(0, 3), Catch::Matchers::WithinRel(0.0f));
+        }
+
+        SECTION("Binary operators return vectors")
+        {
+            mat4 m = mat4::identity();
+            auto row0 = m.makeRowRef(m, 0);
+
+            auto requireThatMatrixUnchanged = [&m]()
+            {
+                REQUIRE_THAT(m(0, 0), Catch::Matchers::WithinRel(1.0f));
+                REQUIRE_THAT(m(0, 1), Catch::Matchers::WithinRel(0.0f));
+                REQUIRE_THAT(m(0, 2), Catch::Matchers::WithinRel(0.0f));
+                REQUIRE_THAT(m(0, 3), Catch::Matchers::WithinRel(0.0f));
+            };
+
+            vec4 v(1.0f, 1.0f, 1.0f, 1.0f);
+
+            // operator+ returns vector, doesn't modify row
+            vec4 result = row0 + v;
+            REQUIRE_THAT(result.x, Catch::Matchers::WithinRel(2.0f));
+            REQUIRE_THAT(result.y, Catch::Matchers::WithinRel(1.0f));
+            REQUIRE_THAT(result.z, Catch::Matchers::WithinRel(1.0f));
+            REQUIRE_THAT(result.w, Catch::Matchers::WithinRel(1.0f));
+            requireThatMatrixUnchanged();
+
+            // operator- returns vector
+            result = row0 - v;
+            REQUIRE_THAT(result.x, Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(result.y, Catch::Matchers::WithinRel(-1.0f));
+            REQUIRE_THAT(result.z, Catch::Matchers::WithinRel(-1.0f));
+            REQUIRE_THAT(result.w, Catch::Matchers::WithinRel(-1.0f));
+            requireThatMatrixUnchanged();
+
+            // operator* returns vector
+            result = row0 * 3.0f;
+            REQUIRE_THAT(result.x, Catch::Matchers::WithinRel(3.0f));
+            REQUIRE_THAT(result.y, Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(result.z, Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(result.w, Catch::Matchers::WithinRel(0.0f));
+            requireThatMatrixUnchanged();
+
+            // operator/ returns vector
+            result = row0 / 2.0f;
+            REQUIRE_THAT(result.x, Catch::Matchers::WithinRel(0.5f));
+            REQUIRE_THAT(result.y, Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(result.z, Catch::Matchers::WithinRel(0.0f));
+            REQUIRE_THAT(result.w, Catch::Matchers::WithinRel(0.0f));
+            requireThatMatrixUnchanged();
+        }
+
+        SECTION("Assignment from vector")
+        {
+            mat4 m{};
+            auto row1 = m.makeRowRef(m, 1);
+
+            vec4 v(5.0f, 6.0f, 7.0f, 8.0f);
+            row1 = v;
+
+            REQUIRE_THAT(m(1, 0), Catch::Matchers::WithinRel(5.0f));
+            REQUIRE_THAT(m(1, 1), Catch::Matchers::WithinRel(6.0f));
+            REQUIRE_THAT(m(1, 2), Catch::Matchers::WithinRel(7.0f));
+            REQUIRE_THAT(m(1, 3), Catch::Matchers::WithinRel(8.0f));
+        }
+
+        SECTION("Implicit conversion to vector")
+        {
+            mat4 m = mat4::identity();
+            m(2, 0) = 10.0f;
+            m(2, 1) = 20.0f;
+            m(2, 2) = 30.0f;
+            m(2, 3) = 40.0f;
+
+            auto row2 = m.makeRowRef(m, 2);
+            vec4 v = row2;
+
+            REQUIRE_THAT(v.x, Catch::Matchers::WithinRel(10.0f));
+            REQUIRE_THAT(v.y, Catch::Matchers::WithinRel(20.0f));
+            REQUIRE_THAT(v.z, Catch::Matchers::WithinRel(30.0f));
+            REQUIRE_THAT(v.w, Catch::Matchers::WithinRel(40.0f));
         }
     }
 }

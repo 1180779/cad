@@ -12,7 +12,8 @@
 
 namespace cadm
 {
-    struct vec2 : vec_base<vec2, 2, cadf>
+    template <>
+    struct vec<2, cadf> : vec_base<vec<2, cadf>, 2, cadf>
     {
         union
         {
@@ -29,16 +30,18 @@ namespace cadm
             std::array<cadf, 2> data;
         };
 
-        vec2() : x(0), y(0)
+        vec() : x(0), y(0)
         {
         }
 
-        vec2(const cadf x, const cadf y) : x(x), y(y)
+        vec(const cadf x, const cadf y) : x(x), y(y)
         {
         }
 
-        constexpr static vec2 unitX() noexcept { return {1.0, 0.0}; }
-        constexpr static vec2 unitY() noexcept { return {0.0, 1.0}; }
+        constexpr static vec unitX() noexcept { return {1.0, 0.0}; }
+        constexpr static vec unitY() noexcept { return {0.0, 1.0}; }
     };
+
+    using vec2 = vec<2, cadf>;
 }
 #endif //CAD_VEC2_H

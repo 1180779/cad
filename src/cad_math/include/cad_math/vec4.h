@@ -12,7 +12,8 @@
 
 namespace cadm
 {
-    struct vec4 : vec_base<vec4, 4, cadf>
+    template <>
+    struct vec<4, cadf> : vec_base<vec<4, cadf>, 4, cadf>
     {
         union
         {
@@ -29,32 +30,34 @@ namespace cadm
             std::array<cadf, 4> data;
         };
 
-        vec4() : x(0), y(0), z(0), w(0)
+        vec() : x(0), y(0), z(0), w(0)
         {
         }
 
-        vec4(const cadf x, const cadf y, const cadf z, const cadf w) : x(x), y(y), z(z), w(w)
+        vec(const cadf x, const cadf y, const cadf z, const cadf w) : x(x), y(y), z(z), w(w)
         {
         }
 
-        vec4(const vec3& v, const cadf w) : x(v.x), y(v.y), z(v.z), w(w)
+        vec(const vec3& v, const cadf w) : x(v.x), y(v.y), z(v.z), w(w)
         {
         }
 
-        vec4(const cadf x, const vec3& v) : x(x), y(v.x), z(v.y), w(v.z)
+        vec(const cadf x, const vec3& v) : x(x), y(v.x), z(v.y), w(v.z)
         {
         }
 
-        vec4 cross(const vec4& other) const
+        vec cross(const vec& other) const
         {
             return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
         }
 
-        constexpr static vec4 unitX() noexcept { return {1.0, 0.0, 0.0, 0.0}; }
-        constexpr static vec4 unitY() noexcept { return {0.0, 1.0, 0.0, 0.0}; }
-        constexpr static vec4 unitZ() noexcept { return {0.0, 0.0, 1.0, 0.0}; }
-        constexpr static vec4 unitW() noexcept { return {0.0, 0.0, 1.0, 0.0}; }
+        constexpr static vec unitX() noexcept { return {1.0, 0.0, 0.0, 0.0}; }
+        constexpr static vec unitY() noexcept { return {0.0, 1.0, 0.0, 0.0}; }
+        constexpr static vec unitZ() noexcept { return {0.0, 0.0, 1.0, 0.0}; }
+        constexpr static vec unitW() noexcept { return {0.0, 0.0, 0.0, 1.0}; }
     };
+
+    using vec4 = vec<4, cadf>;
 }
 
 #endif //CAD_VEC4_H

@@ -11,7 +11,8 @@
 
 namespace cadm
 {
-    struct vec2i : vec_base<vec2i, 2, int>
+    template <>
+    struct vec<2, int> : vec_base<vec<2, int>, 2, int>
     {
         union
         {
@@ -28,17 +29,19 @@ namespace cadm
             std::array<int, 2> data;
         };
 
-        vec2i() : x(0), y(0)
+        vec() : x(0), y(0)
         {
         }
 
-        vec2i(const int x, const int y) : x(x), y(y)
+        vec(const int x, const int y) : x(x), y(y)
         {
         }
 
-        constexpr static vec2i unitX() noexcept { return {1, 0}; }
-        constexpr static vec2i unitY() noexcept { return {0, 1}; }
+        constexpr static vec unitX() noexcept { return {1, 0}; }
+        constexpr static vec unitY() noexcept { return {0, 1}; }
     };
+
+    using vec2i = vec<2, int>;
 }
 
 #endif //CAD_VEC2I_H

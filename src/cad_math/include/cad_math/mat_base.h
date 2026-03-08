@@ -7,61 +7,230 @@
 
 #include <cstddef>
 #include <cmath>
+#include <optional>
 
 #include "common.h"
 
 namespace cadm
 {
-    enum class layout { row_major, column_major };
+    template <typename Derived, typename RowType, std::size_t C, typename T>
+    struct mat_row_ref
+    {
+        Derived& matrix;
+        std::size_t rowIdx;
 
-    template <typename Derived, std::size_t R, std::size_t C, typename T, layout L = layout::column_major>
+        constexpr mat_row_ref(Derived& mat, const std::size_t idx) noexcept
+            : matrix(mat), rowIdx(idx)
+        {
+        }
+
+        constexpr T& operator[](std::size_t col) noexcept
+        {
+            return matrix(rowIdx, col);
+        }
+
+        constexpr const T& operator[](std::size_t col) const noexcept
+        {
+            return matrix(rowIdx, col);
+        }
+
+        constexpr operator RowType() const noexcept
+        {
+            RowType res{};
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                res[k] = (*this)[k];
+            }
+            return res;
+        }
+
+        constexpr mat_row_ref& operator=(const RowType& vec) noexcept
+        {
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                (*this)[k] = vec[k];
+            }
+            return *this;
+        }
+
+        constexpr void swap(mat_row_ref other) noexcept
+        {
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                std::swap((*this)[k], other[k]);
+            }
+        }
+
+        // ===== compound assignment operators (modify in-place) =====
+
+        constexpr mat_row_ref& operator+=(const RowType& vec) noexcept
+        {
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                (*this)[k] += vec[k];
+            }
+            return *this;
+        }
+
+        constexpr mat_row_ref& operator+=(const mat_row_ref& other) noexcept
+        {
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                (*this)[k] += other[k];
+            }
+            return *this;
+        }
+
+        constexpr mat_row_ref& operator-=(const RowType& vec) noexcept
+        {
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                (*this)[k] -= vec[k];
+            }
+            return *this;
+        }
+
+        constexpr mat_row_ref& operator-=(const mat_row_ref& other) noexcept
+        {
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                (*this)[k] -= other[k];
+            }
+            return *this;
+        }
+
+        constexpr mat_row_ref& operator*=(T scalar) noexcept
+        {
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                (*this)[k] *= scalar;
+            }
+            return *this;
+        }
+
+        constexpr mat_row_ref& operator/=(T scalar) noexcept
+        {
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                (*this)[k] /= scalar;
+            }
+            return *this;
+        }
+
+        // ===== binary operators (return new vector, don't modify) =====
+
+        constexpr RowType operator+(const RowType& vec) const noexcept
+        {
+            RowType res{};
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                res[k] = (*this)[k] + vec[k];
+            }
+            return res;
+        }
+
+        constexpr RowType operator+(const mat_row_ref& other) const noexcept
+        {
+            RowType res{};
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                res[k] = (*this)[k] + other[k];
+            }
+            return res;
+        }
+
+        constexpr RowType operator-(const RowType& vec) const noexcept
+        {
+            RowType res{};
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                res[k] = (*this)[k] - vec[k];
+            }
+            return res;
+        }
+
+        constexpr RowType operator-(const mat_row_ref& other) const noexcept
+        {
+            RowType res{};
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                res[k] = (*this)[k] - other[k];
+            }
+            return res;
+        }
+
+        constexpr RowType operator*(T scalar) const noexcept
+        {
+            RowType res{};
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                res[k] = (*this)[k] * scalar;
+            }
+            return res;
+        }
+
+        friend constexpr RowType operator*(T scalar, const mat_row_ref& row) noexcept
+        {
+            return row * scalar;
+        }
+
+        constexpr RowType operator/(T scalar) const noexcept
+        {
+            RowType res{};
+            for (std::size_t k = 0; k < C; ++k)
+            {
+                res[k] = (*this)[k] / scalar;
+            }
+            return res;
+        }
+    };
+
+    template <template <std::size_t, std::size_t, typename> class MatrixT, typename Derived, typename ColType, typename
+              RowType, std::size_t R, std::size_t C, typename T>
     struct mat_base
     {
-        static constexpr std::size_t index(const std::size_t row, const std::size_t col) noexcept
+        constexpr ColType& col(const std::size_t i) noexcept
         {
-            if constexpr (L == layout::row_major)
+            return static_cast<Derived*>(this)->columns[i];
+        }
+
+        constexpr const ColType& col(const std::size_t i) const noexcept
+        {
+            return static_cast<const Derived*>(this)->columns[i];
+        }
+
+        constexpr RowType row(const std::size_t i) const noexcept
+        {
+            RowType res{};
+            for (std::size_t j = 0; j < C; ++j)
             {
-                return row * C + col;
+                res[j] = (*this)(i, j);
             }
-            else
-            {
-                return col * R + row;
-            }
+            return res;
         }
 
         constexpr T& operator()(const std::size_t row, const std::size_t col) noexcept
         {
-            return static_cast<Derived*>(this)->data[index(row, col)];
+            return this->col(col)[row];
         }
 
         constexpr const T& operator()(const std::size_t row, const std::size_t col) const noexcept
         {
-            return static_cast<const Derived*>(this)->data[index(row, col)];
-        }
-
-        constexpr T& operator[](const std::size_t i) noexcept
-        {
-            return static_cast<Derived*>(this)->data[i];
-        }
-
-        constexpr const T& operator[](const std::size_t i) const noexcept
-        {
-            return static_cast<const Derived*>(this)->data[i];
+            return this->col(col)[row];
         }
 
         friend constexpr Derived operator-(Derived lhs)
         {
-            for (std::size_t i = 0; i < R * C; ++i)
-                lhs[i] -= lhs[i];
+            for (std::size_t i = 0; i < C; ++i)
+                lhs.col(i) = -lhs.col(i);
             return lhs;
         }
 
         friend constexpr bool operator==(const Derived& lhs, const Derived& rhs)
         {
-            for (std::size_t i = 0; i < R * C; ++i)
+            for (std::size_t i = 0; i < C; ++i)
             {
-                auto diff = lhs[i] - rhs[i];
-                if (diff < -eps || diff > eps)
+                if (lhs.col(i) != rhs.col(i))
                     return false;
             }
             return true;
@@ -69,34 +238,44 @@ namespace cadm
 
         friend constexpr Derived operator+(Derived lhs, const Derived& rhs)
         {
-            for (std::size_t i = 0; i < R * C; ++i) lhs[i] += rhs[i];
+            for (std::size_t i = 0; i < C; ++i)
+                lhs.col(i) += rhs.col(i);
             return lhs;
         }
 
         friend constexpr Derived operator-(Derived lhs, const Derived& rhs)
         {
-            for (std::size_t i = 0; i < R * C; ++i) lhs[i] -= rhs[i];
+            for (std::size_t i = 0; i < C; ++i)
+                lhs.col(i) -= rhs.col(i);
             return lhs;
         }
 
-        constexpr Derived operator*(const Derived& rhs) const requires (R == C)
+        template <typename OtherDerived, typename OtherCol, typename OtherRow, std::size_t OtherC>
+        constexpr auto operator*(const mat_base<MatrixT, OtherDerived, OtherCol, OtherRow, C, OtherC, T>& rhs) const
         {
-            Derived M{};
+            using ResultType = MatrixT<R, OtherC, T>;
+            ResultType M{};
+
             for (std::size_t i = 0; i < R; ++i)
             {
-                for (std::size_t j = 0; j < C; ++j)
+                const auto r = this->row(i);
+                for (std::size_t j = 0; j < OtherC; ++j)
                 {
-                    for (std::size_t k = 0; k < R; ++k)
-                    {
-                        M(i, j) += (*this)(i, k) * rhs(k, j);
-                    }
+                    M(i, j) = r.dot(rhs.col(j));
                 }
             }
             return M;
         }
 
-        // TODO: implement transposition for non square matrices
-        // TODO: improve implementation of transpose for better performance
+        constexpr ColType operator*(const RowType& v) const noexcept
+        {
+            ColType res = this->col(0) * v[0];
+            for (std::size_t j = 1; j < C; ++j)
+            {
+                res += this->col(j) * v[j];
+            }
+            return res;
+        }
 
         constexpr void transpose() requires (R == C)
         {
@@ -109,29 +288,30 @@ namespace cadm
             }
         }
 
-        [[nodiscard]] constexpr Derived transposed() const requires (R == C)
+        [[nodiscard]] constexpr auto transposed() const
         {
-            Derived result{};
+            using ResultType = MatrixT<C, R, T>;
+            ResultType result{};
             for (std::size_t i = 0; i < R; ++i)
             {
-                for (std::size_t j = 0; j < C; ++j)
-                {
-                    result(j, i) = (*this)(i, j);
-                }
+                result.col(i) = this->row(i);
             }
             return result;
         }
 
-        // TODO: refactor this method to swap rows with additional structures
-        //  (implement additional rows and columns structures referencing the data inside the matrix)
-        constexpr Derived inverse() const requires (R == C)
+        constexpr auto makeRowRef(Derived& matrix, std::size_t row_idx) const noexcept
+        {
+            return mat_row_ref<Derived, RowType, C, T>(matrix, row_idx);
+        }
+
+        [[nodiscard]] constexpr std::optional<Derived> inverseSafe() const requires (R == C)
         {
             Derived temp = *static_cast<const Derived*>(this);
             Derived inv = Derived::identity();
 
             for (std::size_t i = 0; i < R; ++i)
             {
-                // Pivot
+                // find pivot
                 std::size_t pivot = i;
                 for (std::size_t j = i + 1; j < R; ++j)
                 {
@@ -141,46 +321,55 @@ namespace cadm
                     }
                 }
 
+                // check if the matrix is singular
                 if (std::abs(temp(pivot, i)) < eps)
                 {
-                    // Matrix is singular
-                    return Derived{};
+                    return std::nullopt;
                 }
 
-                // Swap rows
+                // swap rows if needed
                 if (pivot != i)
                 {
-                    for (std::size_t k = 0; k < C; ++k)
-                    {
-                        std::swap(temp(i, k), temp(pivot, k));
-                        std::swap(inv(i, k), inv(pivot, k));
-                    }
+                    auto tempRowI = makeRowRef(temp, i);
+                    auto tempRowPivot = makeRowRef(temp, pivot);
+                    tempRowI.swap(tempRowPivot);
+
+                    auto invRowI = makeRowRef(inv, i);
+                    auto invRowPivot = makeRowRef(inv, pivot);
+                    invRowI.swap(invRowPivot);
                 }
 
-                // Normalize row i
+                // normalize row i
                 T div = temp(i, i);
-                for (std::size_t k = 0; k < C; ++k)
-                {
-                    temp(i, k) /= div;
-                    inv(i, k) /= div;
-                }
+                auto tempRowI = makeRowRef(temp, i);
+                auto invRowI = makeRowRef(inv, i);
+                tempRowI /= div;
+                invRowI /= div;
 
-                // Eliminate other rows
+                // eliminate other rows
                 for (std::size_t j = 0; j < R; ++j)
                 {
                     if (i != j)
                     {
                         T mul = temp(j, i);
-                        for (std::size_t k = 0; k < C; ++k)
-                        {
-                            temp(j, k) -= mul * temp(i, k);
-                            inv(j, k) -= mul * inv(i, k);
-                        }
+                        auto tempRowJ = makeRowRef(temp, j);
+                        auto invRowJ = makeRowRef(inv, j);
+                        tempRowJ -= tempRowI * mul;
+                        invRowJ -= invRowI * mul;
                     }
                 }
             }
 
             return inv;
+        }
+
+        [[nodiscard]] constexpr Derived inverse() const requires (R == C)
+        {
+            if (const auto safeInverse = inverseSafe())
+            {
+                return safeInverse.value();
+            }
+            return Derived::identity();
         }
     };
 }

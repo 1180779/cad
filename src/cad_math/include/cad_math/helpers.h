@@ -13,7 +13,6 @@
 
 namespace cadm
 {
-
     // Unprojects a 2D screen point with a given NDC depth z to World Space.
     // z should be in the range [-1, 1] (OpenGL) or [0, 1] (DirectX/Vulkan) depending on the projection matrix.
     // Top left is the (0, 0) point.

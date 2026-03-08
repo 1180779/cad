@@ -12,6 +12,9 @@
 
 namespace cadm
 {
+    template <std::size_t N, typename T>
+    struct vec;
+
     template <typename Derived, std::size_t N, typename T>
     struct vec_base
     {
@@ -36,7 +39,7 @@ namespace cadm
             return res;
         }
 
-        // vector-vector operators
+        // ===== vector-vector operators =====
 
         friend constexpr bool operator==(const Derived& lhs, const Derived& rhs) noexcept
         {
@@ -106,7 +109,7 @@ namespace cadm
             return lhs;
         }
 
-        // vector-scalar operators
+        // ===== vector-scalar operators =====
 
         constexpr Derived& operator+=(const cadf rhs)
         {
@@ -164,7 +167,7 @@ namespace cadm
             return lhs;
         }
 
-        // common methods
+        // ===== common methods =====
 
         void normalize() noexcept
         {

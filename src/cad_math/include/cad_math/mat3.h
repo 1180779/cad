@@ -11,128 +11,101 @@
 
 namespace cadm
 {
-    struct mat3 : public mat_base<mat3, 3, 3, cadf>
+    template <std::size_t R, std::size_t C, typename T>
+    struct mat;
+
+    template <>
+    struct mat<3, 3, cadf> : public mat_base<mat, mat<3, 3, cadf>, vec3, vec3, 3, 3, cadf>
     {
         union
         {
-            struct
-            {
-                // column-major
-                cadf m00, m10, m20,
-                     m01, m11, m21,
-                     m02, m12, m22;
-            };
-
             cadf data[9]{};
+            vec3 columns[3];
         };
 
-    public:
-        using mat_base<mat3, 3, 3, cadf>::operator*;
-
-        mat3()
+        mat()
         {
-            m00 = m01 = m02 = m10 = m11 = m12 = m20 = m21 = m22 = 0.0f;
+            for (auto& cell : data)
+                cell = 0;
         }
 
-        mat3(const cadf m00, const cadf m01, const cadf m02,
-             const cadf m10, const cadf m11, const cadf m12,
-             const cadf m20, const cadf m21, const cadf m22)
+        mat(const cadf x0, const cadf x1, const cadf x2,
+            const cadf y0, const cadf y1, const cadf y2,
+            const cadf z0, const cadf z1, const cadf z2)
         {
-            this->m00 = m00;
-            this->m01 = m01;
-            this->m02 = m02;
-
-            this->m10 = m10;
-            this->m11 = m11;
-            this->m12 = m12;
-
-            this->m20 = m20;
-            this->m21 = m21;
-            this->m22 = m22;
+            columns[0] = vec3(x0, x1, x2);
+            columns[1] = vec3(y0, y1, y2);
+            columns[2] = vec3(z0, z1, z2);
         }
 
-        mat3(const vec3& c0, const vec3& c1, const vec3& c2)
+        mat(const vec3& c0, const vec3& c1, const vec3& c2)
         {
-            this->m00 = c0.x;
-            this->m01 = c0.y;
-            this->m02 = c0.z;
-
-            this->m10 = c1.x;
-            this->m11 = c1.y;
-            this->m12 = c1.z;
-
-            this->m20 = c2.x;
-            this->m21 = c2.y;
-            this->m22 = c2.z;
+            columns[0] = c0;
+            columns[1] = c1;
+            columns[2] = c2;
         }
 
-        static mat3 identity()
+        static mat identity()
         {
-            return mat3{
+            return {
                 1, 0, 0,
                 0, 1, 0,
                 0, 0, 1,
             };
         }
 
-        static mat3 scale(const vec2& s) { return scale(s.x, s.y); }
+        static mat scale(const vec2& s) { return scale(s.x, s.y); }
 
-        static mat3 scale(const cadf sx, const cadf sy)
+        static mat scale(const cadf sx, const cadf sy)
         {
             return diag(sx, sy, 1.0);
         }
 
-        static mat3 diag(const cadf m0, const cadf m1, const cadf m2)
+        static mat diag(const cadf m0, const cadf m1, const cadf m2)
         {
-            return mat3{
+            return {
                 m0, 0, 0,
                 0, m1, 0,
                 0, 0, m2,
             };
         }
 
-        static mat3 translation(const vec2& t) { return translation(t.x, t.y); }
+        static mat translation(const vec2& t) { return translation(t.x, t.y); }
 
-        static mat3 translation(const cadf tx, const cadf ty)
-        {
-            return mat3{
-                1, 0, tx,
-                0, 1, ty,
-                0, 0, 1
-            };
-        }
-        static mat3 rotX(const cadf alpha)
-        {
-            const cadf c = std::cos(alpha);
-            const cadf s = std::sin(alpha);
-
-            return mat3{
-                1, 0, 0,
-                0, c, -s,
-                0, s, c,
-            };
-        }
-
-        static mat3 rotY(const cadf alpha)
-        {
-            const cadf c = std::cos(alpha);
-            const cadf s = std::sin(alpha);
-
-            return mat3{
-                c, 0, s,
-                0, 1, 0,
-                -s, 0, c,
-            };
-        }
-
-        vec3 operator*(const vec3& v) const
+        static mat translation(const cadf tx, const cadf ty)
         {
             return {
-                (*this)(0, 0) * v.x + (*this)(0, 1) * v.y + (*this)(0, 2) * v.z,
-                (*this)(1, 0) * v.x + (*this)(1, 1) * v.y + (*this)(1, 2) * v.z,
-                (*this)(2, 0) * v.x + (*this)(2, 1) * v.y + (*this)(2, 2) * v.z,
+                1, 0, 0,
+                0, 1, 0,
+                tx, ty, 1
+            };
+        }
+
+        static mat rotX(const cadf alpha)
+        {
+            const cadf c = std::cos(alpha);
+            const cadf s = std::sin(alpha);
+
+            return {
+                1, 0, 0,
+                0, c, s,
+                0, -s, c,
+            };
+        }
+
+        static mat rotY(const cadf alpha)
+        {
+            const cadf c = std::cos(alpha);
+            const cadf s = std::sin(alpha);
+
+            return {
+                c, 0, -s,
+                0, 1, 0,
+                s, 0, c,
             };
         }
     };
+
+    using mat3 = mat<3, 3, cadf>;
 }
 #endif //CAD_MAT3_H

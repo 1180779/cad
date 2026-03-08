@@ -6,11 +6,10 @@
 #define CAD_RAY4_H
 
 #include "vec4.h"
+#include "mat4.h"
 
 namespace cadm
 {
-    struct mat4;
-
     struct ray4
     {
         vec4 origin;
