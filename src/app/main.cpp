@@ -7,19 +7,15 @@
 #include <QLocale>
 #include <functional>
 #include <QLabel>
+#include <QPushButton>
 
 #include "OpenGLWidget.h"
 #include <common/DoubleSlider.h>
-#include <QPushButton>
 
 void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, const float initialValue,
                        const std::function<void(float)>& setter, const double mappingRangeStart = 0.0,
                        const double mappingRangeEnd = 1.0)
 {
-    // allowed values for a slider should be from
-    // 1 / (sliderScalingFactor + 1)
-    // to
-    // 1 = (sliderScalingFactor + 1) / (sliderScalingFactor + 1)
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
     const auto edit = new QLineEdit;
@@ -208,12 +204,12 @@ int main(int argc, char* argv[])
 
     // help text
     const auto helpText = new QLabel(
-        "Controls: \n"
-        "Translation: AWSD (XY) + QE (Z)\n"
-        "Rotation: move mouse to rotate around XY axis\n"
-            "\tHold Z to rotate around Z axis\n"
-        "Scale: use mouse wheel\n"
-            "\tHold X, Y, Z to scale only pressed axis");
+        "Controls: <br>"
+        "<b>Translation</b>: AWSD (XY) + QE (Z)<br>"
+        "<b>Rotation</b>: move mouse to rotate around XY axis<br>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;Hold Z to rotate around Z axis<br>"
+        "<b>Scale</b>: use mouse wheel<br>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;Hold X, Y, Z to scale only pressed axis");
     rightControlsLayout->addWidget(helpText);
 
     window.installEventFilter(glWidget);
