@@ -18,6 +18,7 @@ target_link_libraries(cad
         Qt::OpenGLWidgets
         cad_math
         common
+        TBB::tbb
 )
 
 # Create a custom target to copy shaders.

@@ -5,6 +5,23 @@
 #include "OpenGLWidget.h"
 
 #include <QWheelEvent>
+
+// undefine Qt's emit macro to avoid conflicts with TBB
+#ifdef emit
+#define QT_EMIT_DEFINED
+#undef emit
+#endif
+
+#include <execution>
+#include <algorithm>
+#include <numeric>
+
+// restore Qt's emit macro
+#ifdef QT_EMIT_DEFINED
+#define emit
+#undef QT_EMIT_DEFINED
+#endif
+
 #include "cad_math/helpers.h"
 #include "cad_math/mat4.h"
 
@@ -229,77 +246,90 @@ void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsig
 
     const int step = std::max(1, static_cast<int>(state.adaptationSize) - adaptationStep + 1);
 
-    for (int py = 0; py < h; py += step)
-    {
-        for (int px = 0; px < w; px += step)
+    // calculate the number of blocks to process
+    const int numBlocksX = (w + step - 1) / step;
+    const int numBlocksY = (h + step - 1) / step;
+
+    std::vector<int> rowIndices(numBlocksY);
+    std::iota(rowIndices.begin(), rowIndices.end(), 0);
+
+    std::for_each(
+        std::execution::par_unseq,
+        rowIndices.begin(),
+        rowIndices.end(),
+        [&](int blockY)
         {
-            // (O + t*Dir)^T * D' (O + t*Dir) = 0
-            // ...
-            // O^T * D * O + t(O^T * D' * Dir + Dir^T * D' * O) + t^2* Dir^T * D' * Dir
-            //
-            // a = P^T * D' * Dir
-            // b = O^T * D' * Dir + Dir^T * D' * O = 2 * O^T * D' * Dir
-            // c = O^T * D * O
-
-            cadm::ray4 rayWorld = cadm::unprojectRay(cadm::vec2i(px, py), -1.0, state.invPV, w, h);
-
-            const auto DprimDir = state.Dprim * rayWorld.direction;
-            const auto DprimO = state.Dprim * rayWorld.origin;
-
-            const auto a = rayWorld.direction.dot(DprimDir);
-            const auto b = 2.0f * rayWorld.origin.dot(DprimDir);
-            const auto c = rayWorld.origin.dot(DprimO);
-
-            const auto t = solveQuadraticMinPositive(a, b, c);
-
-            cadm::vec3i rgb;
-            if (!t)
+            const int py = blockY * step;
+            for (int blockX = 0; blockX < numBlocksX; ++blockX)
             {
-                rgb = cadm::vec3i();
-            }
-            else
-            {
-                cadm::vec4 intersectionPoint = rayWorld.origin + rayWorld.direction * t.value();
-                cadm::vec4 pWorld(intersectionPoint.x, intersectionPoint.y, intersectionPoint.z, 1.0);
-                cadm::vec4 pObject = state.Minv * pWorld;
-                cadm::vec4 nObject(
-                    2.0 * pObject.x / (state.a * state.a),
-                    2.0 * pObject.y / (state.b * state.b),
-                    2.0 * pObject.z / (state.c * state.c),
-                    0.0
-                );
-                cadm::vec4 nWorld4 = state.MinvT * nObject;
-                cadm::vec3 n(nWorld4.x, nWorld4.y, nWorld4.z);
-                n.normalize();
+                const int px = blockX * step;
+                // (O + t*Dir)^T * D' (O + t*Dir) = 0
+                // ...
+                // O^T * D * O + t(O^T * D' * Dir + Dir^T * D' * O) + t^2* Dir^T * D' * Dir
+                //
+                // a = P^T * D' * Dir
+                // b = O^T * D' * Dir + Dir^T * D' * O = 2 * O^T * D' * Dir
+                // c = O^T * D * O
 
-                cadm::vec4 viewDir4 = -rayWorld.direction;
-                cadm::vec3 viewDir(viewDir4.x, viewDir4.y, viewDir4.z);
-                viewDir.normalize();
+                cadm::ray4 rayWorld = cadm::unprojectRay(cadm::vec2i(px, py), -1.0, state.invPV, w, h);
 
-                const cadm::cadf cos = std::max(static_cast<cadm::cadf>(0.0), viewDir.dot(n));
-                const cadm::cadf intensity = std::pow(cos, state.m);
-                const cadm::vec3 specular = 255.0 * intensity * state.specularColor;
+                const auto DprimDir = state.Dprim * rayWorld.direction;
+                const auto DprimO = state.Dprim * rayWorld.origin;
 
-                rgb.r = static_cast<unsigned char>(std::clamp<cadm::cadf>(
-                    static_cast<cadm::cadf>(state.ambient.r) + specular.x, 0.0, 255.0));
-                rgb.g = static_cast<unsigned char>(std::clamp<cadm::cadf>(
-                    static_cast<cadm::cadf>(state.ambient.g) + specular.y, 0.0, 255.0));
-                rgb.b = static_cast<unsigned char>(std::clamp<cadm::cadf>(
-                    static_cast<cadm::cadf>(state.ambient.b) + specular.z, 0.0, 255.0));
-            }
+                const auto a = rayWorld.direction.dot(DprimDir);
+                const auto b = 2.0f * rayWorld.origin.dot(DprimDir);
+                const auto c = rayWorld.origin.dot(DprimO);
 
-            for (int dy = 0; dy < step && py + dy < h; ++dy)
-            {
-                for (int dx = 0; dx < step && px + dx < w; ++dx)
+                const auto t = solveQuadraticMinPositive(a, b, c);
+
+                cadm::vec3i rgb;
+                if (!t)
                 {
-                    const int i = ((py + dy) * w + (px + dx)) * 3;
-                    buffer[i + 0] = rgb.r;
-                    buffer[i + 1] = rgb.g;
-                    buffer[i + 2] = rgb.b;
+                    rgb = cadm::vec3i();
+                }
+                else
+                {
+                    cadm::vec4 intersectionPoint = rayWorld.origin + rayWorld.direction * t.value();
+                    cadm::vec4 pWorld(intersectionPoint.x, intersectionPoint.y, intersectionPoint.z, 1.0);
+                    cadm::vec4 pObject = state.Minv * pWorld;
+                    cadm::vec4 nObject(
+                        2.0 * pObject.x / (state.a * state.a),
+                        2.0 * pObject.y / (state.b * state.b),
+                        2.0 * pObject.z / (state.c * state.c),
+                        0.0
+                    );
+                    cadm::vec4 nWorld4 = state.MinvT * nObject;
+                    cadm::vec3 n(nWorld4.x, nWorld4.y, nWorld4.z);
+                    n.normalize();
+
+                    cadm::vec4 viewDir4 = -rayWorld.direction;
+                    cadm::vec3 viewDir(viewDir4.x, viewDir4.y, viewDir4.z);
+                    viewDir.normalize();
+
+                    const cadm::cadf cos = std::max(static_cast<cadm::cadf>(0.0), viewDir.dot(n));
+                    const cadm::cadf intensity = std::pow(cos, state.m);
+                    const cadm::vec3 specular = 255.0 * intensity * state.specularColor;
+
+                    rgb.r = static_cast<unsigned char>(std::clamp<cadm::cadf>(
+                        static_cast<cadm::cadf>(state.ambient.r) + specular.x, 0.0, 255.0));
+                    rgb.g = static_cast<unsigned char>(std::clamp<cadm::cadf>(
+                        static_cast<cadm::cadf>(state.ambient.g) + specular.y, 0.0, 255.0));
+                    rgb.b = static_cast<unsigned char>(std::clamp<cadm::cadf>(
+                        static_cast<cadm::cadf>(state.ambient.b) + specular.z, 0.0, 255.0));
+                }
+
+                for (int dy = 0; dy < step && py + dy < h; ++dy)
+                {
+                    for (int dx = 0; dx < step && px + dx < w; ++dx)
+                    {
+                        const int i = ((py + dy) * w + (px + dx)) * 3;
+                        buffer[i + 0] = rgb.r;
+                        buffer[i + 1] = rgb.g;
+                        buffer[i + 2] = rgb.b;
+                    }
                 }
             }
-        }
-    }
+        });
 }
 
 std::optional<cadm::cadf> OpenGLWidget::solveQuadraticMinPositive(const cadm::cadf a, const cadm::cadf b,
@@ -387,7 +417,8 @@ void OpenGLWidget::wheelEvent(QWheelEvent* event)
             m_scale.y *= scaleMult;
         if (m_zPressed)
             m_scale.z *= scaleMult;
-    } else
+    }
+    else
     {
         m_scale.x *= scaleMult;
         m_scale.y *= scaleMult;

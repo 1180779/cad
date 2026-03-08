@@ -14,6 +14,7 @@ find_package(Qt6 COMPONENTS
         REQUIRED)
 
 find_package(OpenGL REQUIRED)
+find_package(TBB REQUIRED)
 
 add_subdirectory(src/cad_math)
 add_subdirectory(src/common)

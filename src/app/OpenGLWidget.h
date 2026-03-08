@@ -99,6 +99,7 @@ private:
 
     cadm::cadf m_a{0.5}, m_b{0.2}, m_c{1};
     unsigned char m_adaptationSize{8};
+    int m_currentAdaptationStep{1};
     cadm::vec3 m_translation{};
     cadm::vec3 m_scale{1, 1, 1};
     cadm::vec3 m_rotation{}; /* rotation around each of the main axes */
@@ -115,7 +116,6 @@ private:
     Camera m_camera{cadm::vec3(0, 0, 15), cadm::vec3(0, 0, 0), cadm::vec3(0, 1, 0)};
 
     RenderState m_renderState;
-    int m_currentAdaptationStep{1};
     bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};
     cadm::cadf m_zoomFactor{1.1};
 };
