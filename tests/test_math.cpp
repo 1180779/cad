@@ -104,7 +104,7 @@ namespace
         SECTION("Identity Inverse")
         {
             mat4 m = mat4::identity();
-            mat4 inv = m.inverse();
+            mat4 inv = m.inversed();
             REQUIRE(inv == m);
         }
 
@@ -112,7 +112,7 @@ namespace
         {
             mat4 m = mat4::diag(2.0, 0.5, 1.0, 1.0);
 
-            mat4 inv = m.inverse();
+            mat4 inv = m.inversed();
             REQUIRE_THAT(inv(0, 0), Catch::Matchers::WithinRel(0.5f));
             REQUIRE_THAT(inv(1, 1), Catch::Matchers::WithinRel(2.0f));
             REQUIRE_THAT(inv(2, 2), Catch::Matchers::WithinRel(1.0f));
@@ -127,7 +127,7 @@ namespace
             m(1, 0) = 3;
             m(1, 1) = 4;
 
-            mat4 inv = m.inverse();
+            mat4 inv = m.inversed();
 
             // check A * A^-1 = I
             mat4 res = m * inv;
@@ -145,7 +145,7 @@ namespace
             m(1, 0) = 3;
             m(1, 1) = 4;
 
-            auto inv_opt = m.inverseSafe();
+            auto inv_opt = m.inversedSafe();
             REQUIRE(inv_opt.has_value());
 
             // check A * A^-1 = I
@@ -161,7 +161,7 @@ namespace
             m(1, 0) = 2;
             m(1, 1) = 4;
 
-            auto inv_opt = m.inverseSafe();
+            auto inv_opt = m.inversedSafe();
             REQUIRE_FALSE(inv_opt.has_value());
         }
 
@@ -169,7 +169,7 @@ namespace
         {
             mat4 m{};
 
-            auto inv_opt = m.inverseSafe();
+            auto inv_opt = m.inversedSafe();
             REQUIRE_FALSE(inv_opt.has_value());
         }
     }
@@ -181,7 +181,7 @@ namespace
             mat4 m = mat4::identity();
 
             // test operator+=
-            auto row0 = m.makeRowRef(m, 0);
+            auto row0 = m.makeRowRef(0);
             vec4 v(1.0f, 2.0f, 3.0f, 4.0f);
             row0 += v;
             REQUIRE_THAT(m(0, 0), Catch::Matchers::WithinRel(2.0f));
@@ -214,7 +214,7 @@ namespace
         SECTION("Binary operators return vectors")
         {
             mat4 m = mat4::identity();
-            auto row0 = m.makeRowRef(m, 0);
+            auto row0 = m.makeRowRef(0);
 
             auto requireThatMatrixUnchanged = [&m]()
             {
@@ -262,7 +262,7 @@ namespace
         SECTION("Assignment from vector")
         {
             mat4 m{};
-            auto row1 = m.makeRowRef(m, 1);
+            auto row1 = m.makeRowRef(1);
 
             vec4 v(5.0f, 6.0f, 7.0f, 8.0f);
             row1 = v;
@@ -281,7 +281,7 @@ namespace
             m(2, 2) = 30.0f;
             m(2, 3) = 40.0f;
 
-            auto row2 = m.makeRowRef(m, 2);
+            auto row2 = m.makeRowRef(2);
             vec4 v = row2;
 
             REQUIRE_THAT(v.x, Catch::Matchers::WithinRel(10.0f));

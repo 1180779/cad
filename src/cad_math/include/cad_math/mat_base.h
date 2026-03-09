@@ -299,27 +299,39 @@ namespace cadm
             return result;
         }
 
-        constexpr auto makeRowRef(Derived& matrix, std::size_t row_idx) const noexcept
+        constexpr auto makeRowRef(std::size_t row_idx) noexcept
         {
-            return mat_row_ref<Derived, RowType, C, T>(matrix, row_idx);
+            return mat_row_ref<Derived, RowType, C, T>(static_cast<Derived&>(*this), row_idx);
         }
 
-        [[nodiscard]] constexpr std::optional<Derived> inverseSafe() const requires (R == C)
+        std::size_t findPivotGEPP(const std::size_t i) const
+        {
+            std::size_t pivot = i;
+            for (std::size_t j = i + 1; j < R; ++j)
+            {
+                if (std::abs((*this)(j, i)) > std::abs((*this)(pivot, i)))
+                {
+                    pivot = j;
+                }
+            }
+            return pivot;
+        }
+
+        void swapRows(const std::size_t i, const std::size_t j)
+        {
+            auto tempRowI = makeRowRef(i);
+            auto tempRowPivot = makeRowRef(j);
+            tempRowI.swap(tempRowPivot);
+        }
+
+        [[nodiscard]] constexpr std::optional<Derived> inversedSafe() const requires (R == C)
         {
             Derived temp = *static_cast<const Derived*>(this);
             Derived inv = Derived::identity();
 
             for (std::size_t i = 0; i < R; ++i)
             {
-                // find pivot
-                std::size_t pivot = i;
-                for (std::size_t j = i + 1; j < R; ++j)
-                {
-                    if (std::abs(temp(j, i)) > std::abs(temp(pivot, i)))
-                    {
-                        pivot = j;
-                    }
-                }
+                std::size_t pivot = temp.findPivotGEPP(i);
 
                 // check if the matrix is singular
                 if (std::abs(temp(pivot, i)) < eps)
@@ -327,22 +339,16 @@ namespace cadm
                     return std::nullopt;
                 }
 
-                // swap rows if needed
                 if (pivot != i)
                 {
-                    auto tempRowI = makeRowRef(temp, i);
-                    auto tempRowPivot = makeRowRef(temp, pivot);
-                    tempRowI.swap(tempRowPivot);
-
-                    auto invRowI = makeRowRef(inv, i);
-                    auto invRowPivot = makeRowRef(inv, pivot);
-                    invRowI.swap(invRowPivot);
+                    temp.swapRows(i, pivot);
+                    inv.swapRows(i, pivot);
                 }
 
                 // normalize row i
                 T div = temp(i, i);
-                auto tempRowI = makeRowRef(temp, i);
-                auto invRowI = makeRowRef(inv, i);
+                auto tempRowI = temp.makeRowRef(i);
+                auto invRowI = inv.makeRowRef(i);
                 tempRowI /= div;
                 invRowI /= div;
 
@@ -352,8 +358,8 @@ namespace cadm
                     if (i != j)
                     {
                         T mul = temp(j, i);
-                        auto tempRowJ = makeRowRef(temp, j);
-                        auto invRowJ = makeRowRef(inv, j);
+                        auto tempRowJ = temp.makeRowRef(j);
+                        auto invRowJ = inv.makeRowRef(j);
                         tempRowJ -= tempRowI * mul;
                         invRowJ -= invRowI * mul;
                     }
@@ -363,9 +369,9 @@ namespace cadm
             return inv;
         }
 
-        [[nodiscard]] constexpr Derived inverse() const requires (R == C)
+        [[nodiscard]] constexpr Derived inversed() const requires (R == C)
         {
-            if (const auto safeInverse = inverseSafe())
+            if (const auto safeInverse = inversedSafe())
             {
                 return safeInverse.value();
             }

@@ -228,12 +228,18 @@ void OpenGLWidget::updateRenderParams()
     const auto scaleM = cadm::mat4::scale(m_scale);
     const auto M = translationM * rotationM * scaleM;
 
-    const auto viewM = m_camera.getViewMatrix();
     const auto D = cadm::mat4::diag(1.0 / (m_a * m_a), 1.0 / (m_b * m_b), 1.0 / (m_c * m_c), -1.0);
-    m_renderState.Minv = M.inverse();
+    if (m_scale == cadm::vec3(1.0, 1.0, 1.0)) // if no scale, use fast inversion
+    {
+        m_renderState.Minv = M.fastInversed();
+    }
+    else
+    {
+        m_renderState.Minv = M.inversed();
+    }
     m_renderState.MinvT = m_renderState.Minv.transposed();
     m_renderState.Dprim = m_renderState.MinvT * D * m_renderState.Minv;
-    m_renderState.invPV = (m_camera.getProjectionMatrix() * viewM).inverse();
+    m_renderState.invPV = (m_camera.getProjectionMatrix() * m_camera.getViewMatrix()).inversed();
 
     m_currentAdaptationStep = 1;
     update();
