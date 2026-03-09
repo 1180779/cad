@@ -5,8 +5,7 @@
 #include "quad.h"
 #include <array>
 
-quad::
-quad() : m_vao(0), m_vbo(0)
+quad::quad() : m_vao(0), m_vbo(0)
 {
     constexpr std::array<GLfloat, 20> vertices = {
         // positions        // texture Coords
@@ -23,7 +22,7 @@ quad() : m_vao(0), m_vbo(0)
     gl->glBindVertexArray(m_vao);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 
-    gl->glBufferData(GL_ARRAY_BUFFER, vertices.size() *sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    gl->glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
     gl->glEnableVertexAttribArray(0);
     gl->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), nullptr);
     gl->glEnableVertexAttribArray(1);

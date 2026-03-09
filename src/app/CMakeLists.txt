@@ -1,14 +1,14 @@
-add_executable(cad main.cpp
-        OpenGLWidget.cpp
-        OpenGLWidget.h
-        quad.cpp
-        quad.h
-        GL.cpp
-        GL.h
-        ShaderProgram.cpp
-        ShaderProgram.h
-        Camera.h
-        Camera.cpp
+add_executable(cad src/main.cpp
+        src/OpenGLWidget.cpp
+        src/OpenGLWidget.h
+        src/quad.cpp
+        src/quad.h
+        src/GL.cpp
+        src/GL.h
+        src/ShaderProgram.cpp
+        src/ShaderProgram.h
+        src/Camera.h
+        src/Camera.cpp
 )
 
 target_link_libraries(cad
@@ -25,7 +25,7 @@ target_link_libraries(cad
 # This runs every build to ensure shaders are up-to-date even if C++ code hasn't changed.
 add_custom_target(CopyShaders
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders
         $<TARGET_FILE_DIR:cad>/shaders
         COMMENT "Copying shaders to output directory"
 )

@@ -27,3 +27,7 @@ Rendering uses a user-modifiable adaptation size.
 
 ## Multithreading
 The CPU buffer filling is parallelized with C++'s std::execution.
+
+## Screenshots
+![](./screenshots/adaptation-blurry.png)
+![](./screenshots/adaptation-sharp.png)
