@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 
     const auto adaptiveRenderingLayout = new QVBoxLayout;
     addIntParameter(adaptiveRenderingLayout, "square size", glWidget->getAdaptationSize(),
-                    [glWidget](const int v) { glWidget->setAdaptationSize(v); }, 1, 15);
+                    [glWidget](const int v) { glWidget->setAdaptationSize(v); }, 1, 256);
 
     adaptiveRenderingGroup->setLayout(adaptiveRenderingLayout);
     rightControlsLayout->addWidget(adaptiveRenderingGroup, 0, Qt::AlignTop);

@@ -17,7 +17,8 @@
 #include "cad_math/vec3i.h"
 #include "Camera.h"
 
-struct RenderState {
+struct RenderState
+{
     int width = 0;
     int height = 0;
     cadm::mat4 invPV;
@@ -78,18 +79,19 @@ public:
     void resetRotation();
     void resetTranslation();
 
-    bool eventFilter(QObject *obj, QEvent *event) override;
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
 protected:
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
-    void keyPressEvent(QKeyEvent *event) override;
+    void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
 
 private:
     void updateRenderParams();
-    static void performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer, int adaptationStep);
+    static void performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer, std::optional<int> prevAdaptationStep,
+                                  int adaptationStep);
     static std::optional<cadm::cadf> solveQuadraticMinPositive(cadm::cadf a, cadm::cadf b, cadm::cadf c);
 
     GLuint m_texture{};
@@ -100,6 +102,7 @@ private:
     cadm::cadf m_a{0.5}, m_b{0.2}, m_c{1};
     unsigned char m_adaptationSize{8};
     int m_currentAdaptationStep{1};
+    std::optional<int> m_prevAdaptationStep{0};
     cadm::vec3 m_translation{};
     cadm::vec3 m_scale{1, 1, 1};
     cadm::vec3 m_rotation{}; /* rotation around each of the main axes */

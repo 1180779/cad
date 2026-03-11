@@ -34,18 +34,23 @@ OpenGLWidget::~OpenGLWidget() = default;
 
 void OpenGLWidget::paintGL()
 {
-    if (m_currentAdaptationStep <= m_renderState.adaptationSize)
+    if (m_currentAdaptationStep > 0)
     {
-        performRaycasting(m_renderState, m_cpuBuffer, m_currentAdaptationStep);
+        performRaycasting(m_renderState, m_cpuBuffer, m_prevAdaptationStep, m_currentAdaptationStep);
 
         const auto gl = GL();
         gl->glBindTexture(GL_TEXTURE_2D, m_texture);
         gl->glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width(), height(), GL_RGB, GL_UNSIGNED_BYTE, m_cpuBuffer.data());
 
-        m_currentAdaptationStep++;
-        if (m_currentAdaptationStep <= m_renderState.adaptationSize)
+        if (m_currentAdaptationStep > 1)
         {
+            m_prevAdaptationStep = m_currentAdaptationStep;
+            m_currentAdaptationStep /= 2;
             update();
+        }
+        else
+        {
+            m_currentAdaptationStep = 0;
         }
     }
 
@@ -241,16 +246,20 @@ void OpenGLWidget::updateRenderParams()
     m_renderState.Dprim = m_renderState.MinvT * D * m_renderState.Minv;
     m_renderState.invPV = (m_camera.getProjectionMatrix() * m_camera.getViewMatrix()).inversed();
 
-    m_currentAdaptationStep = 1;
+    m_currentAdaptationStep = m_adaptationSize;
+    m_prevAdaptationStep = std::nullopt;
     update();
 }
 
-void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer, int adaptationStep)
+void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer,
+                                     std::optional<int> prevAdaptationStep, int adaptationStep)
 {
+    // uncomment to check if adaptation works as expected
+    // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     const int w = state.width;
     const int h = state.height;
 
-    const int step = std::max(1, static_cast<int>(state.adaptationSize) - adaptationStep + 1);
+    const int step = adaptationStep;
 
     // calculate the number of blocks to process
     const int numBlocksX = (w + step - 1) / step;
@@ -269,6 +278,13 @@ void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsig
             for (int blockX = 0; blockX < numBlocksX; ++blockX)
             {
                 const int px = blockX * step;
+
+                if (prevAdaptationStep && step < state.adaptationSize)
+                {
+                    if (px % prevAdaptationStep.value() == 0 && py % prevAdaptationStep.value() == 0)
+                        continue;
+                }
+
                 // (O + t*Dir)^T * D' (O + t*Dir) = 0
                 // ...
                 // O^T * D * O + t(O^T * D' * Dir + Dir^T * D' * O) + t^2* Dir^T * D' * Dir
@@ -324,11 +340,11 @@ void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsig
                         static_cast<cadm::cadf>(state.ambient.b) + specular.z, 0.0, 255.0));
                 }
 
-                for (int dy = 0; dy < step && py + dy < h; ++dy)
+                for (int y = py; y < std::min(h, py + step); ++y)
                 {
-                    for (int dx = 0; dx < step && px + dx < w; ++dx)
+                    for (int x = px; x < std::min(w, px + step); ++x)
                     {
-                        const int i = ((py + dy) * w + (px + dx)) * 3;
+                        const int i = (y * w + x) * 3;
                         buffer[i + 0] = rgb.r;
                         buffer[i + 1] = rgb.g;
                         buffer[i + 2] = rgb.b;
