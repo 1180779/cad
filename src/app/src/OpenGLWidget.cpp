@@ -252,7 +252,7 @@ void OpenGLWidget::updateRenderParams()
 }
 
 void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer,
-                                     std::optional<int> prevAdaptationStep, int adaptationStep)
+                                     std::optional<unsigned int> prevAdaptationStep, unsigned int adaptationStep)
 {
     // uncomment to check if adaptation works as expected
     // std::this_thread::sleep_for(std::chrono::milliseconds(1000));

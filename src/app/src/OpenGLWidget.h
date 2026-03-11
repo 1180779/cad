@@ -90,8 +90,9 @@ protected:
 
 private:
     void updateRenderParams();
-    static void performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer, std::optional<int> prevAdaptationStep,
-                                  int adaptationStep);
+    static void performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer,
+                                  std::optional<unsigned int> prevAdaptationStep,
+                                  unsigned int adaptationStep);
     static std::optional<cadm::cadf> solveQuadraticMinPositive(cadm::cadf a, cadm::cadf b, cadm::cadf c);
 
     GLuint m_texture{};
@@ -100,9 +101,9 @@ private:
     std::vector<unsigned char> m_cpuBuffer{};
 
     cadm::cadf m_a{0.5}, m_b{0.2}, m_c{1};
-    unsigned char m_adaptationSize{8};
-    int m_currentAdaptationStep{1};
-    std::optional<int> m_prevAdaptationStep{0};
+    unsigned int m_adaptationSize{8};
+    unsigned int m_currentAdaptationStep{1};
+    std::optional<unsigned int> m_prevAdaptationStep{0};
     cadm::vec3 m_translation{};
     cadm::vec3 m_scale{1, 1, 1};
     cadm::vec3 m_rotation{}; /* rotation around each of the main axes */
