@@ -344,7 +344,7 @@ void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsig
                 {
                     for (int x = px; x < std::min(w, px + step); ++x)
                     {
-                        const int i = (y * w + x) * 3;
+                        const int i = ((h - 1 - y) * w + x) * 3;
                         buffer[i + 0] = rgb.r;
                         buffer[i + 1] = rgb.g;
                         buffer[i + 2] = rgb.b;
