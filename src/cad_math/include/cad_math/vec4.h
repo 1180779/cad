@@ -30,23 +30,23 @@ namespace cadm
             std::array<cadf, 4> data;
         };
 
-        vec() : x(0), y(0), z(0), w(0)
+        constexpr vec() : x(0), y(0), z(0), w(0)
         {
         }
 
-        vec(const cadf x, const cadf y, const cadf z, const cadf w) : x(x), y(y), z(z), w(w)
+        constexpr vec(const cadf x, const cadf y, const cadf z, const cadf w) : x(x), y(y), z(z), w(w)
         {
         }
 
-        vec(const vec3& v, const cadf w) : x(v.x), y(v.y), z(v.z), w(w)
+        constexpr vec(const vec3& v, const cadf w) : x(v.x), y(v.y), z(v.z), w(w)
         {
         }
 
-        vec(const cadf x, const vec3& v) : x(x), y(v.x), z(v.y), w(v.z)
+        constexpr vec(const cadf x, const vec3& v) : x(x), y(v.x), z(v.y), w(v.z)
         {
         }
 
-        vec cross(const vec& other) const
+        constexpr vec cross(const vec& other) const
         {
             return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
         }

@@ -53,13 +53,13 @@ public:
     void setC(cadm::cadf c);
 
     [[nodiscard]] cadm::vec3 getTranslation() const { return m_translation; }
-    void setTranslation(cadm::vec3 translation);
+    void setTranslation(const cadm::vec3& translation);
 
     [[nodiscard]] cadm::vec3 getRotation() const { return m_rotation; }
-    void setRotation(cadm::vec3 rotation);
+    void setRotation(const cadm::vec3& rotation);
 
     [[nodiscard]] cadm::vec3 getScale() const { return m_scale; }
-    void setScale(cadm::vec3 scale);
+    void setScale(const cadm::vec3& scale);
 
     [[nodiscard]] unsigned char getAdaptationSize() const { return m_adaptationSize; }
     void setAdaptationSize(unsigned char adaptationSize);

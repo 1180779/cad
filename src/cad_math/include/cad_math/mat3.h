@@ -23,13 +23,13 @@ namespace cadm
             vec3 columns[3];
         };
 
-        mat()
+        constexpr mat()
         {
             for (auto& cell : data)
                 cell = 0;
         }
 
-        mat(const cadf x0, const cadf x1, const cadf x2,
+        constexpr mat(const cadf x0, const cadf x1, const cadf x2,
             const cadf y0, const cadf y1, const cadf y2,
             const cadf z0, const cadf z1, const cadf z2)
         {
@@ -38,14 +38,14 @@ namespace cadm
             columns[2] = vec3(z0, z1, z2);
         }
 
-        mat(const vec3& c0, const vec3& c1, const vec3& c2)
+        constexpr mat(const vec3& c0, const vec3& c1, const vec3& c2)
         {
             columns[0] = c0;
             columns[1] = c1;
             columns[2] = c2;
         }
 
-        static mat identity()
+        constexpr static mat identity()
         {
             return {
                 1, 0, 0,
@@ -54,14 +54,14 @@ namespace cadm
             };
         }
 
-        static mat scale(const vec2& s) { return scale(s.x, s.y); }
+        constexpr static mat scale(const vec2& s) { return scale(s.x, s.y); }
 
-        static mat scale(const cadf sx, const cadf sy)
+        constexpr static mat scale(const cadf sx, const cadf sy)
         {
             return diag(sx, sy, 1.0);
         }
 
-        static mat diag(const cadf m0, const cadf m1, const cadf m2)
+        constexpr static mat diag(const cadf m0, const cadf m1, const cadf m2)
         {
             return {
                 m0, 0, 0,
@@ -70,9 +70,9 @@ namespace cadm
             };
         }
 
-        static mat translation(const vec2& t) { return translation(t.x, t.y); }
+        constexpr static mat translation(const vec2& t) { return translation(t.x, t.y); }
 
-        static mat translation(const cadf tx, const cadf ty)
+        constexpr static mat translation(const cadf tx, const cadf ty)
         {
             return {
                 1, 0, 0,

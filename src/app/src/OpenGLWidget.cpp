@@ -128,7 +128,7 @@ void OpenGLWidget::setC(const cadm::cadf c)
     updateRenderParams();
 }
 
-void OpenGLWidget::setTranslation(const cadm::vec3 translation)
+void OpenGLWidget::setTranslation(const cadm::vec3& translation)
 {
     if (m_translation == translation)
         return;
@@ -136,7 +136,7 @@ void OpenGLWidget::setTranslation(const cadm::vec3 translation)
     updateRenderParams();
 }
 
-void OpenGLWidget::setRotation(const cadm::vec3 rotation)
+void OpenGLWidget::setRotation(const cadm::vec3& rotation)
 {
     if (m_rotation == rotation)
         return;
@@ -144,7 +144,7 @@ void OpenGLWidget::setRotation(const cadm::vec3 rotation)
     updateRenderParams();
 }
 
-void OpenGLWidget::setScale(const cadm::vec3 scale)
+void OpenGLWidget::setScale(const cadm::vec3& scale)
 {
     if (m_scale == scale)
         return;
@@ -299,7 +299,7 @@ void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsig
                 const auto DprimO = state.Dprim * rayWorld.origin;
 
                 const auto a = rayWorld.direction.dot(DprimDir);
-                const auto b = 2.0f * rayWorld.origin.dot(DprimDir);
+                const auto b = 2.0 * rayWorld.origin.dot(DprimDir);
                 const auto c = rayWorld.origin.dot(DprimO);
 
                 const auto t = solveQuadraticMinPositive(a, b, c);
@@ -357,35 +357,25 @@ void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsig
 std::optional<cadm::cadf> OpenGLWidget::solveQuadraticMinPositive(const cadm::cadf a, const cadm::cadf b,
                                                                   const cadm::cadf c)
 {
-    // TODO: make better numerically
     if (std::abs(a) < cadm::eps)
     {
         if (std::abs(b) < cadm::eps)
-        {
             return std::nullopt;
-        }
         const auto result = -c / b;
         return result >= 0 ? std::optional(result) : std::nullopt;
     }
 
-    const cadm::cadf discriminant = b * b - 4 * a * c;
-    if (discriminant < 0)
-    {
+    const cadm::cadf disc = b * b - 4.0 * a * c;
+    if (disc < 0)
         return std::nullopt;
-    }
 
-    if (discriminant == 0)
-    {
-        if (const auto result = -b / (2 * a); result >= 0)
-            return result;
-        return std::nullopt;
-    }
+    const cadm::cadf sqrtDisc = std::sqrt(disc);
 
-    const auto sqrt_discriminant = std::sqrt(discriminant);
-    const auto result1 = (-b + sqrt_discriminant) / (2 * a);
-    const auto result2 = (-b - sqrt_discriminant) / (2 * a);
+    const cadm::cadf stableRoot = -0.5 * (b + (b >= 0.0 ? sqrtDisc : -sqrtDisc));
+    const cadm::cadf result1 = stableRoot / a;
+    const cadm::cadf result2 = (std::abs(stableRoot) > cadm::eps) ? (c / stableRoot) : 0.0;
 
-    // We want the smallest positive t
+    // return the smaller non-negative root
     if (result1 >= 0 && result2 >= 0)
         return std::min(result1, result2);
     if (result1 >= 0)
@@ -429,7 +419,7 @@ void OpenGLWidget::wheelEvent(QWheelEvent* event)
     if (delta == 0)
         return;
 
-    const cadm::cadf scaleMult = delta > 0 ? m_zoomFactor : 1.0f / m_zoomFactor;
+    const cadm::cadf scaleMult = delta > 0 ? m_zoomFactor : 1.0 / m_zoomFactor;
 
     if (m_xPressed || m_yPressed || m_zPressed)
     {

@@ -15,7 +15,7 @@ namespace cadm
         vec4 origin;
         vec4 direction;
 
-        ray4(const vec4& point, const vec4& direction) : origin(point), direction(direction)
+        constexpr ray4(const vec4& point, const vec4& direction) : origin(point), direction(direction)
         {
         }
 

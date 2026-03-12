@@ -5,8 +5,12 @@
 #ifndef CAD_CAMERA_H
 #define CAD_CAMERA_H
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include <cad_math/vec3.h>
 #include <cad_math/mat4.h>
+
 
 class Camera
 {
@@ -45,9 +49,9 @@ private:
     cadm::vec3 m_up;
 
     cadm::cadf m_fov{M_PI / 3}; // 60 degrees
-    cadm::cadf m_aspectRatio{1.0f};
-    cadm::cadf m_nearPlane{0.1f};
-    cadm::cadf m_farPlane{100.0f};
+    cadm::cadf m_aspectRatio{1.0};
+    cadm::cadf m_nearPlane{0.1};
+    cadm::cadf m_farPlane{100.0};
 };
 
 #endif //CAD_CAMERA_H

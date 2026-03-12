@@ -24,13 +24,13 @@ namespace cadm
             vec4 columns[4];
         };
 
-        mat()
+        constexpr mat()
         {
             for (auto& cell : data)
                 cell = 0;
         }
 
-        mat(const cadf x0, const cadf x1, const cadf x2, const cadf x3,
+        constexpr mat(const cadf x0, const cadf x1, const cadf x2, const cadf x3,
             const cadf y0, const cadf y1, const cadf y2, const cadf y3,
             const cadf z0, const cadf z1, const cadf z2, const cadf z3,
             const cadf w0, const cadf w1, const cadf w2, const cadf w3)
@@ -41,7 +41,7 @@ namespace cadm
             columns[3] = vec4(w0, w1, w2, w3);
         }
 
-        mat(const vec4& c0, const vec4& c1, const vec4& c2, const vec4& c3)
+        constexpr mat(const vec4& c0, const vec4& c1, const vec4& c2, const vec4& c3)
         {
             columns[0] = c0;
             columns[1] = c1;
@@ -49,7 +49,7 @@ namespace cadm
             columns[3] = c3;
         }
 
-        static mat identity()
+        constexpr static mat identity()
         {
             return mat{
                 1, 0, 0, 0,
@@ -63,7 +63,7 @@ namespace cadm
         // https://www.3dgep.com/understanding-the-view-matrix/
 
         // Look at matrix for Right Handed coordinate system
-        static mat lookAtRH(const vec3& eye, const vec3& target, const vec3& up)
+        constexpr static mat lookAtRH(const vec3& eye, const vec3& target, const vec3& up)
         {
             const vec3 zAxis = (eye - target).normalized(); // forward
             const vec3 xAxis = up.cross(zAxis).normalized(); // right
@@ -81,7 +81,7 @@ namespace cadm
         // {
         // }
 
-        static mat ortho(const cadf left, const cadf right, const cadf bottom, const cadf top, const cadf near,
+        constexpr static mat ortho(const cadf left, const cadf right, const cadf bottom, const cadf top, const cadf near,
                          const cadf far)
         {
             return {
@@ -93,14 +93,14 @@ namespace cadm
             };
         }
 
-        static mat scale(const vec3& s) { return scale(s.x, s.y, s.z); }
+        constexpr static mat scale(const vec3& s) { return scale(s.x, s.y, s.z); }
 
-        static mat scale(const cadf sx, const cadf sy, const cadf sz)
+        constexpr static mat scale(const cadf sx, const cadf sy, const cadf sz)
         {
             return diag(sx, sy, sz, 1.0);
         }
 
-        static mat diag(const cadf d0, const cadf d1, const cadf d2, const cadf d3)
+        constexpr static mat diag(const cadf d0, const cadf d1, const cadf d2, const cadf d3)
         {
             return mat{
                 d0, 0, 0, 0,
@@ -110,9 +110,9 @@ namespace cadm
             };
         }
 
-        static mat translation(const vec3& t) { return translation(t.x, t.y, t.z); }
+        constexpr static mat translation(const vec3& t) { return translation(t.x, t.y, t.z); }
 
-        static mat translation(const cadf tx, const cadf ty, const cadf tz)
+        constexpr static mat translation(const cadf tx, const cadf ty, const cadf tz)
         {
             return {
                 vec4::unitX(),
@@ -161,7 +161,7 @@ namespace cadm
             };
         }
 
-        [[nodiscard]] mat3 upperLeft3x3() const
+        [[nodiscard]] constexpr mat3 upperLeft3x3() const
         {
             return {
                 vec3(col(0)[0], col(0)[1], col(0)[2]),
@@ -173,7 +173,7 @@ namespace cadm
         // fast inverse computation for affine transformation when scaling is not present
         // in that case the linear part is orthogonal which means that its inverse is transposed
         // and greatly simplifies the case
-        [[nodiscard]] mat fastInversed() const noexcept
+        [[nodiscard]] constexpr mat fastInversed() const noexcept
         {
             const auto invUpperLeft = upperLeft3x3().transposed();
             const auto newT = -invUpperLeft * vec3(col(3)[0], col(3)[1], col(3)[2]);

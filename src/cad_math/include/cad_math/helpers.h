@@ -24,7 +24,7 @@ namespace cadm
         const vec2 ndcPoint((static_cast<cadf>(point.x) - halfWidth) / halfWidth,
                             (halfHeight - static_cast<cadf>(point.y)) / halfHeight);
 
-        vec4 unprojectedPoint(ndcPoint.x, ndcPoint.y, z, 1.0f);
+        vec4 unprojectedPoint(ndcPoint.x, ndcPoint.y, z, 1.0);
         unprojectedPoint = invWorldPV * unprojectedPoint;
         unprojectedPoint /= unprojectedPoint.w;
         return unprojectedPoint;

@@ -7,10 +7,10 @@
 
 namespace cadm
 {
-    using cadf = float;
+    using cadf = double;
 
     // used with comparisons
-    constexpr cadf eps = 1e-6;
+    constexpr cadf eps = 1e-9;
 }
 
 #endif //CAD_COMMON_H

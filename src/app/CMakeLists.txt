@@ -29,3 +29,15 @@ add_custom_target(CopyShaders
 )
 
 add_dependencies(cad CopyShaders)
+
+if (WIN32)
+    get_target_property(QMAKE_EXECUTABLE Qt::qmake IMPORTED_LOCATION)
+    get_filename_component(QT_BIN_DIR "${QMAKE_EXECUTABLE}" DIRECTORY)
+
+    add_custom_command(TARGET cad POST_BUILD
+            COMMAND "${QT_BIN_DIR}/windeployqt.exe"
+                    --no-translations
+                    "$<TARGET_FILE:cad>"
+            COMMENT "Running windeployqt"
+    )
+endif ()
