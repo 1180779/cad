@@ -7,7 +7,7 @@
 
 namespace cadm
 {
-    using cadf = double;
+    using cadf = float;
 
     // used with comparisons
     constexpr cadf eps = 1e-9;

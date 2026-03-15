@@ -11,11 +11,11 @@
 
 #include <cad_math/common.h>
 #include "GL.h"
-#include "ShaderProgram.h"
+#include "shaderProgram.h"
 #include "quad.h"
 #include "cad_math/vec3.h"
 #include "cad_math/vec3i.h"
-#include "Camera.h"
+#include "camera.h"
 
 struct RenderState
 {
@@ -96,7 +96,7 @@ private:
     static std::optional<cadm::cadf> solveQuadraticMinPositive(cadm::cadf a, cadm::cadf b, cadm::cadf c);
 
     GLuint m_texture{};
-    std::unique_ptr<ShaderProgram> m_shaderProgram;
+    std::unique_ptr<shaderProgram> m_shaderProgram;
     std::unique_ptr<quad> m_quad;
     std::vector<unsigned char> m_cpuBuffer{};
 
@@ -117,7 +117,7 @@ private:
 
     QPoint m_lastMousePosition;
 
-    Camera m_camera{cadm::vec3(0, 0, 15), cadm::vec3(0, 0, 0), cadm::vec3(0, 1, 0)};
+    camera m_camera{cadm::vec3(0, 0, 15), cadm::vec3(0, 0, 0), cadm::vec3(0, 1, 0)};
 
     RenderState m_renderState;
     bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};

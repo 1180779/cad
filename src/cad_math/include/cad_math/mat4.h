@@ -70,10 +70,10 @@ namespace cadm
             const vec3 yAxis = zAxis.cross(xAxis); // up
 
             return {
-                vec4(xAxis.x, yAxis.x, zAxis.x, 0.0),
-                vec4(xAxis.y, yAxis.y, zAxis.y, 0.0),
-                vec4(xAxis.z, yAxis.z, zAxis.z, 0.0),
-                vec4(-xAxis.dot(eye), -yAxis.dot(eye), -zAxis.dot(eye), 1.0),
+                vec4(xAxis.x, xAxis.y, xAxis.z, 0.0), // Column 0 (Right vector)
+                vec4(yAxis.x, yAxis.y, yAxis.z, 0.0), // Column 1 (Up vector)
+                vec4(zAxis.x, zAxis.y, zAxis.z, 0.0), // Column 2 (Forward vector)
+                vec4(-xAxis.dot(eye), -yAxis.dot(eye), -zAxis.dot(eye), 1.0), // Column 3 (Translation)
             };
         }
 
@@ -90,6 +90,22 @@ namespace cadm
                 vec4(0.0, 0.0, -2.0 / (far - near), 0.0),
                 vec4(-(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near),
                      1.0)
+            };
+        }
+
+        // TODO: further investigate
+        // https://stackoverflow.com/questions/3738384/stable-cotangent
+
+        // TODO: check if constexpr is allowed here in MSVC
+
+        static mat projection(const cadf aspect, const cadf fov, const cadf near, const cadf far)
+        {
+            const cadf ctg = std::cos(fov / 2) / std::sin(fov / 2);
+            return {
+                vec4(ctg / aspect, 0, 0, 0), // Column 0
+                vec4(0, ctg, 0, 0), // Column 1
+                vec4(0, 0, -(far + near) / (far - near), -1), // Column 2
+                vec4(0, 0, -2 * far * near / (far - near), 0), // Column 3
             };
         }
 

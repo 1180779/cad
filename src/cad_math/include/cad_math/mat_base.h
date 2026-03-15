@@ -189,6 +189,8 @@ namespace cadm
               RowType, std::size_t R, std::size_t C, typename T>
     struct mat_base
     {
+        using VT = T;
+
         constexpr ColType& col(const std::size_t i) noexcept
         {
             return static_cast<Derived*>(this)->columns[i];

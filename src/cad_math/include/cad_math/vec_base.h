@@ -18,6 +18,8 @@ namespace cadm
     template <typename Derived, std::size_t N, typename T>
     struct vec_base
     {
+        using VT = T;
+
         constexpr T& operator[](std::size_t i) noexcept { return static_cast<Derived*>(this)->data[i]; }
 
         constexpr const T& operator[](std::size_t i) const noexcept

@@ -59,7 +59,7 @@ void OpenGLWidget::paintGL()
     m_shaderProgram->bind();
     gl->glActiveTexture(GL_TEXTURE0);
     gl->glBindTexture(GL_TEXTURE_2D, m_texture);
-    m_shaderProgram->setUniformValue("screenTexture", 0);
+    m_shaderProgram->setUniform1i("screenTexture", 0);
     m_quad->draw();
     m_shaderProgram->release();
 }
@@ -89,7 +89,7 @@ void OpenGLWidget::initializeGL()
 
     m_quad = std::make_unique<quad>();
 
-    m_shaderProgram = std::make_unique<ShaderProgram>();
+    m_shaderProgram = std::make_unique<shaderProgram>();
     m_shaderProgram->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/vertexShader.vert");
     m_shaderProgram->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/fragmentShader.frag");
     m_shaderProgram->compile();

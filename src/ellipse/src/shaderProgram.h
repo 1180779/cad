@@ -9,11 +9,11 @@
 #include <map>
 #include <string>
 
-class ShaderProgram
+class shaderProgram
 {
 public:
-    explicit ShaderProgram();
-    ~ShaderProgram();
+    explicit shaderProgram();
+    ~shaderProgram();
 
     bool attachShader(GLenum type, const std::string& source);
     bool attachShaderFromFile(GLenum type, std::string filename);
@@ -23,7 +23,7 @@ public:
     void bind() const;
     void release() const;
 
-    void setUniformValue(const std::string& name, int value) const;
+    void setUniform1i(const std::string& name, int value) const;
 
 private:
     GLuint m_program;

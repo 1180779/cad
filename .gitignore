@@ -35,7 +35,3 @@ ui_*.h
 
 # Catch2 - FetchContent downloaded dependencies
 _deps/
-
-# Executables
-cad_math_tests
-cad

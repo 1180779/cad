@@ -1,28 +1,24 @@
 //
-// Created by rdkgsk on 6/1/26.
+// Created by rdkgsk on 3/11/26.
 //
 
 #ifndef CAD_CAMERA_H
 #define CAD_CAMERA_H
 
-#define _USE_MATH_DEFINES
-#include <cmath>
-
 #include <cad_math/vec3.h>
 #include <cad_math/mat4.h>
 
-
-class Camera
+class camera
 {
 public:
-    Camera(cadm::vec3 position, cadm::vec3 target, cadm::vec3 up);
+    camera(const cadm::vec3& position, const cadm::vec3& target, const cadm::vec3& up);
 
     [[nodiscard]] cadm::mat4 getViewMatrix() const;
     [[nodiscard]] cadm::mat4 getProjectionMatrix() const;
 
-    void setPosition(cadm::vec3 position);
-    void setTarget(cadm::vec3 target);
-    void setUp(cadm::vec3 up);
+    void setPosition(const cadm::vec3& position);
+    void setTarget(const cadm::vec3& target);
+    void setUp(const cadm::vec3& up);
 
     void setFov(cadm::cadf fov);
     void setAspectRatio(cadm::cadf aspectRatio);
@@ -49,9 +45,9 @@ private:
     cadm::vec3 m_up;
 
     cadm::cadf m_fov{M_PI / 3}; // 60 degrees
-    cadm::cadf m_aspectRatio{1.0};
-    cadm::cadf m_nearPlane{0.1};
-    cadm::cadf m_farPlane{100.0};
+    cadm::cadf m_aspectRatio{1.0f};
+    cadm::cadf m_nearPlane{0.1f};
+    cadm::cadf m_farPlane{100.0f};
 };
 
 #endif //CAD_CAMERA_H

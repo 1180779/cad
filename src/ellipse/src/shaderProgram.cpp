@@ -5,9 +5,9 @@
 #include <fstream>
 #include <QDebug>
 
-#include "ShaderProgram.h"
+#include "shaderProgram.h"
 
-bool ShaderProgram::attachShader(const GLenum type, const std::string& source)
+bool shaderProgram::attachShader(const GLenum type, const std::string& source)
 {
     const auto gl = GL();
     const GLuint shader = gl->glCreateShader(type);
@@ -37,7 +37,7 @@ bool ShaderProgram::attachShader(const GLenum type, const std::string& source)
     return true;
 }
 
-bool ShaderProgram::attachShaderFromFile(GLenum type, std::string filename)
+bool shaderProgram::attachShaderFromFile(GLenum type, std::string filename)
 {
     std::ifstream file(filename);
     if (!file.is_open())
@@ -55,7 +55,7 @@ bool ShaderProgram::attachShaderFromFile(GLenum type, std::string filename)
     return attachShader(type, source);
 }
 
-bool ShaderProgram::compile()
+bool shaderProgram::compile()
 {
     const auto gl = GL();
     m_program = gl->glCreateProgram();
@@ -77,7 +77,7 @@ bool ShaderProgram::compile()
     return true;
 }
 
-void ShaderProgram::deleteShaders()
+void shaderProgram::deleteShaders()
 {
     const auto gl = GL();
     for (auto& shader : m_shaders)
@@ -87,19 +87,19 @@ void ShaderProgram::deleteShaders()
     m_shaders.clear();
 }
 
-void ShaderProgram::bind() const
+void shaderProgram::bind() const
 {
     const auto gl = GL();
     gl->glUseProgram(m_program);
 }
 
-void ShaderProgram::release() const
+void shaderProgram::release() const
 {
     const auto gl = GL();
     gl->glUseProgram(0);
 }
 
-void ShaderProgram::setUniformValue(const std::string& name, const int value) const
+void shaderProgram::setUniform1i(const std::string& name, const int value) const
 {
     const auto gl = GL();
     const GLint location = gl->glGetUniformLocation(m_program, name.c_str());
@@ -109,11 +109,11 @@ void ShaderProgram::setUniformValue(const std::string& name, const int value) co
     }
 }
 
-ShaderProgram::ShaderProgram() : m_program(0)
+shaderProgram::shaderProgram() : m_program(0)
 {
 }
 
-ShaderProgram::~ShaderProgram()
+shaderProgram::~shaderProgram()
 {
     const auto gl = GL();
     gl->glDeleteProgram(m_program);
