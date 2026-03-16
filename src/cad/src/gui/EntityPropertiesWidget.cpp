@@ -1,0 +1,49 @@
+#include "EntityPropertiesWidget.h"
+#include "TransformWidget.h"
+#include "TorusWidget.h"
+#include "../components/transform.h"
+#include "../components/geometry.h"
+#include <QVBoxLayout>
+
+EntityPropertiesWidget::EntityPropertiesWidget(QWidget *parent)
+    : QWidget(parent)
+{
+    m_layout = new QVBoxLayout(this);
+    m_layout->setAlignment(Qt::AlignTop);
+}
+
+void EntityPropertiesWidget::setEntity(entity *entity)
+{
+    if (m_entity == entity)
+        return;
+
+    clearLayout();
+    m_entity = entity;
+
+    if (!m_entity)
+        return;
+
+    if (auto transform = m_entity->getComponent<TransformComponent>())
+    {
+        auto widget = new TransformWidget(transform.value());
+        m_layout->addWidget(widget);
+        connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+    }
+
+    if (auto torus = m_entity->getComponent<TorusGeometry>())
+    {
+        auto widget = new TorusWidget(torus.value());
+        m_layout->addWidget(widget);
+        connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+    }
+}
+
+void EntityPropertiesWidget::clearLayout()
+{
+    QLayoutItem *item;
+    while ((item = m_layout->takeAt(0)) != nullptr)
+    {
+        delete item->widget();
+        delete item;
+    }
+}

@@ -10,32 +10,68 @@
 TorusGeometry::TorusGeometry()
 {
     m_drawMode = GL_LINES;
+    regenerateMesh();
+}
 
+void TorusGeometry::syncToGpu()
+{
     const auto gl = GL();
-    GLuint buffers[2];
-    gl->glGenBuffers(2, buffers);
-    m_VBO = buffers[0];
-    m_EBO = buffers[1];
-    gl->glGenVertexArrays(1, &m_VAO);
 
-    TorusGeometry::generateMesh();
+    if (m_VAO == 0)
+    {
+        GLuint buffers[2];
+        gl->glGenBuffers(2, buffers);
+        m_VBO = buffers[0];
+        m_EBO = buffers[1];
+        gl->glGenVertexArrays(1, &m_VAO);
+    }
+
+    gl->glBindVertexArray(m_VAO);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
+    gl->glBufferData(
+        GL_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(m_vertices.size() * sizeof(Vertex)),
+        m_vertices.data(),
+        GL_STATIC_DRAW);
+    gl->glBufferData(
+        GL_ELEMENT_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(m_indices.size() * sizeof(uint32_t)),
+        m_indices.data(),
+        GL_STATIC_DRAW);
+
+    static_assert(std::is_same_v<cadm::vec3::VT, float> || std::is_same_v<cadm::vec3::VT, double>);
+    constexpr GLenum type = std::is_same_v<cadm::vec3::VT, float>
+                                ? GL_FLOAT
+                                : GL_DOUBLE;
+    constexpr GLsizei singleSizeof = sizeof(cadm::vec3::VT);
+    gl->glEnableVertexAttribArray(0);
+    gl->glVertexAttribPointer(0, 3, type, GL_FALSE, 3 * singleSizeof, nullptr);
+
+    GET_GL_ERRORS();
+    gl->glBindVertexArray(0);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 TorusGeometry::~TorusGeometry()
 {
-    const auto gl = GL();
-    const GLuint buffers[2] = {m_VBO, m_EBO};
-    gl->glDeleteBuffers(2, buffers);
-    gl->glDeleteVertexArrays(1, &m_VAO);
+    if (m_VAO != 0)
+    {
+        const auto gl = GL();
+        const GLuint buffers[2] = {m_VBO, m_EBO};
+        gl->glDeleteBuffers(2, buffers);
+        gl->glDeleteVertexArrays(1, &m_VAO);
+    }
 }
 
-void TorusGeometry::generateMesh()
+void TorusGeometry::regenerateMesh()
 {
     auto vertices = generateVertices();
     auto indices = generateIndicesForWireframe();
     m_indices.swap(indices);
     m_vertices.swap(vertices);
-    syncMeshToGpu();
+    m_needsUpdate = true;
 }
 
 std::vector<Vertex> TorusGeometry::generateVertices() const
@@ -88,35 +124,4 @@ std::vector<std::uint32_t> TorusGeometry::generateIndicesForWireframe() const
         }
     }
     return indices;
-}
-
-void TorusGeometry::syncMeshToGpu() const
-{
-    const auto gl = GL();
-    gl->glBindVertexArray(m_VAO);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-    gl->glBufferData(
-        GL_ARRAY_BUFFER,
-        static_cast<GLsizeiptr>(m_vertices.size() * sizeof(Vertex)),
-        m_vertices.data(),
-        GL_STATIC_DRAW);
-    gl->glBufferData(
-        GL_ELEMENT_ARRAY_BUFFER,
-        static_cast<GLsizeiptr>(m_indices.size() * sizeof(uint32_t)),
-        m_indices.data(),
-        GL_STATIC_DRAW);
-
-    static_assert(std::is_same_v<cadm::vec3::VT, float> || std::is_same_v<cadm::vec3::VT, double>);
-    constexpr GLenum type = std::is_same_v<cadm::vec3::VT, float>
-                                ? GL_FLOAT
-                                : GL_DOUBLE;
-    constexpr GLsizei singleSizeof = sizeof(cadm::vec3::VT);
-    gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, type, GL_FALSE, 3 * singleSizeof, nullptr);
-
-    GET_GL_ERRORS();
-    gl->glBindVertexArray(0);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }

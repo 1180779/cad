@@ -58,8 +58,6 @@ void OpenGLWidget::initializeGL()
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     m_renderSystem.initialize();
-
-    GeometryFactory::createTorus(m_scene, 2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
 }
 
 void OpenGLWidget::mousePressEvent(QMouseEvent *event)

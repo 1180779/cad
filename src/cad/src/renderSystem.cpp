@@ -40,6 +40,13 @@ void RenderSystem::render(const Scene &scene, const camera &camera)
 
         if (!geometry || !transform) continue;
 
+        if (geometry.value()->m_needsUpdate)
+        {
+            geometry.value()->regenerateMesh();
+            geometry.value()->syncToGpu();
+            geometry.value()->m_needsUpdate = false;
+        }
+
         SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
 
         gl->glBindVertexArray(geometry.value()->m_VAO);

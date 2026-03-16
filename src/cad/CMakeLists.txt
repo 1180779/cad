@@ -23,6 +23,16 @@ add_executable(cad src/main.cpp
         src/geometryFactory.cpp
         src/components/geometry.cpp
         src/components/transform.cpp
+        src/gui/ComponentWidget.h
+        src/gui/ComponentWidget.cpp
+        src/gui/TransformWidget.h
+        src/gui/TransformWidget.cpp
+        src/gui/TorusWidget.h
+        src/gui/TorusWidget.cpp
+        src/gui/EntityPropertiesWidget.h
+        src/gui/EntityPropertiesWidget.cpp
+        src/gui/SceneHierarchyWidget.h
+        src/gui/SceneHierarchyWidget.cpp
 )
 
 target_link_libraries(cad

@@ -14,6 +14,7 @@
 #include <optional>
 #include <ranges>
 #include <type_traits>
+#include <QMetaType>
 
 using EntityID = uint32_t;
 
@@ -64,6 +65,8 @@ private:
     bool m_selected{false};
     std::unordered_map<std::type_index, std::unique_ptr<Component>> m_components;
 };
+
+Q_DECLARE_METATYPE(entity *)
 
 template <typename T>
 T* entity::addComponent()

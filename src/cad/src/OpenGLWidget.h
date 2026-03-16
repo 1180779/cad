@@ -29,6 +29,11 @@ public:
 
     bool eventFilter(QObject *obj, QEvent *event) override;
 
+    Scene& getScene() { return m_scene; }
+
+signals:
+    void selectedEntityChanged(entity *entity);
+
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;

@@ -18,7 +18,12 @@ struct Vertex
 class GeometryComponent : public Component
 {
 public:
-    virtual void generateMesh() = 0;
+    virtual void regenerateMesh() = 0;
+
+    virtual void syncToGpu()
+    {
+    }
+
     ~GeometryComponent() override = default;
 
     std::vector<Vertex> m_vertices;
@@ -43,10 +48,10 @@ public:
     // [[nodiscard]] int getMajorSegments() const { return m_majorSegments; }
     // [[nodiscard]] int getMinorSegments() const { return m_minorSegments; }
 
-    void generateMesh() override;
+    void regenerateMesh() override;
+    void syncToGpu() override;
     [[nodiscard]] std::vector<Vertex> generateVertices() const;
     [[nodiscard]] std::vector<std::uint32_t> generateIndicesForWireframe() const;
-    void syncMeshToGpu() const;
 
     cadm::cadf m_majorRadius = 2.0f;
     cadm::cadf m_minorRadius = 0.5f;
@@ -59,13 +64,13 @@ class AxesGeometry final : public GeometryComponent
 public:
     cadm::cadf m_length = 5.0f;
 
-    void generateMesh() override;
+    void regenerateMesh() override;
 };
 
 class GridGeometry final : public GeometryComponent
 {
 public:
-    void generateMesh() override;
+    void regenerateMesh() override;
 };
 
 #endif //CAD_GEOMETRY_H

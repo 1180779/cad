@@ -1,13 +1,15 @@
 #include <QApplication>
 #include <QVBoxLayout>
-#include <QLineEdit>
-#include <QDebug>
-#include <QDoubleValidator>
 #include <QLabel>
 #include <QPushButton>
 
 #include "gl.h"
 #include "OpenGLWidget.h"
+#include "gui/EntityPropertiesWidget.h"
+#include "gui/SceneHierarchyWidget.h"
+#include "geometryFactory.h"
+#include "components/transform.h"
+#include "components/geometry.h"
 
 int main(int argc, char *argv[])
 {
@@ -23,16 +25,38 @@ int main(int argc, char *argv[])
     const auto rightControlsLayout = new QVBoxLayout;
     rightControlsLayout->setAlignment(Qt::AlignTop);
     const auto leftControlsLayout = new QVBoxLayout;
-    layout->addLayout(leftControlsLayout);
-    layout->addLayout(rightControlsLayout);
+    layout->addLayout(leftControlsLayout, 1);
+    layout->addLayout(rightControlsLayout, 0);
 
     const auto glWidget = new OpenGLWidget;
+    glWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     leftControlsLayout->addWidget(glWidget);
 
-    // help text
-    const auto helpText = new QLabel("Placeholder help text");
-    helpText->setMaximumWidth(rightWidgetsMaxSize);
-    rightControlsLayout->addWidget(helpText);
+    const auto hierarchyWidget = new SceneHierarchyWidget;
+    hierarchyWidget->setMaximumWidth(rightWidgetsMaxSize);
+    rightControlsLayout->addWidget(hierarchyWidget);
+
+    const auto entityPropertiesWidget = new EntityPropertiesWidget;
+    entityPropertiesWidget->setMaximumWidth(rightWidgetsMaxSize);
+    rightControlsLayout->addWidget(entityPropertiesWidget);
+
+    auto &scene = glWidget->getScene();
+    GeometryFactory::createTorus(scene, 2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
+    GeometryFactory::createTorus(scene, 3.0f, 0.2f, 24, 12, cadm::vec3(5, 0, 0), "Torus 2");
+
+    hierarchyWidget->setScene(&scene);
+
+    QObject::connect(
+        hierarchyWidget,
+        &SceneHierarchyWidget::entitySelected,
+        entityPropertiesWidget,
+        &EntityPropertiesWidget::setEntity);
+
+    QObject::connect(
+        entityPropertiesWidget,
+        &EntityPropertiesWidget::propertyChanged,
+        glWidget,
+        [glWidget]() { glWidget->update(); });
 
     window.installEventFilter(glWidget);
     window.show();
