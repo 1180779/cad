@@ -5,7 +5,7 @@
 #ifndef CAD_CHECKMACROS_HPP
 #define CAD_CHECKMACROS_HPP
 
-#include <QtLogging>
+#include <QtDebug>
 
 #include "gl.h"
 
@@ -13,22 +13,22 @@ inline const char* GLErrorToString(const GLenum error)
 {
     switch (error)
     {
-        case GL_INVALID_ENUM:
-            return "GL_INVALID_ENUM";
-        case GL_INVALID_VALUE:
-            return "GL_INVALID_VALUE";
-        case GL_INVALID_OPERATION:
-            return "GL_INVALID_OPERATION";
-        case GL_INVALID_FRAMEBUFFER_OPERATION:
-            return "GL_INVALID_FRAMEBUFFER_OPERATION";
-        case GL_OUT_OF_MEMORY:
-            return "GL_OUT_OF_MEMORY";
-        default:
-            return "UNKNOWN_GL_ERROR";
+    case GL_INVALID_ENUM:
+        return "GL_INVALID_ENUM";
+    case GL_INVALID_VALUE:
+        return "GL_INVALID_VALUE";
+    case GL_INVALID_OPERATION:
+        return "GL_INVALID_OPERATION";
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        return "GL_INVALID_FRAMEBUFFER_OPERATION";
+    case GL_OUT_OF_MEMORY:
+        return "GL_OUT_OF_MEMORY";
+    default:
+        return "UNKNOWN_GL_ERROR";
     }
 }
 
-inline bool LogGLErrorsIfAny(const char* file, const int line)
+inline bool LogGLErrorsIfAny(const char *file, const int line)
 {
     bool hasError = false;
     const auto gl = GL();
@@ -41,7 +41,7 @@ inline bool LogGLErrorsIfAny(const char* file, const int line)
     {
         hasError = true;
         qWarning() << "OpenGL error" << GLErrorToString(error) << "(" << static_cast<unsigned int>(error) << ") at"
-                   << file << "," << line;
+            << file << "," << line;
     }
 
     return hasError;

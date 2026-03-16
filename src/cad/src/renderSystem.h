@@ -16,7 +16,7 @@ class RenderSystem
 {
 public:
     void initialize() const;
-    void render(const Scene& scene, const camera& camera);
+    void render(const Scene &scene, const camera &camera);
     void shutdown();
 
 private:

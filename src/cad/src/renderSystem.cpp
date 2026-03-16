@@ -8,7 +8,6 @@
 #include "scene.h"
 #include "components/geometry.h"
 #include "components/transform.h"
-#include <QDebug> // Include QDebug for logging
 
 
 void RenderSystem::initialize() const

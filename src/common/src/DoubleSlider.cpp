@@ -4,7 +4,8 @@
 
 #include "../include/common/DoubleSlider.h"
 
-DoubleSlider::DoubleSlider(QWidget* parent) : QSlider(parent)
+DoubleSlider::DoubleSlider(QWidget *parent)
+    : QSlider(parent)
 {
     connect(this, &QSlider::valueChanged, this, &DoubleSlider::notifyValueChanged);
 }

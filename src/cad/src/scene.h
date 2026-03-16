@@ -12,11 +12,12 @@
 #include <ranges>
 #include <unordered_map>
 
-class Scene {
+class Scene
+{
 public:
-    entity* createEntity(const std::string& name = "Entity");
+    entity* createEntity(const std::string &name = "Entity");
     std::optional<entity*> getEntity(EntityID id);
-    std::optional<entity*> getEntityByName(const std::string& name);
+    std::optional<entity*> getEntityByName(const std::string &name);
     void removeEntity(EntityID id);
 
     const std::vector<std::unique_ptr<entity>>& getEntities() const { return m_entities; }

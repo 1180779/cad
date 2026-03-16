@@ -29,11 +29,13 @@ namespace cadm
             std::array<cadf, 3> data;
         };
 
-        constexpr vec() : x(0), y(0), z(0)
+        constexpr vec()
+            : x(0), y(0), z(0)
         {
         }
 
-        constexpr vec(const cadf x, const cadf y, const cadf z) : x(x), y(y), z(z)
+        constexpr vec(const cadf x, const cadf y, const cadf z)
+            : x(x), y(y), z(z)
         {
         }
 
@@ -41,7 +43,7 @@ namespace cadm
         constexpr static vec unitY() noexcept { return {0.0, 1.0, 0.0}; }
         constexpr static vec unitZ() noexcept { return {0.0, 0.0, 1.0}; }
 
-        [[nodiscard]] constexpr vec cross(const vec& other) const
+        [[nodiscard]] constexpr vec cross(const vec &other) const
         {
             return {y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x};
         }

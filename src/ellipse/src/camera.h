@@ -15,14 +15,14 @@
 class camera
 {
 public:
-    camera(const cadm::vec3& position, const cadm::vec3& target, const cadm::vec3& up);
+    camera(const cadm::vec3 &position, const cadm::vec3 &target, const cadm::vec3 &up);
 
     [[nodiscard]] cadm::mat4 getViewMatrix() const;
     [[nodiscard]] cadm::mat4 getProjectionMatrix() const;
 
-    void setPosition(const cadm::vec3& position);
-    void setTarget(const cadm::vec3& target);
-    void setUp(const cadm::vec3& up);
+    void setPosition(const cadm::vec3 &position);
+    void setTarget(const cadm::vec3 &target);
+    void setUp(const cadm::vec3 &up);
 
     void setFov(cadm::cadf fov);
     void setAspectRatio(cadm::cadf aspectRatio);

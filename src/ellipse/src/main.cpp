@@ -12,9 +12,13 @@
 #include "OpenGLWidget.h"
 #include <common/DoubleSlider.h>
 
-void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, const float initialValue,
-                       const std::function<void(float)>& setter, const double mappingRangeStart = 0.0,
-                       const double mappingRangeEnd = 1.0)
+void addFloatParameter(
+    QVBoxLayout *parentLayout,
+    const QString &labelText,
+    const float initialValue,
+    const std::function<void(float)> &setter,
+    const double mappingRangeStart = 0.0,
+    const double mappingRangeEnd = 1.0)
 {
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
@@ -31,23 +35,29 @@ void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, cons
     edit->setText(QString::number(initialValue));
     slider->setValue(initialValue);
 
-    QObject::connect(edit, &QLineEdit::textEdited, [setter, slider](const QString& text)
-    {
-        bool ok;
-        const float val = text.toFloat(&ok);
-        if (ok)
+    QObject::connect(
+        edit,
+        &QLineEdit::textEdited,
+        [setter, slider](const QString &text)
+        {
+            bool ok;
+            const float val = text.toFloat(&ok);
+            if (ok)
+            {
+                setter(val);
+                const bool oldState = slider->blockSignals(true);
+                slider->setValue(val);
+                slider->blockSignals(oldState);
+            }
+        });
+    QObject::connect(
+        slider,
+        &DoubleSlider::doubleValueChanged,
+        [setter, edit](const double val)
         {
             setter(val);
-            const bool oldState = slider->blockSignals(true);
-            slider->setValue(val);
-            slider->blockSignals(oldState);
-        }
-    });
-    QObject::connect(slider, &DoubleSlider::doubleValueChanged, [setter, edit](const double val)
-    {
-        setter(val);
-        edit->setText(QString::number(val, 'g', 3));
-    });
+            edit->setText(QString::number(val, 'g', 3));
+        });
 
     layout->addWidget(label);
     layout->addWidget(edit);
@@ -55,8 +65,11 @@ void addFloatParameter(QVBoxLayout* parentLayout, const QString& labelText, cons
     parentLayout->addWidget(slider);
 }
 
-void addIntColor8BitParameter(QVBoxLayout* parentLayout, const QString& labelText, const int initialValue,
-                              const std::function<void(int)>& setter)
+void addIntColor8BitParameter(
+    QVBoxLayout *parentLayout,
+    const QString &labelText,
+    const int initialValue,
+    const std::function<void(int)> &setter)
 {
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
@@ -69,20 +82,28 @@ void addIntColor8BitParameter(QVBoxLayout* parentLayout, const QString& labelTex
     edit->setValidator(validator);
     edit->setText(QString::number(initialValue));
 
-    QObject::connect(edit, &QLineEdit::textChanged, [setter](const QString& text)
-    {
-        bool ok;
-        const int val = text.toInt(&ok);
-        if (ok) setter(val);
-    });
+    QObject::connect(
+        edit,
+        &QLineEdit::textChanged,
+        [setter](const QString &text)
+        {
+            bool ok;
+            const int val = text.toInt(&ok);
+            if (ok) setter(val);
+        });
 
     layout->addWidget(label);
     layout->addWidget(edit);
     parentLayout->addLayout(layout);
 }
 
-void addIntParameter(QVBoxLayout* parentLayout, const QString& labelText, const int initialValue,
-                     const std::function<void(int)>& setter, int minValue, int maxValue)
+void addIntParameter(
+    QVBoxLayout *parentLayout,
+    const QString &labelText,
+    const int initialValue,
+    const std::function<void(int)> &setter,
+    int minValue,
+    int maxValue)
 {
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
@@ -99,23 +120,29 @@ void addIntParameter(QVBoxLayout* parentLayout, const QString& labelText, const 
     edit->setText(QString::number(initialValue));
     slider->setValue(initialValue);
 
-    QObject::connect(edit, &QLineEdit::textEdited, [setter, slider](const QString& text)
-    {
-        bool ok;
-        const int val = static_cast<int>(text.toUInt(&ok));
-        if (ok)
+    QObject::connect(
+        edit,
+        &QLineEdit::textEdited,
+        [setter, slider](const QString &text)
+        {
+            bool ok;
+            const int val = static_cast<int>(text.toUInt(&ok));
+            if (ok)
+            {
+                setter(val);
+                const bool oldState = slider->blockSignals(true);
+                slider->setValue(val);
+                slider->blockSignals(oldState);
+            }
+        });
+    QObject::connect(
+        slider,
+        &QSlider::valueChanged,
+        [setter, edit](int val)
         {
             setter(val);
-            const bool oldState = slider->blockSignals(true);
-            slider->setValue(val);
-            slider->blockSignals(oldState);
-        }
-    });
-    QObject::connect(slider, &QSlider::valueChanged, [setter, edit](int val)
-    {
-        setter(val);
-        edit->setText(QString::number(val));
-    });
+            edit->setText(QString::number(val));
+        });
 
     layout->addWidget(label);
     layout->addWidget(edit);
@@ -123,7 +150,7 @@ void addIntParameter(QVBoxLayout* parentLayout, const QString& labelText, const 
     parentLayout->addWidget(slider);
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     GLSetDefaults();
     QApplication a(argc, argv);
@@ -160,8 +187,13 @@ int main(int argc, char* argv[])
     adaptiveRenderingGroup->setMaximumWidth(rightWidgetsMaxSize);
 
     const auto adaptiveRenderingLayout = new QVBoxLayout;
-    addIntParameter(adaptiveRenderingLayout, "square size", glWidget->getAdaptationSize(),
-                    [glWidget](const int v) { glWidget->setAdaptationSize(v); }, 1, 16);
+    addIntParameter(
+        adaptiveRenderingLayout,
+        "square size",
+        glWidget->getAdaptationSize(),
+        [glWidget](const int v) { glWidget->setAdaptationSize(v); },
+        1,
+        16);
 
     adaptiveRenderingGroup->setLayout(adaptiveRenderingLayout);
     rightControlsLayout->addWidget(adaptiveRenderingGroup, 0, Qt::AlignTop);
@@ -170,8 +202,13 @@ int main(int argc, char* argv[])
     const auto phongParametersGroup = new QGroupBox("Phong parameters");
     phongParametersGroup->setMaximumWidth(rightWidgetsMaxSize);
     const auto phongParametersLayout = new QVBoxLayout;
-    addFloatParameter(phongParametersLayout, "m", glWidget->getM(), [glWidget](const float v) { glWidget->setM(v); },
-                      0.001, 10);
+    addFloatParameter(
+        phongParametersLayout,
+        "m",
+        glWidget->getM(),
+        [glWidget](const float v) { glWidget->setM(v); },
+        0.001,
+        10);
 
     phongParametersGroup->setLayout(phongParametersLayout);
     rightControlsLayout->addWidget(phongParametersGroup, 0, Qt::AlignTop);
@@ -179,12 +216,21 @@ int main(int argc, char* argv[])
     const auto ambientColorGroup = new QGroupBox("Ambient color");
     const auto ambientColorLayout = new QVBoxLayout();
 
-    addIntColor8BitParameter(ambientColorLayout, "r", glWidget->getAmbientR(),
-                             [glWidget](const int v) { glWidget->setAmbientR(v); });
-    addIntColor8BitParameter(ambientColorLayout, "g", glWidget->getAmbientG(),
-                             [glWidget](const int v) { glWidget->setAmbientG(v); });
-    addIntColor8BitParameter(ambientColorLayout, "b", glWidget->getAmbientB(),
-                             [glWidget](const int v) { glWidget->setAmbientB(v); });
+    addIntColor8BitParameter(
+        ambientColorLayout,
+        "r",
+        glWidget->getAmbientR(),
+        [glWidget](const int v) { glWidget->setAmbientR(v); });
+    addIntColor8BitParameter(
+        ambientColorLayout,
+        "g",
+        glWidget->getAmbientG(),
+        [glWidget](const int v) { glWidget->setAmbientG(v); });
+    addIntColor8BitParameter(
+        ambientColorLayout,
+        "b",
+        glWidget->getAmbientB(),
+        [glWidget](const int v) { glWidget->setAmbientB(v); });
     ambientColorGroup->setLayout(ambientColorLayout);
 
     phongParametersLayout->addWidget(ambientColorGroup);

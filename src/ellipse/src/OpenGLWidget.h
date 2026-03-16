@@ -38,7 +38,7 @@ class OpenGLWidget : public QOpenGLWidget
     Q_OBJECT
 
 public:
-    explicit OpenGLWidget(QWidget* parent = nullptr);
+    explicit OpenGLWidget(QWidget *parent = nullptr);
     ~OpenGLWidget() override;
 
     void paintGL() override;
@@ -53,13 +53,13 @@ public:
     void setC(cadm::cadf c);
 
     [[nodiscard]] cadm::vec3 getTranslation() const { return m_translation; }
-    void setTranslation(const cadm::vec3& translation);
+    void setTranslation(const cadm::vec3 &translation);
 
     [[nodiscard]] cadm::vec3 getRotation() const { return m_rotation; }
-    void setRotation(const cadm::vec3& rotation);
+    void setRotation(const cadm::vec3 &rotation);
 
     [[nodiscard]] cadm::vec3 getScale() const { return m_scale; }
-    void setScale(const cadm::vec3& scale);
+    void setScale(const cadm::vec3 &scale);
 
     [[nodiscard]] unsigned char getAdaptationSize() const { return m_adaptationSize; }
     void setAdaptationSize(unsigned char adaptationSize);
@@ -79,20 +79,22 @@ public:
     void resetRotation();
     void resetTranslation();
 
-    bool eventFilter(QObject* obj, QEvent* event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 protected:
-    void mousePressEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void wheelEvent(QWheelEvent* event) override;
-    void keyPressEvent(QKeyEvent* event) override;
-    void keyReleaseEvent(QKeyEvent* event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
     void updateRenderParams();
-    static void performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer,
-                                  std::optional<unsigned int> prevAdaptationStep,
-                                  unsigned int adaptationStep);
+    static void performRaycasting(
+        const RenderState &state,
+        std::vector<unsigned char> &buffer,
+        std::optional<unsigned int> prevAdaptationStep,
+        unsigned int adaptationStep);
     static std::optional<cadm::cadf> solveQuadraticMinPositive(cadm::cadf a, cadm::cadf b, cadm::cadf c);
 
     GLuint m_texture{};

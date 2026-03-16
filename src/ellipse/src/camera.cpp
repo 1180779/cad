@@ -4,7 +4,7 @@
 
 #include "camera.h"
 
-camera::camera(const cadm::vec3& position, const cadm::vec3& target, const cadm::vec3& up)
+camera::camera(const cadm::vec3 &position, const cadm::vec3 &target, const cadm::vec3 &up)
     : m_position(position), m_target(target), m_up(up)
 {
 }
@@ -22,17 +22,17 @@ cadm::mat4 camera::getProjectionMatrix() const
     return cadm::mat4::ortho(-width / 2.0, width / 2.0, -height / 2.0, height / 2.0, m_nearPlane, m_farPlane);
 }
 
-void camera::setPosition(const cadm::vec3& position)
+void camera::setPosition(const cadm::vec3 &position)
 {
     m_position = position;
 }
 
-void camera::setTarget(const cadm::vec3& target)
+void camera::setTarget(const cadm::vec3 &target)
 {
     m_target = target;
 }
 
-void camera::setUp(const cadm::vec3& up)
+void camera::setUp(const cadm::vec3 &up)
 {
     m_up = up;
 }

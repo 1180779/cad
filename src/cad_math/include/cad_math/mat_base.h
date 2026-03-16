@@ -16,10 +16,10 @@ namespace cadm
     template <typename Derived, typename RowType, std::size_t C, typename T>
     struct mat_row_ref
     {
-        Derived& matrix;
+        Derived &matrix;
         std::size_t rowIdx;
 
-        constexpr mat_row_ref(Derived& mat, const std::size_t idx) noexcept
+        constexpr mat_row_ref(Derived &mat, const std::size_t idx) noexcept
             : matrix(mat), rowIdx(idx)
         {
         }
@@ -44,7 +44,7 @@ namespace cadm
             return res;
         }
 
-        constexpr mat_row_ref& operator=(const RowType& vec) noexcept
+        constexpr mat_row_ref& operator=(const RowType &vec) noexcept
         {
             for (std::size_t k = 0; k < C; ++k)
             {
@@ -63,7 +63,7 @@ namespace cadm
 
         // ===== compound assignment operators (modify in-place) =====
 
-        constexpr mat_row_ref& operator+=(const RowType& vec) noexcept
+        constexpr mat_row_ref& operator+=(const RowType &vec) noexcept
         {
             for (std::size_t k = 0; k < C; ++k)
             {
@@ -72,7 +72,7 @@ namespace cadm
             return *this;
         }
 
-        constexpr mat_row_ref& operator+=(const mat_row_ref& other) noexcept
+        constexpr mat_row_ref& operator+=(const mat_row_ref &other) noexcept
         {
             for (std::size_t k = 0; k < C; ++k)
             {
@@ -81,7 +81,7 @@ namespace cadm
             return *this;
         }
 
-        constexpr mat_row_ref& operator-=(const RowType& vec) noexcept
+        constexpr mat_row_ref& operator-=(const RowType &vec) noexcept
         {
             for (std::size_t k = 0; k < C; ++k)
             {
@@ -90,7 +90,7 @@ namespace cadm
             return *this;
         }
 
-        constexpr mat_row_ref& operator-=(const mat_row_ref& other) noexcept
+        constexpr mat_row_ref& operator-=(const mat_row_ref &other) noexcept
         {
             for (std::size_t k = 0; k < C; ++k)
             {
@@ -119,7 +119,7 @@ namespace cadm
 
         // ===== binary operators (return new vector, don't modify) =====
 
-        constexpr RowType operator+(const RowType& vec) const noexcept
+        constexpr RowType operator+(const RowType &vec) const noexcept
         {
             RowType res{};
             for (std::size_t k = 0; k < C; ++k)
@@ -129,7 +129,7 @@ namespace cadm
             return res;
         }
 
-        constexpr RowType operator+(const mat_row_ref& other) const noexcept
+        constexpr RowType operator+(const mat_row_ref &other) const noexcept
         {
             RowType res{};
             for (std::size_t k = 0; k < C; ++k)
@@ -139,7 +139,7 @@ namespace cadm
             return res;
         }
 
-        constexpr RowType operator-(const RowType& vec) const noexcept
+        constexpr RowType operator-(const RowType &vec) const noexcept
         {
             RowType res{};
             for (std::size_t k = 0; k < C; ++k)
@@ -149,7 +149,7 @@ namespace cadm
             return res;
         }
 
-        constexpr RowType operator-(const mat_row_ref& other) const noexcept
+        constexpr RowType operator-(const mat_row_ref &other) const noexcept
         {
             RowType res{};
             for (std::size_t k = 0; k < C; ++k)
@@ -169,7 +169,7 @@ namespace cadm
             return res;
         }
 
-        friend constexpr RowType operator*(T scalar, const mat_row_ref& row) noexcept
+        friend constexpr RowType operator*(T scalar, const mat_row_ref &row) noexcept
         {
             return row * scalar;
         }
@@ -228,7 +228,7 @@ namespace cadm
             return lhs;
         }
 
-        friend constexpr bool operator==(const Derived& lhs, const Derived& rhs)
+        friend constexpr bool operator==(const Derived &lhs, const Derived &rhs)
         {
             for (std::size_t i = 0; i < C; ++i)
             {
@@ -238,14 +238,14 @@ namespace cadm
             return true;
         }
 
-        friend constexpr Derived operator+(Derived lhs, const Derived& rhs)
+        friend constexpr Derived operator+(Derived lhs, const Derived &rhs)
         {
             for (std::size_t i = 0; i < C; ++i)
                 lhs.col(i) += rhs.col(i);
             return lhs;
         }
 
-        friend constexpr Derived operator-(Derived lhs, const Derived& rhs)
+        friend constexpr Derived operator-(Derived lhs, const Derived &rhs)
         {
             for (std::size_t i = 0; i < C; ++i)
                 lhs.col(i) -= rhs.col(i);
@@ -253,7 +253,7 @@ namespace cadm
         }
 
         template <typename OtherDerived, typename OtherCol, typename OtherRow, std::size_t OtherC>
-        constexpr auto operator*(const mat_base<MatrixT, OtherDerived, OtherCol, OtherRow, C, OtherC, T>& rhs) const
+        constexpr auto operator*(const mat_base<MatrixT, OtherDerived, OtherCol, OtherRow, C, OtherC, T> &rhs) const
         {
             using ResultType = MatrixT<R, OtherC, T>;
             ResultType M{};
@@ -269,7 +269,7 @@ namespace cadm
             return M;
         }
 
-        constexpr ColType operator*(const RowType& v) const noexcept
+        constexpr ColType operator*(const RowType &v) const noexcept
         {
             ColType res = this->col(0) * v[0];
             for (std::size_t j = 1; j < C; ++j)

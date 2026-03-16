@@ -7,7 +7,7 @@
 #include <ranges>
 #include <algorithm>
 
-entity* Scene::createEntity(const std::string& name)
+entity* Scene::createEntity(const std::string &name)
 {
     EntityID entityId = m_nextEntityId++;
     m_entities.emplace_back(std::make_unique<entity>(entityId, name));
@@ -18,7 +18,7 @@ std::optional<entity*> Scene::getEntity(EntityID id)
 {
     const auto result = std::ranges::find_if(
         m_entities,
-        [id](const std::unique_ptr<entity>& e)
+        [id](const std::unique_ptr<entity> &e)
         {
             return e->getId() == id;
         });
@@ -26,11 +26,11 @@ std::optional<entity*> Scene::getEntity(EntityID id)
     return std::nullopt;
 }
 
-std::optional<entity*> Scene::getEntityByName(const std::string& name)
+std::optional<entity*> Scene::getEntityByName(const std::string &name)
 {
     const auto byName = std::ranges::find_if(
         m_entities,
-        [name](const std::unique_ptr<entity>& e)
+        [name](const std::unique_ptr<entity> &e)
         {
             return e->getName() == name;
         });
@@ -43,7 +43,7 @@ void Scene::removeEntity(EntityID id)
     // pop and replace
     const auto toBeRemoved = std::ranges::find_if(
         m_entities,
-        [id](const std::unique_ptr<entity>& e)
+        [id](const std::unique_ptr<entity> &e)
         {
             return e->getId() == id;
         });
@@ -55,7 +55,7 @@ void Scene::removeEntity(EntityID id)
 auto Scene::getVisibleEntities()
 {
     return m_entities | std::views::filter(
-        [](const std::unique_ptr<entity>& e)
+        [](const std::unique_ptr<entity> &e)
         {
             return e->isVisible();
         });
@@ -64,7 +64,7 @@ auto Scene::getVisibleEntities()
 auto Scene::getSelectedEntities()
 {
     return m_entities | std::views::filter(
-        [](const std::unique_ptr<entity>& e)
+        [](const std::unique_ptr<entity> &e)
         {
             return e->isSelected();
         });

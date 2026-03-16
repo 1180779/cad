@@ -15,34 +15,35 @@ namespace cadm
         vec4 origin;
         vec4 direction;
 
-        constexpr ray4(const vec4& point, const vec4& direction) : origin(point), direction(direction)
+        constexpr ray4(const vec4 &point, const vec4 &direction)
+            : origin(point), direction(direction)
         {
         }
 
-        friend constexpr bool operator==(const ray4& a, const ray4& b)
+        friend constexpr bool operator==(const ray4 &a, const ray4 &b)
         {
             return a.direction == b.direction && a.origin == b.origin;
         }
 
-        friend constexpr bool operator!=(const ray4& a, const ray4& b)
+        friend constexpr bool operator!=(const ray4 &a, const ray4 &b)
         {
             return !(a == b);
         }
 
-        constexpr ray4& operator*=(const mat4& m)
+        constexpr ray4& operator*=(const mat4 &m)
         {
             origin = m * origin;
             direction = m * direction;
             return *this;
         }
 
-        friend constexpr ray4 operator*(const mat4& m, ray4 r)
+        friend constexpr ray4 operator*(const mat4 &m, ray4 r)
         {
             r *= m;
             return r;
         }
 
-        friend constexpr ray4 operator*(ray4 r, const mat4& m)
+        friend constexpr ray4 operator*(ray4 r, const mat4 &m)
         {
             return m * r;
         }

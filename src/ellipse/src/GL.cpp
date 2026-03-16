@@ -33,7 +33,8 @@ QOpenGLFunctions_4_5_Core* GL()
     }
 
     QOpenGLFunctions_4_5_Core *gl45 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_4_5_Core>(ctx);
-    if (!gl45) {
+    if (!gl45)
+    {
         qWarning() << "OpenGL 4.5 Core not supported";
         return nullptr;
     }

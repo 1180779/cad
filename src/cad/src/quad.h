@@ -9,7 +9,7 @@
 
 class quad
 {
-    public:
+public:
     explicit quad();
     ~quad();
     void draw() const;

@@ -5,14 +5,31 @@
 #include "quad.h"
 #include <array>
 
-quad::quad() : m_vao(0), m_vbo(0)
+quad::quad()
+    : m_vao(0), m_vbo(0)
 {
     constexpr std::array<GLfloat, 20> vertices = {
         // positions        // texture Coords
-        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 0.0f, 1.0f, 0.0f
+        -1.0f,
+        1.0f,
+        0.0f,
+        0.0f,
+        1.0f,
+        -1.0f,
+        -1.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        1.0f,
+        1.0f,
+        0.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        -1.0f,
+        0.0f,
+        1.0f,
+        0.0f
     };
 
     const auto gl = GL();

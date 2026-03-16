@@ -65,7 +65,6 @@ public:
 class GridGeometry final : public GeometryComponent
 {
 public:
-
     void generateMesh() override;
 };
 

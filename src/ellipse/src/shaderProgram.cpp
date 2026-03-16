@@ -7,11 +7,11 @@
 
 #include "shaderProgram.h"
 
-bool shaderProgram::attachShader(const GLenum type, const std::string& source)
+bool shaderProgram::attachShader(const GLenum type, const std::string &source)
 {
     const auto gl = GL();
     const GLuint shader = gl->glCreateShader(type);
-    const char* src = source.c_str();
+    const char *src = source.c_str();
     gl->glShaderSource(shader, 1, &src, nullptr);
 
     gl->glCompileShader(shader);
@@ -30,7 +30,8 @@ bool shaderProgram::attachShader(const GLenum type, const std::string& source)
         const auto previous = m_shaders[type];
         gl->glDeleteShader(previous);
         m_shaders[type] = shader;
-    } else
+    }
+    else
     {
         m_shaders[type] = shader;
     }
@@ -59,7 +60,7 @@ bool shaderProgram::compile()
 {
     const auto gl = GL();
     m_program = gl->glCreateProgram();
-    for (auto& shader : m_shaders)
+    for (auto &shader : m_shaders)
     {
         gl->glAttachShader(m_program, shader.second);
     }
@@ -80,7 +81,7 @@ bool shaderProgram::compile()
 void shaderProgram::deleteShaders()
 {
     const auto gl = GL();
-    for (auto& shader : m_shaders)
+    for (auto &shader : m_shaders)
     {
         gl->glDeleteShader(shader.second);
     }
@@ -99,7 +100,7 @@ void shaderProgram::release() const
     gl->glUseProgram(0);
 }
 
-void shaderProgram::setUniform1i(const std::string& name, const int value) const
+void shaderProgram::setUniform1i(const std::string &name, const int value) const
 {
     const auto gl = GL();
     const GLint location = gl->glGetUniformLocation(m_program, name.c_str());
@@ -109,7 +110,8 @@ void shaderProgram::setUniform1i(const std::string& name, const int value) const
     }
 }
 
-shaderProgram::shaderProgram() : m_program(0)
+shaderProgram::shaderProgram()
+    : m_program(0)
 {
 }
 

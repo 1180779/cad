@@ -36,8 +36,8 @@ if (WIN32)
 
     add_custom_command(TARGET ellipse POST_BUILD
             COMMAND "${QT_BIN_DIR}/windeployqt.exe"
-                    --no-translations
-                    "$<TARGET_FILE:ellipse>"
+            --no-translations
+            "$<TARGET_FILE:ellipse>"
             COMMENT "Running windeployqt"
     )
 endif ()

@@ -18,15 +18,20 @@ class DoubleSlider : public QSlider
     Q_OBJECT
 
 public:
-    explicit DoubleSlider(QWidget* parent = nullptr);
+    explicit DoubleSlider(QWidget *parent = nullptr);
     void setMappingRange(double start, double end);
     void setValue(double value);
     double value() const;
 
-signals:
+    signals  :
+
+    
     void doubleValueChanged(double value);
 
-public slots:
+public
+    slots  :
+
+    
     void notifyValueChanged(int value);
 
 private:

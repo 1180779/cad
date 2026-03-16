@@ -25,7 +25,8 @@
 #include "cad_math/helpers.h"
 #include "OpenGLWidget.h"
 
-OpenGLWidget::OpenGLWidget(QWidget* parent) : QOpenGLWidget(parent)
+OpenGLWidget::OpenGLWidget(QWidget *parent)
+    : QOpenGLWidget(parent)
 {
     setFocusPolicy(Qt::StrongFocus);
 }
@@ -61,26 +62,26 @@ void OpenGLWidget::initializeGL()
     GeometryFactory::createTorus(m_scene, 2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
 }
 
-void OpenGLWidget::mousePressEvent(QMouseEvent* event)
+void OpenGLWidget::mousePressEvent(QMouseEvent *event)
 {
     m_lastMousePosition = event->pos();
 }
 
-void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
+void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
 {
     const auto currentPos = event->pos();
     const auto delta = currentPos - m_lastMousePosition;
     m_lastMousePosition = currentPos;
 }
 
-void OpenGLWidget::wheelEvent(QWheelEvent* event)
+void OpenGLWidget::wheelEvent(QWheelEvent *event)
 {
     // const int delta = event->angleDelta().y();
     // if (delta == 0)
     //     return;
 }
 
-void OpenGLWidget::keyPressEvent(QKeyEvent* event)
+void OpenGLWidget::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key())
     {
@@ -121,7 +122,7 @@ void OpenGLWidget::keyPressEvent(QKeyEvent* event)
     }
 }
 
-void OpenGLWidget::keyReleaseEvent(QKeyEvent* event)
+void OpenGLWidget::keyReleaseEvent(QKeyEvent *event)
 {
     if (!event->isAutoRepeat())
     {
@@ -142,7 +143,7 @@ void OpenGLWidget::keyReleaseEvent(QKeyEvent* event)
     }
 }
 
-bool OpenGLWidget::eventFilter(QObject* obj, QEvent* event)
+bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::KeyPress)
     {

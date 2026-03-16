@@ -9,7 +9,7 @@
 #include "gl.h"
 #include "OpenGLWidget.h"
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     GLSetDefaults();
     QApplication a(argc, argv);

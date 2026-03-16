@@ -29,11 +29,13 @@ namespace cadm
             std::array<int, 3> data;
         };
 
-        constexpr vec() : x(0), y(0), z(0)
+        constexpr vec()
+            : x(0), y(0), z(0)
         {
         }
 
-        constexpr vec(const int x, const int y, const int z) : x(x), y(y), z(z)
+        constexpr vec(const int x, const int y, const int z)
+            : x(x), y(y), z(z)
         {
         }
 
