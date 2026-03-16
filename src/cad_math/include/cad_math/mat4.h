@@ -26,14 +26,27 @@ namespace cadm
 
         constexpr mat()
         {
-            for (auto& cell : data)
+            for (auto &cell : data)
                 cell = 0;
         }
 
-        constexpr mat(const cadf x0, const cadf x1, const cadf x2, const cadf x3,
-            const cadf y0, const cadf y1, const cadf y2, const cadf y3,
-            const cadf z0, const cadf z1, const cadf z2, const cadf z3,
-            const cadf w0, const cadf w1, const cadf w2, const cadf w3)
+        constexpr mat(
+            const cadf x0,
+            const cadf x1,
+            const cadf x2,
+            const cadf x3,
+            const cadf y0,
+            const cadf y1,
+            const cadf y2,
+            const cadf y3,
+            const cadf z0,
+            const cadf z1,
+            const cadf z2,
+            const cadf z3,
+            const cadf w0,
+            const cadf w1,
+            const cadf w2,
+            const cadf w3)
         {
             columns[0] = vec4(x0, x1, x2, x3);
             columns[1] = vec4(y0, y1, y2, y3);
@@ -41,7 +54,7 @@ namespace cadm
             columns[3] = vec4(w0, w1, w2, w3);
         }
 
-        constexpr mat(const vec4& c0, const vec4& c1, const vec4& c2, const vec4& c3)
+        constexpr mat(const vec4 &c0, const vec4 &c1, const vec4 &c2, const vec4 &c3)
         {
             columns[0] = c0;
             columns[1] = c1;
@@ -52,10 +65,10 @@ namespace cadm
         constexpr static mat identity()
         {
             return mat{
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1
+                vec4::unitX(),
+                vec4::unitY(),
+                vec4::unitZ(),
+                vec4::unitW()
             };
         }
 
@@ -63,33 +76,37 @@ namespace cadm
         // https://www.3dgep.com/understanding-the-view-matrix/
 
         // Look at matrix for Right Handed coordinate system
-        constexpr static mat lookAtRH(const vec3& eye, const vec3& target, const vec3& up)
+        constexpr static mat lookAtRH(const vec3 &eye, const vec3 &target, const vec3 &up)
         {
             const vec3 zAxis = (eye - target).normalized(); // forward
             const vec3 xAxis = up.cross(zAxis).normalized(); // right
             const vec3 yAxis = zAxis.cross(xAxis); // up
 
             return {
-                vec4(xAxis.x, xAxis.y, xAxis.z, 0.0), // Column 0 (Right vector)
-                vec4(yAxis.x, yAxis.y, yAxis.z, 0.0), // Column 1 (Up vector)
-                vec4(zAxis.x, zAxis.y, zAxis.z, 0.0), // Column 2 (Forward vector)
-                vec4(-xAxis.dot(eye), -yAxis.dot(eye), -zAxis.dot(eye), 1.0), // Column 3 (Translation)
+                vec4(xAxis.x, xAxis.y, xAxis.z, 0.0),
+                vec4(yAxis.x, yAxis.y, yAxis.z, 0.0),
+                vec4(zAxis.x, zAxis.y, zAxis.z, 0.0),
+                vec4(-xAxis.dot(eye), -yAxis.dot(eye), -zAxis.dot(eye), 1.0),
             };
         }
 
-        // static mat perspective(const cadf fov, const cadf aspect, const cadf near, const cadf far)
-        // {
-        // }
-
-        constexpr static mat ortho(const cadf left, const cadf right, const cadf bottom, const cadf top, const cadf near,
-                         const cadf far)
+        constexpr static mat ortho(
+            const cadf left,
+            const cadf right,
+            const cadf bottom,
+            const cadf top,
+            const cadf near,
+            const cadf far)
         {
             return {
-                vec4(2.0 / (right - left), 0.0, 0.0, 0.0),
-                vec4(0.0, 2.0 / (top - bottom), 0.0, 0.0),
-                vec4(0.0, 0.0, -2.0 / (far - near), 0.0),
-                vec4(-(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near),
-                     1.0)
+                vec4(static_cast<cadf>(2.0 / (right - left)), 0.0, 0.0, 0.0),
+                vec4(0.0, static_cast<cadf>(2.0 / (top - bottom)), 0.0, 0.0),
+                vec4(0.0, 0.0, static_cast<cadf>(-2.0 / (far - near)), 0.0),
+                vec4(
+                    -(right + left) / (right - left),
+                    -(top + bottom) / (top - bottom),
+                    -(far + near) / (far - near),
+                    1.0)
             };
         }
 
@@ -102,14 +119,14 @@ namespace cadm
         {
             const cadf ctg = std::cos(fov / 2) / std::sin(fov / 2);
             return {
-                vec4(ctg / aspect, 0, 0, 0), // Column 0
-                vec4(0, ctg, 0, 0), // Column 1
-                vec4(0, 0, -(far + near) / (far - near), -1), // Column 2
-                vec4(0, 0, -2 * far * near / (far - near), 0), // Column 3
+                vec4(ctg / aspect, 0, 0, 0),
+                vec4(0, ctg, 0, 0),
+                vec4(0, 0, -(far + near) / (far - near), -1),
+                vec4(0, 0, -2 * far * near / (far - near), 0),
             };
         }
 
-        constexpr static mat scale(const vec3& s) { return scale(s.x, s.y, s.z); }
+        constexpr static mat scale(const vec3 &s) { return scale(s.x, s.y, s.z); }
 
         constexpr static mat scale(const cadf sx, const cadf sy, const cadf sz)
         {
@@ -119,14 +136,14 @@ namespace cadm
         constexpr static mat diag(const cadf d0, const cadf d1, const cadf d2, const cadf d3)
         {
             return mat{
-                d0, 0, 0, 0,
-                0, d1, 0, 0,
-                0, 0, d2, 0,
-                0, 0, 0, d3
+                {d0, 0, 0, 0},
+                {0, d1, 0, 0},
+                {0, 0, d2, 0},
+                {0, 0, 0, d3}
             };
         }
 
-        constexpr static mat translation(const vec3& t) { return translation(t.x, t.y, t.z); }
+        constexpr static mat translation(const vec3 &t) { return translation(t.x, t.y, t.z); }
 
         constexpr static mat translation(const cadf tx, const cadf ty, const cadf tz)
         {
@@ -186,19 +203,45 @@ namespace cadm
             };
         }
 
-        // fast inverse computation for affine transformation when scaling is not present
-        // in that case the linear part is orthogonal which means that its inverse is transposed
-        // and greatly simplifies the case
-        [[nodiscard]] constexpr mat fastInversed() const noexcept
+        constexpr void fastTranslationInverse()
         {
-            const auto invUpperLeft = upperLeft3x3().transposed();
-            const auto newT = -invUpperLeft * vec3(col(3)[0], col(3)[1], col(3)[2]);
-            return mat{
-                vec4(invUpperLeft.col(0), 0.0),
-                vec4(invUpperLeft.col(1), 0.0),
-                vec4(invUpperLeft.col(2), 0.0),
-                vec4(newT, 1.0),
-            };
+            (*this)(0, 3) = -(*this)(0, 3);
+            (*this)(1, 3) = -(*this)(1, 3);
+            (*this)(2, 3) = -(*this)(2, 3);
+        }
+
+        [[nodiscard]] constexpr mat fastTranslationInversed() const
+        {
+            auto copy = *this;
+            copy.fastTranslationInverse();
+            return copy;
+        }
+
+        constexpr void fastScaleInverse()
+        {
+            if ((*this)(0, 0) != 0.0)
+                (*this)(0, 0) = static_cast<cadf>(1.0 / (*this)(0, 0));
+            if ((*this)(1, 1) != 0.0)
+                (*this)(1, 1) = static_cast<cadf>(1.0 / (*this)(1, 1));
+            if ((*this)(2, 2) != 0.0)
+                (*this)(2, 2) = static_cast<cadf>(1.0 / (*this)(2, 2));
+        }
+
+        [[nodiscard]] constexpr mat fastScaleInversed() const
+        {
+            auto copy = *this;
+            copy.fastScaleInverse();
+            return copy;
+        }
+
+        constexpr void fastRotationInversed()
+        {
+            transpose();
+        }
+
+        [[nodiscard]] constexpr mat fastRotationInversed() const
+        {
+            return transposed();
         }
     };
 

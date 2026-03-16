@@ -25,7 +25,8 @@
 #include "cad_math/helpers.h"
 #include "cad_math/mat4.h"
 
-OpenGLWidget::OpenGLWidget(QWidget* parent) : QOpenGLWidget(parent)
+OpenGLWidget::OpenGLWidget(QWidget *parent)
+    : QOpenGLWidget(parent)
 {
     setFocusPolicy(Qt::StrongFocus);
 }
@@ -128,7 +129,7 @@ void OpenGLWidget::setC(const cadm::cadf c)
     updateRenderParams();
 }
 
-void OpenGLWidget::setTranslation(const cadm::vec3& translation)
+void OpenGLWidget::setTranslation(const cadm::vec3 &translation)
 {
     if (m_translation == translation)
         return;
@@ -136,7 +137,7 @@ void OpenGLWidget::setTranslation(const cadm::vec3& translation)
     updateRenderParams();
 }
 
-void OpenGLWidget::setRotation(const cadm::vec3& rotation)
+void OpenGLWidget::setRotation(const cadm::vec3 &rotation)
 {
     if (m_rotation == rotation)
         return;
@@ -144,7 +145,7 @@ void OpenGLWidget::setRotation(const cadm::vec3& rotation)
     updateRenderParams();
 }
 
-void OpenGLWidget::setScale(const cadm::vec3& scale)
+void OpenGLWidget::setScale(const cadm::vec3 &scale)
 {
     if (m_scale == scale)
         return;
@@ -234,14 +235,8 @@ void OpenGLWidget::updateRenderParams()
     const auto M = translationM * rotationM * scaleM;
 
     const auto D = cadm::mat4::diag(1.0 / (m_a * m_a), 1.0 / (m_b * m_b), 1.0 / (m_c * m_c), -1.0);
-    if (m_scale == cadm::vec3(1.0, 1.0, 1.0)) // if no scale, use fast inversion
-    {
-        m_renderState.Minv = M.fastInversed();
-    }
-    else
-    {
-        m_renderState.Minv = M.inversed();
-    }
+    m_renderState.Minv = scaleM.fastScaleInversed() * rotationM.fastRotationInversed() * translationM.
+        fastTranslationInversed();
     m_renderState.MinvT = m_renderState.Minv.transposed();
     m_renderState.Dprim = m_renderState.MinvT * D * m_renderState.Minv;
     m_renderState.invPV = (m_camera.getProjectionMatrix() * m_camera.getViewMatrix()).inversed();
@@ -251,8 +246,11 @@ void OpenGLWidget::updateRenderParams()
     update();
 }
 
-void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsigned char>& buffer,
-                                     std::optional<unsigned int> prevAdaptationStep, unsigned int adaptationStep)
+void OpenGLWidget::performRaycasting(
+    const RenderState &state,
+    std::vector<unsigned char> &buffer,
+    std::optional<unsigned int> prevAdaptationStep,
+    unsigned int adaptationStep)
 {
     // uncomment to check if adaptation works as expected
     // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -333,11 +331,17 @@ void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsig
                     const cadm::vec3 specular = 255.0 * intensity * state.specularColor;
 
                     rgb.r = static_cast<unsigned char>(std::clamp<cadm::cadf>(
-                        static_cast<cadm::cadf>(state.ambient.r) + specular.x, 0.0, 255.0));
+                        static_cast<cadm::cadf>(state.ambient.r) + specular.x,
+                        0.0,
+                        255.0));
                     rgb.g = static_cast<unsigned char>(std::clamp<cadm::cadf>(
-                        static_cast<cadm::cadf>(state.ambient.g) + specular.y, 0.0, 255.0));
+                        static_cast<cadm::cadf>(state.ambient.g) + specular.y,
+                        0.0,
+                        255.0));
                     rgb.b = static_cast<unsigned char>(std::clamp<cadm::cadf>(
-                        static_cast<cadm::cadf>(state.ambient.b) + specular.z, 0.0, 255.0));
+                        static_cast<cadm::cadf>(state.ambient.b) + specular.z,
+                        0.0,
+                        255.0));
                 }
 
                 for (int y = py; y < std::min(h, py + step); ++y)
@@ -354,15 +358,19 @@ void OpenGLWidget::performRaycasting(const RenderState& state, std::vector<unsig
         });
 }
 
-std::optional<cadm::cadf> OpenGLWidget::solveQuadraticMinPositive(const cadm::cadf a, const cadm::cadf b,
-                                                                  const cadm::cadf c)
+std::optional<cadm::cadf> OpenGLWidget::solveQuadraticMinPositive(
+    const cadm::cadf a,
+    const cadm::cadf b,
+    const cadm::cadf c)
 {
     if (std::abs(a) < cadm::eps)
     {
         if (std::abs(b) < cadm::eps)
             return std::nullopt;
         const auto result = -c / b;
-        return result >= 0 ? std::optional(result) : std::nullopt;
+        return result >= 0
+                   ? std::optional(result)
+                   : std::nullopt;
     }
 
     const cadm::cadf disc = b * b - 4.0 * a * c;
@@ -371,9 +379,13 @@ std::optional<cadm::cadf> OpenGLWidget::solveQuadraticMinPositive(const cadm::ca
 
     const cadm::cadf sqrtDisc = std::sqrt(disc);
 
-    const cadm::cadf stableRoot = -0.5 * (b + (b >= 0.0 ? sqrtDisc : -sqrtDisc));
+    const cadm::cadf stableRoot = -0.5 * (b + (b >= 0.0
+                                                   ? sqrtDisc
+                                                   : -sqrtDisc));
     const cadm::cadf result1 = stableRoot / a;
-    const cadm::cadf result2 = (std::abs(stableRoot) > cadm::eps) ? (c / stableRoot) : 0.0;
+    const cadm::cadf result2 = (std::abs(stableRoot) > cadm::eps)
+                                   ? (c / stableRoot)
+                                   : 0.0;
 
     // return the smaller non-negative root
     if (result1 >= 0 && result2 >= 0)
@@ -386,12 +398,12 @@ std::optional<cadm::cadf> OpenGLWidget::solveQuadraticMinPositive(const cadm::ca
     return std::nullopt;
 }
 
-void OpenGLWidget::mousePressEvent(QMouseEvent* event)
+void OpenGLWidget::mousePressEvent(QMouseEvent *event)
 {
     m_lastMousePosition = event->pos();
 }
 
-void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
+void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
 {
     // TODO: add time delta?
     const auto currentPos = event->pos();
@@ -413,13 +425,15 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
     }
 }
 
-void OpenGLWidget::wheelEvent(QWheelEvent* event)
+void OpenGLWidget::wheelEvent(QWheelEvent *event)
 {
     const int delta = event->angleDelta().y();
     if (delta == 0)
         return;
 
-    const cadm::cadf scaleMult = delta > 0 ? m_zoomFactor : 1.0 / m_zoomFactor;
+    const cadm::cadf scaleMult = delta > 0
+                                     ? m_zoomFactor
+                                     : 1.0 / m_zoomFactor;
 
     if (m_xPressed || m_yPressed || m_zPressed)
     {
@@ -440,7 +454,7 @@ void OpenGLWidget::wheelEvent(QWheelEvent* event)
     updateRenderParams();
 }
 
-void OpenGLWidget::keyPressEvent(QKeyEvent* event)
+void OpenGLWidget::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key())
     {
@@ -488,7 +502,7 @@ void OpenGLWidget::keyPressEvent(QKeyEvent* event)
     updateRenderParams();
 }
 
-void OpenGLWidget::keyReleaseEvent(QKeyEvent* event)
+void OpenGLWidget::keyReleaseEvent(QKeyEvent *event)
 {
     if (!event->isAutoRepeat())
     {
@@ -509,7 +523,7 @@ void OpenGLWidget::keyReleaseEvent(QKeyEvent* event)
     }
 }
 
-bool OpenGLWidget::eventFilter(QObject* obj, QEvent* event)
+bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::KeyPress)
     {
