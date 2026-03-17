@@ -42,22 +42,24 @@ void OpenGLWidget::paintGL()
     const auto gl = GL();
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // TODO: create view matrix from camera and transform components
     const auto camera = m_mainCamera->getComponent<CameraComponent>();
-    const auto transform = m_mainCamera->getComponent<TransformComponent>();
-    if (!transform || !camera)
+    if (!camera)
     {
-        qWarning() << "No transform or camera component found for main camera entity. Skipping rendering" << __FILE__ <<
+        qWarning() << "No camera component found for main camera entity. Skipping rendering" << __FILE__ <<
             ", " << __LINE__;
         return;
     }
     const auto pCamera = camera.value();
-    const auto pTransform = transform.value();
 
-    const auto view = cadm::mat4::lookAtRH({0, 0, -10}, {}, pCamera->m_up);
-    const auto projection = cadm::mat4::projection(
-        pCamera->m_aspectRatio,
-        pCamera->m_fov,
+    const auto view = cadm::mat4::lookAtRH(pCamera->m_position, pCamera->m_target, pCamera->up());
+    const double height = pCamera->m_orthoHeight;
+    const double width = height * pCamera->m_aspectRatio;
+
+    const auto projection = cadm::mat4::ortho(
+        -width / 2.0,
+        width / 2.0,
+        -height / 2.0,
+        height / 2.0,
         pCamera->m_nearPlane,
         pCamera->m_farPlane);
     m_renderSystem.render(m_scene, view, projection);
@@ -71,7 +73,7 @@ void OpenGLWidget::resizeGL(const int width, const int height)
         return;
     cameraComp.value()->m_aspectRatio = static_cast<cadm::cadf>(width) / static_cast<cadm::cadf>(height);
 
-    // qInfo() << "Resized to " << width << "x" << intheight;
+    // qInfo() << "Resized to " << width << "x" << height;
 }
 
 void OpenGLWidget::initializeGL()
@@ -83,7 +85,7 @@ void OpenGLWidget::initializeGL()
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     const CameraFactory cameraFactory(m_scene);
-    m_mainCamera = cameraFactory.createLookAtCamera({0, 0, -10}, {}, cadm::vec3::unitY());
+    m_mainCamera = cameraFactory.createArcBallCamera({0, 0, 10}, {}, cadm::vec3::unitY());
     m_renderSystem.initialize();
 }
 
@@ -101,9 +103,50 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
 
 void OpenGLWidget::wheelEvent(QWheelEvent *event)
 {
-    // const int delta = event->angleDelta().y();
-    // if (delta == 0)
-    //     return;
+    const int delta = event->angleDelta().y();
+    if (delta == 0)
+        return;
+
+    const auto camera = m_mainCamera->getComponent<CameraComponent>();
+    if (!camera)
+        return;
+    const auto pCamera = camera.value();
+
+    const auto pos = event->position();
+    const auto nx = pos.x() / width() * 2.0 - 1.0;
+    const auto ny = 1.0 - pos.y() / height() * 2.0;
+
+    const auto oldHeight = pCamera->m_orthoHeight;
+    const auto oldWidth = oldHeight * pCamera->m_aspectRatio;
+
+    if (delta > 0)
+    {
+        pCamera->m_orthoHeight /= m_zoomFactor;
+    }
+    else
+    {
+        pCamera->m_orthoHeight *= m_zoomFactor;
+    }
+
+    const auto newHeight = pCamera->m_orthoHeight;
+    const auto newWidth = newHeight * pCamera->m_aspectRatio;
+
+    const auto deltaX = (oldWidth - newWidth) / 2.0 * nx;
+    const auto deltaY = (oldHeight - newHeight) / 2.0 * ny;
+
+    const auto right = pCamera->right();
+    const auto up = pCamera->up();
+
+    const auto translation = right * deltaX + up * deltaY;
+    pCamera->m_position += translation;
+    pCamera->m_target += translation;
+
+    if (const auto transform = m_mainCamera->getComponent<TransformComponent>())
+    {
+        transform.value()->setTranslation(pCamera->m_position);
+    }
+
+    update();
 }
 
 void OpenGLWidget::keyPressEvent(QKeyEvent *event)
@@ -112,20 +155,76 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
     {
     case Qt::Key_W:
     case Qt::UpArrow:
-        break;
+        {
+            const auto camera = m_mainCamera->getComponent<CameraComponent>();
+            if (!camera)
+                break;
+            const auto pCamera = camera.value();
+            const auto step = m_translationStep * pCamera->m_orthoHeight;
+            const auto up = pCamera->up();
+            pCamera->m_position += up * step;
+            pCamera->m_target += up * step;
+            if (auto transform = m_mainCamera->getComponent<TransformComponent>())
+            {
+                transform.value()->setTranslation(pCamera->m_position);
+            }
+            update();
+            break;
+        }
     case Qt::Key_S:
     case Qt::DownArrow:
-        break;
+        {
+            const auto camera = m_mainCamera->getComponent<CameraComponent>();
+            if (!camera)
+                break;
+            const auto pCamera = camera.value();
+            const auto step = m_translationStep * pCamera->m_orthoHeight;
+            const auto up = pCamera->up();
+            pCamera->m_position -= up * step;
+            pCamera->m_target -= up * step;
+            if (auto transform = m_mainCamera->getComponent<TransformComponent>())
+            {
+                transform.value()->setTranslation(pCamera->m_position);
+            }
+            update();
+            break;
+        }
     case Qt::Key_A:
     case Qt::LeftArrow:
-        break;
+        {
+            const auto camera = m_mainCamera->getComponent<CameraComponent>();
+            if (!camera)
+                break;
+            const auto pCamera = camera.value();
+            const auto step = m_translationStep * pCamera->m_orthoHeight;
+            const auto right = pCamera->right();
+            pCamera->m_position -= right * step;
+            pCamera->m_target -= right * step;
+            if (auto transform = m_mainCamera->getComponent<TransformComponent>())
+            {
+                transform.value()->setTranslation(pCamera->m_position);
+            }
+            update();
+            break;
+        }
     case Qt::Key_D:
     case Qt::RightArrow:
-        break;
-    case Qt::Key_Q:
-        break;
-    case Qt::Key_E:
-        break;
+        {
+            const auto camera = m_mainCamera->getComponent<CameraComponent>();
+            if (!camera)
+                break;
+            const auto pCamera = camera.value();
+            const auto step = m_translationStep * pCamera->m_orthoHeight;
+            const auto right = pCamera->right();
+            pCamera->m_position += right * step;
+            pCamera->m_target += right * step;
+            if (auto transform = m_mainCamera->getComponent<TransformComponent>())
+            {
+                transform.value()->setTranslation(pCamera->m_position);
+            }
+            update();
+            break;
+        }
     case Qt::Key_X:
         if (event->isAutoRepeat())
             return;
@@ -143,7 +242,6 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
         return;
     default:
         QOpenGLWidget::keyPressEvent(event);
-        return;
     }
 }
 

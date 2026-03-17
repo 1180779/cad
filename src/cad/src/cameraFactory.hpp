@@ -17,7 +17,7 @@ public:
     {
     }
 
-    entity* createLookAtCamera(cadm::vec3 positon, cadm::vec3 target, cadm::vec3 up) const;
+    entity* createArcBallCamera(cadm::vec3 positon, cadm::vec3 target, cadm::vec3 worldUp) const;
 
 private:
     Scene &m_scene;
