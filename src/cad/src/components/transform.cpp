@@ -4,6 +4,20 @@
 
 #include "transform.h"
 
+TransformComponent::TransformComponent()
+{
+}
+
+TransformComponent::TransformComponent(const cadm::vec3 &translation)
+    : m_translation(translation)
+{
+}
+
+TransformComponent::TransformComponent(const cadm::vec3 &translation, const cadm::vec3 &rotation)
+    : m_translation(translation), m_rotation(rotation)
+{
+}
+
 const cadm::mat4& TransformComponent::getModelMatrix() const
 {
     if (m_isDirty)

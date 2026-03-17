@@ -26,13 +26,13 @@ void RenderSystem::initialize() const
     SHADER_COMPILATION_CHECK(m_axesShader->compile());
 }
 
-void RenderSystem::render(const Scene &scene, const camera &camera)
+void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection)
 {
     // TODO: refactor to use first entity with camera component?
     const auto gl = GL();
     m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", camera.getViewMatrix()));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", camera.getProjectionMatrix()));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
     for (const auto &e : scene.getEntities())
     {
         const auto geometry = e->getComponent<GeometryComponent>();

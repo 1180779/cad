@@ -25,6 +25,10 @@
 #include "cad_math/helpers.h"
 #include "OpenGLWidget.h"
 
+#include "cameraFactory.hpp"
+#include "components/camera.hpp"
+#include "components/transform.h"
+
 OpenGLWidget::OpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)
 {
@@ -38,13 +42,34 @@ void OpenGLWidget::paintGL()
     const auto gl = GL();
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_renderSystem.render(m_scene, m_camera);
+    // TODO: create view matrix from camera and transform components
+    const auto camera = m_mainCamera->getComponent<CameraComponent>();
+    const auto transform = m_mainCamera->getComponent<TransformComponent>();
+    if (!transform || !camera)
+    {
+        qWarning() << "No transform or camera component found for main camera entity. Skipping rendering" << __FILE__ <<
+            ", " << __LINE__;
+        return;
+    }
+    const auto pCamera = camera.value();
+    const auto pTransform = transform.value();
+
+    const auto view = cadm::mat4::lookAtRH({0, 0, -10}, {}, pCamera->m_up);
+    const auto projection = cadm::mat4::projection(
+        pCamera->m_aspectRatio,
+        pCamera->m_fov,
+        pCamera->m_nearPlane,
+        pCamera->m_farPlane);
+    m_renderSystem.render(m_scene, view, projection);
 }
 
 void OpenGLWidget::resizeGL(const int width, const int height)
 {
     QOpenGLWidget::resizeGL(width, height);
-    m_camera.setAspectRatio(static_cast<cadm::cadf>(width) / static_cast<cadm::cadf>(height));
+    const auto cameraComp = m_mainCamera->getComponent<CameraComponent>();
+    if (!cameraComp)
+        return;
+    cameraComp.value()->m_aspectRatio = static_cast<cadm::cadf>(width) / static_cast<cadm::cadf>(height);
 
     // qInfo() << "Resized to " << width << "x" << intheight;
 }
@@ -57,6 +82,8 @@ void OpenGLWidget::initializeGL()
     gl->glEnable(GL_BLEND);
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    const CameraFactory cameraFactory(m_scene);
+    m_mainCamera = cameraFactory.createLookAtCamera({0, 0, -10}, {}, cadm::vec3::unitY());
     m_renderSystem.initialize();
 }
 

@@ -7,8 +7,6 @@ add_executable(cad src/main.cpp
         src/gl.h
         src/shaderProgram.cpp
         src/shaderProgram.h
-        src/camera.h
-        src/camera.cpp
         src/entities/entity.h
         src/components/geometry.h
         src/components/transform.h
@@ -33,6 +31,9 @@ add_executable(cad src/main.cpp
         src/gui/EntityPropertiesWidget.cpp
         src/gui/SceneHierarchyWidget.h
         src/gui/SceneHierarchyWidget.cpp
+        src/components/camera.hpp
+        src/cameraFactory.cpp
+        src/cameraFactory.hpp
 )
 
 target_link_libraries(cad

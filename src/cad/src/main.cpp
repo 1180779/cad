@@ -40,11 +40,11 @@ int main(int argc, char *argv[])
     entityPropertiesWidget->setMaximumWidth(rightWidgetsMaxSize);
     rightControlsLayout->addWidget(entityPropertiesWidget);
 
-    auto &scene = glWidget->getScene();
-    GeometryFactory::createTorus(scene, 2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
-    GeometryFactory::createTorus(scene, 3.0f, 0.2f, 24, 12, cadm::vec3(5, 0, 0), "Torus 2");
+    const GeometryFactory geometryFactory(glWidget->getScene());
+    geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
+    geometryFactory.createTorus(3.0f, 0.2f, 24, 12, cadm::vec3(5, 0, 0), "Torus 2");
 
-    hierarchyWidget->setScene(&scene);
+    hierarchyWidget->setScene(&glWidget->getScene());
 
     QObject::connect(
         hierarchyWidget,

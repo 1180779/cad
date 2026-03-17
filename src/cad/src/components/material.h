@@ -8,7 +8,7 @@
 #include "../entities/entity.h"
 #include <cad_math/vec3.h>
 
-class MaterialComponent : public Component
+class MaterialComponent final : public Component
 {
 public:
     cadm::vec3 color{1.0f, 1.0f, 1.0f};

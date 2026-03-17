@@ -5,8 +5,6 @@
 #ifndef CAD_RENDERSYSTEM_H
 #define CAD_RENDERSYSTEM_H
 
-#include "entities/entity.h"
-#include "camera.h"
 #include "shaderProgram.h"
 #include <memory>
 
@@ -16,7 +14,7 @@ class RenderSystem
 {
 public:
     void initialize() const;
-    void render(const Scene &scene, const camera &camera);
+    void render(const Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection);
     void shutdown();
 
 private:

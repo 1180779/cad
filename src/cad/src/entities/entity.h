@@ -14,6 +14,7 @@
 #include <optional>
 #include <ranges>
 #include <type_traits>
+#include <utility>
 #include <QMetaType>
 
 using EntityID = uint32_t;
@@ -45,8 +46,8 @@ public:
     bool isSelected() const { return m_selected; }
     void setSelected(const bool selected) { m_selected = selected; }
 
-    template <typename T>
-    T* addComponent();
+    template <typename T, typename... Args>
+    T* addComponent(Args &&... args);
 
     // returns the component of the entity or [std::nullopt] if the entity does not have a component of the desired type
     template <typename T>
@@ -68,11 +69,11 @@ private:
 
 Q_DECLARE_METATYPE(entity *)
 
-template <typename T>
-T* entity::addComponent()
+template <typename T, typename... Args>
+T* entity::addComponent(Args &&... args)
 {
     static_assert(std::is_base_of_v<Component, T>, "T must derive from Component");
-    auto component = std::make_unique<T>();
+    auto component = std::make_unique<T>(std::forward<Args>(args)...);
     T *ptr = component.get();
     m_components[std::type_index(typeid(T))] = std::move(component);
     return ptr;

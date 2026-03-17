@@ -8,30 +8,35 @@
 #include "scene.h"
 #include <cad_math/vec3.h>
 
-class GeometryFactory
+class GeometryFactory final
 {
 public:
-    static entity* createTorus(
-        Scene &scene,
+    explicit GeometryFactory(Scene &scene)
+        : m_scene(scene)
+    {
+    }
+
+    entity* createTorus(
         float majorRadius,
         float minorRadius,
         int majorSegments,
         int minorSegments,
         const cadm::vec3 &position = {0, 0, 0},
-        const std::string &name = "Torus");
+        const std::string &name = "Torus") const;
 
-    static entity* createAxis(
-        Scene &scene,
+    entity* createAxis(
         float length = 5.0f,
         const cadm::vec3 &position = {0, 0, 0},
-        const std::string &name = "Axes");
+        const std::string &name = "Axes") const;
 
-    static entity* createGrid(
-        Scene &scene,
+    entity* createGrid(
         float size = 10.0f,
         int divisions = 10,
         const cadm::vec3 &position = {0, 0, 0},
-        const std::string &name = "Grid");
+        const std::string &name = "Grid") const;
+
+private:
+    Scene &m_scene;
 };
 
 #endif //CAD_GEOMETRYFACTORY_H

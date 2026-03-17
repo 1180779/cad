@@ -8,15 +8,14 @@
 #include "components/transform.h"
 
 entity* GeometryFactory::createTorus(
-    Scene &scene,
     const float majorRadius,
     const float minorRadius,
     const int majorSegments,
     const int minorSegments,
     const cadm::vec3 &position,
-    const std::string &name)
+    const std::string &name) const
 {
-    const auto entity = scene.createEntity();
+    const auto entity = m_scene.createEntity();
     const auto transform = entity->addComponent<TransformComponent>();
     transform->setTranslation(position);
     const auto torus = entity->addComponent<TorusGeometry>();
@@ -27,21 +26,20 @@ entity* GeometryFactory::createTorus(
     return entity;
 }
 
-entity* GeometryFactory::createAxis(Scene &scene, float length, const cadm::vec3 &position, const std::string &name)
+entity* GeometryFactory::createAxis(float length, const cadm::vec3 &position, const std::string &name) const
 {
-    const auto entity = scene.createEntity();
+    const auto entity = m_scene.createEntity();
     // TODO: implement
     return entity;
 }
 
 entity* GeometryFactory::createGrid(
-    Scene &scene,
     float size,
     int divisions,
     const cadm::vec3 &position,
-    const std::string &name)
+    const std::string &name) const
 {
-    const auto entity = scene.createEntity();
+    const auto entity = m_scene.createEntity();
     // TODO: implement
     return entity;
 }

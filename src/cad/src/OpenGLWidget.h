@@ -9,9 +9,6 @@
 #include <QKeyEvent>
 
 #include <cad_math/common.h>
-#include "cad_math/vec3.h"
-#include "cad_math/vec3i.h"
-#include "camera.h"
 #include "renderSystem.h"
 #include "scene.h"
 
@@ -46,7 +43,7 @@ private:
     cadm::cadf m_translationStep{0.1};
     QPoint m_lastMousePosition;
 
-    camera m_camera{cadm::vec3(0, 0, 10), cadm::vec3(0, 0, 0), cadm::vec3(0, 1, 0)};
+    entity *m_mainCamera{nullptr};
     bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};
     cadm::cadf m_zoomFactor{1.1};
 
