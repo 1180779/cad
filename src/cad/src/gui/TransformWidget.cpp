@@ -83,12 +83,13 @@ void TransformWidget::setUpTranslationControls(QFormLayout *const layout)
     m_translationY = new QDoubleSpinBox();
     m_translationZ = new QDoubleSpinBox();
 
-    constexpr double min = std::numeric_limits<double>::lowest();
-    constexpr double max = std::numeric_limits<double>::max();
+    m_translationX->setSingleStep(s_translationStep);
+    m_translationY->setSingleStep(s_translationStep);
+    m_translationZ->setSingleStep(s_translationStep);
 
-    m_translationX->setRange(min, max);
-    m_translationY->setRange(min, max);
-    m_translationZ->setRange(min, max);
+    m_translationX->setRange(s_translationMin, s_translationMax);
+    m_translationY->setRange(s_translationMin, s_translationMax);
+    m_translationZ->setRange(s_translationMin, s_translationMax);
 
     m_translationX->setValue(m_transform->getTranslation().x);
     m_translationY->setValue(m_transform->getTranslation().y);
@@ -114,12 +115,13 @@ void TransformWidget::setUpScaleControls(QFormLayout *const layout)
     m_scaleY = new QDoubleSpinBox();
     m_scaleZ = new QDoubleSpinBox();
 
-    constexpr double min = std::numeric_limits<double>::lowest();
-    constexpr double max = std::numeric_limits<double>::max();
+    m_scaleX->setSingleStep(s_scaleStep);
+    m_scaleY->setSingleStep(s_scaleStep);
+    m_scaleZ->setSingleStep(s_scaleStep);
 
-    m_scaleX->setRange(min, max);
-    m_scaleY->setRange(min, max);
-    m_scaleZ->setRange(min, max);
+    m_scaleX->setRange(s_scaleMin, s_scaleMax);
+    m_scaleY->setRange(s_scaleMin, s_scaleMax);
+    m_scaleZ->setRange(s_scaleMin, s_scaleMax);
 
     m_scaleX->setValue(m_transform->getScale().x);
     m_scaleY->setValue(m_transform->getScale().y);
@@ -145,9 +147,13 @@ void TransformWidget::setUpRotationControls(QFormLayout *const layout)
     m_rotationY = new QDoubleSpinBox();
     m_rotationZ = new QDoubleSpinBox();
 
-    m_rotationX->setRange(-360.0, 360.0);
-    m_rotationY->setRange(-360.0, 360.0);
-    m_rotationZ->setRange(-360.0, 360.0);
+    m_rotationX->setSingleStep(s_angleStep);
+    m_rotationY->setSingleStep(s_angleStep);
+    m_rotationZ->setSingleStep(s_angleStep);
+
+    m_rotationX->setRange(s_angleMin, s_angleMax);
+    m_rotationY->setRange(s_angleMin, s_angleMax);
+    m_rotationZ->setRange(s_angleMin, s_angleMax);
 
     m_rotationX->setWrapping(true);
     m_rotationY->setWrapping(true);

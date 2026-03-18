@@ -23,7 +23,7 @@ private
     void onCurrentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
 
 private:
-    void populateList();
+    void populateList() const;
 
     Scene *m_scene = nullptr;
     QListWidget *m_listWidget;

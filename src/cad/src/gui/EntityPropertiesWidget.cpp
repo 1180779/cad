@@ -23,22 +23,22 @@ void EntityPropertiesWidget::setEntity(entity *entity)
     if (!m_entity)
         return;
 
-    if (auto transform = m_entity->getComponent<TransformComponent>())
+    if (const auto transform = m_entity->getComponent<TransformComponent>())
     {
-        auto widget = new TransformWidget(transform.value());
+        const auto widget = new TransformWidget(transform.value());
         m_layout->addWidget(widget);
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }
 
-    if (auto torus = m_entity->getComponent<TorusGeometry>())
+    if (const auto torus = m_entity->getComponent<TorusGeometry>())
     {
-        auto widget = new TorusWidget(torus.value());
+        const auto widget = new TorusWidget(torus.value());
         m_layout->addWidget(widget);
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }
 }
 
-void EntityPropertiesWidget::clearLayout()
+void EntityPropertiesWidget::clearLayout() const
 {
     QLayoutItem *item;
     while ((item = m_layout->takeAt(0)) != nullptr)

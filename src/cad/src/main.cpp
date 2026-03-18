@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     QWidget window;
     window.setMinimumSize(QSize(500, 500));
 
-    constexpr int rightWidgetsMaxSize = 300;
+    constexpr int rightWidgetsMaxSize = 350;
 
     const auto layout = new QHBoxLayout(&window);
     const auto rightControlsLayout = new QVBoxLayout;
@@ -32,6 +32,7 @@ int main(int argc, char *argv[])
 
     const auto hierarchyWidget = new SceneHierarchyWidget;
     hierarchyWidget->setMaximumWidth(rightWidgetsMaxSize);
+    hierarchyWidget->setMinimumWidth(rightWidgetsMaxSize);
     rightControlsLayout->addWidget(hierarchyWidget);
 
     const auto entityPropertiesWidget = new EntityPropertiesWidget;

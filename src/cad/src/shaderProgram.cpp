@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <QDebug>
+#include <ranges>
 
 #include "shaderProgram.h"
 

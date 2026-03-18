@@ -19,7 +19,7 @@ public:
     void propertyChanged();
 
 private:
-    void clearLayout();
+    void clearLayout() const;
 
     entity *m_entity = nullptr;
     QVBoxLayout *m_layout;

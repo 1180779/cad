@@ -1,6 +1,45 @@
 #include "TorusWidget.h"
 #include <QLabel>
 
+TorusWidget::TorusWidget(TorusGeometry *torus, QWidget *parent)
+    : ComponentWidget(torus, parent), m_torus(torus)
+{
+    const auto layout = new QFormLayout(this);
+
+    setUpMajorRadiusControls(layout);
+    setUpMinorRadiusControls(layout);
+    setUpMajorSegmentsControls(layout);
+    setUpMinorSegmentsControls(layout);
+}
+
+void TorusWidget::onMajorRadiusChanged(const double value) const
+{
+    m_torus->m_majorRadius = static_cast<cadm::cadf>(value);
+    m_torus->m_needsUpdate = true;
+    emit const_cast<TorusWidget*>(this)->propertyChanged();
+}
+
+void TorusWidget::onMinorRadiusChanged(const double value) const
+{
+    m_torus->m_minorRadius = static_cast<cadm::cadf>(value);
+    m_torus->m_needsUpdate = true;
+    emit const_cast<TorusWidget*>(this)->propertyChanged();
+}
+
+void TorusWidget::onMajorSegmentsChanged(const int value) const
+{
+    m_torus->m_majorSegments = static_cast<uint32_t>(value);
+    m_torus->m_needsUpdate = true;
+    emit const_cast<TorusWidget*>(this)->propertyChanged();
+}
+
+void TorusWidget::onMinorSegmentsChanged(const int value) const
+{
+    m_torus->m_minorSegments = static_cast<uint32_t>(value);
+    m_torus->m_needsUpdate = true;
+    emit const_cast<TorusWidget*>(this)->propertyChanged();
+}
+
 void TorusWidget::setUpMajorRadiusControls(QFormLayout *const layout)
 {
     m_majorRadius = new QDoubleSpinBox();
@@ -41,43 +80,4 @@ void TorusWidget::setUpMinorSegmentsControls(QFormLayout *const layout)
     m_minorSegments->setKeyboardTracking(true);
     connect(m_minorSegments, &QSpinBox::valueChanged, this, &TorusWidget::onMinorSegmentsChanged);
     layout->addRow(new QLabel("Minor Segments"), m_minorSegments);
-}
-
-TorusWidget::TorusWidget(TorusGeometry *torus, QWidget *parent)
-    : ComponentWidget(torus, parent), m_torus(torus)
-{
-    const auto layout = new QFormLayout(this);
-
-    setUpMajorRadiusControls(layout);
-    setUpMinorRadiusControls(layout);
-    setUpMajorSegmentsControls(layout);
-    setUpMinorSegmentsControls(layout);
-}
-
-void TorusWidget::onMajorRadiusChanged(const double value) const
-{
-    m_torus->m_majorRadius = static_cast<cadm::cadf>(value);
-    m_torus->m_needsUpdate = true;
-    emit const_cast<TorusWidget*>(this)->propertyChanged();
-}
-
-void TorusWidget::onMinorRadiusChanged(const double value) const
-{
-    m_torus->m_minorRadius = static_cast<cadm::cadf>(value);
-    m_torus->m_needsUpdate = true;
-    emit const_cast<TorusWidget*>(this)->propertyChanged();
-}
-
-void TorusWidget::onMajorSegmentsChanged(const int value) const
-{
-    m_torus->m_majorSegments = static_cast<uint32_t>(value);
-    m_torus->m_needsUpdate = true;
-    emit const_cast<TorusWidget*>(this)->propertyChanged();
-}
-
-void TorusWidget::onMinorSegmentsChanged(const int value) const
-{
-    m_torus->m_minorSegments = static_cast<uint32_t>(value);
-    m_torus->m_needsUpdate = true;
-    emit const_cast<TorusWidget*>(this)->propertyChanged();
 }
