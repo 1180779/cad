@@ -115,7 +115,8 @@ namespace cadm
 
         // TODO: check if constexpr is allowed here in MSVC
 
-        static mat projection(const cadf aspect, const cadf fov, const cadf near, const cadf far)
+        // projection minus one to one
+        static mat projectionMO(const cadf aspect, const cadf fov, const cadf near, const cadf far)
         {
             const cadf ctg = std::cos(fov / 2) / std::sin(fov / 2);
             return {
