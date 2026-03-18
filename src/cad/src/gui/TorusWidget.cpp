@@ -16,6 +16,7 @@ void TorusWidget::onMajorRadiusChanged(const double value) const
 {
     m_torus->m_majorRadius = static_cast<cadm::cadf>(value);
     m_torus->m_needsUpdate = true;
+    m_minorRadius->setMaximum(m_torus->m_majorRadius - s_minorRadiusMin);
     emit const_cast<TorusWidget*>(this)->propertyChanged();
 }
 
@@ -43,7 +44,10 @@ void TorusWidget::onMinorSegmentsChanged(const int value) const
 void TorusWidget::setUpMajorRadiusControls(QFormLayout *const layout)
 {
     m_majorRadius = new QDoubleSpinBox();
-    m_majorRadius->setMinimum(0.01);
+    m_majorRadius->setMinimum(s_majorRadiusMin);
+    m_majorRadius->setMaximum(s_majorRadiusMax);
+    m_majorRadius->setSingleStep(s_majorRadiusStep);
+
     m_majorRadius->setValue(m_torus->m_majorRadius);
     m_majorRadius->setKeyboardTracking(true);
     connect(m_majorRadius, &QDoubleSpinBox::valueChanged, this, &TorusWidget::onMajorRadiusChanged);
@@ -53,7 +57,10 @@ void TorusWidget::setUpMajorRadiusControls(QFormLayout *const layout)
 void TorusWidget::setUpMinorRadiusControls(QFormLayout *const layout)
 {
     m_minorRadius = new QDoubleSpinBox();
-    m_minorRadius->setMinimum(0.01);
+    m_minorRadius->setMinimum(s_minorRadiusMin);
+    m_minorRadius->setMaximum(m_torus->m_majorRadius - s_minorRadiusMin);
+    m_minorRadius->setSingleStep(s_minorRadiusStep);
+
     m_minorRadius->setValue(m_torus->m_minorRadius);
     m_minorRadius->setKeyboardTracking(true);
     connect(m_minorRadius, &QDoubleSpinBox::valueChanged, this, &TorusWidget::onMinorRadiusChanged);
@@ -63,8 +70,8 @@ void TorusWidget::setUpMinorRadiusControls(QFormLayout *const layout)
 void TorusWidget::setUpMajorSegmentsControls(QFormLayout *const layout)
 {
     m_majorSegments = new QSpinBox();
-    m_majorSegments->setMinimum(3);
-    m_majorSegments->setMaximum(1000);
+    m_majorSegments->setMinimum(s_majorSegmentsMin);
+    m_majorSegments->setMaximum(s_majorSegmentsMax);
     m_majorSegments->setValue(static_cast<int>(m_torus->m_majorSegments));
     m_majorSegments->setKeyboardTracking(true);
     connect(m_majorSegments, &QSpinBox::valueChanged, this, &TorusWidget::onMajorSegmentsChanged);
@@ -74,8 +81,8 @@ void TorusWidget::setUpMajorSegmentsControls(QFormLayout *const layout)
 void TorusWidget::setUpMinorSegmentsControls(QFormLayout *const layout)
 {
     m_minorSegments = new QSpinBox();
-    m_minorSegments->setMinimum(3);
-    m_minorSegments->setMaximum(1000);
+    m_minorSegments->setMinimum(s_minorSegmentsMin);
+    m_minorSegments->setMaximum(s_minorSegmentsMax);
     m_minorSegments->setValue(static_cast<int>(m_torus->m_minorSegments));
     m_minorSegments->setKeyboardTracking(true);
     connect(m_minorSegments, &QSpinBox::valueChanged, this, &TorusWidget::onMinorSegmentsChanged);

@@ -26,6 +26,19 @@ private:
     void setUpMajorSegmentsControls(QFormLayout *layout);
     void setUpMinorSegmentsControls(QFormLayout *layout);
 
+    static constexpr double s_minorRadiusMin = 0.1;
+    static constexpr double s_minorRadiusStep = 0.1;
+
+    static constexpr double s_majorRadiusMin = 0.1 + s_minorRadiusMin;
+    static constexpr double s_majorRadiusMax = 1000.0;
+    static constexpr double s_majorRadiusStep = 0.1;
+
+    static constexpr int s_majorSegmentsMin = 3;
+    static constexpr int s_majorSegmentsMax = 1000;
+
+    static constexpr int s_minorSegmentsMin = 3;
+    static constexpr int s_minorSegmentsMax = 1000;
+
     TorusGeometry *m_torus;
 
     QDoubleSpinBox *m_majorRadius;
