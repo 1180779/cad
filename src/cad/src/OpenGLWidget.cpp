@@ -62,6 +62,10 @@ void OpenGLWidget::initializeGL()
 
 void OpenGLWidget::mousePressEvent(QMouseEvent *event)
 {
+    if (m_cameraStrategy->handleMousePressEvent(event))
+    {
+        update();
+    }
     m_lastMousePosition = event->pos();
 }
 
@@ -70,6 +74,19 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
     const auto currentPos = event->pos();
     const auto delta = currentPos - m_lastMousePosition;
     m_lastMousePosition = currentPos;
+
+    if (m_cameraStrategy->handleMouseMoveEvent(event, delta))
+    {
+        update();
+    }
+}
+
+void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (m_cameraStrategy->handleMouseReleaseEvent(event))
+    {
+        update();
+    }
 }
 
 void OpenGLWidget::wheelEvent(QWheelEvent *event)

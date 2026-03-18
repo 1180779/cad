@@ -25,7 +25,8 @@ public:
     virtual cadm::mat4 getProjection() = 0;
     void syncAspectRatio(int width, int height) const;
     virtual bool handleMousePressEvent(QMouseEvent *event) = 0;
-    virtual bool handleMouseMoveEvent(QMouseEvent *event) = 0;
+    virtual bool handleMouseReleaseEvent(QMouseEvent *event) = 0;
+    virtual bool handleMouseMoveEvent(QMouseEvent *event, QPoint mouseDelta) = 0;
     virtual bool handleKeyPressEvent(QKeyEvent *event) = 0;
     virtual bool handleWheelEvent(QWheelEvent *event) = 0;
 

@@ -51,12 +51,17 @@ cadm::mat4 CadCameraStrategy::getProjection()
     return projection;
 }
 
-bool CadCameraStrategy::handleMouseMoveEvent(QMouseEvent *event)
+bool CadCameraStrategy::handleMouseMoveEvent(QMouseEvent *event, QPoint mouseDelta)
 {
     return false;
 }
 
 bool CadCameraStrategy::handleMousePressEvent(QMouseEvent *event)
+{
+    return false;
+}
+
+bool CadCameraStrategy::handleMouseReleaseEvent(QMouseEvent *event)
 {
     return false;
 }
