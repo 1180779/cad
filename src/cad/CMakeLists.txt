@@ -34,6 +34,9 @@ add_executable(cad src/main.cpp
         src/components/camera.hpp
         src/cameraFactory.cpp
         src/cameraFactory.hpp
+        src/camera/ICameraStrategy.hpp
+        src/camera/cadCameraStrategy.cpp
+        src/camera/cadCameraStrategy.hpp
 )
 
 target_link_libraries(cad

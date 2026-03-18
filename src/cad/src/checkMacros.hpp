@@ -83,5 +83,16 @@ inline bool LogGLErrorsIfAny(const char *file, const int line)
         } \
     } while (0)
 
+#define SHADER_COMPILATION_CHECK(expr) \
+    do { \
+        if (!expr) { \
+            qWarning() << "Shader compilation failed: " << __FILE__ << ", " << __LINE__; \
+            GET_GL_ERRORS(); \
+        } \
+    } while (0)
 
+#define EXPECTED_COMPONENT_MISSING() \
+    do { \
+            qWarning() << "Expected component missing: " << __FILE__ << ", " << __LINE__; \
+    } while (0)
 #endif //CAD_CHECKMACROS_HPP

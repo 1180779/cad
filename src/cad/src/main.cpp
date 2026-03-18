@@ -3,11 +3,13 @@
 #include <QLabel>
 #include <QPushButton>
 
+#include "cameraFactory.hpp"
 #include "gl.h"
 #include "OpenGLWidget.h"
 #include "gui/EntityPropertiesWidget.h"
 #include "gui/SceneHierarchyWidget.h"
 #include "geometryFactory.h"
+#include "camera/cadCameraStrategy.hpp"
 #include "components/transform.h"
 #include "components/geometry.h"
 
@@ -43,6 +45,14 @@ int main(int argc, char *argv[])
     const GeometryFactory geometryFactory(glWidget->getScene());
     geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
     geometryFactory.createTorus(3.0f, 0.2f, 24, 12, cadm::vec3(5, 0, 0), "Torus 2");
+
+    const CameraFactory cameraFactory(glWidget->getScene());
+    const auto camera = cameraFactory.createArcBallCamera({0, 0, 10}, {}, cadm::vec3::unitY());
+    const auto cadCameraStrategy = std::make_unique<CadCameraStrategy>(
+        camera,
+        [&] { return glWidget->width(); },
+        [&] { return glWidget->height(); });
+    glWidget->setCameraStrategy(cadCameraStrategy.get());
 
     hierarchyWidget->setScene(&glWidget->getScene());
 
