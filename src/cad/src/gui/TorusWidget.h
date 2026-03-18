@@ -2,7 +2,6 @@
 #define TORUSWIDGET_H
 
 #include <QFormLayout>
-#include <QDoubleSpinBox>
 #include <QSpinBox>
 
 #include "ComponentWidget.h"

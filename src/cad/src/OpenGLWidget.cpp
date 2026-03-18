@@ -20,14 +20,8 @@
 #undef QT_EMIT_DEFINED
 #endif
 
-#include "geometryFactory.h"
 #include "gl.h"
 #include "cad_math/helpers.h"
-#include "OpenGLWidget.h"
-
-#include "cameraFactory.hpp"
-#include "components/camera.hpp"
-#include "components/transform.h"
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)

@@ -1,12 +1,9 @@
 #ifndef SCENEHIERARCHYWIDGET_H
 #define SCENEHIERARCHYWIDGET_H
 
-#include <QWidget>
-#include <QListWidget>
 #include <QListWidgetItem>
 #include "../entities/entity.h"
 #include "../scene.h"
-#include <QVariant>
 
 class SceneHierarchyWidget : public QWidget
 {

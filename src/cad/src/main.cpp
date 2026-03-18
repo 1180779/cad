@@ -1,7 +1,5 @@
 #include <QApplication>
 #include <QVBoxLayout>
-#include <QLabel>
-#include <QPushButton>
 
 #include "cameraFactory.hpp"
 #include "gl.h"
@@ -10,8 +8,6 @@
 #include "gui/SceneHierarchyWidget.h"
 #include "geometryFactory.h"
 #include "camera/cadCameraStrategy.hpp"
-#include "components/transform.h"
-#include "components/geometry.h"
 
 int main(int argc, char *argv[])
 {
