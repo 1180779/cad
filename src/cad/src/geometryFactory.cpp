@@ -15,7 +15,7 @@ entity* GeometryFactory::createTorus(
     const cadm::vec3 &position,
     const std::string &name) const
 {
-    const auto entity = m_scene.createEntity();
+    const auto entity = m_scene.createEntity(name);
     const auto transform = entity->addComponent<TransformComponent>();
     transform->setTranslation(position);
     const auto torus = entity->addComponent<TorusGeometry>();
