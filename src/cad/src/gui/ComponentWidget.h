@@ -10,6 +10,8 @@ class ComponentWidget : public QWidget
     Q_OBJECT
 
 public:
+    static constexpr int s_doubleSpinBoxFixedWidth = 80;
+
     explicit ComponentWidget(Component *component, QWidget *parent = nullptr);
 
     signals :

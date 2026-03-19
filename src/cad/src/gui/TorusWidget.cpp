@@ -47,9 +47,9 @@ void TorusWidget::setUpMajorRadiusControls(QFormLayout *const layout)
     m_majorRadius->setMinimum(s_majorRadiusMin);
     m_majorRadius->setMaximum(s_majorRadiusMax);
     m_majorRadius->setSingleStep(s_majorRadiusStep);
-
     m_majorRadius->setValue(m_torus->m_majorRadius);
     m_majorRadius->setKeyboardTracking(true);
+    m_majorRadius->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(m_majorRadius, &QDoubleSpinBox::valueChanged, this, &TorusWidget::onMajorRadiusChanged);
     layout->addRow(new QLabel("Major Radius"), m_majorRadius);
 }
@@ -60,9 +60,9 @@ void TorusWidget::setUpMinorRadiusControls(QFormLayout *const layout)
     m_minorRadius->setMinimum(s_minorRadiusMin);
     m_minorRadius->setMaximum(m_torus->m_majorRadius - s_minorRadiusMin);
     m_minorRadius->setSingleStep(s_minorRadiusStep);
-
     m_minorRadius->setValue(m_torus->m_minorRadius);
     m_minorRadius->setKeyboardTracking(true);
+    m_minorRadius->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(m_minorRadius, &QDoubleSpinBox::valueChanged, this, &TorusWidget::onMinorRadiusChanged);
     layout->addRow(new QLabel("Minor Radius"), m_minorRadius);
 }
@@ -74,6 +74,7 @@ void TorusWidget::setUpMajorSegmentsControls(QFormLayout *const layout)
     m_majorSegments->setMaximum(s_majorSegmentsMax);
     m_majorSegments->setValue(static_cast<int>(m_torus->m_majorSegments));
     m_majorSegments->setKeyboardTracking(true);
+    m_majorSegments->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(m_majorSegments, &QSpinBox::valueChanged, this, &TorusWidget::onMajorSegmentsChanged);
     layout->addRow(new QLabel("Major Segments"), m_majorSegments);
 }
@@ -85,6 +86,7 @@ void TorusWidget::setUpMinorSegmentsControls(QFormLayout *const layout)
     m_minorSegments->setMaximum(s_minorSegmentsMax);
     m_minorSegments->setValue(static_cast<int>(m_torus->m_minorSegments));
     m_minorSegments->setKeyboardTracking(true);
+    m_minorSegments->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(m_minorSegments, &QSpinBox::valueChanged, this, &TorusWidget::onMinorSegmentsChanged);
     layout->addRow(new QLabel("Minor Segments"), m_minorSegments);
 }

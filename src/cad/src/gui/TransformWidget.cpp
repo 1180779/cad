@@ -99,6 +99,10 @@ void TransformWidget::setUpTranslationControls(QFormLayout *const layout)
     m_translationY->setKeyboardTracking(true);
     m_translationZ->setKeyboardTracking(true);
 
+    m_translationX->setFixedWidth(s_doubleSpinBoxFixedWidth);
+    m_translationY->setFixedWidth(s_doubleSpinBoxFixedWidth);
+    m_translationZ->setFixedWidth(s_doubleSpinBoxFixedWidth);
+
     connect(m_translationX, &QDoubleSpinBox::valueChanged, this, &TransformWidget::onTranslationXChanged);
     connect(m_translationY, &QDoubleSpinBox::valueChanged, this, &TransformWidget::onTranslationYChanged);
     connect(m_translationZ, &QDoubleSpinBox::valueChanged, this, &TransformWidget::onTranslationZChanged);
@@ -130,6 +134,10 @@ void TransformWidget::setUpScaleControls(QFormLayout *const layout)
     m_scaleX->setKeyboardTracking(true);
     m_scaleY->setKeyboardTracking(true);
     m_scaleZ->setKeyboardTracking(true);
+
+    m_scaleX->setFixedWidth(s_doubleSpinBoxFixedWidth);
+    m_scaleY->setFixedWidth(s_doubleSpinBoxFixedWidth);
+    m_scaleZ->setFixedWidth(s_doubleSpinBoxFixedWidth);
 
     connect(m_scaleX, &QDoubleSpinBox::valueChanged, this, &TransformWidget::onScaleXChanged);
     connect(m_scaleY, &QDoubleSpinBox::valueChanged, this, &TransformWidget::onScaleYChanged);
@@ -166,6 +174,10 @@ void TransformWidget::setUpRotationControls(QFormLayout *const layout)
     m_rotationX->setKeyboardTracking(true);
     m_rotationY->setKeyboardTracking(true);
     m_rotationZ->setKeyboardTracking(true);
+
+    m_rotationX->setFixedWidth(s_doubleSpinBoxFixedWidth);
+    m_rotationY->setFixedWidth(s_doubleSpinBoxFixedWidth);
+    m_rotationZ->setFixedWidth(s_doubleSpinBoxFixedWidth);
 
     connect(m_rotationX, &QDoubleSpinBox::valueChanged, this, &TransformWidget::onRotationXChanged);
     connect(m_rotationY, &QDoubleSpinBox::valueChanged, this, &TransformWidget::onRotationYChanged);

@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     QWidget window;
     window.setMinimumSize(QSize(500, 500));
 
-    constexpr int rightWidgetsMaxSize = 350;
+    constexpr int rightWidgetsMaxSize = 450;
 
     const auto layout = new QHBoxLayout(&window);
     const auto rightControlsLayout = new QVBoxLayout;
@@ -31,17 +31,16 @@ int main(int argc, char *argv[])
     leftControlsLayout->addWidget(glWidget);
 
     const auto hierarchyWidget = new SceneHierarchyWidget;
-    hierarchyWidget->setMaximumWidth(rightWidgetsMaxSize);
-    hierarchyWidget->setMinimumWidth(rightWidgetsMaxSize);
+    // hierarchyWidget->setMaximumWidth(rightWidgetsMaxSize);
     rightControlsLayout->addWidget(hierarchyWidget);
 
     const auto entityPropertiesWidget = new EntityPropertiesWidget;
-    entityPropertiesWidget->setMaximumWidth(rightWidgetsMaxSize);
+    // entityPropertiesWidget->setMaximumWidth(rightWidgetsMaxSize);
     rightControlsLayout->addWidget(entityPropertiesWidget);
 
     const GeometryFactory geometryFactory(glWidget->getScene());
     geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
-    geometryFactory.createTorus(3.0f, 0.2f, 24, 12, cadm::vec3(5, 0, 0), "Torus 2");
+    // geometryFactory.createTorus(3.0f, 0.2f, 24, 12, cadm::vec3(5, 0, 0), "Torus 2");
 
     const CameraFactory cameraFactory(glWidget->getScene());
     const auto camera = cameraFactory.createArcBallCamera({0, 0, 10}, {}, cadm::vec3::unitY());
