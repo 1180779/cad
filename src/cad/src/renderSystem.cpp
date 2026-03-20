@@ -28,7 +28,6 @@ void RenderSystem::initialize() const
 
 void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection)
 {
-    // TODO: refactor to use first entity with camera component?
     const auto gl = GL();
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
