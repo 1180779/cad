@@ -17,8 +17,8 @@ public:
     {
     }
 
-    entity* createArcBallCamera(
-        cadm::vec3 positon,
+    [[nodiscard]] entity* createArcBallCamera(
+        cadm::cadf radius,
         cadm::vec3 target,
         cadm::vec3 worldUp,
         const std::string &name = "Camera"

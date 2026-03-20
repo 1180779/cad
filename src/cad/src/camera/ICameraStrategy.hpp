@@ -40,7 +40,7 @@ inline void ICameraStrategy::syncAspectRatio(const int width, const int height) 
     const auto cameraComp = m_cameraEntity->getComponent<CameraComponent>();
     if (!cameraComp)
         return;
-    cameraComp.value()->m_aspectRatio = static_cast<cadm::cadf>(width) / static_cast<cadm::cadf>(height);
+    cameraComp.value()->setAspectRatio(static_cast<cadm::cadf>(width) / static_cast<cadm::cadf>(height));
 }
 
 #endif //CAD_ICAMERASTRATEGY_HPP

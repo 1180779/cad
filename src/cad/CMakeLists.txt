@@ -32,11 +32,14 @@ add_executable(cad src/main.cpp
         src/gui/SceneHierarchyWidget.h
         src/gui/SceneHierarchyWidget.cpp
         src/components/camera.hpp
+        src/components/camera.cpp
         src/cameraFactory.cpp
         src/cameraFactory.hpp
         src/camera/ICameraStrategy.hpp
-        src/camera/cadCameraStrategy.cpp
-        src/camera/cadCameraStrategy.hpp
+        src/camera/projectionCameraStrategy.cpp
+        src/camera/projectionCameraStrategy.hpp
+        src/gui/cameraWidget.cpp
+        src/gui/cameraWidget.hpp
 )
 
 target_link_libraries(cad

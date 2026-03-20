@@ -2,12 +2,12 @@
 #include <QVBoxLayout>
 
 #include "cameraFactory.hpp"
+#include "geometryFactory.h"
 #include "gl.h"
 #include "OpenGLWidget.h"
+#include "camera/projectionCameraStrategy.hpp"
 #include "gui/EntityPropertiesWidget.h"
 #include "gui/SceneHierarchyWidget.h"
-#include "geometryFactory.h"
-#include "camera/cadCameraStrategy.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -16,8 +16,6 @@ int main(int argc, char *argv[])
 
     QWidget window;
     window.setMinimumSize(QSize(500, 500));
-
-    constexpr int rightWidgetsMaxSize = 450;
 
     const auto layout = new QHBoxLayout(&window);
     const auto rightControlsLayout = new QVBoxLayout;
@@ -31,24 +29,24 @@ int main(int argc, char *argv[])
     leftControlsLayout->addWidget(glWidget);
 
     const auto hierarchyWidget = new SceneHierarchyWidget;
-    // hierarchyWidget->setMaximumWidth(rightWidgetsMaxSize);
     rightControlsLayout->addWidget(hierarchyWidget);
 
     const auto entityPropertiesWidget = new EntityPropertiesWidget;
-    // entityPropertiesWidget->setMaximumWidth(rightWidgetsMaxSize);
     rightControlsLayout->addWidget(entityPropertiesWidget);
 
     const GeometryFactory geometryFactory(glWidget->getScene());
     geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
-    // geometryFactory.createTorus(3.0f, 0.2f, 24, 12, cadm::vec3(5, 0, 0), "Torus 2");
 
     const CameraFactory cameraFactory(glWidget->getScene());
-    const auto camera = cameraFactory.createArcBallCamera({0, 0, 10}, {}, cadm::vec3::unitY());
-    const auto cadCameraStrategy = std::make_unique<CadCameraStrategy>(
+    const auto camera = cameraFactory.createArcBallCamera(5, {}, cadm::vec3::unitY());
+
+    const auto projCameraStrategy = std::make_shared<projectionCameraStrategy>(
         camera,
         [&] { return glWidget->width(); },
         [&] { return glWidget->height(); });
-    glWidget->setCameraStrategy(cadCameraStrategy.get());
+
+    glWidget->setCameraStrategy(projCameraStrategy.get());
+
 
     hierarchyWidget->setScene(&glWidget->getScene());
 
@@ -62,7 +60,7 @@ int main(int argc, char *argv[])
         entityPropertiesWidget,
         &EntityPropertiesWidget::propertyChanged,
         glWidget,
-        [glWidget]() { glWidget->update(); });
+        [glWidget] { glWidget->update(); });
 
     window.installEventFilter(glWidget);
     window.show();

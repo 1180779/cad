@@ -8,15 +8,14 @@
 #include "gui/TransformWidget.h"
 
 entity* CameraFactory::createArcBallCamera(
-    const cadm::vec3 positon,
+    const cadm::cadf radius,
     const cadm::vec3 target,
     const cadm::vec3 worldUp,
     const std::string &name) const
 {
     const auto entity = m_scene.createEntity(name);
     const auto camera = entity->addComponent<CameraComponent>();
-    camera->m_position = positon;
-    camera->m_target = target;
-    camera->m_worldUp = worldUp;
+    camera->setRadius(radius);
+    camera->setTarget(target);
     return entity;
 }
