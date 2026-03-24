@@ -142,6 +142,7 @@ void CameraWidget::setUpArcBallControls(QFormLayout *layout)
     m_radius->setRange(s_radiusMin, s_radiusMax);
     m_radius->setSingleStep(s_radiusStep);
     m_radius->setValue(m_camera->getRadius());
+    m_radius->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(
         m_radius,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -154,6 +155,7 @@ void CameraWidget::setUpArcBallControls(QFormLayout *layout)
     m_azimuthAngle->setSingleStep(s_azimuthAngleStep);
     m_azimuthAngle->setValue(m_camera->getAzimuthAngle() * 180.0 / std::numbers::pi);
     m_azimuthAngle->setWrapping(true);
+    m_azimuthAngle->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(
         m_azimuthAngle,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -168,6 +170,7 @@ void CameraWidget::setUpArcBallControls(QFormLayout *layout)
     m_polarAngle->setRange(s_polarAngleMin, s_polarAngleMax);
     m_polarAngle->setSingleStep(s_polarAngleStep);
     m_polarAngle->setValue(m_camera->getPolarAngle() * 180.0 / std::numbers::pi);
+    m_polarAngle->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(
         m_polarAngle,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -185,6 +188,7 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
     m_fov->setRange(s_fovMin, s_fovMax);
     m_fov->setSingleStep(s_fovStep);
     m_fov->setValue(m_camera->getFov() * 180.0 / std::numbers::pi);
+    m_fov->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(
         m_fov,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -200,6 +204,7 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
     m_nearPlane->setRange(s_nearPlaneMin, s_nearPlaneMax);
     m_nearPlane->setSingleStep(s_planeStep);
     m_nearPlane->setValue(m_camera->getNearPlane());
+    m_nearPlane->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(
         m_nearPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -211,6 +216,7 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
     m_farPlane->setRange(s_farPlaneMin, s_farPlaneMax);
     m_farPlane->setSingleStep(s_planeStep);
     m_farPlane->setValue(m_camera->getFarPlane());
+    m_farPlane->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(
         m_farPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),

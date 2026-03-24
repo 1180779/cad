@@ -273,6 +273,7 @@ void cadCameraWidget::setUpProjectionControls(QFormLayout *layout)
     m_orthoHeight->setRange(s_orthoHeightMin, s_orthoHeightMax);
     m_orthoHeight->setSingleStep(s_orthoHeightStep);
     m_orthoHeight->setValue(m_camera->getOrthoHeight());
+    m_orthoHeight->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(
         m_orthoHeight,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -287,6 +288,7 @@ void cadCameraWidget::setUpProjectionControls(QFormLayout *layout)
     m_nearPlane->setRange(s_nearPlaneMin, s_nearPlaneMax);
     m_nearPlane->setSingleStep(s_planeStep);
     m_nearPlane->setValue(m_camera->getNearPlane());
+    m_nearPlane->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(
         m_nearPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -298,6 +300,7 @@ void cadCameraWidget::setUpProjectionControls(QFormLayout *layout)
     m_farPlane->setRange(s_farPlaneMin, s_farPlaneMax);
     m_farPlane->setSingleStep(s_planeStep);
     m_farPlane->setValue(m_camera->getFarPlane());
+    m_farPlane->setFixedWidth(s_doubleSpinBoxFixedWidth);
     connect(
         m_farPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
