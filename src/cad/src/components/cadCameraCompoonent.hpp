@@ -31,6 +31,9 @@ class cadCameraComponent final : public QObject, public CameraComponent
 
     Q_PROPERTY(double orthoHeight READ getOrthoHeight WRITE setOrthoHeight NOTIFY orthoHeightChanged)
 
+    Q_PROPERTY(double rotationSpeed READ getRotationSpeed WRITE setRotationSpeed NOTIFY rotationSpeedChanged)
+    Q_PROPERTY(double zoomFactor READ getZoomFactor WRITE setZoomFactor NOTIFY zoomFactorChanged)
+
 public:
     static constexpr cadm::cadf s_minDistance = 0.01;
     static constexpr cadm::cadf s_minDistanceSq = s_minDistance * s_minDistance;
@@ -40,6 +43,12 @@ public:
 
     static constexpr cadm::cadf s_orthoHeightMin = 0.01;
     static constexpr cadm::cadf s_orthoHeightMax = 100.0;
+
+    static constexpr cadm::cadf s_rotationSpeedMin = 0.01;
+    static constexpr cadm::cadf s_rotationSpeedMax = 100.0;
+
+    static constexpr cadm::cadf s_zoomFactorMin = 0.01;
+    static constexpr cadm::cadf s_zoomFactorMax = 100.0;
 
     [[nodiscard]] cadm::vec3 forward() const;
     [[nodiscard]] cadm::vec3 right() const;
@@ -64,6 +73,9 @@ public:
     [[nodiscard]] cadm::cadf getFarPlane() const { return m_farPlane; }
     [[nodiscard]] cadm::cadf getOrthoHeight() const { return m_orthoHeight; }
 
+    [[nodiscard]] cadm::cadf getRotationSpeed() const { return m_rotationSpeed; }
+    [[nodiscard]] cadm::cadf getZoomFactor() const { return m_zoomFactor; }
+
     void setPosition(const cadm::vec3 &position);
     void setPositionX(cadm::cadf x);
     void setPositionY(cadm::cadf y);
@@ -83,15 +95,21 @@ public:
     void setFarPlane(cadm::cadf farPlane);
     void setOrthoHeight(cadm::cadf height);
 
+    void setZoomFactor(cadm::cadf factor);
+    void setRotationSpeed(cadm::cadf rotationSpeed);
+
 private:
     cadm::vec3 m_position{};
     cadm::vec3 m_target{};
     cadm::vec3 m_worldUp = cadm::vec3::unitY();
 
-    cadm::cadf m_nearPlane{0.1f};
-    cadm::cadf m_farPlane{100.0f};
+    cadm::cadf m_nearPlane{0.1};
+    cadm::cadf m_farPlane{100.0};
 
-    cadm::cadf m_orthoHeight{2.0f};
+    cadm::cadf m_orthoHeight{2.0};
+
+    cadm::cadf m_rotationSpeed{0.005};
+    cadm::cadf m_zoomFactor{1.1};
 
 signals:
     void positionChanged(double position);
@@ -112,6 +130,9 @@ signals:
     void nearPlaneChanged(double nearPlane);
     void farPlaneChanged(double farPlane);
     void orthoHeightChanged(double height);
+
+    void rotationSpeedChanged(double height);
+    void zoomFactorChanged(double height);
 
     void propertyUpdated();
 };

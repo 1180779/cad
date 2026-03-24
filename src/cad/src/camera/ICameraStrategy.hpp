@@ -7,7 +7,6 @@
 
 #include <QMouseEvent>
 
-#include "../components/camera.hpp"
 #include "../components/ICamera.hpp"
 #include "../entities/entity.h"
 #include "cad_math/mat4.h"

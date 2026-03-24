@@ -195,6 +195,34 @@ namespace cadm
             };
         }
 
+        static mat rotAxis(const cadf phi, vec3 u)
+        {
+            const auto sin = std::sin(phi);
+            const auto cos = std::cos(phi);
+            const auto oneMinusCos = 1 - cos;
+            return {
+                vec4{
+                    u.x * u.x * oneMinusCos + cos,
+                    u.x * u.y * oneMinusCos + u.z * sin,
+                    u.x * u.z * oneMinusCos - u.y * sin,
+                    0
+                },
+                vec4{
+                    u.x * u.y * oneMinusCos - u.z * sin,
+                    u.y * u.y * oneMinusCos + cos,
+                    u.y * u.z * oneMinusCos + u.x * sin,
+                    0
+                },
+                vec4{
+                    u.x * u.z * oneMinusCos + u.y * sin,
+                    u.y * u.z * oneMinusCos + u.x * sin,
+                    u.z * u.z * oneMinusCos + cos,
+                    0
+                },
+                vec4{0, 0, 0, 1}
+            };
+        }
+
         [[nodiscard]] constexpr mat3 upperLeft3x3() const
         {
             return {

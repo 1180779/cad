@@ -181,3 +181,23 @@ void cadCameraComponent::setOrthoHeight(const cadm::cadf height)
         emit propertyUpdated();
     }
 }
+
+void cadCameraComponent::setZoomFactor(const cadm::cadf factor)
+{
+    if (const auto clampedValue = std::clamp(factor, s_zoomFactorMin, s_zoomFactorMax);
+        std::abs(m_zoomFactor - clampedValue) >= cadm::eps)
+    {
+        m_zoomFactor = clampedValue;
+        emit zoomFactorChanged(clampedValue);
+    }
+}
+
+void cadCameraComponent::setRotationSpeed(const cadm::cadf rotationSpeed)
+{
+    if (const auto clampedValue = std::clamp(rotationSpeed, s_rotationSpeedMin, s_rotationSpeedMax);
+        std::abs(m_rotationSpeed - clampedValue) >= cadm::eps)
+    {
+        m_rotationSpeed = clampedValue;
+        emit rotationSpeedChanged(clampedValue);
+    }
+}

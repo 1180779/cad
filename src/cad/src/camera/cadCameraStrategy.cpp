@@ -39,8 +39,8 @@ cadm::mat4 CadCameraStrategy::getProjection()
         return cadm::mat4::identity();
     }
     const auto pCamera = camera.value();
-    const double height = pCamera->getOrthoHeight();
-    const double width = height * pCamera->getAspectRatio();
+    const auto height = pCamera->getOrthoHeight();
+    const auto width = height * pCamera->getAspectRatio();
 
     const auto projection = cadm::mat4::ortho(
         -width / 2.0,
@@ -52,18 +52,69 @@ cadm::mat4 CadCameraStrategy::getProjection()
     return projection;
 }
 
-bool CadCameraStrategy::handleMouseMoveEvent(QMouseEvent *event, QPoint mouseDelta)
+bool CadCameraStrategy::handleMouseMoveEvent(
+    QMouseEvent *event,
+    QPoint mouseDelta)
 {
-    return false;
+    if (!m_leftMouseDown)
+        return false;
+
+    const auto camera = m_cameraEntity->getComponent<cadCameraComponent>();
+    if (!camera.has_value())
+    {
+        EXPECTED_COMPONENT_MISSING();
+        return false;
+    }
+
+    const auto pCamera = camera.value();
+
+    const auto yawAngle = -static_cast<cadm::cadf>(mouseDelta.x()) * pCamera->getRotationSpeed();
+    const auto pitchAngle = static_cast<cadm::cadf>(mouseDelta.y()) * pCamera->getRotationSpeed();
+
+    const auto position = pCamera->getPosition();
+    const auto target = pCamera->getTarget();
+    const auto right = pCamera->right();
+
+    const auto yawRot = cadm::mat4::rotAxis(yawAngle, cadm::vec3::unitY()).upperLeft3x3();
+    const auto pitchRot = cadm::mat4::rotAxis(pitchAngle, right).upperLeft3x3();
+
+    const auto relPosition = position - target;
+    auto newRelPos = yawRot * (pitchRot * relPosition);
+
+    const auto newForwardDir = (-newRelPos).normalized();
+    if (constexpr cadm::cadf flipThreshold = 0.99;
+        std::abs(newForwardDir.dot(cadm::vec3::unitY())) > flipThreshold)
+    {
+        newRelPos = yawRot * relPosition;
+    }
+
+    const auto radius = relPosition.length();
+    newRelPos = newRelPos.normalized() * radius;
+
+    const auto newPosition = target + newRelPos;
+
+    pCamera->setPosition(newPosition);
+
+    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>();
+        transform.has_value())
+    {
+        transform.value()->setTranslation(newPosition);
+    }
+
+    return true;
 }
 
 bool CadCameraStrategy::handleMousePressEvent(QMouseEvent *event)
 {
+    if (event->button() == Qt::LeftButton)
+        m_leftMouseDown = true;
     return false;
 }
 
 bool CadCameraStrategy::handleMouseReleaseEvent(QMouseEvent *event)
 {
+    if (event->button() == Qt::LeftButton)
+        m_leftMouseDown = false;
     return false;
 }
 
@@ -175,12 +226,12 @@ bool CadCameraStrategy::handleWheelEvent(QWheelEvent *event)
 
     if (delta > 0)
     {
-        const auto newOrthoHeight = pCamera->getOrthoHeight() / m_zoomFactor;
+        const auto newOrthoHeight = pCamera->getOrthoHeight() / pCamera->getZoomFactor();
         pCamera->setOrthoHeight(newOrthoHeight);
     }
     else
     {
-        const auto newOrthoHeight = pCamera->getOrthoHeight() * m_zoomFactor;
+        const auto newOrthoHeight = pCamera->getOrthoHeight() * pCamera->getZoomFactor();
         pCamera->setOrthoHeight(newOrthoHeight);
     }
 
@@ -204,9 +255,4 @@ bool CadCameraStrategy::handleWheelEvent(QWheelEvent *event)
         transform.value()->setTranslation(position);
     }
     return true;
-}
-
-void CadCameraStrategy::setZoomFactor(cadm::cadf zoomFactor)
-{
-    m_zoomFactor = zoomFactor;
 }

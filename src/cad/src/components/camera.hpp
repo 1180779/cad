@@ -17,7 +17,7 @@ class ProjectionCameraComponent final : public QObject, public CameraComponent
 {
     Q_OBJECT
 
-    Q_PROPERTY(double radius READ getRadius WRITE setRadius NOTIFY radiusChanged)
+        Q_PROPERTY(double radius READ getRadius WRITE setRadius NOTIFY radiusChanged)
     Q_PROPERTY(double azimuthAngle READ getAzimuthAngle WRITE setAzimuthAngle NOTIFY azimuthAngleChanged)
     Q_PROPERTY(double polarAngle READ getPolarAngle WRITE setPolarAngle NOTIFY polarAngleChanged)
 
@@ -56,16 +56,16 @@ public:
     [[nodiscard]] cadm::vec3 up() const;
     [[nodiscard]] cadm::vec3 getPosition() const;
 
-    [[nodiscard]] double getRadius() const { return m_radius; }
-    [[nodiscard]] double getAzimuthAngle() const { return m_azimuthAngle; }
-    [[nodiscard]] double getPolarAngle() const { return m_polarAngle; }
-    [[nodiscard]] double getFov() const { return m_fov; }
-    [[nodiscard]] double getNearPlane() const { return m_nearPlane; }
-    [[nodiscard]] double getFarPlane() const { return m_farPlane; }
+    [[nodiscard]] cadm::cadf getRadius() const { return m_radius; }
+    [[nodiscard]] cadm::cadf getAzimuthAngle() const { return m_azimuthAngle; }
+    [[nodiscard]] cadm::cadf getPolarAngle() const { return m_polarAngle; }
+    [[nodiscard]] cadm::cadf getFov() const { return m_fov; }
+    [[nodiscard]] cadm::cadf getNearPlane() const { return m_nearPlane; }
+    [[nodiscard]] cadm::cadf getFarPlane() const { return m_farPlane; }
 
-    [[nodiscard]] double getTargetX() const { return m_target.x; }
-    [[nodiscard]] double getTargetY() const { return m_target.y; }
-    [[nodiscard]] double getTargetZ() const { return m_target.z; }
+    [[nodiscard]] cadm::cadf getTargetX() const { return m_target.x; }
+    [[nodiscard]] cadm::cadf getTargetY() const { return m_target.y; }
+    [[nodiscard]] cadm::cadf getTargetZ() const { return m_target.z; }
     [[nodiscard]] cadm::vec3 getTarget() const { return m_target; }
     [[nodiscard]] cadm::vec3 getWorldUp() const { return m_worldUp; }
 
@@ -92,7 +92,8 @@ private:
     cadm::cadf m_farPlane{100.0f};
     cadm::cadf m_fov{std::numbers::pi / 4.0};
 
-signals:
+    signals :
+    
     void radiusChanged(double radius);
     void azimuthAngleChanged(double angle);
     void polarAngleChanged(double angle);
@@ -111,7 +112,6 @@ signals:
 private:
     friend class projectionCameraStrategy;
 };
-
 
 
 #endif //CAD_CAMERA_HPP

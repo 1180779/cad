@@ -23,13 +23,10 @@ public:
     bool handleKeyPressEvent(QKeyEvent *event) override;
     bool handleWheelEvent(QWheelEvent *event) override;
 
-    cadm::cadf getZoomFactor() const { return m_zoomFactor; }
-    void setZoomFactor(cadm::cadf zoomFactor);
-
 private:
     std::function<int()> m_widthGetter;
     std::function<int()> m_heightGetter;
-    cadm::cadf m_zoomFactor = 1.1;
+    bool m_leftMouseDown{false};
 };
 
 #endif //CAD_CADCAMERASTRATEGY_HPP

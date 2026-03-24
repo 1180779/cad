@@ -24,9 +24,9 @@ cadCameraWidget::cadCameraWidget(cadCameraComponent *camera, QWidget *parent)
     connect(m_camera, &cadCameraComponent::targetYChanged, this, &cadCameraWidget::onTargetYChanged);
     connect(m_camera, &cadCameraComponent::targetZChanged, this, &cadCameraWidget::onTargetZChanged);
 
-    connect(m_camera, &cadCameraComponent::targetXChanged, this, &cadCameraWidget::onWorldUpXChanged);
-    connect(m_camera, &cadCameraComponent::targetYChanged, this, &cadCameraWidget::onWorldUpYChanged);
-    connect(m_camera, &cadCameraComponent::targetZChanged, this, &cadCameraWidget::onWorldUpZChanged);
+    connect(m_camera, &cadCameraComponent::worldUpXChanged, this, &cadCameraWidget::onWorldUpXChanged);
+    connect(m_camera, &cadCameraComponent::worldUpYChanged, this, &cadCameraWidget::onWorldUpYChanged);
+    connect(m_camera, &cadCameraComponent::worldUpZChanged, this, &cadCameraWidget::onWorldUpZChanged);
 
     connect(m_camera, &cadCameraComponent::nearPlaneChanged, this, &cadCameraWidget::onNearPlaneChanged);
     connect(m_camera, &cadCameraComponent::farPlaneChanged, this, &cadCameraWidget::onFarPlaneChanged);
@@ -82,7 +82,7 @@ void cadCameraWidget::onWorldUpXChanged(const double value) const
 {
     m_worldUpX->blockSignals(true);
     m_worldUpX->setValue(value);
-    m_worldUpZ->blockSignals(false);
+    m_worldUpX->blockSignals(false);
 }
 
 void cadCameraWidget::onWorldUpYChanged(const double value) const
@@ -224,9 +224,9 @@ void cadCameraWidget::setUpWorldUpControls(QFormLayout *layout)
     m_worldUpY = new QDoubleSpinBox();
     m_worldUpZ = new QDoubleSpinBox();
 
-    m_worldUpX->setRange(s_worldUpMin, s_targetMax);
-    m_worldUpY->setRange(s_worldUpMin, s_targetMax);
-    m_worldUpZ->setRange(s_worldUpMin, s_targetMax);
+    m_worldUpX->setRange(s_worldUpMin, s_worldUpMax);
+    m_worldUpY->setRange(s_worldUpMin, s_worldUpMax);
+    m_worldUpZ->setRange(s_worldUpMin, s_worldUpMax);
 
     m_worldUpX->setSingleStep(s_worldUpStep);
     m_worldUpY->setSingleStep(s_worldUpStep);
