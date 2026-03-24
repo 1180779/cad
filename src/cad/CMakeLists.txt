@@ -38,8 +38,15 @@ add_executable(cad src/main.cpp
         src/camera/ICameraStrategy.hpp
         src/camera/projectionCameraStrategy.cpp
         src/camera/projectionCameraStrategy.hpp
-        src/gui/cameraWidget.cpp
-        src/gui/cameraWidget.hpp
+        src/gui/projectionCameraWidget.cpp
+        src/gui/projectionCameraWidget.hpp
+        src/camera/cadCameraStrategy.cpp
+        src/camera/cadCameraStrategy.hpp
+        src/components/ICamera.hpp
+        src/components/cadCameraCompoonent.hpp
+        src/components/cadCameraComponent.cpp
+        src/gui/cadCameraWidget.cpp
+        src/gui/cadCameraWidget.hpp
 )
 
 target_link_libraries(cad

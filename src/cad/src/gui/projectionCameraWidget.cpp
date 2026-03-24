@@ -2,14 +2,14 @@
 // Created on 3/19/26.
 //
 
-#include "cameraWidget.hpp"
+#include "projectionCameraWidget.hpp"
 
 #include <QGroupBox>
 #include <QLabel>
 #include <QHBoxLayout>
 #include <numbers>
 
-CameraWidget::CameraWidget(CameraComponent *camera, QWidget *parent)
+CameraWidget::CameraWidget(ProjectionCameraComponent *camera, QWidget *parent)
     : ComponentWidget(camera, parent), m_camera(camera)
 {
     const auto layout = new QFormLayout(this);
@@ -19,54 +19,54 @@ CameraWidget::CameraWidget(CameraComponent *camera, QWidget *parent)
 
     connect(
         m_camera,
-        &CameraComponent::radiusChanged,
+        &ProjectionCameraComponent::radiusChanged,
         this,
         &CameraWidget::onRadiusChanged);
     connect(
         m_camera,
-        &CameraComponent::azimuthAngleChanged,
+        &ProjectionCameraComponent::azimuthAngleChanged,
         this,
         &CameraWidget::onAzimuthAngleChanged);
     connect(
         m_camera,
-        &CameraComponent::polarAngleChanged,
+        &ProjectionCameraComponent::polarAngleChanged,
         this,
         &CameraWidget::onPolarAngleChanged);
     connect(
         m_camera,
-        &CameraComponent::fovChanged,
+        &ProjectionCameraComponent::fovChanged,
         this,
         &CameraWidget::onFovChanged);
     connect(
         m_camera,
-        &CameraComponent::nearPlaneChanged,
+        &ProjectionCameraComponent::nearPlaneChanged,
         this,
         &CameraWidget::onNearPlaneChanged);
     connect(
         m_camera,
-        &CameraComponent::farPlaneChanged,
+        &ProjectionCameraComponent::farPlaneChanged,
         this,
         &CameraWidget::onFarPlaneChanged);
 
     connect(
         m_camera,
-        &CameraComponent::targetXChanged,
+        &ProjectionCameraComponent::targetXChanged,
         this,
         &CameraWidget::onTargetXChanged);
     connect(
         m_camera,
-        &CameraComponent::targetYChanged,
+        &ProjectionCameraComponent::targetYChanged,
         this,
         &CameraWidget::onTargetYChanged);
     connect(
         m_camera,
-        &CameraComponent::targetZChanged,
+        &ProjectionCameraComponent::targetZChanged,
         this,
         &CameraWidget::onTargetZChanged);
 
     connect(
         m_camera,
-        &CameraComponent::propertyUpdated,
+        &ProjectionCameraComponent::propertyUpdated,
         this,
         &ComponentWidget::propertyChanged);
 }
@@ -146,7 +146,7 @@ void CameraWidget::setUpArcBallControls(QFormLayout *layout)
         m_radius,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CameraComponent::setRadius);
+        &ProjectionCameraComponent::setRadius);
     layout->addRow("Radius", m_radius);
 
     m_azimuthAngle = new QDoubleSpinBox();
@@ -204,7 +204,7 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_nearPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CameraComponent::setNearPlane);
+        &ProjectionCameraComponent::setNearPlane);
     layout->addRow("Near Plane", m_nearPlane);
 
     m_farPlane = new QDoubleSpinBox();
@@ -215,7 +215,7 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_farPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CameraComponent::setFarPlane);
+        &ProjectionCameraComponent::setFarPlane);
     layout->addRow("Far Plane", m_farPlane);
 }
 
@@ -249,17 +249,17 @@ void CameraWidget::setUpTargetControls(QFormLayout *layout)
         m_targetX,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CameraComponent::setTargetX);
+        &ProjectionCameraComponent::setTargetX);
     connect(
         m_targetY,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CameraComponent::setTargetY);
+        &ProjectionCameraComponent::setTargetY);
     connect(
         m_targetZ,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CameraComponent::setTargetZ);
+        &ProjectionCameraComponent::setTargetZ);
 
     const auto targetLayout = new QHBoxLayout();
     targetLayout->addWidget(m_targetX);

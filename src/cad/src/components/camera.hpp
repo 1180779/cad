@@ -11,7 +11,9 @@
 #include <QObject>
 #include <numbers>
 
-class CameraComponent final : public QObject, public Component
+#include "ICamera.hpp"
+
+class ProjectionCameraComponent final : public QObject, public CameraComponent
 {
     Q_OBJECT
 
@@ -44,13 +46,7 @@ public:
     static constexpr cadm::cadf s_fovMin = 40.0 * std::numbers::pi / 180.0;
     static constexpr cadm::cadf s_fovMax = 140.0 * std::numbers::pi / 180.0;
 
-    static constexpr cadm::cadf s_nearPlaneMin = 0.01;
-    static constexpr cadm::cadf s_nearPlaneMax = 10000.0;
-
-    static constexpr cadm::cadf s_farPlaneMin = 0.01;
-    static constexpr cadm::cadf s_farPlaneMax = 10000.0;
-
-    explicit CameraComponent(QObject *parent = nullptr)
+    explicit ProjectionCameraComponent(QObject *parent = nullptr)
         : QObject(parent)
     {
     }
@@ -72,7 +68,6 @@ public:
     [[nodiscard]] double getTargetZ() const { return m_target.z; }
     [[nodiscard]] cadm::vec3 getTarget() const { return m_target; }
     [[nodiscard]] cadm::vec3 getWorldUp() const { return m_worldUp; }
-    [[nodiscard]] double getAspectRatio() const { return m_aspectRatio; }
 
     void setTarget(const cadm::vec3 &value);
     void setTargetX(cadm::cadf value);
@@ -85,7 +80,6 @@ public:
     void setFov(cadm::cadf value);
     void setNearPlane(cadm::cadf value);
     void setFarPlane(cadm::cadf value);
-    void setAspectRatio(cadm::cadf value);
 
 private:
     cadm::cadf m_radius{5.0};
@@ -94,7 +88,6 @@ private:
 
     cadm::vec3 m_target{};
     cadm::vec3 m_worldUp = cadm::vec3::unitY();
-    cadm::cadf m_aspectRatio{1.0f};
     cadm::cadf m_nearPlane{0.1f};
     cadm::cadf m_farPlane{100.0f};
     cadm::cadf m_fov{std::numbers::pi / 4.0};

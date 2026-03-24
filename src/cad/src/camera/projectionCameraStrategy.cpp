@@ -19,7 +19,7 @@ projectionCameraStrategy::projectionCameraStrategy(
 
 cadm::mat4 projectionCameraStrategy::getView()
 {
-    const auto camera = m_cameraEntity->getComponent<CameraComponent>();
+    const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
     if (!camera)
     {
         EXPECTED_COMPONENT_MISSING();
@@ -32,7 +32,7 @@ cadm::mat4 projectionCameraStrategy::getView()
 
 cadm::mat4 projectionCameraStrategy::getProjection()
 {
-    const auto camera = m_cameraEntity->getComponent<CameraComponent>();
+    const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
     if (!camera)
     {
         EXPECTED_COMPONENT_MISSING();
@@ -53,7 +53,7 @@ bool projectionCameraStrategy::handleMouseMoveEvent(QMouseEvent *event, const QP
     if (!m_mousePressed)
         return false;
 
-    const auto camera = m_cameraEntity->getComponent<CameraComponent>();
+    const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
     if (!camera)
     {
         EXPECTED_COMPONENT_MISSING();
@@ -97,7 +97,7 @@ bool projectionCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
     case Qt::Key_W:
     case Qt::UpArrow:
         {
-            const auto camera = m_cameraEntity->getComponent<CameraComponent>();
+            const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
             if (!camera)
                 break;
             const auto pCamera = camera.value();
@@ -114,7 +114,7 @@ bool projectionCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
     case Qt::Key_S:
     case Qt::DownArrow:
         {
-            const auto camera = m_cameraEntity->getComponent<CameraComponent>();
+            const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
             if (!camera)
                 break;
             const auto pCamera = camera.value();
@@ -131,7 +131,7 @@ bool projectionCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
     case Qt::Key_A:
     case Qt::LeftArrow:
         {
-            const auto camera = m_cameraEntity->getComponent<CameraComponent>();
+            const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
             if (!camera)
                 break;
             const auto pCamera = camera.value();
@@ -148,7 +148,7 @@ bool projectionCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
     case Qt::Key_D:
     case Qt::RightArrow:
         {
-            const auto camera = m_cameraEntity->getComponent<CameraComponent>();
+            const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
             if (!camera)
                 break;
             const auto pCamera = camera.value();
@@ -173,7 +173,7 @@ bool projectionCameraStrategy::handleWheelEvent(QWheelEvent *event)
     if (delta == 0)
         return false;
 
-    const auto camera = m_cameraEntity->getComponent<CameraComponent>();
+    const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
     if (!camera)
     {
         EXPECTED_COMPONENT_MISSING();

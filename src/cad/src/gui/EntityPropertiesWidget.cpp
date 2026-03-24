@@ -1,11 +1,14 @@
 #include "EntityPropertiesWidget.h"
 #include "TransformWidget.h"
 #include "TorusWidget.h"
-#include "cameraWidget.hpp"
+#include "projectionCameraWidget.hpp"
 #include "../components/transform.h"
 #include "../components/geometry.h"
 #include "../components/camera.hpp"
 #include <QVBoxLayout>
+
+#include "cadCameraWidget.hpp"
+#include "../components/cadCameraCompoonent.hpp"
 
 EntityPropertiesWidget::EntityPropertiesWidget(QWidget *parent)
     : QWidget(parent)
@@ -39,9 +42,16 @@ void EntityPropertiesWidget::setEntity(entity *entity)
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }
 
-    if (const auto camera = m_entity->getComponent<CameraComponent>())
+    if (const auto camera = m_entity->getComponent<ProjectionCameraComponent>())
     {
         const auto widget = new CameraWidget(camera.value());
+        m_layout->addWidget(widget);
+        connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+    }
+
+    if (const auto camera = m_entity->getComponent<cadCameraComponent>())
+    {
+        const auto widget = new cadCameraWidget(camera.value());
         m_layout->addWidget(widget);
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }

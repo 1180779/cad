@@ -4,22 +4,22 @@
 
 #include "camera.hpp"
 
-cadm::vec3 CameraComponent::forward() const
+cadm::vec3 ProjectionCameraComponent::forward() const
 {
     return (m_target - getPosition()).normalized();
 }
 
-cadm::vec3 CameraComponent::right() const
+cadm::vec3 ProjectionCameraComponent::right() const
 {
     return forward().cross(m_worldUp).normalized();
 }
 
-cadm::vec3 CameraComponent::up() const
+cadm::vec3 ProjectionCameraComponent::up() const
 {
     return right().cross(forward()).normalized();
 }
 
-cadm::vec3 CameraComponent::getPosition() const
+cadm::vec3 ProjectionCameraComponent::getPosition() const
 {
     const auto sinPolar = std::sin(m_polarAngle);
     const auto cosPolar = std::cos(m_polarAngle);
@@ -33,7 +33,7 @@ cadm::vec3 CameraComponent::getPosition() const
     };
 }
 
-void CameraComponent::setTarget(const cadm::vec3 &value)
+void ProjectionCameraComponent::setTarget(const cadm::vec3 &value)
 {
     if (m_target != value)
     {
@@ -45,7 +45,7 @@ void CameraComponent::setTarget(const cadm::vec3 &value)
     }
 }
 
-void CameraComponent::setTargetX(const cadm::cadf value)
+void ProjectionCameraComponent::setTargetX(const cadm::cadf value)
 {
     if (std::abs(m_target.x - value) >= cadm::eps)
     {
@@ -55,7 +55,7 @@ void CameraComponent::setTargetX(const cadm::cadf value)
     }
 }
 
-void CameraComponent::setTargetY(const cadm::cadf value)
+void ProjectionCameraComponent::setTargetY(const cadm::cadf value)
 {
     if (std::abs(m_target.y - value) >= cadm::eps)
     {
@@ -65,7 +65,7 @@ void CameraComponent::setTargetY(const cadm::cadf value)
     }
 }
 
-void CameraComponent::setTargetZ(const cadm::cadf value)
+void ProjectionCameraComponent::setTargetZ(const cadm::cadf value)
 {
     if (std::abs(m_target.z - value) >= cadm::eps)
     {
@@ -75,7 +75,7 @@ void CameraComponent::setTargetZ(const cadm::cadf value)
     }
 }
 
-void CameraComponent::setRadius(cadm::cadf value)
+void ProjectionCameraComponent::setRadius(cadm::cadf value)
 {
     value = std::max(value, s_minDistance);
     if (std::abs(m_radius - value) >= cadm::eps)
@@ -86,7 +86,7 @@ void CameraComponent::setRadius(cadm::cadf value)
     }
 }
 
-void CameraComponent::setAzimuthAngle(const cadm::cadf value)
+void ProjectionCameraComponent::setAzimuthAngle(const cadm::cadf value)
 {
     constexpr auto twoPI = s_azimuthAngleMax - s_azimuthAngleMin;
     cadm::cadf wrappedAngle = std::fmod(value - s_azimuthAngleMin, twoPI);
@@ -104,7 +104,7 @@ void CameraComponent::setAzimuthAngle(const cadm::cadf value)
     }
 }
 
-void CameraComponent::setPolarAngle(const cadm::cadf value)
+void ProjectionCameraComponent::setPolarAngle(const cadm::cadf value)
 {
     if (const auto clampedAngle = std::clamp(value, s_polarAngleMin, s_polarAngleMax); std::abs(
         m_polarAngle - clampedAngle) >= cadm::eps)
@@ -115,7 +115,7 @@ void CameraComponent::setPolarAngle(const cadm::cadf value)
     }
 }
 
-void CameraComponent::setFov(const cadm::cadf value)
+void ProjectionCameraComponent::setFov(const cadm::cadf value)
 {
     if (const auto clampedValue = std::clamp(value, s_fovMin, s_fovMax); std::abs(m_fov - clampedValue) >= cadm::eps)
     {
@@ -125,7 +125,7 @@ void CameraComponent::setFov(const cadm::cadf value)
     }
 }
 
-void CameraComponent::setNearPlane(const cadm::cadf value)
+void ProjectionCameraComponent::setNearPlane(const cadm::cadf value)
 {
     auto clampedValue = std::clamp(value, s_nearPlaneMin, s_nearPlaneMax);
     clampedValue = std::min(clampedValue, m_farPlane - 0.01f);
@@ -138,7 +138,7 @@ void CameraComponent::setNearPlane(const cadm::cadf value)
     }
 }
 
-void CameraComponent::setFarPlane(const cadm::cadf value)
+void ProjectionCameraComponent::setFarPlane(const cadm::cadf value)
 {
     auto clampedValue = std::clamp(value, s_farPlaneMin, s_farPlaneMax);
     clampedValue = std::max(clampedValue, m_nearPlane + 0.01f);
@@ -151,11 +151,3 @@ void CameraComponent::setFarPlane(const cadm::cadf value)
     }
 }
 
-void CameraComponent::setAspectRatio(const cadm::cadf value)
-{
-    if (std::abs(m_aspectRatio - value) >= cadm::eps)
-    {
-        m_aspectRatio = value;
-        emit propertyUpdated();
-    }
-}

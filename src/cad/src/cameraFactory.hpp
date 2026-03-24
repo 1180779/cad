@@ -17,11 +17,18 @@ public:
     {
     }
 
-    [[nodiscard]] entity* createArcBallCamera(
+    [[nodiscard]] entity* createCameraOnSphere(
         cadm::cadf radius,
         cadm::vec3 target,
-        cadm::vec3 worldUp,
-        const std::string &name = "Camera"
+        const std::string &name = "On Sphere Camera"
+    )
+    const;
+
+    [[nodiscard]] entity* createCadCamera(
+        const cadm::vec3 &position,
+        const cadm::vec3 &target,
+        const cadm::vec3 &worldUp,
+        const std::string &name = "Cad Camera"
     )
     const;
 

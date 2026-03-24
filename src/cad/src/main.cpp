@@ -5,6 +5,7 @@
 #include "geometryFactory.h"
 #include "gl.h"
 #include "OpenGLWidget.h"
+#include "camera/cadCameraStrategy.hpp"
 #include "camera/projectionCameraStrategy.hpp"
 #include "gui/EntityPropertiesWidget.h"
 #include "gui/SceneHierarchyWidget.h"
@@ -38,14 +39,19 @@ int main(int argc, char *argv[])
     geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
 
     const CameraFactory cameraFactory(glWidget->getScene());
-    const auto camera = cameraFactory.createArcBallCamera(5, {}, cadm::vec3::unitY());
-
+    const auto cameraOnSphere = cameraFactory.createCameraOnSphere(0, {});
     const auto projCameraStrategy = std::make_shared<projectionCameraStrategy>(
-        camera,
+        cameraOnSphere,
+        [&] { return glWidget->width(); },
+        [&] { return glWidget->height(); });
+    const auto cadCamera = cameraFactory.createCadCamera({0, 0, -10}, {}, cadm::vec3::unitY());
+    const auto cadCameraStrat = std::make_shared<CadCameraStrategy>(
+        cadCamera,
         [&] { return glWidget->width(); },
         [&] { return glWidget->height(); });
 
-    glWidget->setCameraStrategy(projCameraStrategy.get());
+    // glWidget->setCameraStrategy(projCameraStrategy.get());
+    glWidget->setCameraStrategy(cadCameraStrat.get());
 
 
     hierarchyWidget->setScene(&glWidget->getScene());
