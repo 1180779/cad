@@ -19,10 +19,10 @@ entity* GeometryFactory::createTorus(
     const auto transform = entity->addComponent<TransformComponent>();
     transform->setTranslation(position);
     const auto torus = entity->addComponent<TorusGeometry>();
-    torus->m_majorRadius = majorRadius;
-    torus->m_minorRadius = minorRadius;
-    torus->m_majorSegments = majorSegments;
-    torus->m_minorSegments = minorSegments;
+    torus->setMajorRadius(majorRadius);
+    torus->setMinorRadius(minorRadius);
+    torus->setMajorSegments(majorSegments);
+    torus->setMinorSegments(minorSegments);
     return entity;
 }
 

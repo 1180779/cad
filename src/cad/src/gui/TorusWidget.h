@@ -41,10 +41,10 @@ private:
 
     TorusGeometry *m_torus;
 
-    QDoubleSpinBox *m_majorRadius;
-    QDoubleSpinBox *m_minorRadius;
-    QSpinBox *m_majorSegments;
-    QSpinBox *m_minorSegments;
+    QDoubleSpinBox *m_majorRadius{};
+    QDoubleSpinBox *m_minorRadius{};
+    QSpinBox *m_majorSegments{};
+    QSpinBox *m_minorSegments{};
 };
 
 #endif // TORUSWIDGET_H
