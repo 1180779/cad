@@ -56,7 +56,7 @@ bool CadCameraStrategy::handleMouseMoveEvent(
     QMouseEvent *event,
     QPoint mouseDelta)
 {
-    if (!m_leftMouseDown)
+    if (!m_leftMouseDown && !m_rightMouseDown)
         return false;
 
     const auto camera = m_cameraEntity->getComponent<cadCameraComponent>();
@@ -67,38 +67,54 @@ bool CadCameraStrategy::handleMouseMoveEvent(
     }
 
     const auto pCamera = camera.value();
-
-    const auto yawAngle = -static_cast<cadm::cadf>(mouseDelta.x()) * pCamera->getRotationSpeed();
-    const auto pitchAngle = static_cast<cadm::cadf>(mouseDelta.y()) * pCamera->getRotationSpeed();
-
-    const auto position = pCamera->getPosition();
-    const auto target = pCamera->getTarget();
-    const auto right = pCamera->right();
-
-    const auto yawRot = cadm::mat4::rotAxis(yawAngle, cadm::vec3::unitY()).upperLeft3x3();
-    const auto pitchRot = cadm::mat4::rotAxis(pitchAngle, right).upperLeft3x3();
-
-    const auto relPosition = position - target;
-    auto newRelPos = yawRot * (pitchRot * relPosition);
-
-    const auto newForwardDir = (-newRelPos).normalized();
-    if (constexpr cadm::cadf flipThreshold = 0.99;
-        std::abs(newForwardDir.dot(cadm::vec3::unitY())) > flipThreshold)
+    if (m_leftMouseDown)
     {
-        newRelPos = yawRot * relPosition;
+        const auto yawAngle = -static_cast<cadm::cadf>(mouseDelta.x()) * pCamera->getRotationSpeed();
+        const auto pitchAngle = static_cast<cadm::cadf>(mouseDelta.y()) * pCamera->getRotationSpeed();
+
+        const auto position = pCamera->getPosition();
+        const auto target = pCamera->getTarget();
+        const auto right = pCamera->right();
+
+        const auto yawRot = cadm::mat4::rotAxis(yawAngle, cadm::vec3::unitY()).upperLeft3x3();
+        const auto pitchRot = cadm::mat4::rotAxis(pitchAngle, right).upperLeft3x3();
+
+        const auto relPosition = position - target;
+        auto newRelPos = yawRot * (pitchRot * relPosition);
+
+        const auto newForwardDir = (-newRelPos).normalized();
+        if (constexpr cadm::cadf flipThreshold = 0.99;
+            std::abs(newForwardDir.dot(cadm::vec3::unitY())) > flipThreshold)
+        {
+            newRelPos = yawRot * relPosition;
+        }
+
+        const auto radius = relPosition.length();
+        newRelPos = newRelPos.normalized() * radius;
+
+        const auto newPosition = target + newRelPos;
+
+        pCamera->setPosition(newPosition);
+
+        if (const auto transform = m_cameraEntity->getComponent<TransformComponent>();
+            transform.has_value())
+        {
+            transform.value()->setTranslation(newPosition);
+        }
     }
 
-    const auto radius = relPosition.length();
-    newRelPos = newRelPos.normalized() * radius;
-
-    const auto newPosition = target + newRelPos;
-
-    pCamera->setPosition(newPosition);
-
-    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>();
-        transform.has_value())
+    if (m_rightMouseDown)
     {
-        transform.value()->setTranslation(newPosition);
+        const cadm::cadf changeX = -pCamera->getAspectRatio() * pCamera->getOrthoHeight() * static_cast<cadm::cadf>(
+            mouseDelta.x()) / static_cast<cadm::cadf>(m_widthGetter());
+        const cadm::cadf changeY = pCamera->getOrthoHeight() * static_cast<cadm::cadf>(mouseDelta.y()) / static_cast<
+            cadm::cadf>(m_heightGetter());
+        const auto translationChange = pCamera->right() * changeX
+            + pCamera->up() * changeY;
+        const auto newPosition = pCamera->getPosition() + translationChange;
+        const auto newTarget = pCamera->getTarget() + translationChange;
+        pCamera->setPosition(newPosition);
+        pCamera->setTarget(newTarget);
     }
 
     return true;
@@ -108,6 +124,8 @@ bool CadCameraStrategy::handleMousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
         m_leftMouseDown = true;
+    else if (event->button() == Qt::RightButton)
+        m_rightMouseDown = true;
     return false;
 }
 
@@ -115,6 +133,8 @@ bool CadCameraStrategy::handleMouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
         m_leftMouseDown = false;
+    else if (event->button() == Qt::RightButton)
+        m_rightMouseDown = false;
     return false;
 }
 

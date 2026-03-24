@@ -27,6 +27,7 @@ private:
     std::function<int()> m_widthGetter;
     std::function<int()> m_heightGetter;
     bool m_leftMouseDown{false};
+    bool m_rightMouseDown{false};
 };
 
 #endif //CAD_CADCAMERASTRATEGY_HPP
