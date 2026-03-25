@@ -145,7 +145,7 @@ std::vector<Vertex> TorusGeometry::generateVertices() const
                 majorRadiusPosition.y + std::sin(majorAngle) * std::cos(minorAngle) * m_minorRadius,
                 std::sin(minorAngle) * m_minorRadius,
             };
-            vertices.push_back({pos, {}, {1, 1, 1, 1}});
+            vertices.push_back({pos, {}, {0, 0, 0, 1}});
         }
     }
     return vertices;

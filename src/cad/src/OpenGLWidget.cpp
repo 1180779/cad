@@ -52,7 +52,7 @@ void OpenGLWidget::resizeGL(const int width, const int height)
 void OpenGLWidget::initializeGL()
 {
     const auto gl = GL();
-    gl->glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
+    gl->glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     gl->glEnable(GL_DEPTH_TEST);
     gl->glEnable(GL_BLEND);
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

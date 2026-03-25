@@ -11,7 +11,7 @@
 class MaterialComponent final : public Component
 {
 public:
-    cadm::vec3 color{1.0f, 1.0f, 1.0f};
+    cadm::vec3 color{0.0f, 0.0f, 0.0f};
     float opacity = 1.0f;
     bool wireframe = false;
     float lineWidth = 1.0f;

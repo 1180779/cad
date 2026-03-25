@@ -1,6 +1,6 @@
 #version 450 core
 
-#define GRID_COLOR_MINOR vec3(0.28)
+#define GRID_COLOR_MINOR vec3(0.72)
 #define GRID_COLOR_MAJOR vec3(0.50)
 
 #define GRID_ALPHA_MINOR 0.35
