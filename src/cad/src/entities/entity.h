@@ -83,13 +83,14 @@ template <typename T>
 std::optional<T*> entity::getComponent()
 {
     static_assert(std::is_base_of_v<Component, T>, "T must derive from Component");
+
+    if (const auto it = m_components.find(std::type_index(typeid(T))); it != m_components.end())
+        return static_cast<T*>(it->second.get());
+
     for (const auto &val : m_components | std::views::values)
-    {
-        if (T *component_ptr = dynamic_cast<T*>(val.get()))
-        {
-            return component_ptr;
-        }
-    }
+        if (T *ptr = dynamic_cast<T*>(val.get()))
+            return ptr;
+
     return std::nullopt;
 }
 
@@ -97,13 +98,13 @@ template <typename T>
 bool entity::hasComponent() const
 {
     static_assert(std::is_base_of_v<Component, T>, "T must derive from Component");
+
+    if (m_components.contains(std::type_index(typeid(T))))
+        return true;
+
     return std::ranges::any_of(
-        m_components.begin(),
-        m_components,
-        [&](const auto &component)
-        {
-            return dynamic_cast<T*>(component.get());
-        });
+        m_components | std::views::values,
+        [](const auto &val) { return dynamic_cast<T*>(val.get()) != nullptr; });
 }
 
 template <typename T>
