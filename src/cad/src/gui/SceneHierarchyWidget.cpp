@@ -7,9 +7,10 @@ SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
 {
     const auto layout = new QVBoxLayout(this);
     m_listWidget = new QListWidget(this);
+    m_listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
     layout->addWidget(m_listWidget);
 
-    connect(m_listWidget, &QListWidget::currentItemChanged, this, &SceneHierarchyWidget::onCurrentItemChanged);
+    connect(m_listWidget, &QListWidget::itemSelectionChanged, this, &SceneHierarchyWidget::onItemSelectionChanged);
 }
 
 void SceneHierarchyWidget::setScene(Scene *scene)
@@ -19,16 +20,12 @@ void SceneHierarchyWidget::setScene(Scene *scene)
     populateList();
 }
 
-void SceneHierarchyWidget::onCurrentItemChanged(QListWidgetItem *current, QListWidgetItem *previous)
+void SceneHierarchyWidget::onItemSelectionChanged()
 {
-    if (!current)
-    {
-        emit entitySelected(nullptr);
-        return;
-    }
-
-    const auto selectedEntity = current->data(Qt::UserRole).value<entity*>();
-    emit entitySelected(selectedEntity);
+    QList<entity*> selected;
+    for (const auto item : m_listWidget->selectedItems())
+        selected.append(item->data(Qt::UserRole).value<entity*>());
+    emit selectionChanged(selected);
 }
 
 void SceneHierarchyWidget::populateList() const

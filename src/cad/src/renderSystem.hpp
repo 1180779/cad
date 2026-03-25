@@ -21,17 +21,21 @@ public:
     void shutdown();
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
-    void setGridPlanes(int planes) { m_gridPlanes = planes; }
-    int  getGridPlanes() const     { return m_gridPlanes; }
+    void setGridPlanes(const int planes) { m_gridPlanes = planes; }
+    [[nodiscard]] int getGridPlanes() const { return m_gridPlanes; }
 
 private:
-    int m_gridPlanes{1}; // XY plane on by default
+    int m_gridPlanes{1};
 
     std::unique_ptr<shaderProgram> m_basicShader = std::make_unique<shaderProgram>();
     std::unique_ptr<shaderProgram> m_wireframeShader = std::make_unique<shaderProgram>();
     std::unique_ptr<shaderProgram> m_axesShader = std::make_unique<shaderProgram>();
     std::unique_ptr<shaderProgram> m_gridShader = std::make_unique<shaderProgram>();
     std::unique_ptr<quad> m_screenQuad;
+
+public:
+    static constexpr cadm::cadf s_selectionHS{0.5f}; // highlight strength
+    static constexpr cadm::cadf s_noSelectionHS{0.5f};
 };
 
 #endif //CAD_RENDERSYSTEM_H

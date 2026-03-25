@@ -10,7 +10,6 @@ add_executable(cad src/main.cpp
         src/entities/entity.hpp
         src/components/geometry.hpp
         src/components/transform.hpp
-        src/components/material.hpp
         src/renderSystem.hpp
         src/scene.hpp
         src/geometryFactory.hpp

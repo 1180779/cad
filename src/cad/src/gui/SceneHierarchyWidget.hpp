@@ -1,6 +1,7 @@
 #ifndef SCENEHIERARCHYWIDGET_H
 #define SCENEHIERARCHYWIDGET_H
 
+#include <QList>
 #include <QListWidgetItem>
 #include "../entities/entity.hpp"
 #include "../scene.hpp"
@@ -13,14 +14,12 @@ public:
     explicit SceneHierarchyWidget(QWidget *parent = nullptr);
     void setScene(Scene *scene);
 
-    signals :
-    
-    void entitySelected(entity *entity);
+signals :
+    void selectionChanged(QList<entity*> entities);
 
 private
-    slots :
-    
-    void onCurrentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
+slots :
+    void onItemSelectionChanged();
 
 private:
     void populateList() const;

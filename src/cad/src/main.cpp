@@ -75,9 +75,28 @@ int main(int argc, char *argv[])
 
     QObject::connect(
         hierarchyWidget,
-        &SceneHierarchyWidget::entitySelected,
+        &SceneHierarchyWidget::selectionChanged,
         entityPropertiesWidget,
-        &EntityPropertiesWidget::setEntity);
+        [entityPropertiesWidget](const QList<entity*> &selected)
+        {
+            entityPropertiesWidget->setEntity(
+                selected.size() == 1
+                    ? selected.first()
+                    : nullptr);
+        });
+
+    QObject::connect(
+        hierarchyWidget,
+        &SceneHierarchyWidget::selectionChanged,
+        glWidget,
+        [glWidget](const QList<entity*> &selected)
+        {
+            for (auto &e : glWidget->getScene().getEntities())
+                e->setSelected(false);
+            for (auto *e : selected)
+                e->setSelected(true);
+            glWidget->update();
+        });
 
     QObject::connect(
         entityPropertiesWidget,

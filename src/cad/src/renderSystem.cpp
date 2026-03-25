@@ -71,7 +71,7 @@ void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm
 
     regenerateGeometry(scene);
 
-    // Pass 1: line geometry
+    // pass 1: line geometry
     for (const auto &e : scene.getEntities())
     {
         const auto geometry = e->getComponent<GeometryComponent>();
@@ -80,13 +80,16 @@ void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm
         const auto *pGeo = geometry.value();
         if (pGeo->m_lineIndices.empty()) continue;
 
+        SHADER_SET_UNIFORM_CHECK(
+            m_wireframeShader->setUniform1("u_highlightStrength", e->isSelected() ? s_selectionHS :
+                s_noSelectionHS));
         SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
         gl->glBindVertexArray(pGeo->m_VAO);
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pGeo->m_EBO_Lines);
         gl->glDrawElements(GL_LINES, static_cast<GLsizei>(pGeo->m_lineIndices.size()), GL_UNSIGNED_INT, nullptr);
     }
 
-    // Pass 2: triangle geometry
+    // pass 2: triangle geometry
     gl->glDepthMask(GL_FALSE);
     for (const auto &e : scene.getEntities())
     {
@@ -96,6 +99,9 @@ void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm
         const auto *pGeo = geometry.value();
         if (pGeo->m_triangleIndices.empty()) continue;
 
+        SHADER_SET_UNIFORM_CHECK(
+            m_wireframeShader->setUniform1("u_highlightStrength", e->isSelected() ? s_selectionHS :
+                s_noSelectionHS));
         SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
         gl->glBindVertexArray(pGeo->m_VAO);
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pGeo->m_EBO_Triangles);
