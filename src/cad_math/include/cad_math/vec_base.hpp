@@ -8,7 +8,7 @@
 #include <cassert>
 #include <cmath>
 
-#include "common.h"
+#include "common.hpp"
 
 namespace cadm
 {

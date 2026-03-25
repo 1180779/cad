@@ -5,7 +5,7 @@
 #ifndef CAD_SHADERPROGRAM_H
 #define CAD_SHADERPROGRAM_H
 
-#include "GL.h"
+#include "GL.hpp"
 #include <map>
 #include <string>
 

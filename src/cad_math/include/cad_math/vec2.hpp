@@ -7,8 +7,8 @@
 
 #include <array>
 
-#include <cad_math/vec_base.h>
-#include <cad_math/common.h>
+#include <cad_math/vec_base.hpp>
+#include <cad_math/common.hpp>
 
 namespace cadm
 {

@@ -5,7 +5,7 @@
 #include <fstream>
 #include <QDebug>
 
-#include "shaderProgram.h"
+#include "shaderProgram.hpp"
 
 bool shaderProgram::attachShader(const GLenum type, const std::string &source)
 {

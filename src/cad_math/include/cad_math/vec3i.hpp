@@ -7,7 +7,7 @@
 
 #include <array>
 
-#include "vec_base.h"
+#include "vec_base.hpp"
 
 namespace cadm
 {

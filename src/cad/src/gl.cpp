@@ -6,7 +6,7 @@
 #include <QOpenGLVersionFunctionsFactory>
 #include <QDebug>
 
-#include "gl.h"
+#include "gl.hpp"
 
 void GLSetDefaults()
 {

@@ -6,7 +6,7 @@
 #define CAD_CADCAMERAWIDGET_HPP
 #include <QFormLayout>
 
-#include "ComponentWidget.h"
+#include "ComponentWidget.hpp"
 #include "../components/cadCameraCompoonent.hpp"
 
 

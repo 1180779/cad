@@ -5,15 +5,13 @@
 #ifndef CAD_GEOMETRY_H
 #define CAD_GEOMETRY_H
 
-#include "../entities/entity.h"
-#include "../gl.h"
-#include <cad_math/vec3.h>
+#include "../entities/entity.hpp"
+#include <cad_math/vec3.hpp>
 #include <vector>
 #include <QObject>
-#include <limits>
 #include <string>
 
-#include "cad_math/vec4.h"
+#include "cad_math/vec4.hpp"
 
 struct Vertex
 {
@@ -27,11 +25,9 @@ class GeometryComponent : public Component
 public:
     virtual void regenerateMesh() = 0;
 
-    virtual void syncToGpu()
-    {
-    }
+    virtual void syncToGpu();
 
-    ~GeometryComponent() override = default;
+    ~GeometryComponent() override;
 
     std::vector<Vertex> m_vertices;
     std::vector<std::uint32_t> m_triangleIndices;
@@ -57,7 +53,6 @@ class TorusGeometry final : public QObject, public GeometryComponent
 
 public:
     TorusGeometry();
-    ~TorusGeometry() override;
 
     [[nodiscard]] cadm::cadf getMajorRadius() const { return m_majorRadius; }
     [[nodiscard]] cadm::cadf getMinorRadius() const { return m_minorRadius; }
@@ -70,7 +65,6 @@ public:
     void setMinorSegments(uint32_t m_minorSegments);
 
     void regenerateMesh() override;
-    void syncToGpu() override;
     [[nodiscard]] std::vector<Vertex> generateVertices() const;
     [[nodiscard]] std::vector<std::uint32_t> generateIndicesForWireframe() const;
 
@@ -92,26 +86,6 @@ class AxesGeometry final : public GeometryComponent
 public:
     cadm::cadf m_length = 5.0f;
     cadm::vec4 m_color{0, 0, 0, 1};
-
-    void regenerateMesh() override;
-};
-
-class GridGeometry final : public GeometryComponent
-{
-public:
-    cadm::cadf m_size{10};
-    int m_divisions{50};
-
-    void regenerateMesh() override;
-};
-
-class PlaneGeometry final : public GeometryComponent
-{
-public:
-    cadm::cadf m_size{10.0f};
-    cadm::vec4 m_fillColor{0.5f, 0.5f, 0.5f, 0.2f};
-    cadm::vec4 m_edgeColor{0.2f, 0.2f, 0.2f, 1.0f};
-    std::string m_label;
 
     void regenerateMesh() override;
 };

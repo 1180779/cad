@@ -5,10 +5,10 @@
 #ifndef CAD_MAT4_H
 #define CAD_MAT4_H
 
-#include "mat_base.h"
-#include "vec4.h"
+#include "mat_base.hpp"
+#include "vec4.hpp"
 
-#include "mat3.h"
+#include "mat3.hpp"
 
 namespace cadm
 {

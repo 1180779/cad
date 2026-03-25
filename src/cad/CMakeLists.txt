@@ -1,19 +1,19 @@
 add_executable(cad src/main.cpp
         src/OpenGLWidget.cpp
-        src/OpenGLWidget.h
+        src/OpenGLWidget.hpp
         src/quad.cpp
-        src/quad.h
+        src/quad.hpp
         src/gl.cpp
-        src/gl.h
+        src/gl.hpp
         src/shaderProgram.cpp
-        src/shaderProgram.h
-        src/entities/entity.h
-        src/components/geometry.h
-        src/components/transform.h
-        src/components/material.h
-        src/renderSystem.h
-        src/scene.h
-        src/geometryFactory.h
+        src/shaderProgram.hpp
+        src/entities/entity.hpp
+        src/components/geometry.hpp
+        src/components/transform.hpp
+        src/components/material.hpp
+        src/renderSystem.hpp
+        src/scene.hpp
+        src/geometryFactory.hpp
         src/scene.cpp
         src/scene.cpp
         src/renderSystem.cpp
@@ -21,15 +21,15 @@ add_executable(cad src/main.cpp
         src/geometryFactory.cpp
         src/components/geometry.cpp
         src/components/transform.cpp
-        src/gui/ComponentWidget.h
+        src/gui/ComponentWidget.hpp
         src/gui/ComponentWidget.cpp
-        src/gui/TransformWidget.h
+        src/gui/TransformWidget.hpp
         src/gui/TransformWidget.cpp
-        src/gui/TorusWidget.h
+        src/gui/TorusWidget.hpp
         src/gui/TorusWidget.cpp
-        src/gui/EntityPropertiesWidget.h
+        src/gui/EntityPropertiesWidget.hpp
         src/gui/EntityPropertiesWidget.cpp
-        src/gui/SceneHierarchyWidget.h
+        src/gui/SceneHierarchyWidget.hpp
         src/gui/SceneHierarchyWidget.cpp
         src/components/camera.hpp
         src/components/camera.cpp
@@ -47,6 +47,8 @@ add_executable(cad src/main.cpp
         src/components/cadCameraComponent.cpp
         src/gui/cadCameraWidget.cpp
         src/gui/cadCameraWidget.hpp
+        src/gui/GridSettingsWidget.hpp
+        src/gui/GridSettingsWidget.cpp
 )
 
 target_link_libraries(cad

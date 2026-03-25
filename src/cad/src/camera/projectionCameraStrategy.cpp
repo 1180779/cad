@@ -6,7 +6,7 @@
 
 #include "../checkMacros.hpp"
 #include "../components/camera.hpp"
-#include "../components/transform.h"
+#include "../components/transform.hpp"
 
 projectionCameraStrategy::projectionCameraStrategy(
     entity *cameraEntity,

@@ -6,8 +6,8 @@
 #define CAD_CADCAMERACOMPOONENT_HPP
 
 #include "ICamera.hpp"
-#include "cad_math/common.h"
-#include "cad_math/vec3.h"
+#include "cad_math/common.hpp"
+#include "cad_math/vec3.hpp"
 #include <QObject>
 
 class cadCameraComponent final : public QObject, public CameraComponent

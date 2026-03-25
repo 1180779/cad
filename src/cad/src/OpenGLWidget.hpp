@@ -7,9 +7,9 @@
 
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
-#include <cad_math/common.h>
-#include "renderSystem.h"
-#include "scene.h"
+#include <cad_math/common.hpp>
+#include "renderSystem.hpp"
+#include "scene.hpp"
 #include "camera/ICameraStrategy.hpp"
 
 class OpenGLWidget : public QOpenGLWidget
@@ -32,6 +32,12 @@ public:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
     Scene& getScene() { return m_scene; }
+
+    void setGridPlanes(int planes)
+    {
+        m_renderSystem.setGridPlanes(planes);
+        update();
+    }
 
     signals :
     

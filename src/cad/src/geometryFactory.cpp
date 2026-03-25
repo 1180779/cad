@@ -2,10 +2,10 @@
 // Created on 3/15/26.
 //
 
-#include "geometryFactory.h"
+#include "geometryFactory.hpp"
 
-#include "components/geometry.h"
-#include "components/transform.h"
+#include "components/geometry.hpp"
+#include "components/transform.hpp"
 
 entity* GeometryFactory::createTorus(
     const float majorRadius,
@@ -26,20 +26,11 @@ entity* GeometryFactory::createTorus(
     return entity;
 }
 
-entity* GeometryFactory::createAxis(float length, const cadm::vec3 &position, const std::string &name) const
+entity* GeometryFactory::createAxis(const float length, const cadm::vec3 &position, const std::string &name) const
 {
-    const auto entity = m_scene.createEntity();
-    // TODO: implement
-    return entity;
-}
-
-entity* GeometryFactory::createGrid(
-    float size,
-    int divisions,
-    const cadm::vec3 &position,
-    const std::string &name) const
-{
-    const auto entity = m_scene.createEntity();
-    // TODO: implement
-    return entity;
+    const auto e = m_scene.createEntity(name);
+    e->addComponent<TransformComponent>()->setTranslation(position);
+    auto *axes = e->addComponent<AxesGeometry>();
+    axes->m_length = length;
+    return e;
 }

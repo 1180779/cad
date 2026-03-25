@@ -6,7 +6,7 @@
 
 #include "components/cadCameraCompoonent.hpp"
 #include "components/camera.hpp"
-#include "gui/TransformWidget.h"
+#include "gui/TransformWidget.hpp"
 
 entity* CameraFactory::createCameraOnSphere(
     const cadm::cadf radius,

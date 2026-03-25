@@ -2,8 +2,8 @@
 #define SCENEHIERARCHYWIDGET_H
 
 #include <QListWidgetItem>
-#include "../entities/entity.h"
-#include "../scene.h"
+#include "../entities/entity.hpp"
+#include "../scene.hpp"
 
 class SceneHierarchyWidget : public QWidget
 {

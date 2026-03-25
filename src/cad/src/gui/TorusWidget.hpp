@@ -4,8 +4,8 @@
 #include <QFormLayout>
 #include <QSpinBox>
 
-#include "ComponentWidget.h"
-#include "../components/geometry.h"
+#include "ComponentWidget.hpp"
+#include "../components/geometry.hpp"
 
 class TorusWidget : public ComponentWidget
 {

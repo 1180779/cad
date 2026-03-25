@@ -5,14 +5,14 @@
 #ifndef CAD_SHADERPROGRAM_H
 #define CAD_SHADERPROGRAM_H
 
-#include "gl.h"
+#include "gl.hpp"
 #include <map>
 #include <string>
 
-#include "cad_math/mat4.h"
-#include "cad_math/vec2.h"
-#include "cad_math/vec3.h"
-#include "cad_math/vec4.h"
+#include "cad_math/mat4.hpp"
+#include "cad_math/vec2.hpp"
+#include "cad_math/vec3.hpp"
+#include "cad_math/vec4.hpp"
 
 class shaderProgram
 {

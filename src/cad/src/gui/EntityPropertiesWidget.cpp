@@ -1,9 +1,9 @@
-#include "EntityPropertiesWidget.h"
-#include "TransformWidget.h"
-#include "TorusWidget.h"
+#include "EntityPropertiesWidget.hpp"
+#include "TransformWidget.hpp"
+#include "TorusWidget.hpp"
 #include "projectionCameraWidget.hpp"
-#include "../components/transform.h"
-#include "../components/geometry.h"
+#include "../components/transform.hpp"
+#include "../components/geometry.hpp"
 #include "../components/camera.hpp"
 #include <QVBoxLayout>
 

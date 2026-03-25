@@ -9,7 +9,7 @@
 #include <cmath>
 #include <optional>
 
-#include "common.h"
+#include "common.hpp"
 
 namespace cadm
 {

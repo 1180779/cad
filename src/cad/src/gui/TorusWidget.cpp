@@ -1,4 +1,4 @@
-#include "TorusWidget.h"
+#include "TorusWidget.hpp"
 #include <QLabel>
 
 TorusWidget::TorusWidget(TorusGeometry *torus, QWidget *parent)

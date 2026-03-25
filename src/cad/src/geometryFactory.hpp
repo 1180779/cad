@@ -5,8 +5,8 @@
 #ifndef CAD_GEOMETRYFACTORY_H
 #define CAD_GEOMETRYFACTORY_H
 
-#include "scene.h"
-#include <cad_math/vec3.h>
+#include "scene.hpp"
+#include <cad_math/vec3.hpp>
 
 class GeometryFactory final
 {
@@ -28,12 +28,6 @@ public:
         float length = 5.0f,
         const cadm::vec3 &position = {0, 0, 0},
         const std::string &name = "Axes") const;
-
-    entity* createGrid(
-        float size = 10.0f,
-        int divisions = 10,
-        const cadm::vec3 &position = {0, 0, 0},
-        const std::string &name = "Grid") const;
 
 private:
     Scene &m_scene;

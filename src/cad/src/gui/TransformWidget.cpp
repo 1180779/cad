@@ -1,4 +1,4 @@
-#include "TransformWidget.h"
+#include "TransformWidget.hpp"
 #include <QFormLayout>
 #include <QDoubleSpinBox>
 #include <QLabel>

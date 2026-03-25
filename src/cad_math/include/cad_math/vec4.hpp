@@ -7,8 +7,8 @@
 
 #include <array>
 
-#include "vec_base.h"
-#include "vec3.h"
+#include "vec_base.hpp"
+#include "vec3.hpp"
 
 namespace cadm
 {

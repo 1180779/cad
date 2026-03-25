@@ -5,8 +5,8 @@
 #ifndef CAD_ICAMERA_HPP
 #define CAD_ICAMERA_HPP
 
-#include "../entities/entity.h"
-#include <cad_math/common.h>
+#include "../entities/entity.hpp"
+#include <cad_math/common.hpp>
 
 class CameraComponent : public Component
 {

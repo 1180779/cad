@@ -5,11 +5,11 @@
 #ifndef CAD_HELPERS_H
 #define CAD_HELPERS_H
 
-#include "mat4.h"
-#include "ray4.h"
-#include "vec2.h"
-#include "vec2i.h"
-#include "vec4.h"
+#include "mat4.hpp"
+#include "ray4.hpp"
+#include "vec2.hpp"
+#include "vec2i.hpp"
+#include "vec4.hpp"
 
 namespace cadm
 {

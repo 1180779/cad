@@ -2,7 +2,7 @@
 // Created by rdkgsk on 3/2/26.
 //
 
-#include "quad.h"
+#include "quad.hpp"
 #include <array>
 
 quad::quad()

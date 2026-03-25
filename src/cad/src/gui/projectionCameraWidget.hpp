@@ -8,7 +8,7 @@
 #include <QFormLayout>
 #include <QDoubleSpinBox>
 
-#include "ComponentWidget.h"
+#include "ComponentWidget.hpp"
 #include "../components/camera.hpp"
 
 class CameraWidget : public ComponentWidget

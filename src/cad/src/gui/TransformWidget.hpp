@@ -4,8 +4,8 @@
 #include <QFormLayout>
 #include <QDoubleSpinBox>
 
-#include "ComponentWidget.h"
-#include "../components/transform.h"
+#include "ComponentWidget.hpp"
+#include "../components/transform.hpp"
 
 class TransformWidget : public ComponentWidget
 {

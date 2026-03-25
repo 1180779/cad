@@ -4,9 +4,9 @@
 
 #ifndef CAD_CAMERAFACTORY_HPP
 #define CAD_CAMERAFACTORY_HPP
-#include "scene.h"
-#include "cad_math/vec3.h"
-#include "entities/entity.h"
+#include "scene.hpp"
+#include "cad_math/vec3.hpp"
+#include "entities/entity.hpp"
 
 
 class CameraFactory final

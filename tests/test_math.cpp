@@ -4,9 +4,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <cad_math/vec3.h>
-#include <cad_math/vec4.h>
-#include <cad_math/mat4.h>
+#include <cad_math/vec3.hpp>
+#include <cad_math/vec4.hpp>
+#include <cad_math/mat4.hpp>
 
 namespace
 {

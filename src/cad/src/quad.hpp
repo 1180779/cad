@@ -5,7 +5,7 @@
 #ifndef CAD_QUAD_H
 #define CAD_QUAD_H
 
-#include "gl.h"
+#include "gl.hpp"
 
 class quad
 {

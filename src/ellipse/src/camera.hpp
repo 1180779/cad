@@ -8,8 +8,8 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include <cad_math/vec3.h>
-#include <cad_math/mat4.h>
+#include <cad_math/vec3.hpp>
+#include <cad_math/mat4.hpp>
 
 
 class camera

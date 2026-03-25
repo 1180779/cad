@@ -2,7 +2,7 @@
 // Created on 3/15/26.
 //
 
-#include "scene.h"
+#include "scene.hpp"
 
 #include <ranges>
 #include <algorithm>

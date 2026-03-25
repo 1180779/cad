@@ -2,7 +2,7 @@
 // Created by rdkgsk on 6/1/26.
 //
 
-#include "camera.h"
+#include "camera.hpp"
 
 camera::camera(const cadm::vec3 &position, const cadm::vec3 &target, const cadm::vec3 &up)
     : m_position(position), m_target(target), m_up(up)

@@ -5,8 +5,8 @@
 #ifndef CAD_MATERIAL_H
 #define CAD_MATERIAL_H
 
-#include "../entities/entity.h"
-#include <cad_math/vec3.h>
+#include "../entities/entity.hpp"
+#include <cad_math/vec3.hpp>
 
 class MaterialComponent final : public Component
 {

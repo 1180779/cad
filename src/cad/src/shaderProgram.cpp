@@ -6,7 +6,7 @@
 #include <QDebug>
 #include <ranges>
 
-#include "shaderProgram.h"
+#include "shaderProgram.hpp"
 
 shaderProgram::shaderProgram()
     : m_program(0)

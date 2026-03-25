@@ -1,14 +1,16 @@
 #include <QApplication>
+#include <QTabWidget>
 #include <QVBoxLayout>
 
 #include "cameraFactory.hpp"
-#include "geometryFactory.h"
-#include "gl.h"
-#include "OpenGLWidget.h"
+#include "geometryFactory.hpp"
+#include "gl.hpp"
+#include "OpenGLWidget.hpp"
 #include "camera/cadCameraStrategy.hpp"
 #include "camera/projectionCameraStrategy.hpp"
-#include "gui/EntityPropertiesWidget.h"
-#include "gui/SceneHierarchyWidget.h"
+#include "gui/EntityPropertiesWidget.hpp"
+#include "gui/GridSettingsWidget.hpp"
+#include "gui/SceneHierarchyWidget.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -19,23 +21,38 @@ int main(int argc, char *argv[])
     window.setMinimumSize(QSize(500, 500));
 
     const auto layout = new QHBoxLayout(&window);
-    const auto rightControlsLayout = new QVBoxLayout;
-    rightControlsLayout->setAlignment(Qt::AlignTop);
     const auto leftControlsLayout = new QVBoxLayout;
     layout->addLayout(leftControlsLayout, 1);
-    layout->addLayout(rightControlsLayout, 0);
 
     const auto glWidget = new OpenGLWidget;
     glWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     leftControlsLayout->addWidget(glWidget);
 
-    const auto hierarchyWidget = new SceneHierarchyWidget;
-    rightControlsLayout->addWidget(hierarchyWidget);
+    // right panel: tabbed widget
+    const auto tabWidget = new QTabWidget;
+    tabWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    layout->addWidget(tabWidget, 0);
 
+    // scene tab
+    const auto sceneTab = new QWidget;
+    const auto sceneTabLayout = new QVBoxLayout(sceneTab);
+    sceneTabLayout->setAlignment(Qt::AlignTop);
+    const auto hierarchyWidget = new SceneHierarchyWidget;
     const auto entityPropertiesWidget = new EntityPropertiesWidget;
-    rightControlsLayout->addWidget(entityPropertiesWidget);
+    sceneTabLayout->addWidget(hierarchyWidget);
+    sceneTabLayout->addWidget(entityPropertiesWidget);
+    tabWidget->addTab(sceneTab, "Scene");
+
+    // viewport tab
+    const auto viewportTab = new QWidget;
+    const auto viewportTabLayout = new QVBoxLayout(viewportTab);
+    viewportTabLayout->setAlignment(Qt::AlignTop);
+    const auto gridSettingsWidget = new GridSettingsWidget;
+    viewportTabLayout->addWidget(gridSettingsWidget);
+    tabWidget->addTab(viewportTab, "Viewport");
 
     const GeometryFactory geometryFactory(glWidget->getScene());
+    void(geometryFactory.createAxis(5.0f, {}, "Axes"));
     geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
 
     const CameraFactory cameraFactory(glWidget->getScene());
@@ -67,6 +84,12 @@ int main(int argc, char *argv[])
         &EntityPropertiesWidget::propertyChanged,
         glWidget,
         [glWidget] { glWidget->update(); });
+
+    QObject::connect(
+        gridSettingsWidget,
+        &GridSettingsWidget::gridPlanesChanged,
+        glWidget,
+        &OpenGLWidget::setGridPlanes);
 
     window.installEventFilter(glWidget);
     window.show();

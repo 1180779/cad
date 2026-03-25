@@ -9,8 +9,8 @@
 #include <QLabel>
 #include <QPushButton>
 
-#include "OpenGLWidget.h"
-#include <common/DoubleSlider.h>
+#include "OpenGLWidget.hpp"
+#include <common/DoubleSlider.hpp>
 
 void addFloatParameter(
     QVBoxLayout *parentLayout,

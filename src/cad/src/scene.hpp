@@ -5,7 +5,7 @@
 #ifndef CAD_SCENE_H
 #define CAD_SCENE_H
 
-#include "entities/entity.h"
+#include "entities/entity.hpp"
 #include <vector>
 #include <memory>
 #include <optional>

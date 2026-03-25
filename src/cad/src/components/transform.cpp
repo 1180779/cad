@@ -2,11 +2,9 @@
 // Created on 3/15/26.
 //
 
-#include "transform.h"
+#include "transform.hpp"
 
-TransformComponent::TransformComponent()
-{
-}
+TransformComponent::TransformComponent() = default;
 
 TransformComponent::TransformComponent(const cadm::vec3 &translation)
     : m_translation(translation)

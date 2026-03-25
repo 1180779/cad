@@ -1,4 +1,4 @@
-#include "SceneHierarchyWidget.h"
+#include "SceneHierarchyWidget.hpp"
 #include <QVBoxLayout>
 #include <QListWidget>
 

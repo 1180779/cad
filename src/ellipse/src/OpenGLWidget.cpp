@@ -2,7 +2,7 @@
 // Created by rdkgsk on 3/1/26.
 //
 
-#include "OpenGLWidget.h"
+#include "OpenGLWidget.hpp"
 
 #include <QWheelEvent>
 
@@ -22,8 +22,8 @@
 #undef QT_EMIT_DEFINED
 #endif
 
-#include "cad_math/helpers.h"
-#include "cad_math/mat4.h"
+#include "cad_math/helpers.hpp"
+#include "cad_math/mat4.hpp"
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)

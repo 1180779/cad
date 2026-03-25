@@ -5,9 +5,9 @@
 #ifndef CAD_TRANSFORM_H
 #define CAD_TRANSFORM_H
 
-#include "../entities/entity.h"
-#include <cad_math/vec3.h>
-#include <cad_math/mat4.h>
+#include "../entities/entity.hpp"
+#include <cad_math/vec3.hpp>
+#include <cad_math/mat4.hpp>
 
 class TransformComponent final : public Component
 {

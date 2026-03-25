@@ -7,7 +7,7 @@
 
 #include <QtDebug>
 
-#include "gl.h"
+#include "gl.hpp"
 
 inline const char* GLErrorToString(const GLenum error)
 {

@@ -5,8 +5,8 @@
 #ifndef CAD_RAY4_H
 #define CAD_RAY4_H
 
-#include "vec4.h"
-#include "mat4.h"
+#include "vec4.hpp"
+#include "mat4.hpp"
 
 namespace cadm
 {

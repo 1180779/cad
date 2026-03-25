@@ -7,7 +7,7 @@
 #include "../checkMacros.hpp"
 #include "../components/cadCameraCompoonent.hpp"
 #include "../components/camera.hpp"
-#include "../components/transform.h"
+#include "../components/transform.hpp"
 
 CadCameraStrategy::CadCameraStrategy(
     entity *cameraEntity,
@@ -79,7 +79,8 @@ bool CadCameraStrategy::handleMouseMoveEvent(
         const auto yawRot = cadm::mat4::rotAxis(yawAngle, cadm::vec3::unitY()).upperLeft3x3();
         const auto pitchRot = cadm::mat4::rotAxis(pitchAngle, right).upperLeft3x3();
 
-        const auto relPosition = position - target;
+        const auto pivot = target;
+        const auto relPosition = position - pivot;
         auto newRelPos = yawRot * (pitchRot * relPosition);
 
         const auto newForwardDir = (-newRelPos).normalized();
