@@ -49,9 +49,16 @@ void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm
         SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
 
         gl->glBindVertexArray(geometry.value()->m_VAO);
+        gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometry.value()->m_EBO_Lines);
         gl->glDrawElements(
-            geometry.value()->m_drawMode,
-            static_cast<GLsizei>(geometry.value()->m_indices.size()),
+            GL_LINES,
+            static_cast<GLsizei>(geometry.value()->m_lineIndices.size()),
+            GL_UNSIGNED_INT,
+            nullptr);
+        gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometry.value()->m_EBO_Triangles);
+        gl->glDrawElements(
+            GL_TRIANGLES,
+            static_cast<GLsizei>(geometry.value()->m_triangleIndices.size()),
             GL_UNSIGNED_INT,
             nullptr);
     }

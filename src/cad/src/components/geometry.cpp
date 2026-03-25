@@ -9,7 +9,6 @@
 
 TorusGeometry::TorusGeometry()
 {
-    m_drawMode = GL_LINES;
     regenerateMesh();
 }
 
@@ -55,25 +54,32 @@ void TorusGeometry::syncToGpu()
 
     if (m_VAO == 0)
     {
-        GLuint buffers[2];
-        gl->glGenBuffers(2, buffers);
+        GLuint buffers[3];
+        gl->glGenBuffers(3, buffers);
         m_VBO = buffers[0];
-        m_EBO = buffers[1];
+        m_EBO_Lines = buffers[1];
+        m_EBO_Triangles = buffers[2];
         gl->glGenVertexArrays(1, &m_VAO);
     }
 
     gl->glBindVertexArray(m_VAO);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
     gl->glBufferData(
         GL_ARRAY_BUFFER,
         static_cast<GLsizeiptr>(m_vertices.size() * sizeof(Vertex)),
         m_vertices.data(),
         GL_STATIC_DRAW);
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO_Lines);
     gl->glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
-        static_cast<GLsizeiptr>(m_indices.size() * sizeof(uint32_t)),
-        m_indices.data(),
+        static_cast<GLsizeiptr>(m_lineIndices.size() * sizeof(uint32_t)),
+        m_lineIndices.data(),
+        GL_STATIC_DRAW);
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO_Triangles);
+    gl->glBufferData(
+        GL_ELEMENT_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(m_triangleIndices.size() * sizeof(uint32_t)),
+        m_triangleIndices.data(),
         GL_STATIC_DRAW);
 
     static_assert(std::is_same_v<cadm::vec3::VT, float> || std::is_same_v<cadm::vec3::VT, double>);
@@ -82,7 +88,9 @@ void TorusGeometry::syncToGpu()
                                 : GL_DOUBLE;
     constexpr GLsizei singleSizeof = sizeof(cadm::vec3::VT);
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, type, GL_FALSE, 3 * singleSizeof, nullptr);
+    gl->glVertexAttribPointer(0, 3, type, GL_FALSE, 10 * singleSizeof, nullptr);
+    gl->glVertexAttribPointer(1, 3, type, GL_FALSE, 10 * singleSizeof, reinterpret_cast<void *>(3 * singleSizeof));
+    gl->glVertexAttribPointer(2, 3, type, GL_FALSE, 10 * singleSizeof, reinterpret_cast<void *>(6 * singleSizeof));
 
     GET_GL_ERRORS();
     gl->glBindVertexArray(0);
@@ -95,8 +103,8 @@ TorusGeometry::~TorusGeometry()
     if (m_VAO != 0)
     {
         const auto gl = GL();
-        const GLuint buffers[2] = {m_VBO, m_EBO};
-        gl->glDeleteBuffers(2, buffers);
+        const GLuint buffers[3] = {m_VBO, m_EBO_Lines, m_EBO_Triangles};
+        gl->glDeleteBuffers(3, buffers);
         gl->glDeleteVertexArrays(1, &m_VAO);
     }
 }
@@ -105,7 +113,7 @@ void TorusGeometry::regenerateMesh()
 {
     auto vertices = generateVertices();
     auto indices = generateIndicesForWireframe();
-    m_indices.swap(indices);
+    m_lineIndices.swap(indices);
     m_vertices.swap(vertices);
     m_needsUpdate = true;
 }
@@ -160,4 +168,24 @@ std::vector<std::uint32_t> TorusGeometry::generateIndicesForWireframe() const
         }
     }
     return indices;
+}
+
+void GridGeometry::regenerateMesh()
+{
+    std::vector<Vertex> vertices;
+    std::vector<std::uint32_t> indices;
+
+    const auto halfSize = m_size / 2;
+    const auto step = m_size / static_cast<cadm::cadf>(m_divisions);
+
+    std::uint32_t index = 0;
+
+    for (std::uint32_t i = 0; i <= m_divisions; ++i)
+    {
+        const auto pos = -halfSize + static_cast<cadm::cadf>(i) * step;
+        vertices.push_back({{pos, -halfSize, 0}});
+        vertices.push_back({{pos, halfSize, 0}});
+        indices.push_back(index++);
+
+    }
 }

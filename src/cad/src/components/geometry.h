@@ -10,10 +10,16 @@
 #include <cad_math/vec3.h>
 #include <vector>
 #include <QObject>
+#include <limits>
+#include <string>
+
+#include "cad_math/vec4.h"
 
 struct Vertex
 {
     cadm::vec3 position;
+    cadm::vec3 normal;
+    cadm::vec4 color;
 };
 
 class GeometryComponent : public Component
@@ -28,13 +34,15 @@ public:
     ~GeometryComponent() override = default;
 
     std::vector<Vertex> m_vertices;
-    std::vector<std::uint32_t> m_indices;
+    std::vector<std::uint32_t> m_triangleIndices;
+    std::vector<std::uint32_t> m_lineIndices;
 
     uint32_t m_VAO = 0;
     uint32_t m_VBO = 0;
-    uint32_t m_EBO = 0;
-    GLenum m_drawMode = GL_TRIANGLES;
+    uint32_t m_EBO_Triangles = 0;
+    uint32_t m_EBO_Lines = 0;
 
+    bool m_selected = false;
     bool m_needsUpdate = true;
 };
 
@@ -83,6 +91,7 @@ class AxesGeometry final : public GeometryComponent
 {
 public:
     cadm::cadf m_length = 5.0f;
+    cadm::vec4 m_color{0, 0, 0, 1};
 
     void regenerateMesh() override;
 };
@@ -90,6 +99,20 @@ public:
 class GridGeometry final : public GeometryComponent
 {
 public:
+    cadm::cadf m_size{10};
+    int m_divisions{50};
+
+    void regenerateMesh() override;
+};
+
+class PlaneGeometry final : public GeometryComponent
+{
+public:
+    cadm::cadf m_size{10.0f};
+    cadm::vec4 m_fillColor{0.5f, 0.5f, 0.5f, 0.2f};
+    cadm::vec4 m_edgeColor{0.2f, 0.2f, 0.2f, 1.0f};
+    std::string m_label;
+
     void regenerateMesh() override;
 };
 
