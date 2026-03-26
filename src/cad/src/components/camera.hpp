@@ -17,7 +17,7 @@ class ProjectionCameraComponent final : public QObject, public CameraComponent
 {
     Q_OBJECT
 
-        Q_PROPERTY(double radius READ getRadius WRITE setRadius NOTIFY radiusChanged)
+    Q_PROPERTY(double radius READ getRadius WRITE setRadius NOTIFY radiusChanged)
     Q_PROPERTY(double azimuthAngle READ getAzimuthAngle WRITE setAzimuthAngle NOTIFY azimuthAngleChanged)
     Q_PROPERTY(double polarAngle READ getPolarAngle WRITE setPolarAngle NOTIFY polarAngleChanged)
 
@@ -29,6 +29,8 @@ class ProjectionCameraComponent final : public QObject, public CameraComponent
     Q_PROPERTY(double targetX READ getTargetX WRITE setTargetX NOTIFY targetXChanged)
     Q_PROPERTY(double targetY READ getTargetY WRITE setTargetY NOTIFY targetYChanged)
     Q_PROPERTY(double targetZ READ getTargetZ WRITE setTargetZ NOTIFY targetZChanged)
+
+    Q_PROPERTY(double zoomFactor READ getZoomFactor WRITE setZoomFactor NOTIFY zoomFactorChanged)
 
 public:
     static constexpr cadm::cadf s_minDistance = 0.01;
@@ -45,6 +47,9 @@ public:
 
     static constexpr cadm::cadf s_fovMin = 40.0 * std::numbers::pi / 180.0;
     static constexpr cadm::cadf s_fovMax = 140.0 * std::numbers::pi / 180.0;
+
+    static constexpr cadm::cadf s_zoomFactorMin = 0.01;
+    static constexpr cadm::cadf s_zoomFactorMax = 100.0;
 
     explicit ProjectionCameraComponent(QObject *parent = nullptr)
         : QObject(parent)
@@ -69,6 +74,8 @@ public:
     [[nodiscard]] cadm::vec3 getTarget() const { return m_target; }
     [[nodiscard]] cadm::vec3 getWorldUp() const { return m_worldUp; }
 
+    [[nodiscard]] cadm::cadf getZoomFactor() const { return m_zoomFactor; }
+
     void setTarget(const cadm::vec3 &value);
     void setTargetX(cadm::cadf value);
     void setTargetY(cadm::cadf value);
@@ -81,6 +88,8 @@ public:
     void setNearPlane(cadm::cadf value);
     void setFarPlane(cadm::cadf value);
 
+    void setZoomFactor(cadm::cadf factor);
+
 private:
     cadm::cadf m_radius{5.0};
     cadm::cadf m_azimuthAngle{};
@@ -92,8 +101,9 @@ private:
     cadm::cadf m_farPlane{100.0f};
     cadm::cadf m_fov{std::numbers::pi / 4.0};
 
-    signals :
-    
+    cadm::cadf m_zoomFactor = 1.1;
+
+signals :
     void radiusChanged(double radius);
     void azimuthAngleChanged(double angle);
     void polarAngleChanged(double angle);
@@ -106,6 +116,8 @@ private:
     void targetXChanged(double x);
     void targetYChanged(double y);
     void targetZChanged(double z);
+
+    void zoomFactorChanged(double height);
 
     void propertyUpdated();
 

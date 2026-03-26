@@ -151,3 +151,12 @@ void ProjectionCameraComponent::setFarPlane(const cadm::cadf value)
     }
 }
 
+void ProjectionCameraComponent::setZoomFactor(cadm::cadf factor)
+{
+    if (const auto clampedValue = std::clamp(factor, s_zoomFactorMin, s_zoomFactorMax);
+        std::abs(m_zoomFactor - clampedValue) >= cadm::eps)
+    {
+        m_zoomFactor = clampedValue;
+        emit zoomFactorChanged(clampedValue);
+    }
+}

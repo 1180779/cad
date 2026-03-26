@@ -49,7 +49,7 @@ cadm::mat4 projectionCameraStrategy::getProjection()
 
 bool projectionCameraStrategy::handleMouseMoveEvent(QMouseEvent *event, const QPoint mouseDelta)
 {
-    if (!m_mousePressed)
+    if (!m_leftMouseDown && !m_rightMouseDown)
         return false;
 
     const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
@@ -61,12 +61,24 @@ bool projectionCameraStrategy::handleMouseMoveEvent(QMouseEvent *event, const QP
 
     const auto pCamera = camera.value();
 
+    if (m_leftMouseDown)
+    {
+        const auto newAzimuth = pCamera->getAzimuthAngle() - static_cast<cadm::cadf>(mouseDelta.x()) * s_sensitivity;
+        const auto newPolar = pCamera->getPolarAngle() - static_cast<cadm::cadf>(mouseDelta.y()) * s_sensitivity;
 
-    const auto newAzimuth = pCamera->getAzimuthAngle() - static_cast<cadm::cadf>(mouseDelta.x()) * s_sensitivity;
-    const auto newPolar = pCamera->getPolarAngle() - static_cast<cadm::cadf>(mouseDelta.y()) * s_sensitivity;
+        pCamera->setAzimuthAngle(newAzimuth);
+        pCamera->setPolarAngle(newPolar);
+    }
 
-    pCamera->setAzimuthAngle(newAzimuth);
-    pCamera->setPolarAngle(newPolar);
+    if (m_rightMouseDown)
+    {
+        const cadm::cadf scale = 2.0 * pCamera->getRadius()
+            * std::tan(pCamera->getFov() / 2.0)
+            / static_cast<cadm::cadf>(m_heightGetter());
+        const auto translationChange = pCamera->right() * (-scale * static_cast<cadm::cadf>(mouseDelta.x()))
+            + pCamera->up() * (scale * static_cast<cadm::cadf>(mouseDelta.y()));
+        pCamera->setTarget(pCamera->getTarget() + translationChange);
+    }
 
     return true;
 }
@@ -75,7 +87,11 @@ bool projectionCameraStrategy::handleMousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::MouseButton::LeftButton)
     {
-        m_mousePressed = true;
+        m_leftMouseDown = true;
+    }
+    else if (event->button() == Qt::MouseButton::RightButton)
+    {
+        m_rightMouseDown = true;
     }
     return false;
 }
@@ -84,7 +100,11 @@ bool projectionCameraStrategy::handleMouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::MouseButton::LeftButton)
     {
-        m_mousePressed = false;
+        m_leftMouseDown = false;
+    }
+    else if (event->button() == Qt::MouseButton::RightButton)
+    {
+        m_rightMouseDown = false;
     }
     return false;
 }
@@ -183,19 +203,14 @@ bool projectionCameraStrategy::handleWheelEvent(QWheelEvent *event)
     auto newRadius = pCamera->getRadius();
     if (delta > 0)
     {
-        newRadius /= m_zoomFactor;
+        newRadius /= pCamera->getZoomFactor();
     }
     else
     {
-        newRadius *= m_zoomFactor;
+        newRadius *= pCamera->getZoomFactor();
     }
 
     pCamera->setRadius(newRadius);
 
     return true;
-}
-
-void projectionCameraStrategy::setZoomFactor(const cadm::cadf zoomFactor)
-{
-    m_zoomFactor = zoomFactor;
 }

@@ -23,16 +23,13 @@ public:
     bool handleKeyPressEvent(QKeyEvent *event) override;
     bool handleWheelEvent(QWheelEvent *event) override;
 
-    [[nodiscard]] cadm::cadf getZoomFactor() const { return m_zoomFactor; }
-    void setZoomFactor(cadm::cadf zoomFactor);
-
     static constexpr cadm::cadf s_sensitivity = 0.01;
 
 private:
     std::function<int()> m_widthGetter;
     std::function<int()> m_heightGetter;
-    cadm::cadf m_zoomFactor = 1.1;
-    bool m_mousePressed{false};
+    bool m_leftMouseDown{false};
+    bool m_rightMouseDown{false};
 };
 
 
