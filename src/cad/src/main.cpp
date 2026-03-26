@@ -1,5 +1,4 @@
 #include <QApplication>
-#include <QTabWidget>
 #include <QVBoxLayout>
 
 #include "cameraFactory.hpp"
@@ -56,7 +55,7 @@ int main(int argc, char *argv[])
     geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
 
     const CameraFactory cameraFactory(glWidget->getScene());
-    const auto cameraOnSphere = cameraFactory.createCameraOnSphere(0, {});
+    const auto cameraOnSphere = cameraFactory.createCameraOnSphere(20, {});
     const auto projCameraStrategy = std::make_shared<projectionCameraStrategy>(
         cameraOnSphere,
         [&] { return glWidget->width(); },
@@ -67,8 +66,8 @@ int main(int argc, char *argv[])
         [&] { return glWidget->width(); },
         [&] { return glWidget->height(); });
 
-    // glWidget->setCameraStrategy(projCameraStrategy.get());
-    glWidget->setCameraStrategy(cadCameraStrat.get());
+    glWidget->getCameraController().addCamera("CAD", cadCameraStrat);
+    glWidget->getCameraController().addCamera("Projection", projCameraStrategy);
 
 
     hierarchyWidget->setScene(&glWidget->getScene());

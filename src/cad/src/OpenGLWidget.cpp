@@ -36,17 +36,15 @@ void OpenGLWidget::paintGL()
     const auto gl = GL();
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    const auto view = m_cameraStrategy->getView();
-    const auto projection = m_cameraStrategy->getProjection();
+    const auto view = m_cameraController.getActiveStrategy()->getView();
+    const auto projection = m_cameraController.getActiveStrategy()->getProjection();
     m_renderSystem.render(m_scene, view, projection);
 }
 
 void OpenGLWidget::resizeGL(const int width, const int height)
 {
     QOpenGLWidget::resizeGL(width, height);
-    m_cameraStrategy->syncAspectRatio(width, height);
-
-    // qInfo() << "Resized to " << width << "x" << height;
+    m_cameraController.getActiveStrategy()->syncAspectRatio(width, height);
 }
 
 void OpenGLWidget::initializeGL()
@@ -62,7 +60,7 @@ void OpenGLWidget::initializeGL()
 
 void OpenGLWidget::mousePressEvent(QMouseEvent *event)
 {
-    if (m_cameraStrategy->handleMousePressEvent(event))
+    if (m_cameraController.getActiveStrategy()->handleMousePressEvent(event))
     {
         update();
     }
@@ -75,7 +73,7 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
     const auto delta = currentPos - m_lastMousePosition;
     m_lastMousePosition = currentPos;
 
-    if (m_cameraStrategy->handleMouseMoveEvent(event, delta))
+    if (m_cameraController.getActiveStrategy()->handleMouseMoveEvent(event, delta))
     {
         update();
     }
@@ -83,7 +81,7 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
 
 void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (m_cameraStrategy->handleMouseReleaseEvent(event))
+    if (m_cameraController.getActiveStrategy()->handleMouseReleaseEvent(event))
     {
         update();
     }
@@ -91,7 +89,7 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
 
 void OpenGLWidget::wheelEvent(QWheelEvent *event)
 {
-    if (m_cameraStrategy->handleWheelEvent(event))
+    if (m_cameraController.getActiveStrategy()->handleWheelEvent(event))
     {
         update();
     }
@@ -99,7 +97,7 @@ void OpenGLWidget::wheelEvent(QWheelEvent *event)
 
 void OpenGLWidget::keyPressEvent(QKeyEvent *event)
 {
-    if (m_cameraStrategy->handleKeyPressEvent(event))
+    if (m_cameraController.getActiveStrategy()->handleKeyPressEvent(event))
     {
         update();
         return;
@@ -107,6 +105,10 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
 
     switch (event->key())
     {
+    case Qt::Key_N:
+        m_cameraController.switchToNext(width(), height());
+        update();
+        return;
     case Qt::Key_X:
         if (event->isAutoRepeat())
             return;

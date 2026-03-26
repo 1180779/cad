@@ -1,54 +1,9 @@
-add_executable(cad src/main.cpp
-        src/OpenGLWidget.cpp
-        src/OpenGLWidget.hpp
-        src/quad.cpp
-        src/quad.hpp
-        src/gl.cpp
-        src/gl.hpp
-        src/shaderProgram.cpp
-        src/shaderProgram.hpp
-        src/entities/entity.hpp
-        src/components/geometry.hpp
-        src/components/transform.hpp
-        src/renderSystem.hpp
-        src/scene.hpp
-        src/geometryFactory.hpp
-        src/scene.cpp
-        src/scene.cpp
-        src/renderSystem.cpp
-        src/checkMacros.hpp
-        src/geometryFactory.cpp
-        src/components/geometry.cpp
-        src/components/transform.cpp
-        src/gui/ComponentWidget.hpp
-        src/gui/ComponentWidget.cpp
-        src/gui/TransformWidget.hpp
-        src/gui/TransformWidget.cpp
-        src/gui/TorusWidget.hpp
-        src/gui/TorusWidget.cpp
-        src/gui/EntityPropertiesWidget.hpp
-        src/gui/EntityPropertiesWidget.cpp
-        src/gui/SceneHierarchyWidget.hpp
-        src/gui/SceneHierarchyWidget.cpp
-        src/components/camera.hpp
-        src/components/camera.cpp
-        src/cameraFactory.cpp
-        src/cameraFactory.hpp
-        src/camera/ICameraStrategy.hpp
-        src/camera/projectionCameraStrategy.cpp
-        src/camera/projectionCameraStrategy.hpp
-        src/gui/projectionCameraWidget.cpp
-        src/gui/projectionCameraWidget.hpp
-        src/camera/cadCameraStrategy.cpp
-        src/camera/cadCameraStrategy.hpp
-        src/components/ICamera.hpp
-        src/components/cadCameraCompoonent.hpp
-        src/components/cadCameraComponent.cpp
-        src/gui/cadCameraWidget.cpp
-        src/gui/cadCameraWidget.hpp
-        src/gui/GridSettingsWidget.hpp
-        src/gui/GridSettingsWidget.cpp
+file(GLOB_RECURSE CAD_SOURCES
+        src/*.cpp
+        src/*.hpp
 )
+
+add_executable(cad ${CAD_SOURCES})
 
 target_link_libraries(cad
         Qt::Core

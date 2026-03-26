@@ -34,8 +34,8 @@ private:
     std::unique_ptr<quad> m_screenQuad;
 
 public:
-    static constexpr cadm::cadf s_selectionHS{0.5f}; // highlight strength
-    static constexpr cadm::cadf s_noSelectionHS{0.5f};
+    static constexpr cadm::cadf s_selectionHS{0.7f}; // highlight strength
+    static constexpr cadm::cadf s_noSelectionHS{0.0f};
 };
 
 #endif //CAD_RENDERSYSTEM_H

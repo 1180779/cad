@@ -10,7 +10,7 @@
 #include <cad_math/common.hpp>
 #include "renderSystem.hpp"
 #include "scene.hpp"
-#include "camera/ICameraStrategy.hpp"
+#include "camera/CameraController.hpp"
 
 class OpenGLWidget : public QOpenGLWidget
 {
@@ -24,16 +24,13 @@ public:
     void resizeGL(int width, int height) override;
     void initializeGL() override;
 
-    void setCameraStrategy(ICameraStrategy *cameraStrategy)
-    {
-        m_cameraStrategy = cameraStrategy;
-    }
+    CameraController& getCameraController() { return m_cameraController; }
 
     bool eventFilter(QObject *obj, QEvent *event) override;
 
     Scene& getScene() { return m_scene; }
 
-    void setGridPlanes(int planes)
+    void setGridPlanes(const int planes)
     {
         m_renderSystem.setGridPlanes(planes);
         update();
@@ -56,7 +53,7 @@ private:
     cadm::cadf m_translationStep{0.1};
     QPoint m_lastMousePosition;
 
-    ICameraStrategy *m_cameraStrategy{nullptr};
+    CameraController m_cameraController{this};
     bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};
     cadm::cadf m_zoomFactor{1.1};
 
