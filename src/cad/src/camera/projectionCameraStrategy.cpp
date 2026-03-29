@@ -113,8 +113,7 @@ bool projectionCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
 {
     switch (event->key())
     {
-    case Qt::Key_W:
-    case Qt::UpArrow:
+    case s_keyUp:
         {
             const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
             if (!camera)
@@ -130,8 +129,7 @@ bool projectionCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
             }
             return true;
         }
-    case Qt::Key_S:
-    case Qt::DownArrow:
+    case s_keyDown:
         {
             const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
             if (!camera)
@@ -147,8 +145,7 @@ bool projectionCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
             }
             return true;
         }
-    case Qt::Key_A:
-    case Qt::LeftArrow:
+    case s_keyLeft:
         {
             const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
             if (!camera)
@@ -164,8 +161,7 @@ bool projectionCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
             }
             return true;
         }
-    case Qt::Key_D:
-    case Qt::RightArrow:
+    case s_keyRight:
         {
             const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
             if (!camera)

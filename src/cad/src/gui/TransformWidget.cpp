@@ -12,6 +12,63 @@ TransformWidget::TransformWidget(TransformComponent *transform, QWidget *parent)
     setUpTranslationControls(layout);
     setUpScaleControls(layout);
     setUpRotationControls(layout);
+
+    connect(m_transform, &TransformComponent::translationXChanged, this, [this](const double v)
+    {
+        m_translationX->blockSignals(true);
+        m_translationX->setValue(v);
+        m_translationX->blockSignals(false);
+    });
+    connect(m_transform, &TransformComponent::translationYChanged, this, [this](const double v)
+    {
+        m_translationY->blockSignals(true);
+        m_translationY->setValue(v);
+        m_translationY->blockSignals(false);
+    });
+    connect(m_transform, &TransformComponent::translationZChanged, this, [this](const double v)
+    {
+        m_translationZ->blockSignals(true);
+        m_translationZ->setValue(v);
+        m_translationZ->blockSignals(false);
+    });
+
+    connect(m_transform, &TransformComponent::scaleXChanged, this, [this](const double v)
+    {
+        m_scaleX->blockSignals(true);
+        m_scaleX->setValue(v);
+        m_scaleX->blockSignals(false);
+    });
+    connect(m_transform, &TransformComponent::scaleYChanged, this, [this](const double v)
+    {
+        m_scaleY->blockSignals(true);
+        m_scaleY->setValue(v);
+        m_scaleY->blockSignals(false);
+    });
+    connect(m_transform, &TransformComponent::scaleZChanged, this, [this](const double v)
+    {
+        m_scaleZ->blockSignals(true);
+        m_scaleZ->setValue(v);
+        m_scaleZ->blockSignals(false);
+    });
+
+    connect(m_transform, &TransformComponent::rotationXChanged, this, [this](const double v)
+    {
+        m_rotationX->blockSignals(true);
+        m_rotationX->setValue(v * 180.0 / std::numbers::pi);
+        m_rotationX->blockSignals(false);
+    });
+    connect(m_transform, &TransformComponent::rotationYChanged, this, [this](const double v)
+    {
+        m_rotationY->blockSignals(true);
+        m_rotationY->setValue(v * 180.0 / std::numbers::pi);
+        m_rotationY->blockSignals(false);
+    });
+    connect(m_transform, &TransformComponent::rotationZChanged, this, [this](const double v)
+    {
+        m_rotationZ->blockSignals(true);
+        m_rotationZ->setValue(v * 180.0 / std::numbers::pi);
+        m_rotationZ->blockSignals(false);
+    });
 }
 
 void TransformWidget::onTranslationXChanged(const double value) const
