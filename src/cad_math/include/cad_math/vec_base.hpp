@@ -171,22 +171,34 @@ namespace cadm
 
         // ===== common methods =====
 
+        // Normalizes in-place. Precondition: length must not be zero or near-zero.
         void normalize() noexcept
         {
             const auto lengthSq = lengthSquared();
-            if (std::abs(lengthSquared() - 1.0) < eps)
+            assert(lengthSq > eps * eps && "normalize() called on a zero or near-zero vector");
+            if (std::abs(lengthSq - static_cast<T>(1)) < eps)
                 return;
 
-            const auto length = std::sqrt(lengthSq);
-            for (int i = 0; i < N; ++i)
-                (*this)[i] /= length;
+            *this /= std::sqrt(lengthSq);
         }
 
-        constexpr Derived normalized() const noexcept
+        // Returns a normalized copy.
+        //
+        // Precondition: length must not be zero or near-zero.
+        [[nodiscard]] Derived normalized() const noexcept
         {
             Derived res = static_cast<const Derived&>(*this);
             res.normalize();
             return res;
+        }
+
+        // Returns a normalized copy, or `fallback` if the vector length is <= eps.
+        [[nodiscard]] Derived safeNormalized(const Derived& fallback) const noexcept
+        {
+            const auto lengthSq = lengthSquared();
+            if (lengthSq < eps * eps)
+                return fallback;
+            return static_cast<const Derived&>(*this) / std::sqrt(lengthSq);
         }
 
         constexpr T length() const noexcept

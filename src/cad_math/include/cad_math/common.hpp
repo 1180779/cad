@@ -9,9 +9,9 @@ namespace cadm
 {
     using cadf = float;
 
+    // General-purpose epsilon for float comparisons and geometric checks.
+    constexpr cadf eps = 1e-6f;
 
-    // used with comparisons
-    constexpr cadf eps = 1e-9;
 }
 
 #endif //CAD_COMMON_H

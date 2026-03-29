@@ -43,7 +43,7 @@ namespace cadm
             return r;
         }
 
-        friend constexpr ray4 operator*(ray4 r, const mat4 &m)
+        friend constexpr ray4 operator*(const ray4 &r, const mat4 &m)
         {
             return m * r;
         }

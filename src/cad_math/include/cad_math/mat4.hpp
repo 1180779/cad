@@ -195,8 +195,12 @@ namespace cadm
             };
         }
 
-        static mat rotAxis(const cadf phi, vec3 u)
+        // Rodrigues rotation matrix around axis `u` by angle `phi` (radians).
+        //
+        // Precondition: `u` must be a unit vector.
+        static mat rotAxis(const cadf phi, const vec3 &u)
         {
+            assert(std::abs(u.lengthSquared() - cadf{1}) < eps && "rotAxis: axis must be a unit vector");
             const auto sin = std::sin(phi);
             const auto cos = std::cos(phi);
             const auto oneMinusCos = 1 - cos;
@@ -215,7 +219,7 @@ namespace cadm
                 },
                 vec4{
                     u.x * u.z * oneMinusCos + u.y * sin,
-                    u.y * u.z * oneMinusCos + u.x * sin,
+                    u.y * u.z * oneMinusCos - u.x * sin,
                     u.z * u.z * oneMinusCos + cos,
                     0
                 },

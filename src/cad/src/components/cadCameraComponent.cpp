@@ -11,12 +11,12 @@ cadm::vec3 cadCameraComponent::forward() const
 
 cadm::vec3 cadCameraComponent::right() const
 {
-    return forward().cross(m_worldUp).normalized();
+    return forward().cross(m_up).safeNormalized(cadm::vec3::unitX());
 }
 
 cadm::vec3 cadCameraComponent::up() const
 {
-    return right().cross(forward()).normalized();
+    return m_up;
 }
 
 void cadCameraComponent::setPosition(const cadm::vec3 &position)
@@ -141,6 +141,48 @@ void cadCameraComponent::setWorldUpZ(const cadm::cadf z)
     {
         m_worldUp.z = z;
         emit worldUpZChanged(z);
+        emit propertyUpdated();
+    }
+}
+
+void cadCameraComponent::setUp(const cadm::vec3 &up)
+{
+    if (m_up != up)
+    {
+        m_up = up;
+        emit upXChanged(up.x);
+        emit upYChanged(up.y);
+        emit upZChanged(up.z);
+        emit propertyUpdated();
+    }
+}
+
+void cadCameraComponent::setUpX(const cadm::cadf x)
+{
+    if (std::abs(m_up.x - x) >= cadm::eps)
+    {
+        m_up.x = x;
+        emit upXChanged(x);
+        emit propertyUpdated();
+    }
+}
+
+void cadCameraComponent::setUpY(const cadm::cadf y)
+{
+    if (std::abs(m_up.y - y) >= cadm::eps)
+    {
+        m_up.y = y;
+        emit upYChanged(y);
+        emit propertyUpdated();
+    }
+}
+
+void cadCameraComponent::setUpZ(const cadm::cadf z)
+{
+    if (std::abs(m_up.z - z) >= cadm::eps)
+    {
+        m_up.z = z;
+        emit upZChanged(z);
         emit propertyUpdated();
     }
 }

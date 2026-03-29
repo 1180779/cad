@@ -72,30 +72,31 @@ bool CadCameraStrategy::handleMouseMoveEvent(
         const auto yawAngle = -static_cast<cadm::cadf>(mouseDelta.x()) * pCamera->getRotationSpeed();
         const auto pitchAngle = static_cast<cadm::cadf>(mouseDelta.y()) * pCamera->getRotationSpeed();
 
-        const auto position = pCamera->getPosition();
-        const auto target = pCamera->getTarget();
-        const auto right = pCamera->right();
+        const auto yawRot = cadm::mat4::rotAxis(yawAngle, pCamera->getWorldUp()).upperLeft3x3();
+        const auto pitchRot = cadm::mat4::rotAxis(pitchAngle, pCamera->right()).upperLeft3x3();
+        const auto combinedRot = yawRot * pitchRot;
 
-        const auto yawRot = cadm::mat4::rotAxis(yawAngle, cadm::vec3::unitY()).upperLeft3x3();
-        const auto pitchRot = cadm::mat4::rotAxis(pitchAngle, right).upperLeft3x3();
+        // TODO: choose pivot based on ray from camera
+        constexpr auto pivot = cadm::vec3{};
+        const auto relTarget = pCamera->getTarget() - pivot;
+        const auto relPosition = pCamera->getPosition() - pivot;
+        auto newRelPos = combinedRot * relPosition;
+        auto newRelTarget = combinedRot * relTarget;
 
-        const auto pivot = target;
-        const auto relPosition = position - pivot;
-        auto newRelPos = yawRot * (pitchRot * relPosition);
+        newRelPos = newRelPos.safeNormalized(cadm::vec3::unitZ()) * relPosition.length();
+        newRelTarget = newRelTarget.safeNormalized(cadm::vec3{}) * relTarget.length();
 
-        const auto newForwardDir = (-newRelPos).normalized();
-        if (constexpr cadm::cadf flipThreshold = 0.99;
-            std::abs(newForwardDir.dot(cadm::vec3::unitY())) > flipThreshold)
-        {
-            newRelPos = yawRot * relPosition;
-        }
+        const auto newPosition = pivot + newRelPos;
+        const auto newTarget = pivot + newRelTarget;
 
-        const auto radius = relPosition.length();
-        newRelPos = newRelPos.normalized() * radius;
-
-        const auto newPosition = target + newRelPos;
+        const auto rotatedUp = combinedRot * pCamera->up();
+        const auto newForward = (newTarget - newPosition).safeNormalized(cadm::vec3::unitZ());
+        const auto newUp = (rotatedUp - newForward * rotatedUp.dot(newForward))
+            .safeNormalized(pCamera->getWorldUp());
 
         pCamera->setPosition(newPosition);
+        pCamera->setTarget(newTarget);
+        pCamera->setUp(newUp);
 
         if (const auto transform = m_cameraEntity->getComponent<TransformComponent>();
             transform.has_value())
@@ -143,8 +144,7 @@ bool CadCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
 {
     switch (event->key())
     {
-    case Qt::Key_W:
-    case Qt::UpArrow:
+    case s_keyDown:
         {
             const auto camera = m_cameraEntity->getComponent<cadCameraComponent>();
             if (!camera)
@@ -162,8 +162,7 @@ bool CadCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
             }
             return true;
         }
-    case Qt::Key_S:
-    case Qt::DownArrow:
+    case s_keyUp:
         {
             const auto camera = m_cameraEntity->getComponent<cadCameraComponent>();
             if (!camera)
@@ -181,8 +180,7 @@ bool CadCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
             }
             return true;
         }
-    case Qt::Key_A:
-    case Qt::LeftArrow:
+    case s_keyLeft:
         {
             const auto camera = m_cameraEntity->getComponent<cadCameraComponent>();
             if (!camera)
@@ -200,8 +198,7 @@ bool CadCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
             }
             return true;
         }
-    case Qt::Key_D:
-    case Qt::RightArrow:
+    case s_keyRight:
         {
             const auto camera = m_cameraEntity->getComponent<cadCameraComponent>();
             if (!camera)
@@ -259,8 +256,8 @@ bool CadCameraStrategy::handleWheelEvent(QWheelEvent *event)
     const auto newHeight = pCamera->getOrthoHeight();
     const auto newWidth = newHeight * pCamera->getAspectRatio();
 
-    const auto deltaX = (oldWidth - newWidth) / 2.0 * nx;
-    const auto deltaY = (oldHeight - newHeight) / 2.0 * ny;
+    const auto deltaX = static_cast<cadm::cadf>((oldWidth - newWidth) / 2.0 * nx);
+    const auto deltaY = static_cast<cadm::cadf>((oldHeight - newHeight) / 2.0 * ny);
 
     const auto right = pCamera->right();
     const auto up = pCamera->up();

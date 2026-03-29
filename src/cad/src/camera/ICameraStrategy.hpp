@@ -21,6 +21,11 @@ public:
     {
     }
 
+    constexpr static Qt::Key s_keyRight = Qt::Key_Right;
+    constexpr static Qt::Key s_keyLeft = Qt::Key_Left;
+    constexpr static Qt::Key s_keyUp = Qt::Key_Up;
+    constexpr static Qt::Key s_keyDown = Qt::Key_Down;
+
     virtual cadm::mat4 getView() = 0;
     virtual cadm::mat4 getProjection() = 0;
     void syncAspectRatio(int width, int height) const;

@@ -26,6 +26,10 @@ class cadCameraComponent final : public QObject, public CameraComponent
     Q_PROPERTY(double worldUpY READ getWorldUpY WRITE setWorldUpY NOTIFY worldUpYChanged)
     Q_PROPERTY(double worldUpZ READ getWorldUpZ WRITE setWorldUpZ NOTIFY worldUpZChanged)
 
+    Q_PROPERTY(double upX READ getUpX WRITE setUpX NOTIFY upXChanged)
+    Q_PROPERTY(double upY READ getUpY WRITE setUpY NOTIFY upYChanged)
+    Q_PROPERTY(double upZ READ getUpZ WRITE setUpZ NOTIFY upZChanged)
+
     Q_PROPERTY(double nearPlane READ getNearPlane WRITE setNearPlane NOTIFY nearPlaneChanged)
     Q_PROPERTY(double farPlane READ getFarPlane WRITE setFarPlane NOTIFY farPlaneChanged)
 
@@ -69,6 +73,11 @@ public:
     [[nodiscard]] cadm::cadf getWorldUpY() const { return m_worldUp.y; }
     [[nodiscard]] cadm::cadf getWorldUpZ() const { return m_worldUp.z; }
 
+    [[nodiscard]] cadm::vec3 getUp() const { return m_up; }
+    [[nodiscard]] cadm::cadf getUpX() const { return m_up.x; }
+    [[nodiscard]] cadm::cadf getUpY() const { return m_up.y; }
+    [[nodiscard]] cadm::cadf getUpZ() const { return m_up.z; }
+
     [[nodiscard]] cadm::cadf getNearPlane() const { return m_nearPlane; }
     [[nodiscard]] cadm::cadf getFarPlane() const { return m_farPlane; }
     [[nodiscard]] cadm::cadf getOrthoHeight() const { return m_orthoHeight; }
@@ -91,6 +100,11 @@ public:
     void setWorldUpY(cadm::cadf y);
     void setWorldUpZ(cadm::cadf z);
 
+    void setUp(const cadm::vec3 &up);
+    void setUpX(cadm::cadf x);
+    void setUpY(cadm::cadf y);
+    void setUpZ(cadm::cadf z);
+
     void setNearPlane(cadm::cadf nearPlane);
     void setFarPlane(cadm::cadf farPlane);
     void setOrthoHeight(cadm::cadf height);
@@ -102,6 +116,7 @@ private:
     cadm::vec3 m_position{};
     cadm::vec3 m_target{};
     cadm::vec3 m_worldUp = cadm::vec3::unitY();
+    cadm::vec3 m_up = cadm::vec3::unitY();
 
     cadm::cadf m_nearPlane{0.1};
     cadm::cadf m_farPlane{100.0};
@@ -126,6 +141,10 @@ signals:
     void worldUpXChanged(double x);
     void worldUpYChanged(double y);
     void worldUpZChanged(double z);
+
+    void upXChanged(double x);
+    void upYChanged(double y);
+    void upZChanged(double z);
 
     void nearPlaneChanged(double nearPlane);
     void farPlaneChanged(double farPlane);
