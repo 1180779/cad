@@ -29,7 +29,8 @@ int main(int argc, char *argv[])
 
     // right panel: tabbed widget
     const auto tabWidget = new QTabWidget;
-    tabWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    tabWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    tabWidget->setFixedWidth(450);
     layout->addWidget(tabWidget, 0);
 
     // scene tab
