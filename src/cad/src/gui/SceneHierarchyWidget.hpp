@@ -14,15 +14,20 @@ public:
     explicit SceneHierarchyWidget(QWidget *parent = nullptr);
     void setScene(Scene *scene);
 
-signals :
+signals:
     void selectionChanged(QList<entity*> entities);
 
-private
-slots :
+public slots:
+    void refresh();
+
+private slots:
     void onItemSelectionChanged();
+    void onItemChanged(const QListWidgetItem *item) const;
 
 private:
-    void populateList() const;
+    void populateList();
+
+    bool m_refreshing{false};
 
     Scene *m_scene = nullptr;
     QListWidget *m_listWidget;
