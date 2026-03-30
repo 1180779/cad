@@ -2,6 +2,7 @@
 #include <QVBoxLayout>
 
 #include "cameraFactory.hpp"
+#include "components/transform.hpp"
 #include "geometryFactory.hpp"
 #include "gl.hpp"
 #include "OpenGLWidget.hpp"
@@ -75,6 +76,7 @@ int main(int argc, char *argv[])
 
 
     hierarchyWidget->setScene(&glWidget->getScene());
+    hierarchyWidget->setCameraController(&glWidget->getCameraController());
 
     QObject::connect(
         glWidget,
@@ -122,6 +124,72 @@ int main(int argc, char *argv[])
         &GridSettingsWidget::gridPlanesChanged,
         glWidget,
         &OpenGLWidget::setGridPlanes);
+
+    QObject::connect(
+        hierarchyWidget,
+        &SceneHierarchyWidget::deleteEntityRequested,
+        glWidget,
+        [glWidget, hierarchyWidget](const entity *e)
+        {
+            glWidget->getScene().removeEntity(e->getId());
+            hierarchyWidget->refresh();
+            glWidget->update();
+        });
+
+    QObject::connect(
+        hierarchyWidget,
+        &SceneHierarchyWidget::setAsCursorRequested,
+        glWidget,
+        [glWidget](entity *e)
+        {
+            glWidget->getScene().setActiveCursor(e);
+        });
+
+    QObject::connect(
+        hierarchyWidget,
+        &SceneHierarchyWidget::setAsCameraRequested,
+        glWidget,
+        [glWidget](const EntityID id)
+        {
+            glWidget->getCameraController().switchTo(id, glWidget->width(), glWidget->height());
+        });
+
+    auto spawnPos = [glWidget]() -> cadm::vec3
+    {
+        if (auto *activeCursor = glWidget->getScene().getActiveCursor())
+            if (const auto t = activeCursor->getComponent<TransformComponent>())
+                return t.value()->getTranslation();
+        return {};
+    };
+
+    auto spawnTorus = [glWidget, spawnPos]
+    {
+        const GeometryFactory factory(glWidget->getScene());
+        void(factory.createTorus(2.0f, 0.5f, 48, 24, spawnPos()));
+        emit
+        glWidget->sceneChanged();
+        glWidget->update();
+    };
+
+    auto spawnCursor = [glWidget, spawnPos]
+    {
+        const GeometryFactory factory(glWidget->getScene());
+        void(factory.createCursor(spawnPos()));
+        emit
+        glWidget->sceneChanged();
+        glWidget->update();
+    };
+
+    QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createTorusRequested, glWidget, spawnTorus);
+    QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createCursorRequested, glWidget, spawnCursor);
+    QObject::connect(glWidget, &OpenGLWidget::createTorusRequested, glWidget, spawnTorus);
+    QObject::connect(glWidget, &OpenGLWidget::createCursorRequested, glWidget, spawnCursor);
+
+    QObject::connect(
+        &glWidget->getCameraController(),
+        &CameraController::cameraChanged,
+        glWidget,
+        [glWidget](const std::string &) { glWidget->update(); });
 
     window.installEventFilter(glWidget);
     window.show();

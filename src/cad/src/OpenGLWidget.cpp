@@ -164,7 +164,8 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
     case Qt::Key_C:
         {
             QMenu menu(this);
-            menu.addAction("Torus", [this] { spawnAtCursor(SpawnEntityType::Torus); });
+            menu.addAction("New Torus", [this] { emit createTorusRequested(); });
+            menu.addAction("New Cursor", [this] { emit createCursorRequested(); });
             menu.exec(QCursor::pos());
         }
         break;
@@ -264,21 +265,3 @@ bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)
     return QObject::eventFilter(obj, event);
 }
 
-void OpenGLWidget::spawnAtCursor(const SpawnEntityType type)
-{
-    cadm::vec3 spawnPos{};
-    if (const auto *cursor = m_scene.getActiveCursor())
-        if (const auto t = const_cast<entity*>(cursor)->getComponent<TransformComponent>())
-            spawnPos = t.value()->getTranslation();
-
-    const GeometryFactory factory(m_scene);
-    switch (type)
-    {
-    case SpawnEntityType::Torus:
-        void(factory.createTorus(2.0f, 0.5f, 48, 24, spawnPos));
-        break;
-    }
-
-    emit sceneChanged();
-    update();
-}

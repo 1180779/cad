@@ -5,6 +5,7 @@
 #ifndef CAD_CAMERACONTROLLER_HPP
 #define CAD_CAMERACONTROLLER_HPP
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -67,6 +68,36 @@ public:
                 return;
             }
         }
+    }
+
+    void switchTo(const EntityID id, const int width, const int height)
+    {
+        for (std::size_t i = 0; i < m_cameras.size(); ++i)
+        {
+            if (m_cameras[i].strategy->getEntity()->getId() == id)
+            {
+                m_activeIndex = i;
+                m_cameras[i].strategy->syncAspectRatio(width, height);
+                emit cameraChanged(m_cameras[i].name);
+                return;
+            }
+        }
+    }
+
+    [[nodiscard]] bool isActiveCamera(const EntityID id) const
+    {
+        if (m_cameras.empty()) return false;
+        return m_cameras[m_activeIndex].strategy->getEntity()->getId() == id;
+    }
+
+    [[nodiscard]] bool isManagedCamera(const EntityID id) const
+    {
+        return std::ranges::any_of(
+            m_cameras,
+            [id](const CameraEntry &e)
+            {
+                return e.strategy->getEntity()->getId() == id;
+            });
     }
 
     [[nodiscard]] const std::vector<CameraEntry>& cameras() const { return m_cameras; }

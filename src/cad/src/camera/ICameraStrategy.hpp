@@ -35,6 +35,8 @@ public:
     virtual bool handleKeyPressEvent(QKeyEvent *event) = 0;
     virtual bool handleWheelEvent(QWheelEvent *event) = 0;
 
+    [[nodiscard]] entity* getEntity() const { return m_cameraEntity; }
+
 protected:
     entity *m_cameraEntity;
     cadm::cadf m_translationStep = 0.1;

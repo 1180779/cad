@@ -1,7 +1,10 @@
 #include "SceneHierarchyWidget.hpp"
+#include <QMenu>
 #include <QVBoxLayout>
 #include <QListWidget>
 #include <unordered_set>
+#include "../components/CursorComponent.hpp"
+#include "../components/ICamera.hpp"
 
 SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
     : QWidget(parent)
@@ -9,10 +12,16 @@ SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
     const auto layout = new QVBoxLayout(this);
     m_listWidget = new QListWidget(this);
     m_listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_listWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     layout->addWidget(m_listWidget);
 
     connect(m_listWidget, &QListWidget::itemSelectionChanged, this, &SceneHierarchyWidget::onItemSelectionChanged);
     connect(m_listWidget, &QListWidget::itemChanged, this, &SceneHierarchyWidget::onItemChanged);
+    connect(
+        m_listWidget,
+        &QListWidget::customContextMenuRequested,
+        this,
+        &SceneHierarchyWidget::onContextMenuRequested);
 }
 
 void SceneHierarchyWidget::setScene(Scene *scene)
@@ -96,4 +105,54 @@ void SceneHierarchyWidget::populateList()
         addEntityToList(e);
     }
     m_refreshing = false;
+}
+
+void SceneHierarchyWidget::setCameraController(CameraController *cameraController)
+{
+    m_cameraController = cameraController;
+}
+
+void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
+{
+    QMenu menu(this);
+
+    const auto *item = m_listWidget->itemAt(pos);
+    if (!item) // create new entities
+    {
+        const auto *createTorusAction = menu.addAction("New Torus");
+        connect(createTorusAction, &QAction::triggered, this, &SceneHierarchyWidget::createTorusRequested);
+        const auto *createCursorAction = menu.addAction("New Cursor");
+        connect(createCursorAction, &QAction::triggered, this, &SceneHierarchyWidget::createCursorRequested);
+        menu.exec(m_listWidget->mapToGlobal(pos));
+        return;
+    }
+
+    auto *e = item->data(Qt::UserRole).value<entity*>();
+    if (!e) return;
+
+    const bool isCursor = e->getComponent<CursorComponent>().has_value();
+    const bool isCamera = e->getComponent<CameraComponent>().has_value();
+    const bool isActiveCursor = m_scene && m_scene->getActiveCursor() == e;
+    const bool isActiveCamera = m_cameraController && m_cameraController->isActiveCamera(e->getId());
+
+    if (isCursor)
+    {
+        auto *action = menu.addAction("Set as active cursor");
+        action->setEnabled(!isActiveCursor);
+        connect(action, &QAction::triggered, this, [this, e] { emit setAsCursorRequested(e); });
+    }
+    else if (isCamera)
+    {
+        auto *action = menu.addAction("Set as active camera");
+        action->setEnabled(!isActiveCamera);
+        connect(action, &QAction::triggered, this, [this, e] { emit setAsCameraRequested(e->getId()); });
+    }
+    else
+    {
+        auto *action = menu.addAction("Delete");
+        action->setEnabled(!isActiveCursor && !isActiveCamera);
+        connect(action, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });
+    }
+
+    menu.exec(m_listWidget->mapToGlobal(pos));
 }

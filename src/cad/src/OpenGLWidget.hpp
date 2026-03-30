@@ -17,10 +17,6 @@ class OpenGLWidget : public QOpenGLWidget
     Q_OBJECT
 
 
-    enum class SpawnEntityType
-    {
-        Torus
-    };
 public:
     explicit OpenGLWidget(QWidget *parent = nullptr);
     ~OpenGLWidget() override;
@@ -41,6 +37,9 @@ signals:
     void selectedEntityChanged(entity *entity);
     void sceneChanged();
 
+    void createTorusRequested();
+    void createCursorRequested();
+
 protected:
     void paintGL() override;
     void resizeGL(int width, int height) override;
@@ -59,7 +58,6 @@ private:
     cadm::cadf m_translationStep{0.1};
     QPoint m_lastMousePosition;
 
-    void spawnAtCursor(SpawnEntityType type);
 
     CameraController m_cameraController{this};
     bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};
