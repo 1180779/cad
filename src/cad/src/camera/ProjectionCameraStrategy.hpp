@@ -17,6 +17,7 @@ public:
 
     cadm::mat4 getView() override;
     cadm::mat4 getProjection() override;
+    void setLookTarget(cadm::vec3 target) override;
     bool handleMouseMoveEvent(QMouseEvent *event, QPoint mouseDelta) override;
     bool handleMousePressEvent(QMouseEvent *event) override;
     bool handleMouseReleaseEvent(QMouseEvent *event) override;

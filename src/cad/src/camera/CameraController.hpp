@@ -13,6 +13,7 @@
 #include <QObject>
 
 #include "ICameraStrategy.hpp"
+#include "../components/TransformComponent.hpp"
 
 class CameraController : public QObject
 {
@@ -98,6 +99,17 @@ public:
             {
                 return e.strategy->getEntity()->getId() == id;
             });
+    }
+
+    void lookAtEntity(Entity *entity) const
+    {
+        auto *strategy = getActiveStrategy();
+        if (!strategy || strategy->getEntity() == entity)
+            return;
+        const auto transform = entity->getComponent<TransformComponent>();
+        if (!transform)
+            return;
+        strategy->setLookTarget(transform.value()->getTranslation());
     }
 
     [[nodiscard]] const std::vector<CameraEntry>& cameras() const { return m_cameras; }

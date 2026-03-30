@@ -23,6 +23,7 @@ public:
     void deleteEntityRequested(Entity *e);
     void setAsCursorRequested(Entity *e);
     void setAsCameraRequested(EntityID id);
+    void focusCameraRequested(Entity *e);
     void createTorusRequested();
     void createCursorRequested();
 

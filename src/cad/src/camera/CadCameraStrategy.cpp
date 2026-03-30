@@ -52,6 +52,24 @@ cadm::mat4 CadCameraStrategy::getProjection()
     return projection;
 }
 
+void CadCameraStrategy::setLookTarget(const cadm::vec3 target)
+{
+    const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
+    if (!camera)
+    {
+        EXPECTED_COMPONENT_MISSING();
+        return;
+    }
+    const auto pCamera = camera.value();
+    const auto offset = pCamera->getPosition() - pCamera->getTarget();
+    const auto newPosition = target + offset;
+    pCamera->setPosition(newPosition);
+    pCamera->setTarget(target);
+
+    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>())
+        transform.value()->setTranslation(newPosition);
+}
+
 bool CadCameraStrategy::handleMouseMoveEvent(
     QMouseEvent *event,
     QPoint mouseDelta)

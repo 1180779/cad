@@ -140,6 +140,8 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
         auto *action = menu.addAction("Set as active cursor");
         action->setEnabled(!isActiveCursor);
         connect(action, &QAction::triggered, this, [this, e] { emit setAsCursorRequested(e); });
+        auto *focusAction = menu.addAction("Focus camera");
+        connect(focusAction, &QAction::triggered, this, [this, e] { emit focusCameraRequested(e); });
     }
     else if (isCamera)
     {
@@ -149,6 +151,8 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
     }
     else
     {
+        auto *focusAction = menu.addAction("Focus camera");
+        connect(focusAction, &QAction::triggered, this, [this, e] { emit focusCameraRequested(e); });
         auto *action = menu.addAction("Delete");
         action->setEnabled(!isActiveCursor && !isActiveCamera);
         connect(action, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });

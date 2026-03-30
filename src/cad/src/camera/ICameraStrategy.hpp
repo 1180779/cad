@@ -28,6 +28,7 @@ public:
 
     virtual cadm::mat4 getView() = 0;
     virtual cadm::mat4 getProjection() = 0;
+    virtual void setLookTarget(cadm::vec3 target) = 0;
     void syncAspectRatio(int width, int height) const;
     virtual bool handleMousePressEvent(QMouseEvent *event) = 0;
     virtual bool handleMouseReleaseEvent(QMouseEvent *event) = 0;

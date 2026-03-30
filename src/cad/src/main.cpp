@@ -154,6 +154,16 @@ int main(int argc, char *argv[])
             glWidget->getCameraController().switchTo(id, glWidget->width(), glWidget->height());
         });
 
+    QObject::connect(
+        hierarchyWidget,
+        &SceneHierarchyWidget::focusCameraRequested,
+        glWidget,
+        [glWidget](Entity *e)
+        {
+            glWidget->getCameraController().lookAtEntity(e);
+            glWidget->update();
+        });
+
     auto spawnPos = [glWidget]() -> cadm::vec3
     {
         if (auto *activeCursor = glWidget->getScene().getActiveCursor())

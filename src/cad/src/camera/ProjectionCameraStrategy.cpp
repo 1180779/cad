@@ -47,6 +47,17 @@ cadm::mat4 ProjectionCameraStrategy::getProjection()
     );
 }
 
+void ProjectionCameraStrategy::setLookTarget(const cadm::vec3 target)
+{
+    const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
+    if (!camera)
+    {
+        EXPECTED_COMPONENT_MISSING();
+        return;
+    }
+    camera.value()->setTarget(target);
+}
+
 bool ProjectionCameraStrategy::handleMouseMoveEvent(QMouseEvent *event, const QPoint mouseDelta)
 {
     if (!m_leftMouseDown && !m_rightMouseDown)
