@@ -54,6 +54,9 @@ int main(int argc, char *argv[])
     void(geometryFactory.createAxis(5.0f, {}, "Axes"));
     geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
 
+    const auto cursor = geometryFactory.createCursor({0, 0, 0}, "Cursor");
+    glWidget->getScene().setActiveCursor(cursor);
+
     const CameraFactory cameraFactory(glWidget->getScene());
     const auto cameraOnSphere = cameraFactory.createCameraOnSphere(20, {});
     const auto projCameraStrategy = std::make_shared<projectionCameraStrategy>(
@@ -107,7 +110,11 @@ int main(int argc, char *argv[])
         entityPropertiesWidget,
         &EntityPropertiesWidget::propertyChanged,
         glWidget,
-        [glWidget] { glWidget->update(); });
+        [glWidget, hierarchyWidget]
+        {
+            hierarchyWidget->refresh();
+            glWidget->update();
+        });
 
     QObject::connect(
         gridSettingsWidget,

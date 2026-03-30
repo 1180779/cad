@@ -16,13 +16,14 @@ class OpenGLWidget : public QOpenGLWidget
 {
     Q_OBJECT
 
+
+    enum class SpawnEntityType
+    {
+        Torus
+    };
 public:
     explicit OpenGLWidget(QWidget *parent = nullptr);
     ~OpenGLWidget() override;
-
-    void paintGL() override;
-    void resizeGL(int width, int height) override;
-    void initializeGL() override;
 
     CameraController& getCameraController() { return m_cameraController; }
 
@@ -41,19 +42,24 @@ signals:
     void sceneChanged();
 
 protected:
+    void paintGL() override;
+    void resizeGL(int width, int height) override;
+    void initializeGL() override;
+
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
-
 private:
     void performBoxSelect();
     void deleteSelectedEntities();
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};
     QPoint m_lastMousePosition;
+
+    void spawnAtCursor(SpawnEntityType type);
 
     CameraController m_cameraController{this};
     bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};

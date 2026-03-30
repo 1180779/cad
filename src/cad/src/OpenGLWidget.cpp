@@ -4,7 +4,7 @@
 
 #include "OpenGLWidget.hpp"
 
-#include <QWheelEvent>
+#include <QMenu>
 
 // undefine Qt's emit macro to avoid conflicts with TBB
 #ifdef emit
@@ -20,6 +20,7 @@
 #undef QT_EMIT_DEFINED
 #endif
 
+#include "geometryFactory.hpp"
 #include "gl.hpp"
 #include "cad_math/helpers.hpp"
 #include "components/transform.hpp"
@@ -159,6 +160,15 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
             return;
         m_xPressed = true;
         return;
+
+    case Qt::Key_C:
+        {
+            QMenu menu(this);
+            menu.addAction("Torus", [this] { spawnAtCursor(SpawnEntityType::Torus); });
+            menu.exec(QCursor::pos());
+        }
+        break;
+
     case Qt::Key_Y:
         if (event->isAutoRepeat())
             return;
@@ -252,4 +262,23 @@ bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)
         return true;
     }
     return QObject::eventFilter(obj, event);
+}
+
+void OpenGLWidget::spawnAtCursor(const SpawnEntityType type)
+{
+    cadm::vec3 spawnPos{};
+    if (const auto *cursor = m_scene.getActiveCursor())
+        if (const auto t = const_cast<entity*>(cursor)->getComponent<TransformComponent>())
+            spawnPos = t.value()->getTranslation();
+
+    const GeometryFactory factory(m_scene);
+    switch (type)
+    {
+    case SpawnEntityType::Torus:
+        void(factory.createTorus(2.0f, 0.5f, 48, 24, spawnPos));
+        break;
+    }
+
+    emit sceneChanged();
+    update();
 }

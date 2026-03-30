@@ -4,6 +4,7 @@
 
 #include "geometryFactory.hpp"
 
+#include "components/CursorComponent.hpp"
 #include "components/geometry.hpp"
 #include "components/transform.hpp"
 
@@ -32,5 +33,15 @@ entity* GeometryFactory::createAxis(const float length, const cadm::vec3 &positi
     e->addComponent<TransformComponent>()->setTranslation(position);
     auto *axes = e->addComponent<AxesGeometry>();
     axes->m_length = length;
+    return e;
+}
+
+entity* GeometryFactory::createCursor(const cadm::vec3 &position, const std::string &name) const
+{
+    const auto e = m_scene.createEntity(name);
+    e->addComponent<TransformComponent>()->setTranslation(position);
+    auto *axes = e->addComponent<AxesGeometry>();
+    axes->m_length = 0.5f;
+    e->addComponent<CursorComponent>();
     return e;
 }

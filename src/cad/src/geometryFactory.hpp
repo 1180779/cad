@@ -29,6 +29,10 @@ public:
         const cadm::vec3 &position = {0, 0, 0},
         const std::string &name = "Axes") const;
 
+    entity* createCursor(
+        const cadm::vec3 &position = {0, 0, 0},
+        const std::string &name = "Cursor") const;
+
 private:
     Scene &m_scene;
 };

@@ -48,6 +48,8 @@ void Scene::removeEntity(EntityID id)
             return e->getId() == id;
         });
     if (toBeRemoved == m_entities.end()) return;
+    if (m_activeCursor == toBeRemoved->get())
+        m_activeCursor = nullptr;
     toBeRemoved->swap(m_entities.back());
     m_entities.pop_back();
 }
