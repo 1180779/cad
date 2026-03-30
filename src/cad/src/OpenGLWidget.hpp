@@ -36,9 +36,9 @@ public:
         update();
     }
 
-    signals :
-    
+signals:
     void selectedEntityChanged(entity *entity);
+    void sceneChanged();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -49,6 +49,7 @@ protected:
     void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
+    void deleteSelectedEntities();
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};
     QPoint m_lastMousePosition;

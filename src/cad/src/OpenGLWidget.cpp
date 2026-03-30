@@ -109,6 +109,9 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
         m_cameraController.switchToNext(width(), height());
         update();
         return;
+    case Qt::Key_Delete:
+        deleteSelectedEntities();
+        return;
     case Qt::Key_X:
         if (event->isAutoRepeat())
             return;
@@ -147,6 +150,23 @@ void OpenGLWidget::keyReleaseEvent(QKeyEvent *event)
         default:
             QOpenGLWidget::keyReleaseEvent(event);
         }
+    }
+}
+
+void OpenGLWidget::deleteSelectedEntities()
+{
+    std::vector<EntityID> toDelete;
+    for (const auto &e : m_scene.getEntities())
+        if (e->isSelected())
+            toDelete.push_back(e->getId());
+
+    for (const EntityID id : toDelete)
+        m_scene.removeEntity(id);
+
+    if (!toDelete.empty())
+    {
+        emit sceneChanged();
+        update();
     }
 }
 

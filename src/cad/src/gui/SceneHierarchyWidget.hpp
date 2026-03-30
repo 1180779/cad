@@ -13,6 +13,7 @@ class SceneHierarchyWidget : public QWidget
 public:
     explicit SceneHierarchyWidget(QWidget *parent = nullptr);
     void setScene(Scene *scene);
+    void addEntityToList(const std::unique_ptr<entity> &e) const;
 
 signals:
     void selectionChanged(QList<entity*> entities);

@@ -73,6 +73,12 @@ int main(int argc, char *argv[])
     hierarchyWidget->setScene(&glWidget->getScene());
 
     QObject::connect(
+        glWidget,
+        &OpenGLWidget::sceneChanged,
+        hierarchyWidget,
+        &SceneHierarchyWidget::refresh);
+
+    QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::selectionChanged,
         entityPropertiesWidget,
