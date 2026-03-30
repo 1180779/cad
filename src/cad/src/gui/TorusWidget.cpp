@@ -49,7 +49,7 @@ void TorusWidget::onMinorSegmentsChanged(const int value) const
 
 void TorusWidget::setUpMajorRadiusControls(QFormLayout *const layout)
 {
-    m_majorRadius = new QDoubleSpinBox();
+    m_majorRadius = new ModifierDoubleSpinBox();
     m_majorRadius->setMinimum(s_majorRadiusMin);
     m_majorRadius->setMaximum(s_majorRadiusMax);
     m_majorRadius->setSingleStep(s_majorRadiusStep);
@@ -61,7 +61,7 @@ void TorusWidget::setUpMajorRadiusControls(QFormLayout *const layout)
 
 void TorusWidget::setUpMinorRadiusControls(QFormLayout *const layout)
 {
-    m_minorRadius = new QDoubleSpinBox();
+    m_minorRadius = new ModifierDoubleSpinBox();
     m_minorRadius->setMinimum(s_minorRadiusMin);
     m_minorRadius->setMaximum(m_torus->getMajorRadius() - s_minorRadiusMin);
     m_minorRadius->setSingleStep(s_minorRadiusStep);
@@ -73,7 +73,7 @@ void TorusWidget::setUpMinorRadiusControls(QFormLayout *const layout)
 
 void TorusWidget::setUpMajorSegmentsControls(QFormLayout *const layout)
 {
-    m_majorSegments = new QSpinBox();
+    m_majorSegments = new ModifierSpinBox();
     m_majorSegments->setMinimum(s_majorSegmentsMin);
     m_majorSegments->setMaximum(s_majorSegmentsMax);
     m_majorSegments->setValue(static_cast<int>(m_torus->getMajorSegments()));
@@ -84,7 +84,7 @@ void TorusWidget::setUpMajorSegmentsControls(QFormLayout *const layout)
 
 void TorusWidget::setUpMinorSegmentsControls(QFormLayout *const layout)
 {
-    m_minorSegments = new QSpinBox();
+    m_minorSegments = new ModifierSpinBox();
     m_minorSegments->setMinimum(s_minorSegmentsMin);
     m_minorSegments->setMaximum(s_minorSegmentsMax);
     m_minorSegments->setValue(static_cast<int>(m_torus->getMinorSegments()));

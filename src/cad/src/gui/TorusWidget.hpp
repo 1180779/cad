@@ -2,9 +2,9 @@
 #define TORUSWIDGET_H
 
 #include <QFormLayout>
-#include <QSpinBox>
 
 #include "ComponentWidget.hpp"
+#include <common/ModifierSpinBox.hpp>
 #include "../components/GeometryComponent.hpp"
 
 class TorusWidget : public ComponentWidget
@@ -41,10 +41,10 @@ private:
 
     TorusGeometry *m_torus;
 
-    QDoubleSpinBox *m_majorRadius{};
-    QDoubleSpinBox *m_minorRadius{};
-    QSpinBox *m_majorSegments{};
-    QSpinBox *m_minorSegments{};
+    ModifierDoubleSpinBox *m_majorRadius{};
+    ModifierDoubleSpinBox *m_minorRadius{};
+    ModifierSpinBox *m_majorSegments{};
+    ModifierSpinBox *m_minorSegments{};
 };
 
 #endif // TORUSWIDGET_H

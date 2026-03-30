@@ -1,6 +1,5 @@
 #include "TransformWidget.hpp"
 #include <QFormLayout>
-#include <QDoubleSpinBox>
 #include <QLabel>
 #include <limits>
 #include <numbers>
@@ -136,9 +135,9 @@ void TransformWidget::onRotationZChanged(const double value) const
 
 void TransformWidget::setUpTranslationControls(QFormLayout *const layout)
 {
-    m_translationX = new QDoubleSpinBox();
-    m_translationY = new QDoubleSpinBox();
-    m_translationZ = new QDoubleSpinBox();
+    m_translationX = new ModifierDoubleSpinBox();
+    m_translationY = new ModifierDoubleSpinBox();
+    m_translationZ = new ModifierDoubleSpinBox();
 
     m_translationX->setSingleStep(s_translationStep);
     m_translationY->setSingleStep(s_translationStep);
@@ -172,9 +171,9 @@ void TransformWidget::setUpTranslationControls(QFormLayout *const layout)
 
 void TransformWidget::setUpScaleControls(QFormLayout *const layout)
 {
-    m_scaleX = new QDoubleSpinBox();
-    m_scaleY = new QDoubleSpinBox();
-    m_scaleZ = new QDoubleSpinBox();
+    m_scaleX = new ModifierDoubleSpinBox();
+    m_scaleY = new ModifierDoubleSpinBox();
+    m_scaleZ = new ModifierDoubleSpinBox();
 
     m_scaleX->setSingleStep(s_scaleStep);
     m_scaleY->setSingleStep(s_scaleStep);
@@ -208,9 +207,9 @@ void TransformWidget::setUpScaleControls(QFormLayout *const layout)
 
 void TransformWidget::setUpRotationControls(QFormLayout *const layout)
 {
-    m_rotationX = new QDoubleSpinBox();
-    m_rotationY = new QDoubleSpinBox();
-    m_rotationZ = new QDoubleSpinBox();
+    m_rotationX = new ModifierDoubleSpinBox();
+    m_rotationY = new ModifierDoubleSpinBox();
+    m_rotationZ = new ModifierDoubleSpinBox();
 
     m_rotationX->setSingleStep(s_angleStep);
     m_rotationY->setSingleStep(s_angleStep);

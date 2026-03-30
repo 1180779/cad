@@ -2,9 +2,9 @@
 #define TRANSFORMWIDGET_H
 
 #include <QFormLayout>
-#include <QDoubleSpinBox>
 
 #include "ComponentWidget.hpp"
+#include <common/ModifierSpinBox.hpp>
 #include "../components/TransformComponent.hpp"
 
 class TransformWidget : public ComponentWidget
@@ -46,17 +46,17 @@ private:
 
     TransformComponent *m_transform;
 
-    QDoubleSpinBox *m_translationX;
-    QDoubleSpinBox *m_translationY;
-    QDoubleSpinBox *m_translationZ;
+    ModifierDoubleSpinBox *m_translationX;
+    ModifierDoubleSpinBox *m_translationY;
+    ModifierDoubleSpinBox *m_translationZ;
 
-    QDoubleSpinBox *m_scaleX;
-    QDoubleSpinBox *m_scaleY;
-    QDoubleSpinBox *m_scaleZ;
+    ModifierDoubleSpinBox *m_scaleX;
+    ModifierDoubleSpinBox *m_scaleY;
+    ModifierDoubleSpinBox *m_scaleZ;
 
-    QDoubleSpinBox *m_rotationX;
-    QDoubleSpinBox *m_rotationY;
-    QDoubleSpinBox *m_rotationZ;
+    ModifierDoubleSpinBox *m_rotationX;
+    ModifierDoubleSpinBox *m_rotationY;
+    ModifierDoubleSpinBox *m_rotationZ;
 };
 
 #endif // TRANSFORMWIDGET_H
