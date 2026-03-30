@@ -4,7 +4,7 @@
 #include <QListWidget>
 #include <unordered_set>
 #include "../components/CursorComponent.hpp"
-#include "../components/ICamera.hpp"
+#include "../components/CameraComponent.hpp"
 
 SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
     : QWidget(parent)
@@ -31,7 +31,7 @@ void SceneHierarchyWidget::setScene(Scene *scene)
     populateList();
 }
 
-void SceneHierarchyWidget::addEntityToList(const std::unique_ptr<entity> &e) const
+void SceneHierarchyWidget::addEntityToList(const std::unique_ptr<Entity> &e) const
 {
     const auto item = new QListWidgetItem(QString::fromStdString(e->getName()));
     item->setData(Qt::UserRole, QVariant::fromValue(e.get()));
@@ -45,7 +45,7 @@ void SceneHierarchyWidget::refresh()
 
     m_refreshing = true;
 
-    std::unordered_set<entity*> inScene;
+    std::unordered_set<Entity*> inScene;
     for (const auto &e : m_scene->getEntities())
         inScene.insert(e.get());
 
@@ -53,7 +53,7 @@ void SceneHierarchyWidget::refresh()
     for (int i = m_listWidget->count() - 1; i >= 0; --i)
     {
         auto *item = m_listWidget->item(i);
-        if (auto *e = item->data(Qt::UserRole).value<entity*>(); !inScene.contains(e))
+        if (auto *e = item->data(Qt::UserRole).value<Entity*>(); !inScene.contains(e))
         {
             delete m_listWidget->takeItem(i);
         }
@@ -76,9 +76,9 @@ void SceneHierarchyWidget::refresh()
 
 void SceneHierarchyWidget::onItemSelectionChanged()
 {
-    QList<entity*> selected;
+    QList<Entity*> selected;
     for (const auto item : m_listWidget->selectedItems())
-        selected.append(item->data(Qt::UserRole).value<entity*>());
+        selected.append(item->data(Qt::UserRole).value<Entity*>());
     emit selectionChanged(selected);
 }
 
@@ -86,7 +86,7 @@ void SceneHierarchyWidget::onItemChanged(const QListWidgetItem *item) const
 {
     // Update entity name
     if (m_refreshing) return;
-    if (auto *e = item->data(Qt::UserRole).value<entity*>())
+    if (auto *e = item->data(Qt::UserRole).value<Entity*>())
         e->setName(item->text().toStdString());
 }
 
@@ -127,7 +127,7 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
         return;
     }
 
-    auto *e = item->data(Qt::UserRole).value<entity*>();
+    auto *e = item->data(Qt::UserRole).value<Entity*>();
     if (!e) return;
 
     const bool isCursor = e->getComponent<CursorComponent>().has_value();

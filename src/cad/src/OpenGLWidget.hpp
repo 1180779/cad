@@ -8,8 +8,8 @@
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
 #include <cad_math/common.hpp>
-#include "renderSystem.hpp"
-#include "scene.hpp"
+#include "RenderSystem.hpp"
+#include "Scene.hpp"
 #include "camera/CameraController.hpp"
 
 class OpenGLWidget : public QOpenGLWidget
@@ -34,7 +34,8 @@ public:
     }
 
 signals:
-    void selectedEntityChanged(entity *entity);
+
+    void selectedEntityChanged(Entity *entity);
     void sceneChanged();
 
     void createTorusRequested();

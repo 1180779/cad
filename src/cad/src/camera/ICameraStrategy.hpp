@@ -7,8 +7,8 @@
 
 #include <QMouseEvent>
 
-#include "../components/ICamera.hpp"
-#include "../entities/entity.hpp"
+#include "../components/CameraComponent.hpp"
+#include "../entities/Entity.hpp"
 #include "cad_math/mat4.hpp"
 
 class ICameraStrategy
@@ -16,7 +16,7 @@ class ICameraStrategy
 public:
     virtual ~ICameraStrategy() = default;
 
-    explicit ICameraStrategy(entity *cameraEntity)
+    explicit ICameraStrategy(Entity *cameraEntity)
         : m_cameraEntity{cameraEntity}
     {
     }
@@ -35,10 +35,10 @@ public:
     virtual bool handleKeyPressEvent(QKeyEvent *event) = 0;
     virtual bool handleWheelEvent(QWheelEvent *event) = 0;
 
-    [[nodiscard]] entity* getEntity() const { return m_cameraEntity; }
+    [[nodiscard]] Entity* getEntity() const { return m_cameraEntity; }
 
 protected:
-    entity *m_cameraEntity;
+    Entity *m_cameraEntity;
     cadm::cadf m_translationStep = 0.1;
 };
 

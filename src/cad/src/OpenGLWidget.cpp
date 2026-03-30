@@ -20,10 +20,10 @@
 #undef QT_EMIT_DEFINED
 #endif
 
-#include "geometryFactory.hpp"
-#include "gl.hpp"
+#include "GeometryFactory.hpp"
+#include "GlCommon.hpp"
 #include "cad_math/helpers.hpp"
-#include "components/transform.hpp"
+#include "components/TransformComponent.hpp"
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)

@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "../entities/entity.hpp"
+#include "../entities/Entity.hpp"
 
 class ComponentWidget : public QWidget
 {
@@ -14,8 +14,10 @@ public:
 
     explicit ComponentWidget(Component *component, QWidget *parent = nullptr);
 
-    signals :
-    
+    signals  :
+
+
+
     void propertyChanged();
 
 protected:

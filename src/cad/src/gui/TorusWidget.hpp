@@ -5,7 +5,7 @@
 #include <QSpinBox>
 
 #include "ComponentWidget.hpp"
-#include "../components/geometry.hpp"
+#include "../components/GeometryComponent.hpp"
 
 class TorusWidget : public ComponentWidget
 {

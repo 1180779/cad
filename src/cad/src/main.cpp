@@ -1,13 +1,13 @@
 #include <QApplication>
 #include <QVBoxLayout>
 
-#include "cameraFactory.hpp"
-#include "components/transform.hpp"
-#include "geometryFactory.hpp"
-#include "gl.hpp"
+#include "CameraFactory.hpp"
+#include "components/TransformComponent.hpp"
+#include "GeometryFactory.hpp"
+#include "GlCommon.hpp"
 #include "OpenGLWidget.hpp"
-#include "camera/cadCameraStrategy.hpp"
-#include "camera/projectionCameraStrategy.hpp"
+#include "camera/CadCameraStrategy.hpp"
+#include "camera/ProjectionCameraStrategy.hpp"
 #include "gui/EntityPropertiesWidget.hpp"
 #include "gui/GridSettingsWidget.hpp"
 #include "gui/SceneHierarchyWidget.hpp"
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 
     const CameraFactory cameraFactory(glWidget->getScene());
     const auto cameraOnSphere = cameraFactory.createCameraOnSphere(20, {});
-    const auto projCameraStrategy = std::make_shared<projectionCameraStrategy>(
+    const auto projCameraStrategy = std::make_shared<ProjectionCameraStrategy>(
         cameraOnSphere,
         [&] { return glWidget->width(); },
         [&] { return glWidget->height(); });
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         hierarchyWidget,
         &SceneHierarchyWidget::selectionChanged,
         entityPropertiesWidget,
-        [entityPropertiesWidget](const QList<entity*> &selected)
+        [entityPropertiesWidget](const QList<Entity*> &selected)
         {
             entityPropertiesWidget->setEntity(
                 selected.size() == 1
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         hierarchyWidget,
         &SceneHierarchyWidget::selectionChanged,
         glWidget,
-        [glWidget](const QList<entity*> &selected)
+        [glWidget](const QList<Entity*> &selected)
         {
             for (auto &e : glWidget->getScene().getEntities())
                 e->setSelected(false);
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
         hierarchyWidget,
         &SceneHierarchyWidget::deleteEntityRequested,
         glWidget,
-        [glWidget, hierarchyWidget](const entity *e)
+        [glWidget, hierarchyWidget](const Entity *e)
         {
             glWidget->getScene().removeEntity(e->getId());
             hierarchyWidget->refresh();
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
         hierarchyWidget,
         &SceneHierarchyWidget::setAsCursorRequested,
         glWidget,
-        [glWidget](entity *e)
+        [glWidget](Entity *e)
         {
             glWidget->getScene().setActiveCursor(e);
         });

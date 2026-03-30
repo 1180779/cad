@@ -88,9 +88,9 @@ void OpenGLWidget::initializeGL()
     gl->glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // for rgb the cpu buffer is not aligned, which leads to artifacts
     gl->glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
 
-    m_quad = std::make_unique<quad>();
+    m_quad = std::make_unique<Quad>();
 
-    m_shaderProgram = std::make_unique<shaderProgram>();
+    m_shaderProgram = std::make_unique<ShaderProgram>();
     m_shaderProgram->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/vertexShader.vert");
     m_shaderProgram->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/fragmentShader.frag");
     m_shaderProgram->compile();

@@ -5,7 +5,7 @@
 #ifndef CAD_CURSORCOMPONENT_HPP
 #define CAD_CURSORCOMPONENT_HPP
 
-#include "../entities/entity.hpp"
+#include "../entities/Entity.hpp"
 
 class CursorComponent final : public Component
 {

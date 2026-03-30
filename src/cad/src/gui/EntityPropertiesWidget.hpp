@@ -2,7 +2,7 @@
 #define ENTITYPROPERTIESWIDGET_H
 
 #include <QWidget>
-#include "../entities/entity.hpp"
+#include "../entities/Entity.hpp"
 
 class QVBoxLayout;
 
@@ -12,16 +12,18 @@ class EntityPropertiesWidget : public QWidget
 
 public:
     explicit EntityPropertiesWidget(QWidget *parent = nullptr);
-    void setEntity(entity *entity);
+    void setEntity(Entity *entity);
 
-    signals :
-    
+    signals  :
+
+
+
     void propertyChanged();
 
 private:
     void clearLayout() const;
 
-    entity *m_entity = nullptr;
+    Entity *m_entity = nullptr;
     QVBoxLayout *m_layout;
 };
 

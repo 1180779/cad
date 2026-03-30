@@ -193,7 +193,7 @@ namespace cadm
         }
 
         // Returns a normalized copy, or `fallback` if the vector length is <= eps.
-        [[nodiscard]] Derived safeNormalized(const Derived& fallback) const noexcept
+        [[nodiscard]] Derived safeNormalized(const Derived &fallback) const noexcept
         {
             const auto lengthSq = lengthSquared();
             if (lengthSq < eps * eps)

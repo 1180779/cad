@@ -1,14 +1,14 @@
 #include "EntityPropertiesWidget.hpp"
 #include "TransformWidget.hpp"
 #include "TorusWidget.hpp"
-#include "projectionCameraWidget.hpp"
-#include "../components/transform.hpp"
-#include "../components/geometry.hpp"
-#include "../components/camera.hpp"
+#include "ProjectionCameraWidget.hpp"
+#include "../components/TransformComponent.hpp"
+#include "../components/GeometryComponent.hpp"
+#include "../components/ProjectionCameraComponent.hpp"
 #include <QVBoxLayout>
 
-#include "cadCameraWidget.hpp"
-#include "../components/cadCameraCompoonent.hpp"
+#include "CadCameraWidget.hpp"
+#include "../components/CadCameraComponent.hpp"
 
 EntityPropertiesWidget::EntityPropertiesWidget(QWidget *parent)
     : QWidget(parent)
@@ -17,7 +17,7 @@ EntityPropertiesWidget::EntityPropertiesWidget(QWidget *parent)
     m_layout->setAlignment(Qt::AlignTop);
 }
 
-void EntityPropertiesWidget::setEntity(entity *entity)
+void EntityPropertiesWidget::setEntity(Entity *entity)
 {
     if (m_entity == entity)
         return;
@@ -49,9 +49,9 @@ void EntityPropertiesWidget::setEntity(entity *entity)
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }
 
-    if (const auto camera = m_entity->getComponent<cadCameraComponent>())
+    if (const auto camera = m_entity->getComponent<CadCameraComponent>())
     {
-        const auto widget = new cadCameraWidget(camera.value());
+        const auto widget = new CadCameraWidget(camera.value());
         m_layout->addWidget(widget);
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }

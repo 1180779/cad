@@ -5,7 +5,7 @@
 #include <QDoubleSpinBox>
 
 #include "ComponentWidget.hpp"
-#include "../components/transform.hpp"
+#include "../components/TransformComponent.hpp"
 
 class TransformWidget : public ComponentWidget
 {

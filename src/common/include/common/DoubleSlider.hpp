@@ -25,11 +25,13 @@ public:
 
     signals  :
 
-    
+
+
     void doubleValueChanged(double value);
 
 public
     slots  :
+
 
     
     void notifyValueChanged(int value);

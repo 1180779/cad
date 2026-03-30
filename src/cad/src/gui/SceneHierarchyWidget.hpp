@@ -3,8 +3,8 @@
 
 #include <QList>
 #include <QListWidgetItem>
-#include "../entities/entity.hpp"
-#include "../scene.hpp"
+#include "../entities/Entity.hpp"
+#include "../Scene.hpp"
 #include "../camera/CameraController.hpp"
 
 class SceneHierarchyWidget : public QWidget
@@ -15,12 +15,13 @@ public:
     explicit SceneHierarchyWidget(QWidget *parent = nullptr);
     void setScene(Scene *scene);
     void setCameraController(CameraController *cameraController);
-    void addEntityToList(const std::unique_ptr<entity> &e) const;
+    void addEntityToList(const std::unique_ptr<Entity> &e) const;
 
-signals:
-    void selectionChanged(QList<entity*> entities);
-    void deleteEntityRequested(entity *e);
-    void setAsCursorRequested(entity *e);
+    signals:
+
+    void selectionChanged(QList<Entity*> entities);
+    void deleteEntityRequested(Entity *e);
+    void setAsCursorRequested(Entity *e);
     void setAsCameraRequested(EntityID id);
     void createTorusRequested();
     void createCursorRequested();

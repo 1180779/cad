@@ -11,7 +11,6 @@ namespace cadm
 
     // General-purpose epsilon for float comparisons and geometric checks.
     constexpr cadf eps = 1e-6f;
-
 }
 
 #endif //CAD_COMMON_H

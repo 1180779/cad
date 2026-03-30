@@ -1,14 +1,14 @@
 add_executable(ellipse src/main.cpp
         src/OpenGLWidget.cpp
         src/OpenGLWidget.hpp
-        src/quad.cpp
-        src/quad.hpp
+        src/Quad.cpp
+        src/Quad.hpp
         src/GL.cpp
         src/GL.hpp
-        src/shaderProgram.cpp
-        src/shaderProgram.hpp
-        src/camera.hpp
-        src/camera.cpp
+        src/ShaderProgram.cpp
+        src/ShaderProgram.hpp
+        src/Camera.hpp
+        src/Camera.cpp
 )
 
 target_link_libraries(ellipse
