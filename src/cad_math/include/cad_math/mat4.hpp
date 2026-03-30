@@ -78,14 +78,14 @@ namespace cadm
         // Look at matrix for Right Handed coordinate system
         constexpr static mat lookAtRH(const vec3 &eye, const vec3 &target, const vec3 &up)
         {
-            const vec3 zAxis = (eye - target).normalized(); // forward
+            const vec3 zAxis = (eye - target).normalized(); // backward (away from target)
             const vec3 xAxis = up.cross(zAxis).normalized(); // right
             const vec3 yAxis = zAxis.cross(xAxis); // up
 
             return {
-                vec4(xAxis.x, xAxis.y, xAxis.z, 0.0),
-                vec4(yAxis.x, yAxis.y, yAxis.z, 0.0),
-                vec4(zAxis.x, zAxis.y, zAxis.z, 0.0),
+                vec4(xAxis.x, yAxis.x, zAxis.x, 0.0),
+                vec4(xAxis.y, yAxis.y, zAxis.y, 0.0),
+                vec4(xAxis.z, yAxis.z, zAxis.z, 0.0),
                 vec4(-xAxis.dot(eye), -yAxis.dot(eye), -zAxis.dot(eye), 1.0),
             };
         }
