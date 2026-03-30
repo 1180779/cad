@@ -24,12 +24,30 @@ void RenderSystem::initialize()
     SHADER_ATTACHING_CHECK(m_gridShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/gridShader.vert"));
     SHADER_ATTACHING_CHECK(m_gridShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/gridShader.frag"));
 
+    SHADER_ATTACHING_CHECK(
+        m_selectionRectShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/selectionRectShader.vert"));
+    SHADER_ATTACHING_CHECK(
+        m_selectionRectShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/selectionRectShader.frag"));
+
     SHADER_COMPILATION_CHECK(m_basicShader->compile());
     SHADER_COMPILATION_CHECK(m_wireframeShader->compile());
     SHADER_COMPILATION_CHECK(m_axesShader->compile());
     SHADER_COMPILATION_CHECK(m_gridShader->compile());
+    SHADER_COMPILATION_CHECK(m_selectionRectShader->compile());
 
     m_screenQuad = std::make_unique<quad>();
+
+    // Selection rect
+    const auto gl = GL();
+    gl->glGenVertexArrays(1, &m_selectionRectVAO);
+    gl->glGenBuffers(1, &m_selectionRectVBO);
+    gl->glBindVertexArray(m_selectionRectVAO);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectionRectVBO);
+    gl->glBufferData(GL_ARRAY_BUFFER, 4 * 2 * GL_CADM_VT_SIZE, nullptr, GL_DYNAMIC_DRAW);
+    gl->glEnableVertexAttribArray(0);
+    gl->glVertexAttribPointer(0, 2, GL_CADM_VT_TYPE, GL_FALSE, 2 * GL_CADM_VT_SIZE, nullptr);
+    gl->glBindVertexArray(0);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void RenderSystem::renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection) const
@@ -118,10 +136,54 @@ void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm
     GET_GL_ERRORS();
 }
 
+void RenderSystem::renderSelectionRect(
+    const cadm::cadf x0Ndc,
+    const cadm::cadf y0Ndc,
+    const cadm::cadf x1Ndc,
+    const cadm::cadf y1Ndc) const
+{
+    const cadm::cadf verts[8] = {
+        x0Ndc,
+        y0Ndc,
+        x1Ndc,
+        y0Ndc,
+        x1Ndc,
+        y1Ndc,
+        x0Ndc,
+        y1Ndc,
+    };
+
+    const auto gl = GL();
+    gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectionRectVBO);
+    gl->glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    m_selectionRectShader->bind();
+    gl->glBindVertexArray(m_selectionRectVAO);
+
+    // Fill
+    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectColor));
+    gl->glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    // Outline
+    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectOutlineColor));
+    gl->glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+    gl->glBindVertexArray(0);
+    m_selectionRectShader->release();
+}
+
 void RenderSystem::shutdown()
 {
     UNIQUE_PTR_RELEASE_CHECK(m_basicShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_wireframeShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_axesShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_gridShader.release());
+
+    if (m_selectionRectVAO != 0)
+    {
+        const auto gl = GL();
+        gl->glDeleteBuffers(1, &m_selectionRectVBO);
+        gl->glDeleteVertexArrays(1, &m_selectionRectVAO);
+    }
 }

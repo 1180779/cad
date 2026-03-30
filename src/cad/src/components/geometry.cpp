@@ -53,18 +53,12 @@ void GeometryComponent::syncToGpu()
         m_lineIndices.data(),
         GL_STATIC_DRAW);
 
-    static_assert(std::is_same_v<cadm::vec3::VT, float> || std::is_same_v<cadm::vec3::VT, double>);
-    constexpr GLenum type = std::is_same_v<cadm::vec3::VT, float>
-                                ? GL_FLOAT
-                                : GL_DOUBLE;
-    constexpr GLsizei s = sizeof(cadm::vec3::VT);
-
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, type, GL_FALSE, 10 * s, nullptr);
+    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 10 * GL_CADM_VT_SIZE, nullptr);
     gl->glEnableVertexAttribArray(1);
-    gl->glVertexAttribPointer(1, 3, type, GL_FALSE, 10 * s, reinterpret_cast<void*>(3 * s));
+    gl->glVertexAttribPointer(1, 3, GL_CADM_VT_TYPE, GL_FALSE, 10 * GL_CADM_VT_SIZE, reinterpret_cast<void*>(3 * GL_CADM_VT_SIZE));
     gl->glEnableVertexAttribArray(2);
-    gl->glVertexAttribPointer(2, 4, type, GL_FALSE, 10 * s, reinterpret_cast<void*>(6 * s));
+    gl->glVertexAttribPointer(2, 4, GL_CADM_VT_TYPE, GL_FALSE, 10 * GL_CADM_VT_SIZE, reinterpret_cast<void*>(6 * GL_CADM_VT_SIZE));
 
     GET_GL_ERRORS();
     gl->glBindVertexArray(0);

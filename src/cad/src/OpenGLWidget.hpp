@@ -49,6 +49,7 @@ protected:
     void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
+    void performBoxSelect();
     void deleteSelectedEntities();
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};
@@ -60,6 +61,12 @@ private:
 
     Scene m_scene;
     RenderSystem m_renderSystem;
+
+    bool m_boxSelectMode{false};
+    bool m_boxSelecting{false};
+    QPoint m_boxSelectStart;
+    QPoint m_boxSelectCurrent;
+    Qt::MouseButton m_boxSelectMouseButton = Qt::LeftButton;
 };
 
 

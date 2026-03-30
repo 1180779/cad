@@ -22,6 +22,7 @@
 
 #include "gl.hpp"
 #include "cad_math/helpers.hpp"
+#include "components/transform.hpp"
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)
@@ -39,6 +40,18 @@ void OpenGLWidget::paintGL()
     const auto view = m_cameraController.getActiveStrategy()->getView();
     const auto projection = m_cameraController.getActiveStrategy()->getProjection();
     m_renderSystem.render(m_scene, view, projection);
+
+    if (m_boxSelecting)
+    {
+        const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
+        const auto w = static_cast<cadm::cadf>(width());
+        const auto h = static_cast<cadm::cadf>(height());
+        const auto x0 = 2.0 * static_cast<cadm::cadf>(rect.left()) / w - 1.0;
+        const auto x1 = 2.0 * static_cast<cadm::cadf>(rect.right()) / w - 1.0;
+        const auto y0 = 1.0 - 2.0 * static_cast<cadm::cadf>(rect.bottom()) / h;
+        const auto y1 = 1.0 - 2.0 * static_cast<cadm::cadf>(rect.top()) / h;
+        m_renderSystem.renderSelectionRect(x0, y0, x1, y1);
+    }
 }
 
 void OpenGLWidget::resizeGL(const int width, const int height)
@@ -60,6 +73,16 @@ void OpenGLWidget::initializeGL()
 
 void OpenGLWidget::mousePressEvent(QMouseEvent *event)
 {
+    m_lastMousePosition = event->pos();
+
+    if (m_boxSelectMode && event->button() == m_boxSelectMouseButton)
+    {
+        m_boxSelecting = true;
+        m_boxSelectStart = event->pos();
+        m_boxSelectCurrent = event->pos();
+        return;
+    }
+
     if (m_cameraController.getActiveStrategy()->handleMousePressEvent(event))
     {
         update();
@@ -73,6 +96,13 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
     const auto delta = currentPos - m_lastMousePosition;
     m_lastMousePosition = currentPos;
 
+    if (m_boxSelecting)
+    {
+        m_boxSelectCurrent = currentPos;
+        update();
+        return;
+    }
+
     if (m_cameraController.getActiveStrategy()->handleMouseMoveEvent(event, delta))
     {
         update();
@@ -81,6 +111,14 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
 
 void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
+    if (m_boxSelecting && event->button() == m_boxSelectMouseButton)
+    {
+        m_boxSelecting = false;
+        performBoxSelect();
+        update();
+        return;
+    }
+
     if (m_cameraController.getActiveStrategy()->handleMouseReleaseEvent(event))
     {
         update();
@@ -111,6 +149,10 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
         return;
     case Qt::Key_Delete:
         deleteSelectedEntities();
+        return;
+    case Qt::Key_B:
+        if (event->isAutoRepeat()) return;
+        m_boxSelectMode = true;
         return;
     case Qt::Key_X:
         if (event->isAutoRepeat())
@@ -147,6 +189,10 @@ void OpenGLWidget::keyReleaseEvent(QKeyEvent *event)
         case Qt::Key_Z:
             m_zPressed = false;
             break;
+        case Qt::Key_B:
+            if (!m_boxSelecting)
+                m_boxSelectMode = false;
+            break;
         default:
             QOpenGLWidget::keyReleaseEvent(event);
         }
@@ -168,6 +214,27 @@ void OpenGLWidget::deleteSelectedEntities()
         emit sceneChanged();
         update();
     }
+}
+
+void OpenGLWidget::performBoxSelect()
+{
+    const auto view = m_cameraController.getActiveStrategy()->getView();
+    const auto projection = m_cameraController.getActiveStrategy()->getProjection();
+    const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
+
+    for (const auto &e : m_scene.getEntities())
+    {
+        const auto transform = e->getComponent<TransformComponent>();
+        if (!transform) continue;
+        const auto screen = cadm::projectToScreenGL(
+            transform.value()->getTranslation(),
+            view,
+            projection,
+            width(),
+            height());
+        e->setSelected(screen.has_value() && rect.contains(screen->x, screen->y));
+    }
+    emit selectedEntityChanged(nullptr);
 }
 
 bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)

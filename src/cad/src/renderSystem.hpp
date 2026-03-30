@@ -18,6 +18,11 @@ public:
     void renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection) const;
     void regenerateGeometry(const Scene &scene);
     void render(const Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection);
+    void renderSelectionRect(
+        cadm::cadf x0Ndc,
+        cadm::cadf y0Ndc,
+        cadm::cadf x1Ndc,
+        cadm::cadf y1Ndc) const;
     void shutdown();
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
@@ -31,7 +36,14 @@ private:
     std::unique_ptr<shaderProgram> m_wireframeShader = std::make_unique<shaderProgram>();
     std::unique_ptr<shaderProgram> m_axesShader = std::make_unique<shaderProgram>();
     std::unique_ptr<shaderProgram> m_gridShader = std::make_unique<shaderProgram>();
+    std::unique_ptr<shaderProgram> m_selectionRectShader = std::make_unique<shaderProgram>();
     std::unique_ptr<quad> m_screenQuad;
+
+    // 2D selection rectangle
+    uint32_t m_selectionRectVAO = 0;
+    uint32_t m_selectionRectVBO = 0;
+    static constexpr cadm::vec4 s_selectionRectColor{0.39, 0.63, 1.0, 0.16};
+    static constexpr cadm::vec4 s_selectionRectOutlineColor{1.0, 1.0, 1.0, 0.86};
 
 public:
     static constexpr cadm::cadf s_selectionHS{0.7f}; // highlight strength
