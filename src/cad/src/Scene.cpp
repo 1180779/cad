@@ -6,6 +6,7 @@
 
 #include <ranges>
 #include <algorithm>
+#include "components/PointComponent.hpp"
 
 Entity* Scene::createEntity(const std::string &name)
 {
@@ -38,6 +39,31 @@ std::optional<Entity*> Scene::getEntityByName(const std::string &name)
     return std::nullopt;
 }
 
+Entity* Scene::createPoint(const cadm::vec3 position, const std::string &name)
+{
+    Entity *entity = createEntity(name);
+    const PointHandle handle = m_pointRegistry.addPoint(position);
+    entity->addComponent<PointComponent>(handle);
+    m_pointEntityMap[handle] = entity->getId();
+    return entity;
+}
+
+std::optional<Entity*> Scene::getEntityByPointHandle(const PointHandle handle)
+{
+    const auto it = m_pointEntityMap.find(handle);
+    if (it == m_pointEntityMap.end()) return std::nullopt;
+    return getEntity(it->second);
+}
+
+void Scene::syncPointSelectionToRegistry()
+{
+    for (const auto &e : m_entities)
+    {
+        if (const auto pc = e->getComponent<PointComponent>())
+            m_pointRegistry.setSelected(pc.value()->m_handle, e->isSelected());
+    }
+}
+
 void Scene::removeEntity(EntityID id)
 {
     // pop and replace
@@ -50,6 +76,11 @@ void Scene::removeEntity(EntityID id)
     if (toBeRemoved == m_entities.end()) return;
     if (m_activeCursor == toBeRemoved->get())
         m_activeCursor = nullptr;
+    if (const auto pc = (*toBeRemoved)->getComponent<PointComponent>())
+    {
+        m_pointEntityMap.erase(pc.value()->m_handle);
+        m_pointRegistry.removePoint(pc.value()->m_handle);
+    }
     toBeRemoved->swap(m_entities.back());
     m_entities.pop_back();
 }

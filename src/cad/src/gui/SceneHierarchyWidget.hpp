@@ -26,9 +26,11 @@ public:
     void focusCameraRequested(Entity *e);
     void createTorusRequested();
     void createCursorRequested();
+    void createPointRequested();
 
 public slots:
     void refresh();
+    void syncSelectionFromScene();
 
 private slots:
     void onItemSelectionChanged();

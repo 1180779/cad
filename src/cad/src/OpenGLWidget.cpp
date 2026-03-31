@@ -22,7 +22,9 @@
 
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
+#include "PointRegistry.hpp"
 #include "cad_math/helpers.hpp"
+#include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
@@ -47,10 +49,10 @@ void OpenGLWidget::paintGL()
         const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
         const auto w = static_cast<cadm::cadf>(width());
         const auto h = static_cast<cadm::cadf>(height());
-        const auto x0 = 2.0 * static_cast<cadm::cadf>(rect.left()) / w - 1.0;
-        const auto x1 = 2.0 * static_cast<cadm::cadf>(rect.right()) / w - 1.0;
-        const auto y0 = 1.0 - 2.0 * static_cast<cadm::cadf>(rect.bottom()) / h;
-        const auto y1 = 1.0 - 2.0 * static_cast<cadm::cadf>(rect.top()) / h;
+        const auto x0 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.left()) / w - 1.0);
+        const auto x1 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.right()) / w - 1.0);
+        const auto y0 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.bottom()) / h);
+        const auto y1 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.top()) / h);
         m_renderSystem.renderSelectionRect(x0, y0, x1, y1);
     }
 }
@@ -68,6 +70,7 @@ void OpenGLWidget::initializeGL()
     gl->glEnable(GL_DEPTH_TEST);
     gl->glEnable(GL_BLEND);
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl->glEnable(GL_PROGRAM_POINT_SIZE);
 
     m_renderSystem.initialize();
 }
@@ -75,6 +78,7 @@ void OpenGLWidget::initializeGL()
 void OpenGLWidget::mousePressEvent(QMouseEvent *event)
 {
     m_lastMousePosition = event->pos();
+    m_pressPosition = event->pos();
 
     if (m_boxSelectMode && event->button() == m_boxSelectMouseButton)
     {
@@ -118,6 +122,60 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
         performBoxSelect();
         update();
         return;
+    }
+
+    if (event->button() == Qt::LeftButton &&
+        (event->pos() - m_pressPosition).manhattanLength() <= s_clickRadiusPx)
+    {
+        const PointHandle hit = pickPoint(event->pos());
+        if (hit == InvalidPointHandle && !(event->modifiers() & Qt::ShiftModifier)) // miss
+        {
+            for (auto &e : m_scene.getEntities())
+                e->setSelected(false);
+            m_scene.syncPointSelectionToRegistry();
+            emit selectedEntityChanged(nullptr);
+            emit viewportSelectionChanged();
+            update();
+        }
+        if (hit != InvalidPointHandle) // hit
+        {
+            const bool additive = event->modifiers() & Qt::ShiftModifier;
+            if (!additive)
+            {
+                for (auto &e : m_scene.getEntities())
+                    e->setSelected(false);
+                emit selectedEntityChanged(nullptr);
+            }
+
+            if (const auto entityOpt = m_scene.getEntityByPointHandle(hit))
+            {
+                Entity *entity = entityOpt.value();
+                entity->setSelected(
+                    additive
+                        ? !entity->isSelected()
+                        : true);
+                m_scene.syncPointSelectionToRegistry();
+
+                // only show properties when exactly one point entity is selected
+                int selectedPointCount = 0;
+                Entity *solePointEntity = nullptr;
+                for (const auto &e : m_scene.getEntities())
+                {
+                    if (e->isSelected() && e->hasComponent<PointComponent>())
+                    {
+                        ++selectedPointCount;
+                        solePointEntity = e.get();
+                    }
+                }
+                emit selectedEntityChanged(
+                    selectedPointCount == 1
+                        ? solePointEntity
+                        : nullptr);
+            }
+            emit viewportSelectionChanged();
+            update();
+            return;
+        }
     }
 
     if (m_cameraController.getActiveStrategy()->handleMouseReleaseEvent(event))
@@ -166,6 +224,7 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
             QMenu menu(this);
             menu.addAction("New Torus", [this] { emit createTorusRequested(); });
             menu.addAction("New Cursor", [this] { emit createCursorRequested(); });
+            menu.addAction("New Point", [this] { emit createPointRequested(); });
             menu.exec(QCursor::pos());
         }
         break;
@@ -227,25 +286,62 @@ void OpenGLWidget::deleteSelectedEntities()
     }
 }
 
+PointHandle OpenGLWidget::pickPoint(const QPoint screenPos) const
+{
+    const auto view = m_cameraController.getActiveStrategy()->getView();
+    const auto projection = m_cameraController.getActiveStrategy()->getProjection();
+    const auto &registry = m_scene.getPointRegistry();
+
+    PointHandle best = InvalidPointHandle;
+    int bestDist = s_clickRadiusPx * s_clickRadiusPx + 1;
+
+    for (const PointHandle h : registry.aliveHandles())
+    {
+        const auto screen = cadm::projectToScreenGL(
+            registry.getPosition(h),
+            view,
+            projection,
+            width(),
+            height());
+        if (!screen.has_value())
+            continue;
+
+        const int dx = screen->x - screenPos.x();
+        const int dy = screen->y - screenPos.y();
+        if (const int dist = dx * dx + dy * dy; dist < bestDist)
+        {
+            bestDist = dist;
+            best = h;
+        }
+    }
+
+    return best;
+}
+
 void OpenGLWidget::performBoxSelect()
 {
     const auto view = m_cameraController.getActiveStrategy()->getView();
     const auto projection = m_cameraController.getActiveStrategy()->getProjection();
     const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
 
+    const auto &registry = m_scene.getPointRegistry();
     for (const auto &e : m_scene.getEntities())
     {
-        const auto transform = e->getComponent<TransformComponent>();
-        if (!transform) continue;
-        const auto screen = cadm::projectToScreenGL(
-            transform.value()->getTranslation(),
-            view,
-            projection,
-            width(),
-            height());
+        cadm::vec3 worldPos;
+        if (const auto pc = e->getComponent<PointComponent>())
+            worldPos = registry.getPosition(pc.value()->m_handle);
+        else if (const auto transform = e->getComponent<TransformComponent>())
+            worldPos = transform.value()->getTranslation();
+        else
+            continue;
+
+        const auto screen = cadm::projectToScreenGL(worldPos, view, projection, width(), height());
         e->setSelected(screen.has_value() && rect.contains(screen->x, screen->y));
     }
+
+    m_scene.syncPointSelectionToRegistry();
     emit selectedEntityChanged(nullptr);
+    emit viewportSelectionChanged();
 }
 
 bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)
@@ -264,4 +360,3 @@ bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)
     }
     return QObject::eventFilter(obj, event);
 }
-

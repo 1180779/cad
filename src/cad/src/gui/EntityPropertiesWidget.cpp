@@ -2,9 +2,11 @@
 #include "TransformWidget.hpp"
 #include "TorusWidget.hpp"
 #include "ProjectionCameraWidget.hpp"
+#include "PointPropertiesWidget.hpp"
 #include "../components/TransformComponent.hpp"
 #include "../components/GeometryComponent.hpp"
 #include "../components/ProjectionCameraComponent.hpp"
+#include "../components/PointComponent.hpp"
 #include <QVBoxLayout>
 
 #include "CadCameraWidget.hpp"
@@ -15,6 +17,11 @@ EntityPropertiesWidget::EntityPropertiesWidget(QWidget *parent)
 {
     m_layout = new QVBoxLayout(this);
     m_layout->setAlignment(Qt::AlignTop);
+}
+
+void EntityPropertiesWidget::setScene(Scene *scene)
+{
+    m_scene = scene;
 }
 
 void EntityPropertiesWidget::setEntity(Entity *entity)
@@ -54,6 +61,14 @@ void EntityPropertiesWidget::setEntity(Entity *entity)
         const auto widget = new CadCameraWidget(camera.value());
         m_layout->addWidget(widget);
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+    }
+
+    if (const auto pc = m_entity->getComponent<PointComponent>(); pc && m_scene)
+    {
+        const auto widget = new PointPropertiesWidget();
+        widget->setPoint(&m_scene->getPointRegistry(), pc.value()->m_handle);
+        m_layout->addWidget(widget);
+        connect(widget, &PointPropertiesWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }
 }
 

@@ -5,6 +5,7 @@
 #include "RenderSystem.hpp"
 
 #include "CheckMacros.hpp"
+#include "GlCommon.hpp"
 #include "Scene.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
@@ -29,11 +30,16 @@ void RenderSystem::initialize()
     SHADER_ATTACHING_CHECK(
         m_selectionRectShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/selectionRectShader.frag"));
 
+    SHADER_ATTACHING_CHECK(m_pointShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/pointShader.vert"));
+    SHADER_ATTACHING_CHECK(m_pointShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/pointShader.frag"));
+
+
     SHADER_COMPILATION_CHECK(m_basicShader->compile());
     SHADER_COMPILATION_CHECK(m_wireframeShader->compile());
     SHADER_COMPILATION_CHECK(m_axesShader->compile());
     SHADER_COMPILATION_CHECK(m_gridShader->compile());
     SHADER_COMPILATION_CHECK(m_selectionRectShader->compile());
+    SHADER_COMPILATION_CHECK(m_pointShader->compile());
 
     m_screenQuad = std::make_unique<Quad>();
 
@@ -77,19 +83,8 @@ void RenderSystem::regenerateGeometry(const Scene &scene)
     }
 }
 
-void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection)
+void RenderSystem::renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *const gl) const
 {
-    const auto gl = GL();
-
-    renderInfiniteGrid(view, projection);
-
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-
-    regenerateGeometry(scene);
-
-    // pass 1: line geometry
     for (const auto &e : scene.getEntities())
     {
         const auto geometry = e->getComponent<GeometryComponent>();
@@ -106,8 +101,10 @@ void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pGeo->m_EBO_Lines);
         gl->glDrawElements(GL_LINES, static_cast<GLsizei>(pGeo->m_lineIndices.size()), GL_UNSIGNED_INT, nullptr);
     }
+}
 
-    // pass 2: triangle geometry
+void RenderSystem::renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *const gl) const
+{
     gl->glDepthMask(GL_FALSE);
     for (const auto &e : scene.getEntities())
     {
@@ -133,6 +130,51 @@ void RenderSystem::render(const Scene &scene, const cadm::mat4 &view, const cadm
 
     gl->glBindVertexArray(0);
     m_wireframeShader->release();
+}
+
+void RenderSystem::renderControlPoints(
+    Scene &scene,
+    const cadm::mat4 &view,
+    const cadm::mat4 &projection,
+    QOpenGLFunctions_4_5_Core *const gl) const
+{
+    auto &pointRegistry = scene.getPointRegistry();
+    pointRegistry.syncToGpu();
+    if (!pointRegistry.empty())
+    {
+        m_pointShader->bind();
+        SHADER_SET_UNIFORM_CHECK(m_pointShader->setUniformMat4("view", view));
+        SHADER_SET_UNIFORM_CHECK(m_pointShader->setUniformMat4("projection", projection));
+        gl->glBindVertexArray(pointRegistry.getVAO());
+        gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pointRegistry.getEBO());
+        gl->glDrawElements(
+            GL_POINTS,
+            static_cast<GLsizei>(pointRegistry.aliveCount()),
+            GL_UNSIGNED_INT,
+            nullptr);
+        gl->glBindVertexArray(0);
+        m_pointShader->release();
+    }
+}
+
+void RenderSystem::render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection)
+{
+    const auto gl = GL();
+
+    renderInfiniteGrid(view, projection);
+
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
+
+    regenerateGeometry(scene);
+
+    renderLineGeometry(scene, gl);
+    GET_GL_ERRORS();
+    renderTriangleGeometry(scene, gl);
+    GET_GL_ERRORS();
+    renderControlPoints(scene, view, projection, gl);
+
     GET_GL_ERRORS();
 }
 

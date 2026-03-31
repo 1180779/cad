@@ -16,8 +16,8 @@ class RenderSystem
 public:
     void initialize();
     void renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection) const;
-    void regenerateGeometry(const Scene &scene);
-    void render(const Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection);
+    static void regenerateGeometry(const Scene &scene);
+    void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection);
     void renderSelectionRect(
         cadm::cadf x0Ndc,
         cadm::cadf y0Ndc,
@@ -30,14 +30,23 @@ public:
     [[nodiscard]] int getGridPlanes() const { return m_gridPlanes; }
 
 private:
-    int m_gridPlanes{1};
+    void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+    void renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+    void renderControlPoints(
+        Scene &scene,
+        const cadm::mat4 &view,
+        const cadm::mat4 &projection,
+        QOpenGLFunctions_4_5_Core *gl) const;
 
     std::unique_ptr<ShaderProgram> m_basicShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_wireframeShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_axesShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_gridShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_selectionRectShader = std::make_unique<ShaderProgram>();
+    std::unique_ptr<ShaderProgram> m_pointShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
+
+    int m_gridPlanes{1};
 
     // 2D selection rectangle
     uint32_t m_selectionRectVAO = 0;

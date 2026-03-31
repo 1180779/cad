@@ -6,6 +6,7 @@
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
 #include "OpenGLWidget.hpp"
+#include "PointRegistry.hpp"
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/ProjectionCameraStrategy.hpp"
 #include "gui/EntityPropertiesWidget.hpp"
@@ -77,12 +78,19 @@ int main(int argc, char *argv[])
 
     hierarchyWidget->setScene(&glWidget->getScene());
     hierarchyWidget->setCameraController(&glWidget->getCameraController());
+    entityPropertiesWidget->setScene(&glWidget->getScene());
 
     QObject::connect(
         glWidget,
         &OpenGLWidget::sceneChanged,
         hierarchyWidget,
         &SceneHierarchyWidget::refresh);
+
+    QObject::connect(
+        glWidget,
+        &OpenGLWidget::viewportSelectionChanged,
+        hierarchyWidget,
+        &SceneHierarchyWidget::syncSelectionFromScene);
 
     QObject::connect(
         hierarchyWidget,
@@ -106,6 +114,7 @@ int main(int argc, char *argv[])
                 e->setSelected(false);
             for (auto *e : selected)
                 e->setSelected(true);
+            glWidget->getScene().syncPointSelectionToRegistry();
             glWidget->update();
         });
 
@@ -190,10 +199,21 @@ int main(int argc, char *argv[])
         glWidget->update();
     };
 
+    auto spawnPoint = [glWidget, spawnPos]
+    {
+        const GeometryFactory factory(glWidget->getScene());
+        void(factory.createPoint(spawnPos()));
+        emit
+        glWidget->sceneChanged();
+        glWidget->update();
+    };
+
     QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createTorusRequested, glWidget, spawnTorus);
     QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createCursorRequested, glWidget, spawnCursor);
+    QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPointRequested, glWidget, spawnPoint);
     QObject::connect(glWidget, &OpenGLWidget::createTorusRequested, glWidget, spawnTorus);
     QObject::connect(glWidget, &OpenGLWidget::createCursorRequested, glWidget, spawnCursor);
+    QObject::connect(glWidget, &OpenGLWidget::createPointRequested, glWidget, spawnPoint);
 
     QObject::connect(
         &glWidget->getCameraController(),

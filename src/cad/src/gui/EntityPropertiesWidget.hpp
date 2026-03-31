@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "../entities/Entity.hpp"
+#include "../Scene.hpp"
 
 class QVBoxLayout;
 
@@ -12,6 +13,7 @@ class EntityPropertiesWidget : public QWidget
 
 public:
     explicit EntityPropertiesWidget(QWidget *parent = nullptr);
+    void setScene(Scene *scene);
     void setEntity(Entity *entity);
 
     signals  :
@@ -23,6 +25,7 @@ public:
 private:
     void clearLayout() const;
 
+    Scene *m_scene = nullptr;
     Entity *m_entity = nullptr;
     QVBoxLayout *m_layout;
 };

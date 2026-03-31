@@ -45,3 +45,8 @@ Entity* GeometryFactory::createCursor(const cadm::vec3 &position, const std::str
     e->addComponent<CursorComponent>();
     return e;
 }
+
+Entity* GeometryFactory::createPoint(const cadm::vec3 &position, const std::string &name) const
+{
+    return m_scene.createPoint(position, name);
+}

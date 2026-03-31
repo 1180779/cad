@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include "../components/CursorComponent.hpp"
 #include "../components/CameraComponent.hpp"
+#include "../components/PointComponent.hpp"
 
 SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
     : QWidget(parent)
@@ -76,6 +77,7 @@ void SceneHierarchyWidget::refresh()
 
 void SceneHierarchyWidget::onItemSelectionChanged()
 {
+    if (m_refreshing) return;
     QList<Entity*> selected;
     for (const auto item : m_listWidget->selectedItems())
         selected.append(item->data(Qt::UserRole).value<Entity*>());
@@ -112,6 +114,20 @@ void SceneHierarchyWidget::setCameraController(CameraController *cameraControlle
     m_cameraController = cameraController;
 }
 
+void SceneHierarchyWidget::syncSelectionFromScene()
+{
+    if (!m_scene) return;
+
+    m_refreshing = true;
+    for (int i = 0; i < m_listWidget->count(); ++i)
+    {
+        auto *item = m_listWidget->item(i);
+        const auto *entity = item->data(Qt::UserRole).value<Entity*>();
+        item->setSelected(entity && entity->isSelected());
+    }
+    m_refreshing = false;
+}
+
 void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
 {
     QMenu menu(this);
@@ -123,6 +139,8 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
         connect(createTorusAction, &QAction::triggered, this, &SceneHierarchyWidget::createTorusRequested);
         const auto *createCursorAction = menu.addAction("New Cursor");
         connect(createCursorAction, &QAction::triggered, this, &SceneHierarchyWidget::createCursorRequested);
+        const auto *createPointAction = menu.addAction("New Point");
+        connect(createPointAction, &QAction::triggered, this, &SceneHierarchyWidget::createPointRequested);
         menu.exec(m_listWidget->mapToGlobal(pos));
         return;
     }
@@ -130,17 +148,23 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
     auto *e = item->data(Qt::UserRole).value<Entity*>();
     if (!e) return;
 
-    const bool isCursor = e->getComponent<CursorComponent>().has_value();
-    const bool isCamera = e->getComponent<CameraComponent>().has_value();
+    const bool isCursor = e->hasComponent<CursorComponent>();
+    const bool isCamera = e->hasComponent<CameraComponent>();
+    const bool isPoint = e->hasComponent<PointComponent>();
     const bool isActiveCursor = m_scene && m_scene->getActiveCursor() == e;
     const bool isActiveCamera = m_cameraController && m_cameraController->isActiveCamera(e->getId());
 
-    if (isCursor)
+    if (isPoint)
+    {
+        const auto *action = menu.addAction("Delete");
+        connect(action, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });
+    }
+    else if (isCursor)
     {
         auto *action = menu.addAction("Set as active cursor");
         action->setEnabled(!isActiveCursor);
         connect(action, &QAction::triggered, this, [this, e] { emit setAsCursorRequested(e); });
-        auto *focusAction = menu.addAction("Focus camera");
+        const auto *focusAction = menu.addAction("Focus camera");
         connect(focusAction, &QAction::triggered, this, [this, e] { emit focusCameraRequested(e); });
     }
     else if (isCamera)
@@ -151,7 +175,7 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
     }
     else
     {
-        auto *focusAction = menu.addAction("Focus camera");
+        const auto *focusAction = menu.addAction("Focus camera");
         connect(focusAction, &QAction::triggered, this, [this, e] { emit focusCameraRequested(e); });
         auto *action = menu.addAction("Delete");
         action->setEnabled(!isActiveCursor && !isActiveCamera);

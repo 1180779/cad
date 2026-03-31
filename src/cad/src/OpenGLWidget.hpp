@@ -8,6 +8,8 @@
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
 #include <cad_math/common.hpp>
+#include <cad_math/vec3.hpp>
+#include "PointRegistry.hpp"
 #include "RenderSystem.hpp"
 #include "Scene.hpp"
 #include "camera/CameraController.hpp"
@@ -15,7 +17,6 @@
 class OpenGLWidget : public QOpenGLWidget
 {
     Q_OBJECT
-
 
 public:
     explicit OpenGLWidget(QWidget *parent = nullptr);
@@ -34,12 +35,13 @@ public:
     }
 
 signals:
-
     void selectedEntityChanged(Entity *entity);
+    void viewportSelectionChanged();
     void sceneChanged();
 
     void createTorusRequested();
     void createCursorRequested();
+    void createPointRequested();
 
 protected:
     void paintGL() override;
@@ -52,13 +54,18 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
+
 private:
     void performBoxSelect();
     void deleteSelectedEntities();
+    PointHandle pickPoint(QPoint screenPos) const;
+
+    static constexpr int s_clickRadiusPx = 6;
+
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};
     QPoint m_lastMousePosition;
-
+    QPoint m_pressPosition;
 
     CameraController m_cameraController{this};
     bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};
