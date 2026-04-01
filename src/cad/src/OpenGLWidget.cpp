@@ -24,11 +24,13 @@
 #include "GlCommon.hpp"
 #include "PointRegistry.hpp"
 #include "cad_math/helpers.hpp"
+#include "components/CursorComponent.hpp"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
+#include "cursor/GridPlanePlacementStrategy.hpp"
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
-    : QOpenGLWidget(parent)
+    : QOpenGLWidget(parent), m_cursorPlacementStrategy(std::make_shared<GridPlanePlacementStrategy>(1 /*XY plane*/))
 {
     setFocusPolicy(Qt::StrongFocus);
 }
@@ -128,6 +130,28 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
         (event->pos() - m_pressPosition).manhattanLength() <= s_clickRadiusPx)
     {
         const PointHandle hit = pickPoint(event->pos());
+
+        if (hit == InvalidPointHandle &&
+            event->modifiers() & Qt::ShiftModifier &&
+            m_cursorPlacementStrategy)
+        {
+            if (Entity *cursor = m_scene.getActiveCursor())
+            {
+                auto *cam = m_cameraController.getActiveStrategy();
+                const auto invView = cam->getView().inversedView();
+                const auto invProj = cam->getInvProjection();
+                if (const auto pos = m_cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj); pos
+                    .has_value())
+                {
+                    if (const auto transform = cursor->getComponent<TransformComponent>())
+                        transform.value()->setTranslation(pos.value());
+                    emit sceneChanged();
+                    update();
+                }
+            }
+            return;
+        }
+
         if (hit == InvalidPointHandle && !(event->modifiers() & Qt::ShiftModifier)) // miss
         {
             for (auto &e : m_scene.getEntities())

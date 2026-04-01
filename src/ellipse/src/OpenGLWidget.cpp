@@ -235,8 +235,8 @@ void OpenGLWidget::updateRenderParams()
     const auto M = translationM * rotationM * scaleM;
 
     const auto D = cadm::mat4::diag(1.0 / (m_a * m_a), 1.0 / (m_b * m_b), 1.0 / (m_c * m_c), -1.0);
-    m_renderState.Minv = scaleM.fastScaleInversed() * rotationM.fastRotationInversed() * translationM.
-        fastTranslationInversed();
+    m_renderState.Minv = scaleM.inversedScale() * rotationM.inversedRotation() * translationM.
+        inversedTranslation();
     m_renderState.MinvT = m_renderState.Minv.transposed();
     m_renderState.Dprim = m_renderState.MinvT * D * m_renderState.Minv;
     m_renderState.invPV = (m_camera.getProjectionMatrix() * m_camera.getViewMatrix()).inversed();

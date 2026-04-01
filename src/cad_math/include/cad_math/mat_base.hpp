@@ -34,7 +34,7 @@ namespace cadm
             return matrix(rowIdx, col);
         }
 
-        constexpr operator RowType() const noexcept
+        explicit constexpr operator RowType() const noexcept
         {
             RowType res{};
             for (std::size_t k = 0; k < C; ++k)
@@ -306,7 +306,7 @@ namespace cadm
             return mat_row_ref<Derived, RowType, C, T>(static_cast<Derived&>(*this), row_idx);
         }
 
-        std::size_t findPivotGEPP(const std::size_t i) const
+        [[nodiscard]] std::size_t findPivotGEPP(const std::size_t i) const
         {
             std::size_t pivot = i;
             for (std::size_t j = i + 1; j < R; ++j)

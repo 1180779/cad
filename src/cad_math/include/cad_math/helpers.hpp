@@ -36,24 +36,6 @@ namespace cadm
             static_cast<int>((1.0f - ndcY) / 2.0f * static_cast<cadf>(height)));
     }
 
-    // Unprojects a 2D screen point with a given NDC depth z to World Space.
-    // z should be in the range [-1, 1] (OpenGL) or [0, 1] (DirectX/Vulkan) depending on the projection matrix.
-    // Top left is the (0, 0) point.
-    inline vec4 unproject(const vec2i point, const cadf z, const mat4 &invWorldPV, const int width, const int height)
-    {
-        const cadf halfWidth = static_cast<cadf>(width / 2.0);
-        const cadf halfHeight = static_cast<cadf>(height / 2.0);
-
-        const vec2 ndcPoint(
-            (static_cast<cadf>(point.x) - halfWidth) / halfWidth,
-            (halfHeight - static_cast<cadf>(point.y)) / halfHeight);
-
-        vec4 unprojectedPoint(ndcPoint.x, ndcPoint.y, z, 1.0);
-        unprojectedPoint = invWorldPV * unprojectedPoint;
-        unprojectedPoint /= unprojectedPoint.w;
-        return unprojectedPoint;
-    }
-
     // Unprojects a 2D screen point with a given NDC depth z to World Space ray.
     // z should be the lower value (-1 for OpenGL or 1 for DirectX/Vulkan) depending on the projection matrix.
     // Top left is the (0, 0) point.
@@ -81,6 +63,23 @@ namespace cadm
 
         vec4 rayDir = (unprojectedFarPoint - unprojectedNearPoint).normalized();
         return {unprojectedNearPoint, rayDir};
+    }
+
+    // Intersects a ray (origin + t*dir) with the infinite plane dot(normal, p) = offset.
+    // Returns the parameter t at the intersection point, or nullopt when the ray is
+    // parallel to the plane.
+    // The hit position is: origin + dir * t.
+    inline std::optional<cadf> intersectRayPlane(
+        const vec3 &origin,
+        const vec3 &dir,
+        const vec3 &normal,
+        const cadf offset,
+        const cadf parallelThreshold = feps)
+    {
+        const auto denom = normal.dot(dir);
+        if (std::abs(denom) < parallelThreshold)
+            return std::nullopt;
+        return (offset - normal.dot(origin)) / denom;
     }
 }
 

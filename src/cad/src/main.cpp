@@ -93,6 +93,28 @@ int main(int argc, char *argv[])
         &SceneHierarchyWidget::syncSelectionFromScene);
 
     QObject::connect(
+        glWidget,
+        &OpenGLWidget::viewportSelectionChanged,
+        entityPropertiesWidget,
+        [glWidget, entityPropertiesWidget]
+        {
+            Entity *sole = nullptr;
+            int count = 0;
+            for (const auto &e : glWidget->getScene().getEntities())
+            {
+                if (e->isSelected())
+                {
+                    ++count;
+                    sole = e.get();
+                }
+            }
+            entityPropertiesWidget->setEntity(
+                count == 1
+                    ? sole
+                    : nullptr);
+        });
+
+    QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::selectionChanged,
         entityPropertiesWidget,

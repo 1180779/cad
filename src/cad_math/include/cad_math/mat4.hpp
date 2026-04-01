@@ -236,21 +236,21 @@ namespace cadm
             };
         }
 
-        constexpr void fastTranslationInverse()
+        constexpr void inverseTranslation()
         {
             (*this)(0, 3) = -(*this)(0, 3);
             (*this)(1, 3) = -(*this)(1, 3);
             (*this)(2, 3) = -(*this)(2, 3);
         }
 
-        [[nodiscard]] constexpr mat fastTranslationInversed() const
+        [[nodiscard]] constexpr mat inversedTranslation() const
         {
             auto copy = *this;
-            copy.fastTranslationInverse();
+            copy.inverseTranslation();
             return copy;
         }
 
-        constexpr void fastScaleInverse()
+        constexpr void inverseScale()
         {
             if ((*this)(0, 0) != 0.0)
                 (*this)(0, 0) = static_cast<cadf>(1.0 / (*this)(0, 0));
@@ -260,21 +260,91 @@ namespace cadm
                 (*this)(2, 2) = static_cast<cadf>(1.0 / (*this)(2, 2));
         }
 
-        [[nodiscard]] constexpr mat fastScaleInversed() const
+        [[nodiscard]] constexpr mat inversedScale() const
         {
             auto copy = *this;
-            copy.fastScaleInverse();
+            copy.inverseScale();
             return copy;
         }
 
-        constexpr void fastRotationInversed()
+        constexpr void inverseRotation()
         {
             transpose();
         }
 
-        [[nodiscard]] constexpr mat fastRotationInversed() const
+        [[nodiscard]] constexpr mat inversedRotation() const
         {
             return transposed();
+        }
+
+        void inverseView()
+        {
+            *this = inversedView();
+        }
+
+        [[nodiscard]] constexpr mat inversedView() const
+        {
+            const auto col0 = col(0).xyz();
+            const auto col1 = col(1).xyz();
+            const auto col2 = col(2).xyz();
+            const auto colt = col(3).xyz();
+
+            const auto ntx = -col0.dot(colt);
+            const auto nty = -col1.dot(colt);
+            const auto ntz = -col2.dot(colt);
+
+            return {
+                {col0.x, col1.x, col2.x, 0},
+                {col0.y, col1.y, col2.y, 0},
+                {col0.z, col1.z, col2.z, 0},
+                {ntx, nty, ntz, 1},
+            };
+        }
+
+        void inverseProjectionMO()
+        {
+            *this = inversedProjectionMO();
+        }
+
+        [[nodiscard]] mat inversedProjectionMO() const
+        {
+            const auto a = col(0)[0];
+            const auto b = col(1)[1];
+            const auto c = col(2)[2];
+            const auto d = col(3)[2];
+
+            return {
+                {static_cast<cadf>(1.0 / a), 0, 0, 0},
+                {0, static_cast<cadf>(1.0 / b), 0, 0},
+                {0, 0, 0, static_cast<cadf>(1.0 / d)},
+                {0, 0, -1, c / d},
+            };
+        }
+
+        void inverseOrtho()
+        {
+            *this = inversedOrtho();
+        }
+
+        [[nodiscard]] constexpr mat inversedOrtho() const
+        {
+            const auto a = col(0)[0];
+            const auto b = col(1)[1];
+            const auto c = col(2)[2];
+            const auto tx = col(3)[0];
+            const auto ty = col(3)[1];
+            const auto tz = col(3)[2];
+
+            const auto ia = static_cast<cadf>(1.0 / a);
+            const auto ib = static_cast<cadf>(1.0 / b);
+            const auto ic = static_cast<cadf>(1.0 / c);
+
+            return {
+                {ia, 0, 0, 0},
+                {0, ib, 0, 0},
+                {0, 0, ic, 0},
+                {-tx * ia, -ty * ib, -tz * ic, 1},
+            };
         }
     };
 

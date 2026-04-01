@@ -13,6 +13,7 @@
 #include "RenderSystem.hpp"
 #include "Scene.hpp"
 #include "camera/CameraController.hpp"
+#include "cursor/ICursorPlacementStrategy.hpp"
 
 class OpenGLWidget : public QOpenGLWidget
 {
@@ -31,7 +32,14 @@ public:
     void setGridPlanes(const int planes)
     {
         m_renderSystem.setGridPlanes(planes);
+        if (m_cursorPlacementStrategy)
+            m_cursorPlacementStrategy->onGridPlanesChanged(planes);
         update();
+    }
+
+    void setCursorPlacementStrategy(std::shared_ptr<ICursorPlacementStrategy> strategy)
+    {
+        m_cursorPlacementStrategy = std::move(strategy);
     }
 
 signals:
@@ -79,6 +87,8 @@ private:
     QPoint m_boxSelectStart;
     QPoint m_boxSelectCurrent;
     Qt::MouseButton m_boxSelectMouseButton = Qt::LeftButton;
+
+    std::shared_ptr<ICursorPlacementStrategy> m_cursorPlacementStrategy;
 };
 
 
