@@ -141,6 +141,34 @@ namespace cadm
                 c,
             };
         }
+
+        static mat rotZYX(const vec3 &xyz)
+        {
+            return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x);
+        }
+
+        static mat rotZYX(const cadf rx, const cadf ry, const cadf rz)
+        {
+            return rotZ(rz) * rotY(ry) * rotX(rx);
+        }
+
+        static mat rotZ(const cadf alpha)
+        {
+            const cadf c = std::cos(alpha);
+            const cadf s = std::sin(alpha);
+
+            return {
+                c,
+                s,
+                0,
+                -s,
+                c,
+                0,
+                0,
+                0,
+                1,
+            };
+        }
     };
 
     using mat3 = mat<3, 3, cadf>;

@@ -5,8 +5,10 @@
 #ifndef CAD_HELPERS_H
 #define CAD_HELPERS_H
 
+#include <algorithm>
 #include <optional>
 
+#include "mat3.hpp"
 #include "mat4.hpp"
 #include "ray4.hpp"
 #include "vec2.hpp"
@@ -63,6 +65,23 @@ namespace cadm
 
         vec4 rayDir = (unprojectedFarPoint - unprojectedNearPoint).normalized();
         return {unprojectedNearPoint, rayDir};
+    }
+
+    // Extracts ZYX Euler angles (rx, ry, rz) from rotation matrix M = Rz * Ry * Rx.
+    inline vec3 eulerZYXFromRotMat(const mat3 &m)
+    {
+        // https://en.wikipedia.org/wiki/Euler_angles
+        const auto m20 = m.row(2)[0];
+        const auto m00 = m.row(0)[0];
+        const auto m10 = m.row(1)[0];
+        const auto m21 = m.row(2)[1];
+        const auto m22 = m.row(2)[2];
+
+        const auto alpha = std::atan2(m10, m00);
+        const auto beta = std::asin(-m20);
+        const auto gamma = std::atan2(m21, m22);
+
+        return {gamma, beta, alpha};
     }
 
     // Intersects a ray (origin + t*dir) with the infinite plane dot(normal, p) = offset.

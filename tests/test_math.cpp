@@ -7,10 +7,57 @@
 #include <cad_math/vec3.hpp>
 #include <cad_math/vec4.hpp>
 #include <cad_math/mat4.hpp>
+#include <cad_math/helpers.hpp>
+#include <numbers>
 
 namespace
 {
     using namespace cadm;
+
+    constexpr cadf kPi = std::numbers::pi_v<cadf>;
+
+    TEST_CASE("eulerZYXFromRotMat", "[math][euler]")
+    {
+        SECTION("Identity")
+        {
+            const auto m = mat3::identity();
+            const auto angles = eulerZYXFromRotMat(m);
+            const auto rot = mat3::rotZYX(angles);
+            REQUIRE(rot == m);
+        }
+
+        SECTION("Pure Rx rotation")
+        {
+            const auto m = mat3::rotX(kPi / 4.0f); // 45 deg
+            const auto angles = eulerZYXFromRotMat(m);
+            const auto rot = mat3::rotZYX(angles);
+            REQUIRE(rot == m);
+        }
+
+        SECTION("Pure Ry rotation")
+        {
+            const auto m = mat3::rotY(kPi / 6.0f); // 30 deg
+            const auto angles = eulerZYXFromRotMat(m);
+            const auto rot = mat3::rotZYX(angles);
+            REQUIRE(rot == m);
+        }
+
+        SECTION("Combined ZYX rotation")
+        {
+            const auto m = mat3::rotZYX(kPi / 6.0f, kPi / 4.0f, kPi / 3.0f); // 30, 45, 60 deg
+            const auto angles = eulerZYXFromRotMat(m);
+            const auto rot = mat3::rotZYX(angles);
+            REQUIRE(rot == m);
+        }
+
+        SECTION("Gimbal lock ry = pi/2")
+        {
+            const auto m = mat3::rotZYX(kPi / 5.0f, kPi / 2.0f, 0.0f);
+            const auto angles = eulerZYXFromRotMat(m);
+            const auto rot = mat3::rotZYX(angles.x, angles.y, angles.z);
+            REQUIRE(rot == m);
+        }
+    }
 
     TEST_CASE("vec3 basic operations", "[math][vec3]")
     {
@@ -282,7 +329,7 @@ namespace
             m(2, 3) = 40.0f;
 
             auto row2 = m.makeRowRef(2);
-            vec4 v = row2;
+            auto v = static_cast<vec4>(row2);
 
             REQUIRE_THAT(v.x, Catch::Matchers::WithinRel(10.0f));
             REQUIRE_THAT(v.y, Catch::Matchers::WithinRel(20.0f));
