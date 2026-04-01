@@ -7,7 +7,10 @@
 
 #include "ShaderProgram.hpp"
 #include "Quad.hpp"
+#include "components/GeometryComponent.hpp"
 #include <memory>
+#include <cad_math/vec3.hpp>
+#include <cad_math/mat4.hpp>
 
 class Scene;
 
@@ -23,6 +26,10 @@ public:
         cadm::cadf y0Ndc,
         cadm::cadf x1Ndc,
         cadm::cadf y1Ndc) const;
+    void renderPivotMarker(
+        const cadm::vec3 &pos,
+        const cadm::mat4 &view,
+        const cadm::mat4 &projection) const;
     void shutdown();
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
@@ -37,6 +44,8 @@ private:
         const cadm::mat4 &view,
         const cadm::mat4 &projection,
         QOpenGLFunctions_4_5_Core *gl) const;
+
+    AxesGeometry m_pivotAxes;
 
     std::unique_ptr<ShaderProgram> m_basicShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_wireframeShader = std::make_unique<ShaderProgram>();

@@ -15,6 +15,8 @@
 #include "camera/CameraController.hpp"
 #include "cursor/ICursorPlacementStrategy.hpp"
 
+enum class PivotMode { MedianPoint, ActiveCursor };
+
 class OpenGLWidget : public QOpenGLWidget
 {
     Q_OBJECT
@@ -28,6 +30,8 @@ public:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
     Scene& getScene() { return m_scene; }
+
+    void setPivotMode(PivotMode mode) { m_pivotMode = mode; }
 
     void setGridPlanes(const int planes)
     {
@@ -68,6 +72,8 @@ private:
     void deleteSelectedEntities();
     PointHandle pickPoint(QPoint screenPos) const;
 
+    [[nodiscard]] std::optional<cadm::vec3> computePivot() const;
+
     static constexpr int s_clickRadiusPx = 6;
 
     cadm::cadf m_sensitivity{0.001};
@@ -89,6 +95,7 @@ private:
     Qt::MouseButton m_boxSelectMouseButton = Qt::LeftButton;
 
     std::shared_ptr<ICursorPlacementStrategy> m_cursorPlacementStrategy;
+    PivotMode m_pivotMode = PivotMode::MedianPoint;
 };
 
 

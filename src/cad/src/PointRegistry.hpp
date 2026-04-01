@@ -5,7 +5,6 @@
 #ifndef CAD_POINTREGISTRY_HPP
 #define CAD_POINTREGISTRY_HPP
 
-#include <cstdint>
 #include <limits>
 #include <qopenglfunctions_4_5_core.h>
 #include <unordered_set>

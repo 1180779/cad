@@ -6,7 +6,6 @@
 #define CAD_ICURSORPLACEMENTSTRATEGY_HPP
 
 #include <optional>
-#include <QMouseEvent>
 #include <cad_math/mat4.hpp>
 #include <cad_math/vec3.hpp>
 

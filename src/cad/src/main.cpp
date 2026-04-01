@@ -6,7 +6,6 @@
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
 #include "OpenGLWidget.hpp"
-#include "PointRegistry.hpp"
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/ProjectionCameraStrategy.hpp"
 #include "gui/EntityPropertiesWidget.hpp"

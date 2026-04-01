@@ -1,7 +1,6 @@
 #ifndef SCENEHIERARCHYWIDGET_H
 #define SCENEHIERARCHYWIDGET_H
 
-#include <QList>
 #include <QListWidgetItem>
 #include "../entities/Entity.hpp"
 #include "../Scene.hpp"

@@ -5,6 +5,8 @@
 #ifndef CAD_GRIDPLANEPLACEMENTSTRATEGY_HPP
 #define CAD_GRIDPLANEPLACEMENTSTRATEGY_HPP
 
+#include <QMouseEvent>
+
 #include "ICursorPlacementStrategy.hpp"
 
 // Resolves cursor placement by intersecting the mouse ray with the most

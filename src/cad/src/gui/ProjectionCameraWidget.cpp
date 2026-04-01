@@ -4,7 +4,6 @@
 
 #include "ProjectionCameraWidget.hpp"
 
-#include <QGroupBox>
 #include <QLabel>
 #include <QHBoxLayout>
 #include <numbers>

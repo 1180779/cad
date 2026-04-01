@@ -46,6 +46,9 @@ void OpenGLWidget::paintGL()
     const auto projection = m_cameraController.getActiveStrategy()->getProjection();
     m_renderSystem.render(m_scene, view, projection);
 
+    if (const auto pivot = computePivot())
+        m_renderSystem.renderPivotMarker(pivot.value(), view, projection);
+
     if (m_boxSelecting)
     {
         const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
@@ -366,6 +369,34 @@ void OpenGLWidget::performBoxSelect()
     m_scene.syncPointSelectionToRegistry();
     emit selectedEntityChanged(nullptr);
     emit viewportSelectionChanged();
+}
+
+std::optional<cadm::vec3> OpenGLWidget::computePivot() const
+{
+    if (m_pivotMode == PivotMode::ActiveCursor)
+    {
+        if (Entity *cursor = m_scene.getActiveCursor())
+            if (const auto tc = cursor->getComponent<TransformComponent>())
+                return tc.value()->getTranslation();
+        return std::nullopt;
+    }
+
+    cadm::vec3 sum{};
+    int count = 0;
+    const auto &registry = m_scene.getPointRegistry();
+    for (const auto &e : m_scene.getEntities())
+    {
+        if (!e->isSelected()) continue;
+        if (const auto pc = e->getComponent<PointComponent>())
+            sum = sum + registry.getPosition(pc.value()->m_handle);
+        else if (const auto tc = e->getComponent<TransformComponent>())
+            sum = sum + tc.value()->getTranslation();
+        else
+            continue;
+        ++count;
+    }
+    if (count == 0) return std::nullopt;
+    return sum * (static_cast<cadm::cadf>(1.0) / static_cast<cadm::cadf>(count));
 }
 
 bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)

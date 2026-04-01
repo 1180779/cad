@@ -1,7 +1,6 @@
 #include "TransformWidget.hpp"
 #include <QFormLayout>
 #include <QLabel>
-#include <limits>
 #include <numbers>
 
 TransformWidget::TransformWidget(TransformComponent *transform, QWidget *parent)

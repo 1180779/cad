@@ -41,6 +41,10 @@ void RenderSystem::initialize()
     SHADER_COMPILATION_CHECK(m_selectionRectShader->compile());
     SHADER_COMPILATION_CHECK(m_pointShader->compile());
 
+    m_pivotAxes.m_length = 0.5f;
+    m_pivotAxes.regenerateMesh();
+    m_pivotAxes.syncToGpu();
+
     m_screenQuad = std::make_unique<Quad>();
 
     // Selection rect
@@ -213,6 +217,31 @@ void RenderSystem::renderSelectionRect(
 
     gl->glBindVertexArray(0);
     m_selectionRectShader->release();
+}
+
+void RenderSystem::renderPivotMarker(
+    const cadm::vec3 &pos,
+    const cadm::mat4 &view,
+    const cadm::mat4 &projection) const
+{
+    const auto gl = GL();
+    const cadm::mat4 model = cadm::mat4::translation(pos);
+
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", model));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
+
+    gl->glBindVertexArray(m_pivotAxes.m_VAO);
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pivotAxes.m_EBO_Lines);
+    gl->glDrawElements(
+        GL_LINES,
+        static_cast<GLsizei>(m_pivotAxes.m_lineIndices.size()),
+        GL_UNSIGNED_INT,
+        nullptr);
+    gl->glBindVertexArray(0);
+    m_wireframeShader->release();
 }
 
 void RenderSystem::shutdown()
