@@ -38,6 +38,27 @@ namespace cadm
             static_cast<int>((1.0f - ndcY) / 2.0f * static_cast<cadf>(height)));
     }
 
+    // Unprojects a 2D screen point at a specific NDC depth to a World Space position.
+    // ndcZ: the clip-space Z to unproject at (e.g. pivot depth from VP * pivotPos).
+    // Top left is the (0, 0) point.
+    inline vec3 unprojectPoint(
+        const vec2i point,
+        const cadf ndcZ,
+        const mat4 &invVP,
+        const int width,
+        const int height)
+    {
+        const cadf halfWidth = static_cast<cadf>(width / 2.0);
+        const cadf halfHeight = static_cast<cadf>(height / 2.0);
+
+        const cadf ndcX = (static_cast<cadf>(point.x) - halfWidth) / halfWidth;
+        const cadf ndcY = (halfHeight - static_cast<cadf>(point.y)) / halfHeight;
+
+        vec4 world = invVP * vec4(ndcX, ndcY, ndcZ, 1.0);
+        world /= world.w;
+        return {world.x, world.y, world.z};
+    }
+
     // Unprojects a 2D screen point with a given NDC depth z to World Space ray.
     // z should be the lower value (-1 for OpenGL or 1 for DirectX/Vulkan) depending on the projection matrix.
     // Top left is the (0, 0) point.

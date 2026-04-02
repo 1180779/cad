@@ -13,9 +13,11 @@
 #include "RenderSystem.hpp"
 #include "Scene.hpp"
 #include "camera/CameraController.hpp"
+#include "components/EntitySnapshot.hpp"
 #include "cursor/ICursorPlacementStrategy.hpp"
 
 enum class PivotMode { MedianPoint, ActiveCursor };
+enum class TransformMode { None, Rotate, Scale, Translate };
 
 class OpenGLWidget : public QOpenGLWidget
 {
@@ -27,11 +29,13 @@ public:
 
     CameraController& getCameraController() { return m_cameraController; }
 
+    void removeEntity(EntityID id);
+
     bool eventFilter(QObject *obj, QEvent *event) override;
 
     Scene& getScene() { return m_scene; }
 
-    void setPivotMode(PivotMode mode) { m_pivotMode = mode; }
+    void setPivotMode(const PivotMode mode) { m_pivotMode = mode; }
 
     void setGridPlanes(const int planes)
     {
@@ -41,7 +45,7 @@ public:
         update();
     }
 
-    void setCursorPlacementStrategy(std::shared_ptr<ICursorPlacementStrategy> strategy)
+    void setCursorPlacementStrategy(std::unique_ptr<ICursorPlacementStrategy> strategy)
     {
         m_cursorPlacementStrategy = std::move(strategy);
     }
@@ -50,6 +54,7 @@ signals:
     void selectedEntityChanged(Entity *entity);
     void viewportSelectionChanged();
     void sceneChanged();
+    void transformModeChanged(TransformMode mode, QString axisInfo);
 
     void createTorusRequested();
     void createCursorRequested();
@@ -74,12 +79,22 @@ private:
 
     [[nodiscard]] std::optional<cadm::vec3> computePivot() const;
 
-    static constexpr int s_clickRadiusPx = 6;
+    void beginTransform(TransformMode mode);
+    void handleTransformRotate(int dx, PointRegistry &registry);
+    void handleTransformTranslate(QPoint currentMousePos, PointRegistry &registry);
+    void handleTransformScale(int dx, PointRegistry &registry);
+    void applyTransform(QPoint currentMousePos);
+    void cancelTransform();
+    void confirmTransform();
+
+    static constexpr int s_clickRadiusPx = 8;
 
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};
     QPoint m_lastMousePosition;
     QPoint m_pressPosition;
+    bool m_leftMouseDown{false};
+    bool m_rightMouseDown{false};
 
     CameraController m_cameraController{this};
     bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};
@@ -94,8 +109,13 @@ private:
     QPoint m_boxSelectCurrent;
     Qt::MouseButton m_boxSelectMouseButton = Qt::LeftButton;
 
-    std::shared_ptr<ICursorPlacementStrategy> m_cursorPlacementStrategy;
+    std::unique_ptr<ICursorPlacementStrategy> m_cursorPlacementStrategy;
+
     PivotMode m_pivotMode = PivotMode::MedianPoint;
+    TransformMode m_transformMode = TransformMode::None;
+    std::vector<EntitySnapshot> m_transformSnapshots;
+    QPoint m_transformStartMousePos;
+    cadm::vec3 m_transformPivot;
 };
 
 

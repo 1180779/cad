@@ -8,7 +8,7 @@
 #include <QMouseEvent>
 
 #include "../components/CameraComponent.hpp"
-#include "../entities/Entity.hpp"
+#include "../components/Entity.hpp"
 #include "cad_math/mat4.hpp"
 
 class ICameraStrategy

@@ -2,7 +2,7 @@
 #define SCENEHIERARCHYWIDGET_H
 
 #include <QListWidgetItem>
-#include "../entities/Entity.hpp"
+#include "../components/Entity.hpp"
 #include "../Scene.hpp"
 #include "../camera/CameraController.hpp"
 

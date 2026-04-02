@@ -60,10 +60,12 @@ void RenderSystem::initialize()
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void RenderSystem::renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection) const
+void RenderSystem::renderInfiniteGrid(
+    const cadm::mat4 &view,
+    const cadm::mat4 &projection,
+    const cadm::mat4 &invVP) const
 {
     const auto VP = projection * view;
-    const auto invVP = VP.inversed();
     m_gridShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniformMat4("VP", VP));
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniformMat4("invVP", invVP));
@@ -161,11 +163,15 @@ void RenderSystem::renderControlPoints(
     }
 }
 
-void RenderSystem::render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection)
+void RenderSystem::render(
+    Scene &scene,
+    const cadm::mat4 &view,
+    const cadm::mat4 &projection,
+    const cadm::mat4 &invVP) const
 {
     const auto gl = GL();
 
-    renderInfiniteGrid(view, projection);
+    renderInfiniteGrid(view, projection, invVP);
 
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));

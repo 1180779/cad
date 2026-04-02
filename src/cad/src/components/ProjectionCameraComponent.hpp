@@ -5,7 +5,6 @@
 #ifndef CAD_CAMERA_HPP
 #define CAD_CAMERA_HPP
 
-#include "../entities/Entity.hpp"
 #include "cad_math/mat4.hpp"
 #include "cad_math/vec3.hpp"
 #include <QObject>

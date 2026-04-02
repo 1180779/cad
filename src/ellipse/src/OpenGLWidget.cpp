@@ -240,6 +240,7 @@ void OpenGLWidget::updateRenderParams()
     m_renderState.MinvT = m_renderState.Minv.transposed();
     m_renderState.Dprim = m_renderState.MinvT * D * m_renderState.Minv;
     m_renderState.invPV = (m_camera.getProjectionMatrix() * m_camera.getViewMatrix()).inversed();
+    // TODO: replace with fast inverses
 
     m_currentAdaptationStep = m_adaptationSize;
     m_prevAdaptationStep = std::nullopt;
@@ -249,8 +250,8 @@ void OpenGLWidget::updateRenderParams()
 void OpenGLWidget::performRaycasting(
     const RenderState &state,
     std::vector<unsigned char> &buffer,
-    std::optional<unsigned int> prevAdaptationStep,
-    unsigned int adaptationStep)
+    const std::optional<unsigned int> prevAdaptationStep,
+    const unsigned int adaptationStep)
 {
     // uncomment to check if adaptation works as expected
     // std::this_thread::sleep_for(std::chrono::milliseconds(1000));

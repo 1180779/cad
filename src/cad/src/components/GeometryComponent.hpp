@@ -5,7 +5,7 @@
 #ifndef CAD_GEOMETRY_H
 #define CAD_GEOMETRY_H
 
-#include "../entities/Entity.hpp"
+#include "Entity.hpp"
 #include <cad_math/vec3.hpp>
 #include <vector>
 #include <QObject>

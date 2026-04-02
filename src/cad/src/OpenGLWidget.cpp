@@ -30,7 +30,7 @@
 #include "cursor/GridPlanePlacementStrategy.hpp"
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
-    : QOpenGLWidget(parent), m_cursorPlacementStrategy(std::make_shared<GridPlanePlacementStrategy>(1 /*XY plane*/))
+    : QOpenGLWidget(parent), m_cursorPlacementStrategy(std::make_unique<GridPlanePlacementStrategy>(1 /*XY plane*/))
 {
     setFocusPolicy(Qt::StrongFocus);
 }
@@ -44,7 +44,8 @@ void OpenGLWidget::paintGL()
 
     const auto view = m_cameraController.getActiveStrategy()->getView();
     const auto projection = m_cameraController.getActiveStrategy()->getProjection();
-    m_renderSystem.render(m_scene, view, projection);
+    const auto invVP = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
+    m_renderSystem.render(m_scene, view, projection, invVP);
 
     if (const auto pivot = computePivot())
         m_renderSystem.renderPivotMarker(pivot.value(), view, projection);
@@ -84,6 +85,13 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event)
 {
     m_lastMousePosition = event->pos();
     m_pressPosition = event->pos();
+    if (event->button() == Qt::LeftButton)
+        m_leftMouseDown = true;
+    else if (event->button() == Qt::RightButton)
+        m_rightMouseDown = true;
+
+    if (m_transformMode != TransformMode::None)
+        return;
 
     if (m_boxSelectMode && event->button() == m_boxSelectMouseButton)
     {
@@ -106,10 +114,38 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
     const auto delta = currentPos - m_lastMousePosition;
     m_lastMousePosition = currentPos;
 
+    if (m_transformMode != TransformMode::None)
+    {
+        applyTransform(currentPos);
+        update();
+        return;
+    }
+
     if (m_boxSelecting)
     {
         m_boxSelectCurrent = currentPos;
         update();
+        return;
+    }
+
+    if (m_leftMouseDown &&
+        event->modifiers() & Qt::ShiftModifier &&
+        m_cursorPlacementStrategy)
+    {
+        if (Entity *cursor = m_scene.getActiveCursor())
+        {
+            auto *cam = m_cameraController.getActiveStrategy();
+            const auto invView = cam->getView().inversedView();
+            const auto invProj = cam->getInvProjection();
+            if (const auto pos = m_cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj);
+                pos.has_value())
+            {
+                if (const auto transform = cursor->getComponent<TransformComponent>())
+                    transform.value()->setTranslation(pos.value());
+                emit sceneChanged();
+                update();
+            }
+        }
         return;
     }
 
@@ -121,6 +157,18 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
 
 void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
+    if (event->button() == Qt::LeftButton)
+        m_leftMouseDown = false;
+    else if (event->button() == Qt::RightButton)
+        m_rightMouseDown = false;
+
+    if (m_transformMode != TransformMode::None && event->button() == Qt::LeftButton)
+    {
+        confirmTransform();
+        update();
+        return;
+    }
+
     if (m_boxSelecting && event->button() == m_boxSelectMouseButton)
     {
         m_boxSelecting = false;
@@ -129,8 +177,10 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
         return;
     }
 
-    if (event->button() == Qt::LeftButton &&
-        (event->pos() - m_pressPosition).manhattanLength() <= s_clickRadiusPx)
+    const auto diff = event->pos() - m_pressPosition;
+    if (const auto dist2 = diff.x() * diff.x() + diff.y() * diff.y();
+        event->button() == Qt::LeftButton &&
+        dist2 <= s_clickRadiusPx * s_clickRadiusPx)
     {
         const PointHandle hit = pickPoint(event->pos());
 
@@ -174,12 +224,12 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
                 emit selectedEntityChanged(nullptr);
             }
 
-            if (const auto entityOpt = m_scene.getEntityByPointHandle(hit))
+            if (const auto entity = m_scene.getEntityByPointHandle(hit))
             {
-                Entity *entity = entityOpt.value();
-                entity->setSelected(
+                Entity *pEntity = entity.value();
+                pEntity->setSelected(
                     additive
-                        ? !entity->isSelected()
+                        ? !pEntity->isSelected()
                         : true);
                 m_scene.syncPointSelectionToRegistry();
 
@@ -229,6 +279,57 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
 
     switch (event->key())
     {
+    case Qt::Key_Escape:
+        if (m_transformMode != TransformMode::None)
+        {
+            cancelTransform();
+            update();
+        }
+        return;
+    case Qt::Key_Return:
+    case Qt::Key_Enter:
+        if (m_transformMode != TransformMode::None)
+        {
+            confirmTransform();
+            update();
+        }
+        return;
+    case Qt::Key_G:
+        if (event->isAutoRepeat()) return;
+        if (m_transformMode == TransformMode::Translate)
+            cancelTransform();
+        else
+        {
+            if (m_transformMode != TransformMode::None)
+                confirmTransform();
+            beginTransform(TransformMode::Translate);
+        }
+        update();
+        return;
+    case Qt::Key_R:
+        if (event->isAutoRepeat()) return;
+        if (m_transformMode == TransformMode::Rotate)
+            cancelTransform();
+        else
+        {
+            if (m_transformMode != TransformMode::None)
+                confirmTransform();
+            beginTransform(TransformMode::Rotate);
+        }
+        update();
+        return;
+    case Qt::Key_S:
+        if (event->isAutoRepeat()) return;
+        if (m_transformMode == TransformMode::Scale)
+            cancelTransform();
+        else
+        {
+            if (m_transformMode != TransformMode::None)
+                confirmTransform();
+            beginTransform(TransformMode::Scale);
+        }
+        update();
+        return;
     case Qt::Key_N:
         m_cameraController.switchToNext(width(), height());
         update();
@@ -244,6 +345,8 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
         if (event->isAutoRepeat())
             return;
         m_xPressed = true;
+        if (m_transformMode == TransformMode::Rotate)
+            emit transformModeChanged(m_transformMode, "X");
         return;
 
     case Qt::Key_C:
@@ -260,11 +363,15 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
         if (event->isAutoRepeat())
             return;
         m_yPressed = true;
+        if (m_transformMode == TransformMode::Rotate)
+            emit transformModeChanged(m_transformMode, "Y");
         return;
     case Qt::Key_Z:
         if (event->isAutoRepeat())
             return;
         m_zPressed = true;
+        if (m_transformMode == TransformMode::Rotate)
+            emit transformModeChanged(m_transformMode, "Z");
         return;
     default:
         QOpenGLWidget::keyPressEvent(event);
@@ -279,12 +386,36 @@ void OpenGLWidget::keyReleaseEvent(QKeyEvent *event)
         {
         case Qt::Key_X:
             m_xPressed = false;
+            if (m_transformMode == TransformMode::Rotate)
+                emit transformModeChanged(
+                m_transformMode,
+                m_yPressed
+                    ? "Y"
+                    : m_zPressed
+                    ? "Z"
+                    : "");
             break;
         case Qt::Key_Y:
             m_yPressed = false;
+            if (m_transformMode == TransformMode::Rotate)
+                emit transformModeChanged(
+                m_transformMode,
+                m_xPressed
+                    ? "X"
+                    : m_zPressed
+                    ? "Z"
+                    : "");
             break;
         case Qt::Key_Z:
             m_zPressed = false;
+            if (m_transformMode == TransformMode::Rotate)
+                emit transformModeChanged(
+                m_transformMode,
+                m_xPressed
+                    ? "X"
+                    : m_yPressed
+                    ? "Y"
+                    : "");
             break;
         case Qt::Key_B:
             if (!m_boxSelecting)
@@ -298,13 +429,21 @@ void OpenGLWidget::keyReleaseEvent(QKeyEvent *event)
 
 void OpenGLWidget::deleteSelectedEntities()
 {
+    const Entity *activeCursor = m_scene.getActiveCursor();
     std::vector<EntityID> toDelete;
     for (const auto &e : m_scene.getEntities())
-        if (e->isSelected())
-            toDelete.push_back(e->getId());
+    {
+        if (!e->isSelected())
+            continue;
+        if (m_cameraController.isManagedCamera(e->getId()))
+            continue;
+        if (e.get() == activeCursor)
+            continue;
+        toDelete.push_back(e->getId());
+    }
 
     for (const EntityID id : toDelete)
-        m_scene.removeEntity(id);
+        removeEntity(id);
 
     if (!toDelete.empty())
     {
@@ -395,8 +534,203 @@ std::optional<cadm::vec3> OpenGLWidget::computePivot() const
             continue;
         ++count;
     }
-    if (count == 0) return std::nullopt;
+    if (count <= 1) return std::nullopt;
     return sum * (static_cast<cadm::cadf>(1.0) / static_cast<cadm::cadf>(count));
+}
+
+void OpenGLWidget::beginTransform(const TransformMode mode)
+{
+    const auto pivot = computePivot();
+    if (!pivot.has_value())
+        return;
+
+    m_transformPivot = pivot.value();
+    m_transformStartMousePos = mapFromGlobal(QCursor::pos());
+    m_transformSnapshots.clear();
+
+    const auto &registry = m_scene.getPointRegistry();
+    for (const auto &e : m_scene.getEntities())
+    {
+        if (!e->isSelected()) continue;
+
+        EntitySnapshot snap;
+        if (!snap.fillFromEntity(registry, e.get()))
+            continue;
+
+        m_transformSnapshots.push_back(snap);
+    }
+
+    if (m_transformSnapshots.empty())
+        return;
+
+    m_transformMode = mode;
+    emit transformModeChanged(m_transformMode, {});
+}
+
+void OpenGLWidget::handleTransformRotate(const int dx, PointRegistry &registry)
+{
+    const cadm::cadf angle = static_cast<cadm::cadf>(dx) * (2 * std::numbers::pi / static_cast<cadm::cadf>(
+        width()));
+
+    cadm::vec3 axis;
+    if (m_xPressed)
+        axis = cadm::vec3::unitX();
+    else if (m_yPressed)
+        axis = cadm::vec3::unitY();
+    else if (m_zPressed)
+        axis = cadm::vec3::unitZ();
+    else
+    {
+        // Default: rotate around camera's view-forward direction
+        const auto view = m_cameraController.getActiveStrategy()->getView();
+        axis = -view.col(2).xyz().normalized();
+    }
+
+    const cadm::mat3 R = cadm::mat4::rotAxis(angle, axis).upperLeft3x3();
+    for (const auto &snap : m_transformSnapshots)
+    {
+        const cadm::vec3 newPos = m_transformPivot + R * (snap.origPos - m_transformPivot);
+        const auto entity = m_scene.getEntity(snap.id);
+        if (!entity) continue;
+        Entity *pEntity = entity.value();
+
+        if (!snap.isTransformEntity)
+        {
+            if (const auto pc = pEntity->getComponent<PointComponent>())
+                registry.setPosition(pc.value()->m_handle, newPos);
+        }
+        else
+        {
+            if (const auto tc = pEntity->getComponent<TransformComponent>())
+            {
+                tc.value()->setTranslation(newPos);
+                tc.value()->setRotation(cadm::eulerZYXFromRotMat(R * snap.origRotMat));
+            }
+        }
+    }
+}
+
+void OpenGLWidget::handleTransformTranslate(const QPoint currentMousePos, PointRegistry &registry)
+{
+    const auto view = m_cameraController.getActiveStrategy()->getView();
+    const auto proj = m_cameraController.getActiveStrategy()->getProjection();
+    const cadm::mat4 VP = proj * view;
+    const cadm::mat4 invVP = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
+
+    const cadm::vec4 pivotClip = VP * cadm::vec4(m_transformPivot, 1);
+    const cadm::cadf pivotNdcZ = pivotClip.z / pivotClip.w;
+    auto unprojectAt = [&](const QPoint &p) -> cadm::vec3
+    {
+        return cadm::unprojectPoint({p.x(), p.y()}, pivotNdcZ, invVP, width(), height());
+    };
+
+    cadm::vec3 delta = unprojectAt(currentMousePos) - unprojectAt(m_transformStartMousePos);
+
+    if (m_xPressed)
+        delta = cadm::vec3::unitX() * cadm::vec3::unitX().dot(delta);
+    else if (m_yPressed)
+        delta = cadm::vec3::unitY() * cadm::vec3::unitY().dot(delta);
+    else if (m_zPressed)
+        delta = cadm::vec3::unitZ() * cadm::vec3::unitZ().dot(delta);
+
+    for (const auto &snap : m_transformSnapshots)
+    {
+        const cadm::vec3 newPos = snap.origPos + delta;
+        const auto entity = m_scene.getEntity(snap.id);
+        if (!entity) continue;
+        Entity *pEntity = entity.value();
+
+        if (!snap.isTransformEntity)
+        {
+            if (const auto pc = pEntity->getComponent<PointComponent>())
+                registry.setPosition(pc.value()->m_handle, newPos);
+        }
+        else
+        {
+            if (const auto tc = pEntity->getComponent<TransformComponent>())
+                tc.value()->setTranslation(newPos);
+        }
+    }
+}
+
+void OpenGLWidget::handleTransformScale(const int dx, PointRegistry &registry)
+{
+    const cadm::cadf scaleFactor = std::exp(
+        static_cast<cadm::cadf>(dx) * static_cast<cadm::cadf>(2.0) / static_cast<cadm::cadf>(width()));
+
+    for (const auto &snap : m_transformSnapshots)
+    {
+        const cadm::vec3 newPos = m_transformPivot + (snap.origPos - m_transformPivot) * scaleFactor;
+        const auto entity = m_scene.getEntity(snap.id);
+        if (!entity) continue;
+        Entity *pEntity = entity.value();
+
+        if (!snap.isTransformEntity)
+        {
+            if (const auto pc = pEntity->getComponent<PointComponent>())
+                registry.setPosition(pc.value()->m_handle, newPos);
+        }
+        else
+        {
+            if (const auto tc = pEntity->getComponent<TransformComponent>())
+            {
+                tc.value()->setTranslation(newPos);
+                tc.value()->setScale(snap.origScale * scaleFactor);
+            }
+        }
+    }
+}
+
+void OpenGLWidget::applyTransform(const QPoint currentMousePos)
+{
+    if (m_transformMode == TransformMode::None || m_transformSnapshots.empty())
+        return;
+
+    const int dx = currentMousePos.x() - m_transformStartMousePos.x();
+    auto &registry = m_scene.getPointRegistry();
+
+    switch (m_transformMode)
+    {
+    case TransformMode::None: // will never hit; just to silence the warning
+        break;
+    case TransformMode::Rotate:
+        handleTransformRotate(dx, registry);
+        break;
+    case TransformMode::Scale:
+        handleTransformScale(dx, registry);
+        break;
+    case TransformMode::Translate:
+        handleTransformTranslate(currentMousePos, registry);
+        break;
+    }
+}
+
+void OpenGLWidget::cancelTransform()
+{
+    auto &registry = m_scene.getPointRegistry();
+    for (const auto &snap : m_transformSnapshots)
+    {
+        const auto entity = m_scene.getEntity(snap.id);
+        if (!entity) continue;
+        snap.restoreEntity(registry, entity.value());
+    }
+    m_transformMode = TransformMode::None;
+    m_transformSnapshots.clear();
+    emit transformModeChanged(TransformMode::None, {});
+}
+
+void OpenGLWidget::confirmTransform()
+{
+    m_transformMode = TransformMode::None;
+    m_transformSnapshots.clear();
+    emit transformModeChanged(TransformMode::None, {});
+    emit sceneChanged();
+}
+
+void OpenGLWidget::removeEntity(const EntityID id)
+{
+    m_cameraController.removeCamera(id);
+    m_scene.removeEntity(id);
 }
 
 bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)

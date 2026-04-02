@@ -1,4 +1,6 @@
 #include <QApplication>
+#include <QComboBox>
+#include <QLabel>
 #include <QVBoxLayout>
 
 #include "CameraFactory.hpp"
@@ -28,6 +30,11 @@ int main(int argc, char *argv[])
     glWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     leftControlsLayout->addWidget(glWidget);
 
+    constexpr auto transformModeDefaultString = "Mode: NA";
+    const auto transformModeLabel = new QLabel(transformModeDefaultString);
+    transformModeLabel->setAlignment(Qt::AlignLeft);
+    leftControlsLayout->addWidget(transformModeLabel);
+
     // right panel: tabbed widget
     const auto tabWidget = new QTabWidget;
     tabWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
@@ -50,6 +57,14 @@ int main(int argc, char *argv[])
     viewportTabLayout->setAlignment(Qt::AlignTop);
     const auto gridSettingsWidget = new GridSettingsWidget;
     viewportTabLayout->addWidget(gridSettingsWidget);
+
+    const auto pivotLabel = new QLabel("Transform pivot:");
+    const auto pivotCombo = new QComboBox;
+    pivotCombo->addItem("Median point", static_cast<int>(PivotMode::MedianPoint));
+    pivotCombo->addItem("Active cursor", static_cast<int>(PivotMode::ActiveCursor));
+    viewportTabLayout->addWidget(pivotLabel);
+    viewportTabLayout->addWidget(pivotCombo);
+
     tabWidget->addTab(viewportTab, "Viewport");
 
     const GeometryFactory geometryFactory(glWidget->getScene());
@@ -61,18 +76,18 @@ int main(int argc, char *argv[])
 
     const CameraFactory cameraFactory(glWidget->getScene());
     const auto cameraOnSphere = cameraFactory.createCameraOnSphere(20, {});
-    const auto projCameraStrategy = std::make_shared<ProjectionCameraStrategy>(
+    auto projCameraStrategy = std::make_unique<ProjectionCameraStrategy>(
         cameraOnSphere,
         [&] { return glWidget->width(); },
         [&] { return glWidget->height(); });
     const auto cadCamera = cameraFactory.createCadCamera({0, 0, -10}, {}, cadm::vec3::unitY());
-    const auto cadCameraStrat = std::make_shared<CadCameraStrategy>(
+    auto cadCameraStrat = std::make_unique<CadCameraStrategy>(
         cadCamera,
         [&] { return glWidget->width(); },
         [&] { return glWidget->height(); });
 
-    glWidget->getCameraController().addCamera("CAD", cadCameraStrat);
-    glWidget->getCameraController().addCamera("Projection", projCameraStrategy);
+    glWidget->getCameraController().addCamera("CAD", std::move(cadCameraStrat));
+    glWidget->getCameraController().addCamera("Projection", std::move(projCameraStrategy));
 
 
     hierarchyWidget->setScene(&glWidget->getScene());
@@ -156,12 +171,46 @@ int main(int argc, char *argv[])
         &OpenGLWidget::setGridPlanes);
 
     QObject::connect(
+        glWidget,
+        &OpenGLWidget::transformModeChanged,
+        transformModeLabel,
+        [transformModeLabel](const TransformMode mode, const QString &axisInfo)
+        {
+            switch (mode)
+            {
+            case TransformMode::Translate: transformModeLabel->setText("Mode: Translate  (G)");
+                break;
+            case TransformMode::Rotate:
+                {
+                    const QString axis = axisInfo.isEmpty()
+                                             ? "View"
+                                             : axisInfo;
+                    transformModeLabel->setText(QString("Mode: Rotate  (R)  |  Axis: " + axis));
+                }
+                break;
+            case TransformMode::Scale: transformModeLabel->setText("Mode: Scale  (S)");
+                break;
+            case TransformMode::None: transformModeLabel->setText(transformModeDefaultString);
+                break;
+            }
+        });
+
+    QObject::connect(
+        pivotCombo,
+        &QComboBox::currentIndexChanged,
+        glWidget,
+        [glWidget, pivotCombo](const int index)
+        {
+            glWidget->setPivotMode(static_cast<PivotMode>(pivotCombo->itemData(index).toInt()));
+        });
+
+    QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::deleteEntityRequested,
         glWidget,
         [glWidget, hierarchyWidget](const Entity *e)
         {
-            glWidget->getScene().removeEntity(e->getId());
+            glWidget->removeEntity(e->getId());
             hierarchyWidget->refresh();
             glWidget->update();
         });
@@ -190,7 +239,7 @@ int main(int argc, char *argv[])
         glWidget,
         [glWidget](Entity *e)
         {
-            glWidget->getCameraController().lookAtEntity(e);
+            glWidget->getCameraController().lookAtEntity(e, glWidget->getScene().getPointRegistry());
             glWidget->update();
         });
 

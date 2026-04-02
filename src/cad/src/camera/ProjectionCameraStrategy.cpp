@@ -83,6 +83,9 @@ bool ProjectionCameraStrategy::handleMouseMoveEvent(QMouseEvent *event, const QP
 
     if (m_rightMouseDown)
     {
+        // hWorld = 2 * radius * tan(fov / 2)
+        // <=>
+        // scale = hWorld / hScreen
         const cadm::cadf scale = 2.0 * pCamera->getRadius()
             * std::tan(pCamera->getFov() / 2.0)
             / static_cast<cadm::cadf>(m_heightGetter());

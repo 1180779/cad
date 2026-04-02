@@ -2,7 +2,7 @@
 #define ENTITYPROPERTIESWIDGET_H
 
 #include <QWidget>
-#include "../entities/Entity.hpp"
+#include "../components/Entity.hpp"
 #include "../Scene.hpp"
 
 class QVBoxLayout;

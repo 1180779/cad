@@ -5,7 +5,7 @@
 #ifndef CAD_POINTCOMPONENT_HPP
 #define CAD_POINTCOMPONENT_HPP
 
-#include "../entities/Entity.hpp"
+#include "Entity.hpp"
 #include "../PointRegistry.hpp"
 
 class PointComponent final : public Component

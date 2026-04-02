@@ -301,6 +301,14 @@ namespace cadm
             return result;
         }
 
+        [[nodiscard]] constexpr Derived normalizedColumns() const noexcept
+        {
+            Derived result = *static_cast<const Derived*>(this);
+            for (std::size_t i = 0; i < C; ++i)
+                result.col(i) = result.col(i).normalized();
+            return result;
+        }
+
         constexpr auto makeRowRef(std::size_t row_idx) noexcept
         {
             return mat_row_ref<Derived, RowType, C, T>(static_cast<Derived&>(*this), row_idx);

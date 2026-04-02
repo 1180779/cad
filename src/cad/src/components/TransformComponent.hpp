@@ -7,7 +7,7 @@
 
 #include <QObject>
 
-#include "../entities/Entity.hpp"
+#include "Entity.hpp"
 #include <cad_math/vec3.hpp>
 #include <cad_math/mat4.hpp>
 
@@ -47,7 +47,7 @@ private:
 
     // Euler angles for now
     // TODO: replace with quaternions
-    cadm::vec3 m_rotation{};
+    cadm::vec3 m_rotation{}; // Z, Y, X
     cadm::vec3 m_scale{1.0f, 1.0f, 1.0f};
 
     mutable cadm::mat4 m_modelMatrix = cadm::mat4::identity();

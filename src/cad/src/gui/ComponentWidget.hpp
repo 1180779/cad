@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "../entities/Entity.hpp"
+#include "../components/Entity.hpp"
 
 class ComponentWidget : public QWidget
 {

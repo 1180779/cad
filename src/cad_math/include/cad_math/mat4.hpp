@@ -195,6 +195,16 @@ namespace cadm
             };
         }
 
+        static mat rotZYX(const vec3 &xyz)
+        {
+            return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x);
+        }
+
+        static mat rotZYX(const cadf x, const cadf y, const cadf z)
+        {
+            return rotZ(z) * rotY(y) * rotX(x);
+        }
+
         // Rodrigues rotation matrix around axis `u` by angle `phi` (radians).
         //
         // Precondition: `u` must be a unit vector.

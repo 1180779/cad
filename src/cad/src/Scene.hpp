@@ -5,7 +5,7 @@
 #ifndef CAD_SCENE_H
 #define CAD_SCENE_H
 
-#include "entities/Entity.hpp"
+#include "components/Entity.hpp"
 #include "PointRegistry.hpp"
 #include <vector>
 #include <memory>

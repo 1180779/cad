@@ -21,9 +21,9 @@ const cadm::mat4& TransformComponent::getModelMatrix() const
     if (m_isDirty)
     {
         m_isDirty = false;
-
-        m_modelMatrix = cadm::mat4::translation(m_translation) * cadm::mat4::rotZ(m_rotation.z) * cadm::mat4::rotY(
-            m_rotation.y) * cadm::mat4::rotX(m_rotation.x) * cadm::mat4::scale(m_scale);
+        m_modelMatrix = cadm::mat4::translation(m_translation)
+            * cadm::mat4::rotZYX(m_rotation)
+            * cadm::mat4::scale(m_scale);
     }
     return m_modelMatrix;
 }

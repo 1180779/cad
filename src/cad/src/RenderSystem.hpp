@@ -18,9 +18,8 @@ class RenderSystem
 {
 public:
     void initialize();
-    void renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection) const;
     static void regenerateGeometry(const Scene &scene);
-    void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection);
+    void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVP) const;
     void renderSelectionRect(
         cadm::cadf x0Ndc,
         cadm::cadf y0Ndc,
@@ -37,6 +36,7 @@ public:
     [[nodiscard]] int getGridPlanes() const { return m_gridPlanes; }
 
 private:
+    void renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVP) const;
     void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
     void renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
     void renderControlPoints(

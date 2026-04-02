@@ -156,6 +156,8 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
 
     if (isPoint)
     {
+        const auto *focusAction = menu.addAction("Focus camera");
+        connect(focusAction, &QAction::triggered, this, [this, e] { emit focusCameraRequested(e); });
         const auto *action = menu.addAction("Delete");
         connect(action, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });
     }
