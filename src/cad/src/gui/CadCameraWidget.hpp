@@ -21,10 +21,7 @@ public:
     ~CadCameraWidget() override = default;
 
 private
-    slots  :
-
-
-    
+slots :
     void onPositionXChanged(double value) const;
     void onPositionYChanged(double value) const;
     void onPositionZChanged(double value) const;

@@ -18,6 +18,7 @@
 
 enum class PivotMode { MedianPoint, ActiveCursor };
 enum class TransformMode { None, Rotate, Scale, Translate };
+enum class CoordSpace { World, Local };
 
 class OpenGLWidget : public QOpenGLWidget
 {
@@ -36,6 +37,8 @@ public:
     Scene& getScene() { return m_scene; }
 
     void setPivotMode(const PivotMode mode) { m_pivotMode = mode; }
+    void setCoordSpace(const CoordSpace space) { m_coordSpace = space; }
+    CoordSpace getCoordSpace() const { return m_coordSpace; }
 
     void setGridPlanes(const int planes)
     {
@@ -112,6 +115,7 @@ private:
     std::unique_ptr<ICursorPlacementStrategy> m_cursorPlacementStrategy;
 
     PivotMode m_pivotMode = PivotMode::MedianPoint;
+    CoordSpace m_coordSpace = CoordSpace::World;
     TransformMode m_transformMode = TransformMode::None;
     std::vector<EntitySnapshot> m_transformSnapshots;
     QPoint m_transformStartMousePos;
