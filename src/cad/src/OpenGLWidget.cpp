@@ -4,6 +4,9 @@
 
 #include "OpenGLWidget.hpp"
 
+#include <QAbstractSpinBox>
+#include <QApplication>
+#include <QLineEdit>
 #include <QMenu>
 
 // undefine Qt's emit macro to avoid conflicts with TBB
@@ -330,6 +333,13 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
         }
         update();
         return;
+    case Qt::Key_QuoteLeft:
+        if (event->isAutoRepeat()) return;
+        m_coordSpace = (m_coordSpace == CoordSpace::World)
+                           ? CoordSpace::Local
+                           : CoordSpace::World;
+        update();
+        return;
     case Qt::Key_N:
         m_cameraController.switchToNext(width(), height());
         update();
@@ -534,7 +544,7 @@ std::optional<cadm::vec3> OpenGLWidget::computePivot() const
             continue;
         ++count;
     }
-    if (count <= 1) return std::nullopt;
+    if (count == 0) return std::nullopt;
     return sum * (static_cast<cadm::cadf>(1.0) / static_cast<cadm::cadf>(count));
 }
 
@@ -572,24 +582,36 @@ void OpenGLWidget::handleTransformRotate(const int dx, PointRegistry &registry)
     const cadm::cadf angle = static_cast<cadm::cadf>(dx) * (2 * std::numbers::pi / static_cast<cadm::cadf>(
         width()));
 
-    cadm::vec3 axis;
-    if (m_xPressed)
-        axis = cadm::vec3::unitX();
-    else if (m_yPressed)
-        axis = cadm::vec3::unitY();
-    else if (m_zPressed)
-        axis = cadm::vec3::unitZ();
-    else
-    {
-        // Default: rotate around camera's view-forward direction
-        const auto view = m_cameraController.getActiveStrategy()->getView();
-        axis = -view.col(2).xyz().normalized();
-    }
-
-    const cadm::mat3 R = cadm::mat4::rotAxis(angle, axis).upperLeft3x3();
     for (const auto &snap : m_transformSnapshots)
     {
-        const cadm::vec3 newPos = m_transformPivot + R * (snap.origPos - m_transformPivot);
+        const bool useLocal = m_coordSpace == CoordSpace::Local && snap.isTransformEntity;
+
+        cadm::vec3 axis;
+        if (m_xPressed)
+            axis = useLocal
+                       ? snap.origRotMat.columns[0]
+                       : cadm::vec3::unitX();
+        else if (m_yPressed)
+            axis = useLocal
+                       ? snap.origRotMat.columns[1]
+                       : cadm::vec3::unitY();
+        else if (m_zPressed)
+            axis = useLocal
+                       ? snap.origRotMat.columns[2]
+                       : cadm::vec3::unitZ();
+        else
+        {
+            // rotate around camera's view-forward direction
+            const auto view = m_cameraController.getActiveStrategy()->getView();
+            axis = -view.col(2).xyz().normalized();
+        }
+
+        const cadm::vec3 pivot = useLocal
+                                     ? snap.origPos
+                                     : m_transformPivot;
+        const cadm::mat3 R = cadm::mat4::rotAxis(angle, axis).upperLeft3x3();
+        const cadm::vec3 newPos = pivot + R * (snap.origPos - pivot);
+
         const auto entity = m_scene.getEntity(snap.id);
         if (!entity) continue;
         Entity *pEntity = entity.value();
@@ -624,17 +646,35 @@ void OpenGLWidget::handleTransformTranslate(const QPoint currentMousePos, PointR
         return cadm::unprojectPoint({p.x(), p.y()}, pivotNdcZ, invVP, width(), height());
     };
 
-    cadm::vec3 delta = unprojectAt(currentMousePos) - unprojectAt(m_transformStartMousePos);
-
-    if (m_xPressed)
-        delta = cadm::vec3::unitX() * cadm::vec3::unitX().dot(delta);
-    else if (m_yPressed)
-        delta = cadm::vec3::unitY() * cadm::vec3::unitY().dot(delta);
-    else if (m_zPressed)
-        delta = cadm::vec3::unitZ() * cadm::vec3::unitZ().dot(delta);
+    const cadm::vec3 rawDelta = unprojectAt(currentMousePos) - unprojectAt(m_transformStartMousePos);
 
     for (const auto &snap : m_transformSnapshots)
     {
+        const bool useLocal = m_coordSpace == CoordSpace::Local && snap.isTransformEntity;
+
+        cadm::vec3 delta = rawDelta;
+        if (m_xPressed)
+        {
+            const cadm::vec3 ax = useLocal
+                                      ? snap.origRotMat.columns[0]
+                                      : cadm::vec3::unitX();
+            delta = ax * ax.dot(rawDelta);
+        }
+        else if (m_yPressed)
+        {
+            const cadm::vec3 ax = useLocal
+                                      ? snap.origRotMat.columns[1]
+                                      : cadm::vec3::unitY();
+            delta = ax * ax.dot(rawDelta);
+        }
+        else if (m_zPressed)
+        {
+            const cadm::vec3 ax = useLocal
+                                      ? snap.origRotMat.columns[2]
+                                      : cadm::vec3::unitZ();
+            delta = ax * ax.dot(rawDelta);
+        }
+
         const cadm::vec3 newPos = snap.origPos + delta;
         const auto entity = m_scene.getEntity(snap.id);
         if (!entity) continue;
@@ -660,7 +700,10 @@ void OpenGLWidget::handleTransformScale(const int dx, PointRegistry &registry)
 
     for (const auto &snap : m_transformSnapshots)
     {
-        const cadm::vec3 newPos = m_transformPivot + (snap.origPos - m_transformPivot) * scaleFactor;
+        const cadm::vec3 pivot = (m_coordSpace == CoordSpace::Local && snap.isTransformEntity)
+                                     ? snap.origPos
+                                     : m_transformPivot;
+        const cadm::vec3 newPos = pivot + (snap.origPos - pivot) * scaleFactor;
         const auto entity = m_scene.getEntity(snap.id);
         if (!entity) continue;
         Entity *pEntity = entity.value();

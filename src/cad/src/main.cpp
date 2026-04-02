@@ -65,6 +65,13 @@ int main(int argc, char *argv[])
     viewportTabLayout->addWidget(pivotLabel);
     viewportTabLayout->addWidget(pivotCombo);
 
+    const auto coordSpaceLabel = new QLabel("Transform space:");
+    const auto coordSpaceCombo = new QComboBox;
+    coordSpaceCombo->addItem("World", static_cast<int>(CoordSpace::World));
+    coordSpaceCombo->addItem("Local", static_cast<int>(CoordSpace::Local));
+    viewportTabLayout->addWidget(coordSpaceLabel);
+    viewportTabLayout->addWidget(coordSpaceCombo);
+
     tabWidget->addTab(viewportTab, "Viewport");
 
     const GeometryFactory geometryFactory(glWidget->getScene());
@@ -205,6 +212,15 @@ int main(int argc, char *argv[])
         });
 
     QObject::connect(
+        coordSpaceCombo,
+        &QComboBox::currentIndexChanged,
+        glWidget,
+        [glWidget, coordSpaceCombo](const int index)
+        {
+            glWidget->setCoordSpace(static_cast<CoordSpace>(coordSpaceCombo->itemData(index).toInt()));
+        });
+
+    QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::deleteEntityRequested,
         glWidget,
@@ -291,7 +307,7 @@ int main(int argc, char *argv[])
         glWidget,
         [glWidget](const std::string &) { glWidget->update(); });
 
-    window.installEventFilter(glWidget);
+    QApplication::instance()->installEventFilter(glWidget);
     window.show();
     return QApplication::exec();
 }
