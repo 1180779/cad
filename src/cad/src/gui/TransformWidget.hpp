@@ -32,8 +32,8 @@ private:
     void setUpScaleControls(QFormLayout *layout);
     void setUpRotationControls(QFormLayout *layout);
 
-    static constexpr double s_angleMin = 0.0;
-    static constexpr double s_angleMax = 360.0;
+    static constexpr double s_angleMin = -180.0;
+    static constexpr double s_angleMax = 180.0;
     static constexpr double s_angleStep = 5.0;
 
     static constexpr double s_translationMin = std::numeric_limits<double>::lowest();
