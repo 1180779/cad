@@ -56,9 +56,21 @@ void GeometryComponent::syncToGpu()
     gl->glEnableVertexAttribArray(0);
     gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 10 * GL_CADM_VT_SIZE, nullptr);
     gl->glEnableVertexAttribArray(1);
-    gl->glVertexAttribPointer(1, 3, GL_CADM_VT_TYPE, GL_FALSE, 10 * GL_CADM_VT_SIZE, reinterpret_cast<void*>(3 * GL_CADM_VT_SIZE));
+    gl->glVertexAttribPointer(
+        1,
+        3,
+        GL_CADM_VT_TYPE,
+        GL_FALSE,
+        10 * GL_CADM_VT_SIZE,
+        reinterpret_cast<void*>(3 * GL_CADM_VT_SIZE));
     gl->glEnableVertexAttribArray(2);
-    gl->glVertexAttribPointer(2, 4, GL_CADM_VT_TYPE, GL_FALSE, 10 * GL_CADM_VT_SIZE, reinterpret_cast<void*>(6 * GL_CADM_VT_SIZE));
+    gl->glVertexAttribPointer(
+        2,
+        4,
+        GL_CADM_VT_TYPE,
+        GL_FALSE,
+        10 * GL_CADM_VT_SIZE,
+        reinterpret_cast<void*>(6 * GL_CADM_VT_SIZE));
 
     GET_GL_ERRORS();
     gl->glBindVertexArray(0);
@@ -172,10 +184,6 @@ void AxesGeometry::regenerateMesh()
 {
     m_vertices.clear();
     m_lineIndices.clear();
-
-    constexpr cadm::vec4 xColor{1, 0, 0, 1};
-    constexpr cadm::vec4 yColor{0, 1, 0, 1};
-    constexpr cadm::vec4 zColor{0, 0, 1, 1};
 
     m_vertices.push_back({{0, 0, 0}, {}, xColor});
     m_vertices.push_back({{m_length, 0, 0}, {}, xColor});

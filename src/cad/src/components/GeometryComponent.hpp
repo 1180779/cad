@@ -85,9 +85,13 @@ class AxesGeometry final : public GeometryComponent
 {
 public:
     cadm::cadf m_length = 5.0f;
-    cadm::vec4 m_color{0, 0, 0, 1};
+    float m_lineWidth = 1.0f;
+    static constexpr cadm::vec4 xColor{1, 0, 0, 1};
+    static constexpr cadm::vec4 yColor{0, 1, 0, 1};
+    static constexpr cadm::vec4 zColor{0, 0, 1, 1};
 
     void regenerateMesh() override;
 };
+
 
 #endif //CAD_GEOMETRY_H

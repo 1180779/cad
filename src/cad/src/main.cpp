@@ -74,8 +74,8 @@ int main(int argc, char *argv[])
 
     tabWidget->addTab(viewportTab, "Viewport");
 
+    // default scene entities
     const GeometryFactory geometryFactory(glWidget->getScene());
-    void(geometryFactory.createAxis(5.0f, {}, "Axes"));
     geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
 
     const auto cursor = geometryFactory.createCursor({0, 0, 0}, "Cursor");

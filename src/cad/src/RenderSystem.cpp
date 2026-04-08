@@ -9,6 +9,8 @@
 #include "Scene.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
+#include <cad_math/vec2.hpp>
+#include <cad_math/vec3.hpp>
 
 
 void RenderSystem::initialize()
@@ -163,6 +165,55 @@ void RenderSystem::renderControlPoints(
     }
 }
 
+void RenderSystem::renderInfiniteAxes(
+    const cadm::mat4 &view,
+    const cadm::mat4 &projection,
+    const cadm::mat4 &invVP) const
+{
+    const cadm::mat4 VP = projection * view;
+    m_axesShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("VP", VP));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("invVP", invVP));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", cadm::mat4::identity()));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", cadm::vec3{}));
+    SHADER_SET_UNIFORM_CHECK(
+        m_axesShader->setUniform2(
+            "u_viewport",
+            cadm::vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
+        )
+    );
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", 7));
+    m_screenQuad->draw();
+    m_axesShader->release();
+}
+
+void RenderSystem::renderTransformAxis(
+    const cadm::vec3 &pivot,
+    const cadm::mat4 &axisModel,
+    const int axesMask,
+    const cadm::mat4 &view,
+    const cadm::mat4 &projection,
+    const cadm::mat4 &invVP) const
+{
+    const cadm::mat4 VP = projection * view;
+    m_axesShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("VP", VP));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("invVP", invVP));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", axisModel));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", pivot));
+    SHADER_SET_UNIFORM_CHECK(
+        m_axesShader->setUniform2(
+            "u_viewport",
+            cadm::vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
+        )
+    );
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", axesMask));
+    m_screenQuad->draw();
+    m_axesShader->release();
+}
+
 void RenderSystem::render(
     Scene &scene,
     const cadm::mat4 &view,
@@ -172,6 +223,10 @@ void RenderSystem::render(
     const auto gl = GL();
 
     renderInfiniteGrid(view, projection, invVP);
+
+    gl->glDepthFunc(GL_LEQUAL);
+    renderInfiniteAxes(view, projection, invVP);
+    gl->glDepthFunc(GL_LESS);
 
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));

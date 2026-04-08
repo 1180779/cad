@@ -53,6 +53,29 @@ void OpenGLWidget::paintGL()
     if (const auto pivot = computePivot())
         m_renderSystem.renderPivotMarker(pivot.value(), view, projection);
 
+    if (m_transformMode != TransformMode::None)
+    {
+        int axesMask = 0;
+        if (m_xPressed) axesMask |= 1;
+        if (m_yPressed) axesMask |= 2;
+        if (m_zPressed) axesMask |= 4;
+        if (axesMask != 0)
+        {
+            cadm::mat4 axisModel = cadm::mat4::identity();
+            if (m_coordSpace == CoordSpace::Local && !m_transformSnapshots.empty())
+            {
+                const auto &r = m_transformSnapshots[0].origRotMat;
+                axisModel = cadm::mat4{
+                    cadm::vec4(r.columns[0], 0),
+                    cadm::vec4(r.columns[1], 0),
+                    cadm::vec4(r.columns[2], 0),
+                    cadm::vec4::unitW()
+                };
+            }
+            m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask, view, projection, invVP);
+        }
+    }
+
     if (m_boxSelecting)
     {
         const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
@@ -70,6 +93,7 @@ void OpenGLWidget::resizeGL(const int width, const int height)
 {
     QOpenGLWidget::resizeGL(width, height);
     m_cameraController.getActiveStrategy()->syncAspectRatio(width, height);
+    m_renderSystem.setViewport(width, height);
 }
 
 void OpenGLWidget::initializeGL()
@@ -82,6 +106,7 @@ void OpenGLWidget::initializeGL()
     gl->glEnable(GL_PROGRAM_POINT_SIZE);
 
     m_renderSystem.initialize();
+    m_renderSystem.setViewport(width(), height());
 }
 
 void OpenGLWidget::mousePressEvent(QMouseEvent *event)

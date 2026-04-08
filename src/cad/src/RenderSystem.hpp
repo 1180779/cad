@@ -29,14 +29,31 @@ public:
         const cadm::vec3 &pos,
         const cadm::mat4 &view,
         const cadm::mat4 &projection) const;
+    void renderTransformAxis(
+        const cadm::vec3 &pivot,
+        const cadm::mat4 &axisModel,
+        int axesMask,
+        const cadm::mat4 &view,
+        const cadm::mat4 &projection,
+        const cadm::mat4 &invVP) const;
     void shutdown();
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
     void setGridPlanes(const int planes) { m_gridPlanes = planes; }
     [[nodiscard]] int getGridPlanes() const { return m_gridPlanes; }
 
+    void setViewport(const int w, const int h)
+    {
+        m_viewportW = w;
+        m_viewportH = h;
+    }
+
 private:
     void renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVP) const;
+    void renderInfiniteAxes(
+        const cadm::mat4 &view,
+        const cadm::mat4 &projection,
+        const cadm::mat4 &invVP) const;
     void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
     void renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
     void renderControlPoints(
@@ -56,6 +73,8 @@ private:
     std::unique_ptr<Quad> m_screenQuad;
 
     int m_gridPlanes{1};
+    int m_viewportW{1};
+    int m_viewportH{1};
 
     // 2D selection rectangle
     uint32_t m_selectionRectVAO = 0;
