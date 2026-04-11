@@ -120,6 +120,8 @@ private:
 
     static constexpr int s_clickRadiusPx = 8;
 
+    void wrapMouseIfNeeded(QPoint currentPos, QPoint delta);
+
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};
     QPoint m_lastMousePosition;

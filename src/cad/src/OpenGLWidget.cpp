@@ -163,20 +163,13 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
 {
     const auto currentPos = event->pos();
 
-    if (m_skipNextMouseMove)
-    {
-        m_skipNextMouseMove = false;
-        m_lastMousePosition = currentPos;
-        return;
-    }
-
     const auto delta = currentPos - m_lastMousePosition;
     m_lastMousePosition = currentPos;
 
     if (m_transformMode != TransformMode::None)
     {
         applyTransform(currentPos);
-        wrapMouseIfNeeded(currentPos);
+        wrapMouseIfNeeded(currentPos, delta);
         update();
         return;
     }
@@ -206,17 +199,17 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
     case DragMode::CameraOrbit:
         if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::Orbit, delta))
             update();
-        wrapMouseIfNeeded(currentPos);
+        wrapMouseIfNeeded(currentPos, delta);
         return;
     case DragMode::CameraPan:
         if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::Pan, delta))
             update();
-        wrapMouseIfNeeded(currentPos);
+        wrapMouseIfNeeded(currentPos, delta);
         return;
     case DragMode::CameraZoomDrag:
         if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::ZoomDrag, delta))
             update();
-        wrapMouseIfNeeded(currentPos);
+        wrapMouseIfNeeded(currentPos, delta);
     default: break;
     }
 }
@@ -828,6 +821,41 @@ void OpenGLWidget::confirmTransform()
     m_transformSnapshots.clear();
     emit transformModeChanged(TransformMode::None, {});
     emit sceneChanged();
+}
+
+void OpenGLWidget::wrapMouseIfNeeded(const QPoint currentPos, const QPoint delta)
+{
+    constexpr int margin = 2;
+    const int w = width();
+    const int h = height();
+
+    QPoint newPos = currentPos;
+
+    const auto rightBoundary = w - margin - 1;
+    constexpr auto leftBoundary = margin;
+    constexpr auto upBoundary = margin;
+    const auto downBoundary = h - margin - 1;
+    if (currentPos.x() <= leftBoundary && delta.x() < 0)
+        newPos.setX(rightBoundary);
+    else if (currentPos.x() >= rightBoundary && delta.x() > 0)
+        newPos.setX(leftBoundary);
+
+    if (currentPos.y() <= upBoundary && delta.y() < 0)
+        newPos.setY(downBoundary);
+    else if (currentPos.y() >= downBoundary && delta.y() > 0)
+        newPos.setY(upBoundary);
+
+    if (newPos == currentPos)
+        return;
+
+    if (m_transformMode != TransformMode::None)
+    {
+        const QPoint wrapDelta = newPos - currentPos;
+        m_transformStartMousePos += wrapDelta;
+    }
+
+    m_lastMousePosition = newPos;
+    QCursor::setPos(mapToGlobal(newPos));
 }
 
 void OpenGLWidget::removeEntity(const EntityID id)
