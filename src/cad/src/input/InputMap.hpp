@@ -66,6 +66,12 @@ public:
     // Returns the action bound to this input.
     [[nodiscard]] std::optional<InputAction> matchAction(Qt::MouseButton button, Qt::KeyboardModifiers mods) const;
 
+    // TODO: Key release events should not match on modifiers, because the user may release modifier keys
+    //  before releasing the main key. Currently this is not a problem because all release-sensitive bindings
+    //  use NoModifier. If modifier-sensitive held-key bindings are added, consider
+    //  tracking active key actions in the widget (QSet<InputAction> m_heldKeyActions) and clearing them
+    //  on release without re-matching through the InputMap.
+
 private:
     struct KeyCombo
     {
