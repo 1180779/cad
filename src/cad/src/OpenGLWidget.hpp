@@ -15,10 +15,26 @@
 #include "camera/CameraController.hpp"
 #include "components/EntitySnapshot.hpp"
 #include "cursor/ICursorPlacementStrategy.hpp"
+#include "input/InputMap.hpp"
 
 enum class PivotMode { MedianPoint, ActiveCursor };
+
 enum class TransformMode { None, Rotate, Scale, Translate };
+
 enum class CoordSpace { World, Local };
+
+enum class AxisConstraint { None, X, Y, Z };
+
+enum class DragMode
+{
+    None,
+    CameraOrbit,
+    CameraPan,
+    CameraZoomDrag,
+    BoxSelect,
+    ClickSelect,
+    CursorPlace,
+};
 
 class OpenGLWidget : public QOpenGLWidget
 {
@@ -34,11 +50,11 @@ public:
 
     bool eventFilter(QObject *obj, QEvent *event) override;
 
-    Scene& getScene() { return m_scene; }
+    [[nodiscard]] Scene& getScene() { return m_scene; }
+    [[nodiscard]] CoordSpace getCoordSpace() const { return m_coordSpace; }
 
     void setPivotMode(const PivotMode mode) { m_pivotMode = mode; }
     void setCoordSpace(const CoordSpace space) { m_coordSpace = space; }
-    CoordSpace getCoordSpace() const { return m_coordSpace; }
 
     void setGridPlanes(const int planes)
     {
@@ -79,44 +95,58 @@ private:
     void performBoxSelect();
     void deleteSelectedEntities();
     PointHandle pickPoint(QPoint screenPos) const;
+    void selectPoint(PointHandle hit, bool additive);
 
     [[nodiscard]] std::optional<cadm::vec3> computePivot() const;
 
-    void beginTransform(TransformMode mode);
     void handleTransformRotate(int dx, PointRegistry &registry);
     void handleTransformTranslate(QPoint currentMousePos, PointRegistry &registry);
     void handleTransformScale(int dx, PointRegistry &registry);
+
+    static QString axisLabel(AxisConstraint constraint);
+
+    // save entities states and begin transform operation
+    void beginTransform(TransformMode mode);
+
+    // update the entities based on the state saved at the beginning of the transform
+    // this way no numerical errors are accumulated
     void applyTransform(QPoint currentMousePos);
+
+    // restore the state of entities at the beginning of the transform operation
     void cancelTransform();
+
+    // confirm the transform; clear the states saved at the beginning of the transform
     void confirmTransform();
 
     static constexpr int s_clickRadiusPx = 8;
+
+    void wrapMouseIfNeeded(QPoint currentPos, QPoint delta);
 
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};
     QPoint m_lastMousePosition;
     QPoint m_pressPosition;
-    bool m_leftMouseDown{false};
-    bool m_rightMouseDown{false};
 
     CameraController m_cameraController{this};
-    bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};
+    InputMap m_inputMap;
+
+    // holds currently active drag i.e. the drag that is taking place right now
+    DragMode m_activeDrag{DragMode::None};
     cadm::cadf m_zoomFactor{1.1};
 
     Scene m_scene;
     RenderSystem m_renderSystem;
 
     bool m_boxSelectMode{false};
-    bool m_boxSelecting{false};
     QPoint m_boxSelectStart;
     QPoint m_boxSelectCurrent;
-    Qt::MouseButton m_boxSelectMouseButton = Qt::LeftButton;
 
     std::unique_ptr<ICursorPlacementStrategy> m_cursorPlacementStrategy;
 
     PivotMode m_pivotMode = PivotMode::MedianPoint;
     CoordSpace m_coordSpace = CoordSpace::World;
     TransformMode m_transformMode = TransformMode::None;
+    AxisConstraint m_axisConstraint = AxisConstraint::None;
     std::vector<EntitySnapshot> m_transformSnapshots;
     QPoint m_transformStartMousePos;
     cadm::vec3 m_transformPivot;
