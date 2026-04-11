@@ -409,23 +409,23 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
 
 void OpenGLWidget::keyReleaseEvent(QKeyEvent *event)
 {
-    if (!event->isAutoRepeat())
-    {
-        const auto action = m_inputMap.matchRelease(static_cast<Qt::Key>(event->key()), event->modifiers());
-        if (!action)
-        {
-            QOpenGLWidget::keyReleaseEvent(event);
-            return;
-        }
+    if (event->isAutoRepeat())
+        return;
 
-        switch (*action)
-        {
-        case InputAction::SetBoxSelectMode:
-            m_boxSelectMode = false;
-            break;
-        default:
-            QOpenGLWidget::keyReleaseEvent(event);
-        }
+    const auto action = m_inputMap.matchAction(static_cast<Qt::Key>(event->key()), event->modifiers());
+    if (!action)
+    {
+        QOpenGLWidget::keyReleaseEvent(event);
+        return;
+    }
+
+    switch (*action)
+    {
+    case InputAction::SetBoxSelectMode:
+        m_boxSelectMode = false;
+        break;
+    default:
+        QOpenGLWidget::keyReleaseEvent(event);
     }
 }
 
