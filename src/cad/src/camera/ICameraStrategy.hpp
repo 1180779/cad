@@ -10,6 +10,7 @@
 #include "../components/CameraComponent.hpp"
 
 enum class CameraAction { Orbit, Pan, ZoomDrag };
+enum class CameraKeyAction { MoveUp, MoveDown, MoveLeft, MoveRight };
 
 #include "../components/Entity.hpp"
 #include "cad_math/mat4.hpp"
@@ -24,18 +25,13 @@ public:
     {
     }
 
-    constexpr static Qt::Key s_keyRight = Qt::Key_Right;
-    constexpr static Qt::Key s_keyLeft = Qt::Key_Left;
-    constexpr static Qt::Key s_keyUp = Qt::Key_Up;
-    constexpr static Qt::Key s_keyDown = Qt::Key_Down;
-
     virtual cadm::mat4 getView() = 0;
     virtual cadm::mat4 getProjection() = 0;
     virtual cadm::mat4 getInvProjection() = 0;
     virtual void setLookTarget(cadm::vec3 target) = 0;
     void syncAspectRatio(int width, int height) const;
     virtual bool handleCameraMove(CameraAction action, QPoint delta) = 0;
-    virtual bool handleKeyPressEvent(QKeyEvent *event) = 0;
+    virtual bool handleCameraKeyAction(CameraKeyAction action) = 0;
     virtual bool handleWheelEvent(QWheelEvent *event) = 0;
 
     [[nodiscard]] Entity* getEntity() const { return m_cameraEntity; }

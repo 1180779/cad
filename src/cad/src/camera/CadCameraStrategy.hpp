@@ -22,7 +22,7 @@ public:
     cadm::mat4 getInvProjection() override { return getProjection().inversedOrtho(); }
     void setLookTarget(cadm::vec3 target) override;
     bool handleCameraMove(CameraAction action, QPoint mouseDelta) override;
-    bool handleKeyPressEvent(QKeyEvent *event) override;
+    bool handleCameraKeyAction(CameraKeyAction action) override;
     bool handleWheelEvent(QWheelEvent *event) override;
 
 private:

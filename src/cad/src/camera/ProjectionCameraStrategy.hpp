@@ -20,7 +20,7 @@ public:
     cadm::mat4 getInvProjection() override { return getProjection().inversedProjectionMO(); }
     void setLookTarget(cadm::vec3 target) override;
     bool handleCameraMove(CameraAction action, QPoint delta) override;
-    bool handleKeyPressEvent(QKeyEvent *event) override;
+    bool handleCameraKeyAction(CameraKeyAction action) override;
     bool handleWheelEvent(QWheelEvent *event) override;
 
     static constexpr cadm::cadf s_sensitivity = 0.01;

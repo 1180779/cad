@@ -293,12 +293,6 @@ void OpenGLWidget::wheelEvent(QWheelEvent *event)
 
 void OpenGLWidget::keyPressEvent(QKeyEvent *event)
 {
-    if (m_cameraController.getActiveStrategy()->handleKeyPressEvent(event))
-    {
-        update();
-        return;
-    }
-
     if (event->isAutoRepeat())
     {
         QOpenGLWidget::keyPressEvent(event);
@@ -394,6 +388,22 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
             menu.addAction("New Point", [this] { emit createPointRequested(); });
             menu.exec(QCursor::pos());
         }
+        break;
+    case InputAction::CameraMoveUp:
+        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveUp))
+            update();
+        break;
+    case InputAction::CameraMoveDown:
+        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveDown))
+            update();
+        break;
+    case InputAction::CameraMoveLeft:
+        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveLeft))
+            update();
+        break;
+    case InputAction::CameraMoveRight:
+        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveRight))
+            update();
         break;
     default:
         break;

@@ -32,6 +32,10 @@ enum class InputAction
     CameraOrbit,
     CameraPan,
     CameraZoomDrag,
+    CameraMoveUp,
+    CameraMoveDown,
+    CameraMoveLeft,
+    CameraMoveRight,
 
     // Viewport actions
     Select,
@@ -123,6 +127,11 @@ inline InputMap::InputMap()
 
     bind(InputAction::SetObjectSelectMode, {Qt::Key_O, Qt::NoModifier, InputTrigger::OnPress});
     bind(InputAction::SetBoxSelectMode, {Qt::Key_B, Qt::NoModifier, InputTrigger::OnPress});
+
+    bind(InputAction::CameraMoveUp, {Qt::Key_Up, Qt::NoModifier, InputTrigger::OnPress});
+    bind(InputAction::CameraMoveDown, {Qt::Key_Down, Qt::NoModifier, InputTrigger::OnPress});
+    bind(InputAction::CameraMoveLeft, {Qt::Key_Left, Qt::NoModifier, InputTrigger::OnPress});
+    bind(InputAction::CameraMoveRight, {Qt::Key_Right, Qt::NoModifier, InputTrigger::OnPress});
 
     bind(InputAction::CameraOrbit, {Qt::MiddleButton, Qt::NoModifier, InputTrigger::WhileHeld});
     bind(InputAction::CameraPan, {Qt::MiddleButton, Qt::ShiftModifier, InputTrigger::WhileHeld});

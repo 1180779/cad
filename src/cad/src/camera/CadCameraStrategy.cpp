@@ -144,85 +144,37 @@ bool CadCameraStrategy::handleCameraMove(const CameraAction action, const QPoint
     return false;
 }
 
-bool CadCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
+bool CadCameraStrategy::handleCameraKeyAction(const CameraKeyAction action)
 {
-    switch (event->key())
+    const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
+    if (!camera)
+        return false;
+    const auto pCamera = camera.value();
+    const auto step = m_translationStep * pCamera->getOrthoHeight();
+
+    cadm::vec3 offset;
+    switch (action)
     {
-    case s_keyDown:
-        {
-            const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-            if (!camera)
-                break;
-            const auto pCamera = camera.value();
-            const auto step = m_translationStep * pCamera->getOrthoHeight();
-            const auto up = pCamera->up();
-            const auto position = pCamera->getPosition() + up * step;
-            const auto target = pCamera->getTarget() + up * step;
-            pCamera->setPosition(position);
-            pCamera->setTarget(target);
-            if (auto transform = m_cameraEntity->getComponent<TransformComponent>())
-            {
-                transform.value()->setTranslation(position);
-            }
-            return true;
-        }
-    case s_keyUp:
-        {
-            const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-            if (!camera)
-                break;
-            const auto pCamera = camera.value();
-            const auto step = m_translationStep * pCamera->getOrthoHeight();
-            const auto up = pCamera->up();
-            const auto position = pCamera->getPosition() - up * step;
-            const auto target = pCamera->getTarget() - up * step;
-            pCamera->setPosition(position);
-            pCamera->setTarget(target);
-            if (auto transform = m_cameraEntity->getComponent<TransformComponent>())
-            {
-                transform.value()->setTranslation(position);
-            }
-            return true;
-        }
-    case s_keyLeft:
-        {
-            const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-            if (!camera)
-                break;
-            const auto pCamera = camera.value();
-            const auto step = m_translationStep * pCamera->getOrthoHeight();
-            const auto right = pCamera->right();
-            const auto position = pCamera->getPosition() - right * step;
-            const auto target = pCamera->getTarget() - right * step;
-            pCamera->setPosition(position);
-            pCamera->setTarget(target);
-            if (auto transform = m_cameraEntity->getComponent<TransformComponent>())
-            {
-                transform.value()->setTranslation(position);
-            }
-            return true;
-        }
-    case s_keyRight:
-        {
-            const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-            if (!camera)
-                break;
-            const auto pCamera = camera.value();
-            const auto step = m_translationStep * pCamera->getOrthoHeight();
-            const auto right = pCamera->right();
-            const auto position = pCamera->getPosition() + right * step;
-            const auto target = pCamera->getTarget() + right * step;
-            pCamera->setPosition(position);
-            pCamera->setTarget(target);
-            if (auto transform = m_cameraEntity->getComponent<TransformComponent>())
-            {
-                transform.value()->setTranslation(position);
-            }
-            return true;
-        }
+    case CameraKeyAction::MoveUp:
+        offset = pCamera->up() * step;
+        break;
+    case CameraKeyAction::MoveDown:
+        offset = -pCamera->up() * step;
+        break;
+    case CameraKeyAction::MoveLeft:
+        offset = -pCamera->right() * step;
+        break;
+    case CameraKeyAction::MoveRight:
+        offset = pCamera->right() * step;
+        break;
     default: return false;
     }
-    return false;
+
+    pCamera->setPosition(pCamera->getPosition() + offset);
+    pCamera->setTarget(pCamera->getTarget() + offset);
+    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>())
+        transform.value()->setTranslation(pCamera->getPosition());
+    return true;
 }
 
 bool CadCameraStrategy::handleWheelEvent(QWheelEvent *event)

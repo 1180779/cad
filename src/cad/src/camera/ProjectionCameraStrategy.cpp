@@ -103,77 +103,36 @@ bool ProjectionCameraStrategy::handleCameraMove(const CameraAction action, const
     return false;
 }
 
-bool ProjectionCameraStrategy::handleKeyPressEvent(QKeyEvent *event)
+bool ProjectionCameraStrategy::handleCameraKeyAction(const CameraKeyAction action)
 {
-    switch (event->key())
+    const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
+    if (!camera)
+        return false;
+    const auto pCamera = camera.value();
+    const auto step = m_translationStep * pCamera->getRadius();
+
+    cadm::vec3 newTarget;
+    switch (action)
     {
-    case s_keyUp:
-        {
-            const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
-            if (!camera)
-                break;
-            const auto pCamera = camera.value();
-            const auto step = m_translationStep * pCamera->getRadius();
-            const auto up = pCamera->up();
-            const auto newTarget = pCamera->getTarget() + up * step;
-            pCamera->setTarget(newTarget);
-            if (auto transform = m_cameraEntity->getComponent<TransformComponent>())
-            {
-                transform.value()->setTranslation(pCamera->getPosition());
-            }
-            return true;
-        }
-    case s_keyDown:
-        {
-            const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
-            if (!camera)
-                break;
-            const auto pCamera = camera.value();
-            const auto step = m_translationStep * pCamera->getRadius();
-            const auto up = pCamera->up();
-            const auto newTarget = pCamera->getTarget() - up * step;
-            pCamera->setTarget(newTarget);
-            if (auto transform = m_cameraEntity->getComponent<TransformComponent>())
-            {
-                transform.value()->setTranslation(pCamera->getPosition());
-            }
-            return true;
-        }
-    case s_keyLeft:
-        {
-            const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
-            if (!camera)
-                break;
-            const auto pCamera = camera.value();
-            const auto step = m_translationStep * pCamera->getRadius();
-            const auto right = pCamera->right();
-            const auto newTarget = pCamera->getTarget() - right * step;
-            pCamera->setTarget(newTarget);
-            if (auto transform = m_cameraEntity->getComponent<TransformComponent>())
-            {
-                transform.value()->setTranslation(pCamera->getPosition());
-            }
-            return true;
-        }
-    case s_keyRight:
-        {
-            const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
-            if (!camera)
-                break;
-            const auto pCamera = camera.value();
-            const auto step = m_translationStep * pCamera->getRadius();
-            const auto right = pCamera->right();
-            const auto newTarget = pCamera->getTarget() + right * step;
-            pCamera->setTarget(newTarget);
-            if (auto transform = m_cameraEntity->getComponent<TransformComponent>())
-            {
-                transform.value()->setTranslation(pCamera->getPosition());
-            }
-            return true;
-        }
+    case CameraKeyAction::MoveUp:
+        newTarget = pCamera->getTarget() + pCamera->up() * step;
+        break;
+    case CameraKeyAction::MoveDown:
+        newTarget = pCamera->getTarget() - pCamera->up() * step;
+        break;
+    case CameraKeyAction::MoveLeft:
+        newTarget = pCamera->getTarget() - pCamera->right() * step;
+        break;
+    case CameraKeyAction::MoveRight:
+        newTarget = pCamera->getTarget() + pCamera->right() * step;
+        break;
     default: return false;
     }
-    return false;
+
+    pCamera->setTarget(newTarget);
+    if (auto transform = m_cameraEntity->getComponent<TransformComponent>())
+        transform.value()->setTranslation(pCamera->getPosition());
+    return true;
 }
 
 bool ProjectionCameraStrategy::handleWheelEvent(QWheelEvent *event)
