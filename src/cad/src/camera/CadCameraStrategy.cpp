@@ -43,10 +43,10 @@ cadm::mat4 CadCameraStrategy::getProjection()
     const auto width = height * pCamera->getAspectRatio();
 
     const auto projection = cadm::mat4::ortho(
-        -width / 2.0,
-        width / 2.0,
-        -height / 2.0,
-        height / 2.0,
+        static_cast<cadm::cadf>(-width / 2.0),
+        static_cast<cadm::cadf>(width / 2.0),
+        -static_cast<cadm::cadf>(height / 2.0),
+        static_cast<cadm::cadf>(height / 2.0),
         pCamera->getNearPlane(),
         pCamera->getFarPlane());
     return projection;
@@ -70,13 +70,53 @@ void CadCameraStrategy::setLookTarget(const cadm::vec3 target)
         transform.value()->setTranslation(newPosition);
 }
 
-bool CadCameraStrategy::handleMouseMoveEvent(
-    QMouseEvent *event,
-    QPoint mouseDelta)
+void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent *const pCamera) const
 {
-    if (!m_leftMouseDown && !m_rightMouseDown)
-        return false;
+    // TODO: redo
+    const auto polarAngleChange = -static_cast<cadm::cadf>(mouseDelta.y()) * pCamera->getRotationSpeed();
+    const auto azimuthAngleChange = static_cast<cadm::cadf>(mouseDelta.x()) * pCamera->getRotationSpeed();
 
+    const auto pivot = pCamera->getTarget();
+    const auto relPosition = pCamera->getPosition() - pivot;
+
+    const auto polarRot = cadm::mat4::rotAxis(polarAngleChange, pCamera->right()).upperLeft3x3();
+    auto newRelPos = polarRot * relPosition;
+    auto newUp = polarRot * pCamera->up();
+
+    const auto azimuthRot = cadm::mat4::rotAxis(azimuthAngleChange, pCamera->getWorldUp()).upperLeft3x3();
+    newRelPos = azimuthRot * newRelPos;
+    newUp = azimuthRot * newUp;
+
+    newRelPos = newRelPos.safeNormalized(cadm::vec3::unitZ()) * relPosition.length();
+    const auto newPosition = pivot + newRelPos;
+
+    // Re-orthogonalize up
+    const auto newForward = (-newRelPos).safeNormalized(cadm::vec3::unitZ());
+    const auto finalUp = (newUp - newForward * newUp.dot(newForward)).safeNormalized(pCamera->getWorldUp());
+
+    pCamera->setPosition(newPosition);
+    pCamera->setUp(finalUp);
+
+    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>();
+        transform.has_value())
+    {
+        transform.value()->setTranslation(newPosition);
+    }
+}
+
+void CadCameraStrategy::handlePan(const QPoint mouseDelta, CadCameraComponent *const pCamera) const
+{
+    const cadm::cadf changeX = -pCamera->getAspectRatio() * pCamera->getOrthoHeight() * static_cast<cadm::cadf>(
+        mouseDelta.x()) / static_cast<cadm::cadf>(m_widthGetter());
+    const cadm::cadf changeY = pCamera->getOrthoHeight() * static_cast<cadm::cadf>(mouseDelta.y()) / static_cast<
+        cadm::cadf>(m_heightGetter());
+    const auto translationChange = pCamera->right() * changeX + pCamera->up() * changeY;
+    pCamera->setPosition(pCamera->getPosition() + translationChange);
+    pCamera->setTarget(pCamera->getTarget() + translationChange);
+}
+
+bool CadCameraStrategy::handleCameraMove(const CameraAction action, const QPoint mouseDelta)
+{
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
     if (!camera.has_value())
     {
@@ -85,76 +125,22 @@ bool CadCameraStrategy::handleMouseMoveEvent(
     }
 
     const auto pCamera = camera.value();
-    if (m_leftMouseDown)
+
+    switch (action)
     {
-        const auto yawAngle = -static_cast<cadm::cadf>(mouseDelta.x()) * pCamera->getRotationSpeed();
-        const auto pitchAngle = static_cast<cadm::cadf>(mouseDelta.y()) * pCamera->getRotationSpeed();
-
-        const auto yawRot = cadm::mat4::rotAxis(yawAngle, pCamera->getWorldUp()).upperLeft3x3();
-        const auto pitchRot = cadm::mat4::rotAxis(pitchAngle, pCamera->right()).upperLeft3x3();
-        const auto combinedRot = yawRot * pitchRot;
-
-        // TODO: choose pivot based on ray from camera
-        constexpr auto pivot = cadm::vec3{};
-        const auto relTarget = pCamera->getTarget() - pivot;
-        const auto relPosition = pCamera->getPosition() - pivot;
-        auto newRelPos = combinedRot * relPosition;
-        auto newRelTarget = combinedRot * relTarget;
-
-        newRelPos = newRelPos.safeNormalized(cadm::vec3::unitZ()) * relPosition.length();
-        newRelTarget = newRelTarget.safeNormalized(cadm::vec3{}) * relTarget.length();
-
-        const auto newPosition = pivot + newRelPos;
-        const auto newTarget = pivot + newRelTarget;
-
-        const auto rotatedUp = combinedRot * pCamera->up();
-        const auto newForward = (newTarget - newPosition).safeNormalized(cadm::vec3::unitZ());
-        const auto newUp = (rotatedUp - newForward * rotatedUp.dot(newForward))
-            .safeNormalized(pCamera->getWorldUp());
-
-        pCamera->setPosition(newPosition);
-        pCamera->setTarget(newTarget);
-        pCamera->setUp(newUp);
-
-        if (const auto transform = m_cameraEntity->getComponent<TransformComponent>();
-            transform.has_value())
-        {
-            transform.value()->setTranslation(newPosition);
-        }
+    case CameraAction::Orbit:
+        handleOrbit(mouseDelta, pCamera);
+        return true;
+    case CameraAction::Pan:
+        handlePan(mouseDelta, pCamera);
+        return true;
+    case CameraAction::ZoomDrag:
+        const cadm::cadf factor = std::exp(
+            static_cast<cadm::cadf>(-mouseDelta.y()) * static_cast<cadm::cadf>(0.01));
+        pCamera->setOrthoHeight(pCamera->getOrthoHeight() * factor);
+        return true;
     }
 
-    if (m_rightMouseDown)
-    {
-        const cadm::cadf changeX = -pCamera->getAspectRatio() * pCamera->getOrthoHeight() * static_cast<cadm::cadf>(
-            mouseDelta.x()) / static_cast<cadm::cadf>(m_widthGetter());
-        const cadm::cadf changeY = pCamera->getOrthoHeight() * static_cast<cadm::cadf>(mouseDelta.y()) / static_cast<
-            cadm::cadf>(m_heightGetter());
-        const auto translationChange = pCamera->right() * changeX
-            + pCamera->up() * changeY;
-        const auto newPosition = pCamera->getPosition() + translationChange;
-        const auto newTarget = pCamera->getTarget() + translationChange;
-        pCamera->setPosition(newPosition);
-        pCamera->setTarget(newTarget);
-    }
-
-    return true;
-}
-
-bool CadCameraStrategy::handleMousePressEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::LeftButton)
-        m_leftMouseDown = true;
-    else if (event->button() == Qt::RightButton)
-        m_rightMouseDown = true;
-    return false;
-}
-
-bool CadCameraStrategy::handleMouseReleaseEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::LeftButton)
-        m_leftMouseDown = false;
-    else if (event->button() == Qt::RightButton)
-        m_rightMouseDown = false;
     return false;
 }
 

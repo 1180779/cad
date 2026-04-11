@@ -19,9 +19,7 @@ public:
     cadm::mat4 getProjection() override;
     cadm::mat4 getInvProjection() override { return getProjection().inversedProjectionMO(); }
     void setLookTarget(cadm::vec3 target) override;
-    bool handleMouseMoveEvent(QMouseEvent *event, QPoint mouseDelta) override;
-    bool handleMousePressEvent(QMouseEvent *event) override;
-    bool handleMouseReleaseEvent(QMouseEvent *event) override;
+    bool handleCameraMove(CameraAction action, QPoint delta) override;
     bool handleKeyPressEvent(QKeyEvent *event) override;
     bool handleWheelEvent(QWheelEvent *event) override;
 
@@ -30,8 +28,6 @@ public:
 private:
     std::function<int()> m_widthGetter;
     std::function<int()> m_heightGetter;
-    bool m_leftMouseDown{false};
-    bool m_rightMouseDown{false};
 };
 
 

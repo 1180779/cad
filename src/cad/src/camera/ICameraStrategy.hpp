@@ -8,6 +8,9 @@
 #include <QMouseEvent>
 
 #include "../components/CameraComponent.hpp"
+
+enum class CameraAction { Orbit, Pan, ZoomDrag };
+
 #include "../components/Entity.hpp"
 #include "cad_math/mat4.hpp"
 
@@ -31,9 +34,7 @@ public:
     virtual cadm::mat4 getInvProjection() = 0;
     virtual void setLookTarget(cadm::vec3 target) = 0;
     void syncAspectRatio(int width, int height) const;
-    virtual bool handleMousePressEvent(QMouseEvent *event) = 0;
-    virtual bool handleMouseReleaseEvent(QMouseEvent *event) = 0;
-    virtual bool handleMouseMoveEvent(QMouseEvent *event, QPoint mouseDelta) = 0;
+    virtual bool handleCameraMove(CameraAction action, QPoint delta) = 0;
     virtual bool handleKeyPressEvent(QKeyEvent *event) = 0;
     virtual bool handleWheelEvent(QWheelEvent *event) = 0;
 

@@ -58,11 +58,8 @@ void ProjectionCameraStrategy::setLookTarget(const cadm::vec3 target)
     camera.value()->setTarget(target);
 }
 
-bool ProjectionCameraStrategy::handleMouseMoveEvent(QMouseEvent *event, const QPoint mouseDelta)
+bool ProjectionCameraStrategy::handleCameraMove(const CameraAction action, const QPoint delta)
 {
-    if (!m_leftMouseDown && !m_rightMouseDown)
-        return false;
-
     const auto camera = m_cameraEntity->getComponent<ProjectionCameraComponent>();
     if (!camera)
     {
@@ -72,54 +69,37 @@ bool ProjectionCameraStrategy::handleMouseMoveEvent(QMouseEvent *event, const QP
 
     const auto pCamera = camera.value();
 
-    if (m_leftMouseDown)
+    switch (action)
     {
-        const auto newAzimuth = pCamera->getAzimuthAngle() - static_cast<cadm::cadf>(mouseDelta.x()) * s_sensitivity;
-        const auto newPolar = pCamera->getPolarAngle() - static_cast<cadm::cadf>(mouseDelta.y()) * s_sensitivity;
-
-        pCamera->setAzimuthAngle(newAzimuth);
-        pCamera->setPolarAngle(newPolar);
+    case CameraAction::Orbit:
+        {
+            const auto newAzimuth = pCamera->getAzimuthAngle() - static_cast<cadm::cadf>(delta.x()) * s_sensitivity;
+            const auto newPolar = pCamera->getPolarAngle() - static_cast<cadm::cadf>(delta.y()) * s_sensitivity;
+            pCamera->setAzimuthAngle(newAzimuth);
+            pCamera->setPolarAngle(newPolar);
+            return true;
+        }
+    case CameraAction::Pan:
+        {
+            // hWorld = 2 * radius * tan(fov / 2)
+            // scale = hWorld / hScreen
+            const cadm::cadf scale = 2.0 * pCamera->getRadius()
+                * std::tan(pCamera->getFov() / 2.0)
+                / static_cast<cadm::cadf>(m_heightGetter());
+            const auto translationChange = pCamera->right() * (-scale * static_cast<cadm::cadf>(delta.x()))
+                + pCamera->up() * (scale * static_cast<cadm::cadf>(delta.y()));
+            pCamera->setTarget(pCamera->getTarget() + translationChange);
+            return true;
+        }
+    case CameraAction::ZoomDrag:
+        {
+            const cadm::cadf factor = std::exp(
+                static_cast<cadm::cadf>(-delta.y()) * static_cast<cadm::cadf>(0.01));
+            pCamera->setRadius(pCamera->getRadius() * factor);
+            return true;
+        }
     }
 
-    if (m_rightMouseDown)
-    {
-        // hWorld = 2 * radius * tan(fov / 2)
-        // <=>
-        // scale = hWorld / hScreen
-        const cadm::cadf scale = 2.0 * pCamera->getRadius()
-            * std::tan(pCamera->getFov() / 2.0)
-            / static_cast<cadm::cadf>(m_heightGetter());
-        const auto translationChange = pCamera->right() * (-scale * static_cast<cadm::cadf>(mouseDelta.x()))
-            + pCamera->up() * (scale * static_cast<cadm::cadf>(mouseDelta.y()));
-        pCamera->setTarget(pCamera->getTarget() + translationChange);
-    }
-
-    return true;
-}
-
-bool ProjectionCameraStrategy::handleMousePressEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::MouseButton::LeftButton)
-    {
-        m_leftMouseDown = true;
-    }
-    else if (event->button() == Qt::MouseButton::RightButton)
-    {
-        m_rightMouseDown = true;
-    }
-    return false;
-}
-
-bool ProjectionCameraStrategy::handleMouseReleaseEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::MouseButton::LeftButton)
-    {
-        m_leftMouseDown = false;
-    }
-    else if (event->button() == Qt::MouseButton::RightButton)
-    {
-        m_rightMouseDown = false;
-    }
     return false;
 }
 
