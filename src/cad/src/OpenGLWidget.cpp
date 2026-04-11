@@ -293,13 +293,10 @@ void OpenGLWidget::wheelEvent(QWheelEvent *event)
 
 void OpenGLWidget::keyPressEvent(QKeyEvent *event)
 {
-    if (event->isAutoRepeat())
-    {
-        QOpenGLWidget::keyPressEvent(event);
-        return;
-    }
-
-    const auto action = m_inputMap.matchAction(static_cast<Qt::Key>(event->key()), event->modifiers());
+    const auto action = m_inputMap.matchAction(
+        static_cast<Qt::Key>(event->key()),
+        event->modifiers(),
+        event->isAutoRepeat());
     if (!action)
     {
         QOpenGLWidget::keyPressEvent(event);

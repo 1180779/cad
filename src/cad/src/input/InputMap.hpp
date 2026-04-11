@@ -56,6 +56,7 @@ struct InputBinding
     std::variant<Qt::Key, Qt::MouseButton> input;
     Qt::KeyboardModifiers modifiers{Qt::NoModifier};
     InputTrigger trigger{InputTrigger::OnPress};
+    bool allowAutoRepeat{false};
 };
 
 class InputMap
@@ -63,10 +64,13 @@ class InputMap
 public:
     InputMap();
 
-    void bind(InputAction action, InputBinding binding);
+    void bind(InputAction action, const InputBinding &binding);
 
-    // Returns the action bound to this input
-    [[nodiscard]] std::optional<InputAction> matchAction(Qt::Key key, Qt::KeyboardModifiers mods) const;
+    // Returns the action bound to this input. Filters out non-repeating bindings when isAutoRepeat is true.
+    [[nodiscard]] std::optional<InputAction> matchAction(
+        Qt::Key key,
+        Qt::KeyboardModifiers mods,
+        bool isAutoRepeat = false) const;
     // Returns the action bound to this input
     [[nodiscard]] std::optional<InputAction> matchAction(Qt::MouseButton button, Qt::KeyboardModifiers mods) const;
 
@@ -94,6 +98,7 @@ private:
     {
         InputAction action;
         InputTrigger trigger;
+        bool allowAutoRepeat;
     };
 
     friend size_t qHash(const KeyCombo &k, const size_t seed = 0)
@@ -128,10 +133,10 @@ inline InputMap::InputMap()
     bind(InputAction::SetObjectSelectMode, {Qt::Key_O, Qt::NoModifier, InputTrigger::OnPress});
     bind(InputAction::SetBoxSelectMode, {Qt::Key_B, Qt::NoModifier, InputTrigger::OnPress});
 
-    bind(InputAction::CameraMoveUp, {Qt::Key_Up, Qt::NoModifier, InputTrigger::OnPress});
-    bind(InputAction::CameraMoveDown, {Qt::Key_Down, Qt::NoModifier, InputTrigger::OnPress});
-    bind(InputAction::CameraMoveLeft, {Qt::Key_Left, Qt::NoModifier, InputTrigger::OnPress});
-    bind(InputAction::CameraMoveRight, {Qt::Key_Right, Qt::NoModifier, InputTrigger::OnPress});
+    bind(InputAction::CameraMoveUp, {Qt::Key_Up, Qt::NoModifier, InputTrigger::OnPress, true});
+    bind(InputAction::CameraMoveDown, {Qt::Key_Down, Qt::NoModifier, InputTrigger::OnPress, true});
+    bind(InputAction::CameraMoveLeft, {Qt::Key_Left, Qt::NoModifier, InputTrigger::OnPress, true});
+    bind(InputAction::CameraMoveRight, {Qt::Key_Right, Qt::NoModifier, InputTrigger::OnPress, true});
 
     bind(InputAction::CameraOrbit, {Qt::MiddleButton, Qt::NoModifier, InputTrigger::WhileHeld});
     bind(InputAction::CameraPan, {Qt::MiddleButton, Qt::ShiftModifier, InputTrigger::WhileHeld});
@@ -141,18 +146,27 @@ inline InputMap::InputMap()
     bind(InputAction::RightClick, {Qt::RightButton, Qt::NoModifier, InputTrigger::OnPress});
 }
 
-inline void InputMap::bind(const InputAction action, const InputBinding binding)
+inline void InputMap::bind(const InputAction action, const InputBinding &binding)
 {
     if (std::holds_alternative<Qt::Key>(binding.input))
-        m_keyBindings[{std::get<Qt::Key>(binding.input), binding.modifiers}] = {action, binding.trigger};
+        m_keyBindings[{std::get<Qt::Key>(binding.input), binding.modifiers}] = {
+            action,
+            binding.trigger,
+            binding.allowAutoRepeat
+        };
     else
-        m_mouseBindings[{std::get<Qt::MouseButton>(binding.input), binding.modifiers}] = {action, binding.trigger};
+        m_mouseBindings[{std::get<Qt::MouseButton>(binding.input), binding.modifiers}] = {
+            action,
+            binding.trigger,
+            binding.allowAutoRepeat
+        };
 }
 
-inline std::optional<InputAction> InputMap::matchAction(const Qt::Key key, const Qt::KeyboardModifiers mods) const
+inline std::optional<InputAction> InputMap::matchAction(const Qt::Key key, const Qt::KeyboardModifiers mods,
+                                                        const bool isAutoRepeat) const
 {
     if (const auto it = m_keyBindings.find({key, mods});
-        it != m_keyBindings.cend())
+        it != m_keyBindings.cend() && (it->allowAutoRepeat || !isAutoRepeat))
         return it->action;
     return std::nullopt;
 }
