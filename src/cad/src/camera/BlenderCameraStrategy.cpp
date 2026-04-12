@@ -12,7 +12,7 @@ BlenderCameraStrategy::BlenderCameraStrategy(
     Entity *cameraEntity,
     const std::function<int()> &widthGetter,
     const std::function<int()> &heightGetter)
-    : ICameraStrategy(cameraEntity), m_widthGetter(widthGetter), m_heightGetter(heightGetter)
+    : ICameraStrategy(cameraEntity, widthGetter, heightGetter)
 {
 }
 
@@ -44,10 +44,10 @@ cadm::mat4 BlenderCameraStrategy::getProjection()
         const auto h = pCamera->getOrthoHeight();
         const auto w = h * pCamera->getAspectRatio();
         return cadm::mat4::ortho(
-            -w / 2.0,
-            w / 2.0,
-            -h / 2.0,
-            h / 2.0,
+            static_cast<cadm::cadf>(-w / 2.0),
+            static_cast<cadm::cadf>(w / 2.0),
+            static_cast<cadm::cadf>(-h / 2.0),
+            static_cast<cadm::cadf>(h / 2.0),
             pCamera->getNearPlane(),
             pCamera->getFarPlane());
     }
@@ -119,9 +119,9 @@ bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QP
             {
                 // hWorld = 2 * radius * tan(fov / 2)
                 // scale = hWorld / hScreen
-                scale = 2.0 * pCamera->getRadius()
-                    * std::tan(pCamera->getFov() / 2.0)
-                    / static_cast<cadm::cadf>(m_heightGetter());
+                scale = static_cast<cadm::cadf>(
+                    2.0 * pCamera->getRadius() * std::tan(pCamera->getFov() / 2.0)
+                    / static_cast<cadm::cadf>(m_heightGetter()));
             }
             const auto translationChange = pCamera->right() * (-scale * static_cast<cadm::cadf>(delta.x()))
                 + pCamera->up() * (scale * static_cast<cadm::cadf>(delta.y()));

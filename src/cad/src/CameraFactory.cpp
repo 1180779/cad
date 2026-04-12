@@ -8,7 +8,7 @@
 #include "components/BlenderCameraComponent.hpp"
 #include "gui/TransformWidget.hpp"
 
-Entity* CameraFactory::createCameraOnSphere(
+Entity* CameraFactory::createBlenderCamera(
     const cadm::cadf radius,
     const cadm::vec3 target,
     const std::string &name) const

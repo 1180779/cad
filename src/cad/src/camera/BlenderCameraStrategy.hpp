@@ -25,10 +25,6 @@ public:
     void toggleProjection() override;
 
     static constexpr cadm::cadf s_sensitivity = 0.01;
-
-private:
-    std::function<int()> m_widthGetter;
-    std::function<int()> m_heightGetter;
 };
 
 

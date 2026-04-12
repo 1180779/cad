@@ -13,7 +13,7 @@ CadCameraStrategy::CadCameraStrategy(
     Entity *cameraEntity,
     const std::function<int()> &widthGetter,
     const std::function<int()> &heightGetter)
-    : ICameraStrategy(cameraEntity), m_widthGetter{widthGetter}, m_heightGetter{heightGetter}
+    : ICameraStrategy(cameraEntity, widthGetter, heightGetter)
 {
 }
 

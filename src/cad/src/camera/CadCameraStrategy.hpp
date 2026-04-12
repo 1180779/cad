@@ -28,9 +28,6 @@ public:
 private:
     void handleOrbit(QPoint mouseDelta, CadCameraComponent *pCamera) const;
     void handlePan(QPoint mouseDelta, CadCameraComponent *pCamera) const;
-
-    std::function<int()> m_widthGetter;
-    std::function<int()> m_heightGetter;
 };
 
 #endif //CAD_CADCAMERASTRATEGY_HPP

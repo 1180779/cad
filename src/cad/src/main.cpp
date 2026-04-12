@@ -82,9 +82,9 @@ int main(int argc, char *argv[])
     glWidget->getScene().setActiveCursor(cursor);
 
     const CameraFactory cameraFactory(glWidget->getScene());
-    const auto cameraOnSphere = cameraFactory.createCameraOnSphere(20, {});
-    auto projCameraStrategy = std::make_unique<BlenderCameraStrategy>(
-        cameraOnSphere,
+    const auto blenderCamera = cameraFactory.createBlenderCamera(20, {});
+    auto blenderCameraStrategy = std::make_unique<BlenderCameraStrategy>(
+        blenderCamera,
         [&] { return glWidget->width(); },
         [&] { return glWidget->height(); });
     const auto cadCamera = cameraFactory.createCadCamera({0, 0, -10}, {}, cadm::vec3::unitY());
@@ -93,9 +93,8 @@ int main(int argc, char *argv[])
         [&] { return glWidget->width(); },
         [&] { return glWidget->height(); });
 
-    glWidget->getCameraController().addCamera("CAD", std::move(cadCameraStrat));
-    glWidget->getCameraController().addCamera("Projection", std::move(projCameraStrategy));
-
+    glWidget->getCameraController().addCamera("Blender", std::move(blenderCameraStrategy));
+    glWidget->getCameraController().addCamera("Cad", std::move(cadCameraStrat));
 
     hierarchyWidget->setScene(&glWidget->getScene());
     hierarchyWidget->setCameraController(&glWidget->getCameraController());
@@ -246,7 +245,7 @@ int main(int argc, char *argv[])
         glWidget,
         [glWidget](const EntityID id)
         {
-            glWidget->getCameraController().switchTo(id, glWidget->width(), glWidget->height());
+            glWidget->getCameraController().switchTo(id);
         });
 
     QObject::connect(

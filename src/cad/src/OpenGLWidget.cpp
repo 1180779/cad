@@ -100,7 +100,7 @@ void OpenGLWidget::paintGL()
 void OpenGLWidget::resizeGL(const int width, const int height)
 {
     QOpenGLWidget::resizeGL(width, height);
-    m_cameraController.getActiveStrategy()->syncAspectRatio(width, height);
+    m_cameraController.getActiveStrategy()->syncAspectRatio();
     m_renderSystem.setViewport(width, height);
 }
 
@@ -361,7 +361,7 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
         update();
         break;
     case InputAction::SwitchCamera:
-        m_cameraController.switchToNext(width(), height());
+        m_cameraController.switchToNext();
         update();
         break;
     case InputAction::DeleteSelected:

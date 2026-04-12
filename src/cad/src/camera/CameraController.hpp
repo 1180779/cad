@@ -73,37 +73,37 @@ public:
         return m_cameras[m_activeIndex].name;
     }
 
-    void switchToNext(const int width, const int height)
+    void switchToNext()
     {
         if (m_cameras.size() <= 1)
             return;
         m_activeIndex = (m_activeIndex + 1) % m_cameras.size();
-        m_cameras[m_activeIndex].strategy->syncAspectRatio(width, height);
+        m_cameras[m_activeIndex].strategy->syncAspectRatio();
         emit cameraChanged(m_cameras[m_activeIndex].name);
     }
 
-    void switchTo(const std::string &name, const int width, const int height)
+    void switchTo(const std::string &name)
     {
         for (std::size_t i = 0; i < m_cameras.size(); ++i)
         {
             if (m_cameras[i].name == name)
             {
                 m_activeIndex = i;
-                m_cameras[i].strategy->syncAspectRatio(width, height);
+                m_cameras[i].strategy->syncAspectRatio();
                 emit cameraChanged(name);
                 return;
             }
         }
     }
 
-    void switchTo(const EntityID id, const int width, const int height)
+    void switchTo(const EntityID id)
     {
         for (std::size_t i = 0; i < m_cameras.size(); ++i)
         {
             if (m_cameras[i].strategy->getEntity()->getId() == id)
             {
                 m_activeIndex = i;
-                m_cameras[i].strategy->syncAspectRatio(width, height);
+                m_cameras[i].strategy->syncAspectRatio();
                 emit cameraChanged(m_cameras[i].name);
                 return;
             }

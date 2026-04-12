@@ -17,7 +17,7 @@ public:
     {
     }
 
-    [[nodiscard]] Entity* createCameraOnSphere(
+    [[nodiscard]] Entity* createBlenderCamera(
         cadm::cadf radius,
         cadm::vec3 target,
         const std::string &name = "On Sphere Camera"
