@@ -379,6 +379,10 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
             menu.exec(QCursor::pos());
         }
         break;
+    case InputAction::CameraToggleProjection:
+        m_cameraController.getActiveStrategy()->toggleProjection();
+        update();
+        break;
     case InputAction::CameraMoveUp:
         if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveUp))
             update();

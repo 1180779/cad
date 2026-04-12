@@ -68,10 +68,12 @@ void RenderSystem::renderInfiniteGrid(
     const cadm::mat4 &invVP) const
 {
     const auto VP = projection * view;
+    const cadm::vec3 cameraForward{-view.row(2).xyz()};
     m_gridShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniformMat4("VP", VP));
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniformMat4("invVP", invVP));
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_gridPlanes", m_gridPlanes));
+    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform3("u_viewDir", cameraForward));
     m_screenQuad->draw();
     m_gridShader->release();
 }

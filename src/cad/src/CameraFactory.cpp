@@ -5,7 +5,7 @@
 #include "CameraFactory.hpp"
 
 #include "components/CadCameraComponent.hpp"
-#include "components/ProjectionCameraComponent.hpp"
+#include "components/BlenderCameraComponent.hpp"
 #include "gui/TransformWidget.hpp"
 
 Entity* CameraFactory::createCameraOnSphere(
@@ -14,7 +14,7 @@ Entity* CameraFactory::createCameraOnSphere(
     const std::string &name) const
 {
     const auto entity = m_scene.createEntity(name);
-    const auto camera = entity->addComponent<ProjectionCameraComponent>();
+    const auto camera = entity->addComponent<BlenderCameraComponent>();
     camera->setRadius(radius);
     camera->setTarget(target);
     return entity;

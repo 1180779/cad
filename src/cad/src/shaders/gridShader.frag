@@ -20,6 +20,7 @@ uniform mat4 invVP;
 uniform mat4 VP;
 // bitmask: bit 0 = XY plane (z=0), bit 1 = XZ plane (y=0), bit 2 = YZ plane (x=0)
 uniform int u_gridPlanes;
+uniform vec3 u_viewDir;
 
 out vec4 FragColor;
 
@@ -61,6 +62,13 @@ float samplePlane(vec3 nearW, vec3 farW, int axis, out float outDepth, out vec3 
     float alpha = max(minor * GRID_ALPHA_MINOR, major * GRID_ALPHA_MAJOR);
 
     alpha *= 1.0 - smoothstep(GRID_FADE_FAR * 0.5, GRID_FADE_FAR, length(inPlaneDelta));
+
+    // fade out when view direction is nearly parallel to the plane
+    vec3 planeNormal = (axis == 0) ? vec3(0.0, 0.0, 1.0)
+    : (axis == 1) ? vec3(0.0, 1.0, 0.0)
+    :               vec3(1.0, 0.0, 0.0);
+    float cosAngle = abs(dot(u_viewDir, planeNormal));
+    alpha *= smoothstep(0.0, 0.15, cosAngle);
 
     if (alpha < GRID_DISCARD_THRESHOLD) return 0.0;
 

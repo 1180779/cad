@@ -6,7 +6,7 @@
 
 #include "../CheckMacros.hpp"
 #include "../components/CadCameraComponent.hpp"
-#include "../components/ProjectionCameraComponent.hpp"
+#include "../components/BlenderCameraComponent.hpp"
 #include "../components/TransformComponent.hpp"
 
 CadCameraStrategy::CadCameraStrategy(
@@ -72,7 +72,8 @@ void CadCameraStrategy::setLookTarget(const cadm::vec3 target)
 
 void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent *const pCamera) const
 {
-    // TODO: redo
+    // TODO(raycast-pivot): rotation pivot should be the ray-scene intersection point under the cursor.
+    //  Currently rotates around target
     const auto polarAngleChange = -static_cast<cadm::cadf>(mouseDelta.y()) * pCamera->getRotationSpeed();
     const auto azimuthAngleChange = static_cast<cadm::cadf>(mouseDelta.x()) * pCamera->getRotationSpeed();
 

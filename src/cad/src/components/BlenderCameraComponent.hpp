@@ -5,6 +5,7 @@
 #ifndef CAD_CAMERA_HPP
 #define CAD_CAMERA_HPP
 
+#include "cad_math/mat3.hpp"
 #include "cad_math/mat4.hpp"
 #include "cad_math/vec3.hpp"
 #include <QObject>
@@ -12,13 +13,11 @@
 
 #include "CameraComponent.hpp"
 
-class ProjectionCameraComponent final : public QObject, public CameraComponent
+class BlenderCameraComponent final : public QObject, public CameraComponent
 {
     Q_OBJECT
 
     Q_PROPERTY(double radius READ getRadius WRITE setRadius NOTIFY radiusChanged)
-    Q_PROPERTY(double azimuthAngle READ getAzimuthAngle WRITE setAzimuthAngle NOTIFY azimuthAngleChanged)
-    Q_PROPERTY(double polarAngle READ getPolarAngle WRITE setPolarAngle NOTIFY polarAngleChanged)
 
     Q_PROPERTY(double fov READ getFov WRITE setFov NOTIFY fovChanged)
 
@@ -30,6 +29,8 @@ class ProjectionCameraComponent final : public QObject, public CameraComponent
     Q_PROPERTY(double targetZ READ getTargetZ WRITE setTargetZ NOTIFY targetZChanged)
 
     Q_PROPERTY(double zoomFactor READ getZoomFactor WRITE setZoomFactor NOTIFY zoomFactorChanged)
+    Q_PROPERTY(bool isOrtho READ isOrtho WRITE setIsOrtho NOTIFY isOrthoChanged)
+    Q_PROPERTY(double orthoHeight READ getOrthoHeight WRITE setOrthoHeight NOTIFY orthoHeightChanged)
 
 public:
     static constexpr cadm::cadf s_minDistance = 0.01;
@@ -38,19 +39,16 @@ public:
     static constexpr cadm::cadf s_radiusMin = 0.01;
     static constexpr cadm::cadf s_radiusMax = 1000.0;
 
-    static constexpr cadm::cadf s_azimuthAngleMin = 0.0;
-    static constexpr cadm::cadf s_azimuthAngleMax = 2.0 * std::numbers::pi;
-
-    static constexpr cadm::cadf s_polarAngleMin = -80.0 * std::numbers::pi / 180.0;
-    static constexpr cadm::cadf s_polarAngleMax = 80.0 * std::numbers::pi / 180.0;
-
     static constexpr cadm::cadf s_fovMin = 40.0 * std::numbers::pi / 180.0;
     static constexpr cadm::cadf s_fovMax = 140.0 * std::numbers::pi / 180.0;
 
     static constexpr cadm::cadf s_zoomFactorMin = 0.01;
     static constexpr cadm::cadf s_zoomFactorMax = 100.0;
 
-    explicit ProjectionCameraComponent(QObject *parent = nullptr)
+    static constexpr cadm::cadf s_orthoHeightMin = 0.01;
+    static constexpr cadm::cadf s_orthoHeightMax = 1000.0;
+
+    explicit BlenderCameraComponent(QObject *parent = nullptr)
         : QObject(parent)
     {
     }
@@ -61,8 +59,6 @@ public:
     [[nodiscard]] cadm::vec3 getPosition() const;
 
     [[nodiscard]] cadm::cadf getRadius() const { return m_radius; }
-    [[nodiscard]] cadm::cadf getAzimuthAngle() const { return m_azimuthAngle; }
-    [[nodiscard]] cadm::cadf getPolarAngle() const { return m_polarAngle; }
     [[nodiscard]] cadm::cadf getFov() const { return m_fov; }
     [[nodiscard]] cadm::cadf getNearPlane() const { return m_nearPlane; }
     [[nodiscard]] cadm::cadf getFarPlane() const { return m_farPlane; }
@@ -71,9 +67,10 @@ public:
     [[nodiscard]] cadm::cadf getTargetY() const { return m_target.y; }
     [[nodiscard]] cadm::cadf getTargetZ() const { return m_target.z; }
     [[nodiscard]] cadm::vec3 getTarget() const { return m_target; }
-    [[nodiscard]] cadm::vec3 getWorldUp() const { return m_worldUp; }
 
     [[nodiscard]] cadm::cadf getZoomFactor() const { return m_zoomFactor; }
+    [[nodiscard]] bool isOrtho() const { return m_isOrtho; }
+    [[nodiscard]] cadm::cadf getOrthoHeight() const { return m_orthoHeight; }
 
     void setTarget(const cadm::vec3 &value);
     void setTargetX(cadm::cadf value);
@@ -81,31 +78,30 @@ public:
     void setTargetZ(cadm::cadf value);
 
     void setRadius(cadm::cadf value);
-    void setAzimuthAngle(cadm::cadf value);
-    void setPolarAngle(cadm::cadf value);
     void setFov(cadm::cadf value);
     void setNearPlane(cadm::cadf value);
     void setFarPlane(cadm::cadf value);
 
     void setZoomFactor(cadm::cadf factor);
+    void setIsOrtho(bool value);
+    void setOrthoHeight(cadm::cadf value);
 
 private:
     cadm::cadf m_radius{5.0};
-    cadm::cadf m_azimuthAngle{};
-    cadm::cadf m_polarAngle{};
+    // Position = target + orbitRot*(0,0,radius).
+    cadm::mat3 m_orbitRot = cadm::mat3::identity();
 
     cadm::vec3 m_target{};
-    cadm::vec3 m_worldUp = cadm::vec3::unitY();
     cadm::cadf m_nearPlane{0.1f};
-    cadm::cadf m_farPlane{100.0f};
+    cadm::cadf m_farPlane{200.0f};
     cadm::cadf m_fov{std::numbers::pi / 4.0};
 
     cadm::cadf m_zoomFactor = 1.1;
+    bool m_isOrtho = false;
+    cadm::cadf m_orthoHeight = 5.0;
 
-signals :
+    signals :
     void radiusChanged(double radius);
-    void azimuthAngleChanged(double angle);
-    void polarAngleChanged(double angle);
 
     void fovChanged(double fov);
 
@@ -117,11 +113,13 @@ signals :
     void targetZChanged(double z);
 
     void zoomFactorChanged(double height);
+    void isOrthoChanged(bool isOrtho);
+    void orthoHeightChanged(double height);
 
     void propertyUpdated();
 
 private:
-    friend class ProjectionCameraStrategy;
+    friend class BlenderCameraStrategy;
 };
 
 

@@ -9,7 +9,7 @@
 #include "GlCommon.hpp"
 #include "OpenGLWidget.hpp"
 #include "camera/CadCameraStrategy.hpp"
-#include "camera/ProjectionCameraStrategy.hpp"
+#include "camera/BlenderCameraStrategy.hpp"
 #include "gui/EntityPropertiesWidget.hpp"
 #include "gui/GridSettingsWidget.hpp"
 #include "gui/SceneHierarchyWidget.hpp"
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 
     const CameraFactory cameraFactory(glWidget->getScene());
     const auto cameraOnSphere = cameraFactory.createCameraOnSphere(20, {});
-    auto projCameraStrategy = std::make_unique<ProjectionCameraStrategy>(
+    auto projCameraStrategy = std::make_unique<BlenderCameraStrategy>(
         cameraOnSphere,
         [&] { return glWidget->width(); },
         [&] { return glWidget->height(); });

@@ -34,6 +34,11 @@ public:
     virtual bool handleCameraKeyAction(CameraKeyAction action) = 0;
     virtual bool handleWheelEvent(QWheelEvent *event) = 0;
 
+    // no-op by default; override in strategies that support it
+    virtual void toggleProjection()
+    {
+    }
+
     [[nodiscard]] Entity* getEntity() const { return m_cameraEntity; }
 
 protected:

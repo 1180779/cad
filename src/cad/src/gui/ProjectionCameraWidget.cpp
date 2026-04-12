@@ -8,7 +8,7 @@
 #include <QHBoxLayout>
 #include <numbers>
 
-CameraWidget::CameraWidget(ProjectionCameraComponent *camera, QWidget *parent)
+CameraWidget::CameraWidget(BlenderCameraComponent *camera, QWidget *parent)
     : ComponentWidget(camera, parent), m_camera(camera)
 {
     const auto layout = new QFormLayout(this);
@@ -18,54 +18,44 @@ CameraWidget::CameraWidget(ProjectionCameraComponent *camera, QWidget *parent)
 
     connect(
         m_camera,
-        &ProjectionCameraComponent::radiusChanged,
+        &BlenderCameraComponent::radiusChanged,
         this,
         &CameraWidget::onRadiusChanged);
     connect(
         m_camera,
-        &ProjectionCameraComponent::azimuthAngleChanged,
-        this,
-        &CameraWidget::onAzimuthAngleChanged);
-    connect(
-        m_camera,
-        &ProjectionCameraComponent::polarAngleChanged,
-        this,
-        &CameraWidget::onPolarAngleChanged);
-    connect(
-        m_camera,
-        &ProjectionCameraComponent::fovChanged,
+        &BlenderCameraComponent::fovChanged,
         this,
         &CameraWidget::onFovChanged);
     connect(
         m_camera,
-        &ProjectionCameraComponent::nearPlaneChanged,
+        &BlenderCameraComponent::nearPlaneChanged,
         this,
         &CameraWidget::onNearPlaneChanged);
     connect(
         m_camera,
-        &ProjectionCameraComponent::farPlaneChanged,
+        &BlenderCameraComponent::farPlaneChanged,
         this,
         &CameraWidget::onFarPlaneChanged);
 
     connect(
         m_camera,
-        &ProjectionCameraComponent::targetXChanged,
+        &BlenderCameraComponent::targetXChanged,
         this,
         &CameraWidget::onTargetXChanged);
     connect(
         m_camera,
-        &ProjectionCameraComponent::targetYChanged,
+        &BlenderCameraComponent::targetYChanged,
         this,
         &CameraWidget::onTargetYChanged);
     connect(
         m_camera,
-        &ProjectionCameraComponent::targetZChanged,
+        &BlenderCameraComponent::targetZChanged,
         this,
         &CameraWidget::onTargetZChanged);
 
     connect(
         m_camera,
-        &ProjectionCameraComponent::propertyUpdated,
+        &BlenderCameraComponent::propertyUpdated,
         this,
         &ComponentWidget::propertyChanged);
 }
@@ -76,20 +66,6 @@ void CameraWidget::onRadiusChanged(const double value)
     m_radius->setValue(value);
     m_radius->blockSignals(false);
     emit propertyChanged();
-}
-
-void CameraWidget::onAzimuthAngleChanged(const double value) const
-{
-    m_azimuthAngle->blockSignals(true);
-    m_azimuthAngle->setValue(value * 180.0 / std::numbers::pi);
-    m_azimuthAngle->blockSignals(false);
-}
-
-void CameraWidget::onPolarAngleChanged(const double value) const
-{
-    m_polarAngle->blockSignals(true);
-    m_polarAngle->setValue(value * 180.0 / std::numbers::pi);
-    m_polarAngle->blockSignals(false);
 }
 
 void CameraWidget::onFovChanged(const double value) const
@@ -146,39 +122,9 @@ void CameraWidget::setUpArcBallControls(QFormLayout *layout)
         m_radius,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &ProjectionCameraComponent::setRadius);
+        &BlenderCameraComponent::setRadius);
     layout->addRow("Radius", m_radius);
 
-    m_azimuthAngle = new QDoubleSpinBox();
-    m_azimuthAngle->setRange(s_azimuthAngleMin, s_azimuthAngleMax);
-    m_azimuthAngle->setSingleStep(s_azimuthAngleStep);
-    m_azimuthAngle->setValue(m_camera->getAzimuthAngle() * 180.0 / std::numbers::pi);
-    m_azimuthAngle->setWrapping(true);
-    m_azimuthAngle->setFixedWidth(s_doubleSpinBoxFixedWidth);
-    connect(
-        m_azimuthAngle,
-        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-        this,
-        [this](const double value)
-        {
-            m_camera->setAzimuthAngle(value * std::numbers::pi / 180.0);
-        });
-    layout->addRow("Azimuth Angle", m_azimuthAngle);
-
-    m_polarAngle = new QDoubleSpinBox();
-    m_polarAngle->setRange(s_polarAngleMin, s_polarAngleMax);
-    m_polarAngle->setSingleStep(s_polarAngleStep);
-    m_polarAngle->setValue(m_camera->getPolarAngle() * 180.0 / std::numbers::pi);
-    m_polarAngle->setFixedWidth(s_doubleSpinBoxFixedWidth);
-    connect(
-        m_polarAngle,
-        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-        this,
-        [this](const double value)
-        {
-            m_camera->setPolarAngle(value * std::numbers::pi / 180.0);
-        });
-    layout->addRow("Polar Angle", m_polarAngle);
 }
 
 void CameraWidget::setUpProjectionControls(QFormLayout *layout)
@@ -208,7 +154,7 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_nearPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &ProjectionCameraComponent::setNearPlane);
+        &BlenderCameraComponent::setNearPlane);
     layout->addRow("Near Plane", m_nearPlane);
 
     m_farPlane = new QDoubleSpinBox();
@@ -220,7 +166,7 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_farPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &ProjectionCameraComponent::setFarPlane);
+        &BlenderCameraComponent::setFarPlane);
     layout->addRow("Far Plane", m_farPlane);
 }
 
@@ -254,17 +200,17 @@ void CameraWidget::setUpTargetControls(QFormLayout *layout)
         m_targetX,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &ProjectionCameraComponent::setTargetX);
+        &BlenderCameraComponent::setTargetX);
     connect(
         m_targetY,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &ProjectionCameraComponent::setTargetY);
+        &BlenderCameraComponent::setTargetY);
     connect(
         m_targetZ,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &ProjectionCameraComponent::setTargetZ);
+        &BlenderCameraComponent::setTargetZ);
 
     const auto targetLayout = new QHBoxLayout();
     targetLayout->addWidget(m_targetX);

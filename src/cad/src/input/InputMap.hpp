@@ -36,6 +36,7 @@ enum class InputAction
     CameraMoveDown,
     CameraMoveLeft,
     CameraMoveRight,
+    CameraToggleProjection,
 
     // Viewport actions
     Select,
@@ -125,6 +126,7 @@ inline InputMap::InputMap()
     bind(InputAction::SetObjectSelectMode, {Qt::Key_O, Qt::NoModifier});
     bind(InputAction::SetBoxSelectMode, {Qt::Key_B, Qt::NoModifier});
 
+    bind(InputAction::CameraToggleProjection, {Qt::Key_5, Qt::NoModifier});
     bind(InputAction::CameraMoveUp, {Qt::Key_Up, Qt::NoModifier, true});
     bind(InputAction::CameraMoveDown, {Qt::Key_Down, Qt::NoModifier, true});
     bind(InputAction::CameraMoveLeft, {Qt::Key_Left, Qt::NoModifier, true});

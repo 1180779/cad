@@ -301,6 +301,20 @@ namespace cadm
             return result;
         }
 
+        // Modified Gram-Schmidt orthonormalization of columns
+        [[nodiscard]] Derived orthonormalized() const requires (R == C)
+        {
+            // https://www.math.uci.edu/~ttrogdon/105A/html/Lecture23.html
+            Derived v = *static_cast<const Derived*>(this);
+            for (std::size_t j = 0; j < C; ++j)
+            {
+                const auto qj = v.col(j).normalized();
+                for (std::size_t k = j + 1; k < C; ++k)
+                    v.col(k) -= qj.dot(v.col(k)) * qj;
+            }
+            return v;
+        }
+
         [[nodiscard]] constexpr Derived normalizedColumns() const noexcept
         {
             Derived result = *static_cast<const Derived*>(this);

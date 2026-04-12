@@ -5,7 +5,7 @@
 #include "PointPropertiesWidget.hpp"
 #include "../components/TransformComponent.hpp"
 #include "../components/GeometryComponent.hpp"
-#include "../components/ProjectionCameraComponent.hpp"
+#include "../components/BlenderCameraComponent.hpp"
 #include "../components/PointComponent.hpp"
 #include <QVBoxLayout>
 
@@ -49,7 +49,7 @@ void EntityPropertiesWidget::setEntity(Entity *entity)
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }
 
-    if (const auto camera = m_entity->getComponent<ProjectionCameraComponent>())
+    if (const auto camera = m_entity->getComponent<BlenderCameraComponent>())
     {
         const auto widget = new CameraWidget(camera.value());
         m_layout->addWidget(widget);
