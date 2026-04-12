@@ -12,8 +12,9 @@ uniform int u_axesMask;// bit 0=X, bit 1=Y, bit 2=Z
 
 out vec4 FragColor;
 
-#define AXES_FAR  0.9999
-#define AXES_NEAR 0.0001
+#define AXIS_FADE_FAR 1000.0
+#define AXIS_FAR  0.9999
+#define AXIS_NEAR 0.0001
 #define SOFT_EDGE 1.0
 
 const vec3 AXIS_DIR[3] = vec3[3](
@@ -95,17 +96,19 @@ void main()
         // Transform axis direction by u_model
         vec3 d = normalize((u_model * vec4(AXIS_DIR[i], 0.0)).xyz);
 
-        vec3 hitPoint;
-        float pixDist = axisPixelDist(nearW, farW, d, hitPoint);
+        vec3 hit;
+        float pixDist = axisPixelDist(nearW, farW, d, hit);
         float pixDist2 = pixDist * pixDist;
         if (pixDist2 >= threshold2 || pixDist2 >= bestDist2) continue;
 
         bestDist2 = pixDist2;
         float alpha = 1.0 - smoothstep(halfW - SOFT_EDGE, halfW + SOFT_EDGE, pixDist);
+        float distAlongAxis = abs(dot(hit - u_axisOrigin, d));
+        alpha *= 1.0 - smoothstep(AXIS_FADE_FAR * 0.5, AXIS_FADE_FAR, distAlongAxis);
         bestColor = vec4(AXIS_COLOR[i].rgb, alpha);
 
-        vec4 clip = VP * vec4(hitPoint, 1.0);
-        bestDepth = clamp((clip.z / clip.w) * 0.5 + 0.5, AXES_NEAR, AXES_FAR);
+        vec4 clip = VP * vec4(hit, 1.0);
+        bestDepth = clamp((clip.z / clip.w) * 0.5 + 0.5, AXIS_NEAR, AXIS_FAR);
     }
 
     if (bestColor.a < 0.01) discard;
