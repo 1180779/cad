@@ -6,7 +6,7 @@ The project uses C++ with CMake. The libraries used are Qt for windowing and wid
 TBB (for std::execution library dependency; you might need to change this to compile on your system).
 
 For details refer to the documents linked in the respective folders of the repository:
-- [lab1 - ellipse raycasting](./src/app/README.md)
+- [lab1 - ellipse raycasting](./src/ellipse/README.md)
 - [CAD/CAM system](./src/cad/README.md)
 
 ## Building and running
