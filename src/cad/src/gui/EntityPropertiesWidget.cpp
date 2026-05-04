@@ -32,6 +32,7 @@ void EntityPropertiesWidget::setEntity(Entity *entity)
 
     clearLayout();
     m_entity = entity;
+    m_bezierWidget = nullptr;
 
     if (!m_entity)
         return;
@@ -74,10 +75,27 @@ void EntityPropertiesWidget::setEntity(Entity *entity)
 
     if (const auto bezier = m_entity->getComponent<BezierC0Component>())
     {
-        const auto widget = new BezierC0Widget(bezier.value(), m_scene);
-        m_layout->addWidget(widget);
-        connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+        m_bezierWidget = new BezierC0Widget(bezier.value(), m_scene);
+        m_layout->addWidget(m_bezierWidget);
+        connect(m_bezierWidget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+        connect(
+            m_bezierWidget,
+            &BezierC0Widget::pointSelectionChanged,
+            this,
+            &EntityPropertiesWidget::pointSelectionChanged);
     }
+}
+
+void EntityPropertiesWidget::syncBezierSelection() const
+{
+    if (m_bezierWidget)
+        m_bezierWidget->syncSelection();
+}
+
+void EntityPropertiesWidget::refreshComponents() const
+{
+    if (m_bezierWidget)
+        m_bezierWidget->refreshList();
 }
 
 void EntityPropertiesWidget::clearLayout() const

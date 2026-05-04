@@ -46,7 +46,11 @@ void BezierC0Component::addControlPoint(const PointHandle h)
 
 void BezierC0Component::removeAssociatedCallback(const std::vector<unsigned>::value_type h)
 {
-    const auto subId = m_removeControlPointCallbacks.at(h);
+    const auto subIdIter = m_removeControlPointCallbacks.find(h);
+    if (subIdIter == m_removeControlPointCallbacks.end())
+        return;
+
+    const auto subId = subIdIter->first;
     m_registry->unsubscribeFromRemove(subId);
     m_removeControlPointCallbacks.erase(h);
 }

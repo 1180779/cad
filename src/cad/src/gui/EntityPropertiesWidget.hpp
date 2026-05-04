@@ -16,11 +16,13 @@ public:
     void setScene(Scene *scene);
     void setEntity(Entity *entity);
 
-    signals  :
-
-
-
+signals:
     void propertyChanged();
+    void pointSelectionChanged(QList<Entity*> selected);
+
+public slots:
+    void syncBezierSelection() const;
+    void refreshComponents() const;
 
 private:
     void clearLayout() const;
@@ -28,6 +30,7 @@ private:
     Scene *m_scene = nullptr;
     Entity *m_entity = nullptr;
     QVBoxLayout *m_layout;
+    class BezierC0Widget *m_bezierWidget = nullptr;
 };
 
 #endif // ENTITYPROPERTIESWIDGET_H

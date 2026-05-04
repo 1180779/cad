@@ -172,6 +172,34 @@ int main(int argc, char *argv[])
         });
 
     QObject::connect(
+        entityPropertiesWidget,
+        &EntityPropertiesWidget::pointSelectionChanged,
+        glWidget,
+        [glWidget, hierarchyWidget, entityPropertiesWidget](const QList<Entity*> &selected)
+        {
+            for (auto &e : glWidget->getScene().getEntities())
+                e->setSelected(false);
+            for (auto *e : selected)
+                e->setSelected(true);
+            glWidget->getScene().syncPointSelectionToRegistry();
+            hierarchyWidget->syncSelectionFromScene();
+            entityPropertiesWidget->syncBezierSelection();
+            glWidget->update();
+        });
+
+    QObject::connect(
+        glWidget,
+        &OpenGLWidget::viewportSelectionChanged,
+        entityPropertiesWidget,
+        &EntityPropertiesWidget::syncBezierSelection);
+
+    QObject::connect(
+        glWidget,
+        &OpenGLWidget::sceneChanged,
+        entityPropertiesWidget,
+        &EntityPropertiesWidget::refreshComponents);
+
+    QObject::connect(
         gridSettingsWidget,
         &GridSettingsWidget::gridPlanesChanged,
         glWidget,
