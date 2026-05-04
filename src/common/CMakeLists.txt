@@ -1,5 +1,6 @@
 add_library(common STATIC
-        include/common/DoubleSlider.h
+        include/common/DoubleSlider.hpp
+        include/common/ModifierSpinBox.hpp
         src/DoubleSlider.cpp
 )
 

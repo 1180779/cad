@@ -39,3 +39,5 @@ _deps/
 # Executables
 cad_math_tests
 cad
+/CLAUDE.md
+.claude

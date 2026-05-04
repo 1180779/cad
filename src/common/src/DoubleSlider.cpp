@@ -2,9 +2,10 @@
 // Created on 3/6/26.
 //
 
-#include "../include/common/DoubleSlider.h"
+#include "../include/common/DoubleSlider.hpp"
 
-DoubleSlider::DoubleSlider(QWidget* parent) : QSlider(parent)
+DoubleSlider::DoubleSlider(QWidget *parent)
+    : QSlider(parent)
 {
     connect(this, &QSlider::valueChanged, this, &DoubleSlider::notifyValueChanged);
 }

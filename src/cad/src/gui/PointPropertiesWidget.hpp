@@ -1,0 +1,42 @@
+//
+// Created on 3/31/26.
+//
+
+#ifndef CAD_POINTPROPERTIESWIDGET_HPP
+#define CAD_POINTPROPERTIESWIDGET_HPP
+
+#include <common/ModifierSpinBox.hpp>
+#include "../PointRegistry.hpp"
+
+class PointPropertiesWidget : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit PointPropertiesWidget(QWidget *parent = nullptr);
+
+    void setPoint(PointRegistry *registry, PointHandle handle);
+
+    static constexpr double s_coordMin = std::numeric_limits<double>::lowest();
+    static constexpr double s_coordMax = std::numeric_limits<double>::max();
+    static constexpr double s_coordStep = 0.1;
+    static constexpr int s_spinWidth = 80;
+
+signals:
+    void propertyChanged();
+
+private slots:
+    void onXChanged(double value);
+    void onYChanged(double value);
+    void onZChanged(double value);
+
+private:
+    PointRegistry *m_registry = nullptr;
+    PointHandle m_handle = InvalidPointHandle;
+
+    ModifierDoubleSpinBox *m_x{};
+    ModifierDoubleSpinBox *m_y{};
+    ModifierDoubleSpinBox *m_z{};
+};
+
+#endif //CAD_POINTPROPERTIESWIDGET_HPP
