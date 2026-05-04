@@ -4,7 +4,9 @@ file(GLOB_RECURSE CAD_SOURCES
 )
 
 add_executable(cad ${CAD_SOURCES}
-        src/Callbacks.hpp)
+        src/Callbacks.hpp
+        src/ViewportTypes.hpp
+        src/gui/StatusBarWidget.hpp)
 
 target_link_libraries(cad
         Qt::Core

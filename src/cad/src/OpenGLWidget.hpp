@@ -12,18 +12,11 @@
 #include "PointRegistry.hpp"
 #include "RenderSystem.hpp"
 #include "Scene.hpp"
+#include "ViewportTypes.hpp"
 #include "camera/CameraController.hpp"
 #include "components/EntitySnapshot.hpp"
 #include "cursor/ICursorPlacementStrategy.hpp"
 #include "input/InputMap.hpp"
-
-enum class PivotMode { MedianPoint, ActiveCursor };
-
-enum class TransformMode { None, Rotate, Scale, Translate };
-
-enum class CoordSpace { World, Local };
-
-enum class AxisConstraint { None, X, Y, Z };
 
 enum class DragMode
 {
@@ -47,7 +40,7 @@ public:
 
     CameraController& getCameraController() { return m_cameraController; }
 
-    void removeEntity(EntityID id);
+    bool removeEntity(EntityID id);
 
     bool eventFilter(QObject *obj, QEvent *event) override;
 
@@ -78,7 +71,7 @@ public:
         emit clickToAddModeChanged(active);
     }
 
-    signals:
+signals:
     void selectedEntityChanged(Entity *entity);
     void viewportSelectionChanged();
     void sceneChanged();
@@ -115,22 +108,23 @@ private:
 
     static QString axisLabel(AxisConstraint constraint);
 
-    // save entities states and begin transform operation
+    /// save entity states and begin transform operation
     void beginTransform(TransformMode mode);
 
-    // update the entities based on the state saved at the beginning of the transform
-    // this way no numerical errors are accumulated
+    /// update the entities based on the state saved at the beginning of the transform
+    /// this way no numerical errors are accumulated
     void applyTransform(QPoint currentMousePos);
 
-    // restore the state of entities at the beginning of the transform operation
+    /// restore the state of entities at the beginning of the transform operation
     void cancelTransform();
 
-    // confirm the transform; clear the states saved at the beginning of the transform
+    /// confirm the transform; clear the states saved at the beginning of the transform
     void confirmTransform();
 
     static constexpr int s_clickRadiusPx = 8;
 
     void wrapMouseIfNeeded(QPoint currentPos, QPoint delta);
+    bool removeEntityInternal(EntityID id);
 
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};
@@ -140,7 +134,7 @@ private:
     CameraController m_cameraController{this};
     InputMap m_inputMap;
 
-    // holds currently active drag i.e. the drag that is taking place right now
+    /// holds currently active drag i.e., the drag that is taking place right now
     DragMode m_activeDrag{DragMode::None};
     cadm::cadf m_zoomFactor{1.1};
 
@@ -152,8 +146,12 @@ private:
     QPoint m_boxSelectCurrent;
 
     std::unique_ptr<IViewportPositionStrategy> m_cursorPlacementStrategy;
-    PointHandle m_draggedPoint = 0; // valid only in PointDrag mode
-    bool m_clickToAddMode = false; // when true, LMB click places a new point at the cursor
+
+    /// valid only in PointDrag mode
+    PointHandle m_draggedPoint = 0;
+
+    /// when true, LMB click places a new point at the cursor
+    bool m_clickToAddMode = false;
 
     PivotMode m_pivotMode = PivotMode::MedianPoint;
     CoordSpace m_coordSpace = CoordSpace::World;

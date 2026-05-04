@@ -64,7 +64,7 @@ void Scene::syncPointSelectionToRegistry()
     }
 }
 
-void Scene::removeEntity(EntityID id)
+bool Scene::removeEntity(EntityID id)
 {
     // pop and replace
     const auto toBeRemoved = std::ranges::find_if(
@@ -73,7 +73,7 @@ void Scene::removeEntity(EntityID id)
         {
             return e->getId() == id;
         });
-    if (toBeRemoved == m_entities.end()) return;
+    if (toBeRemoved == m_entities.end()) return false;
     if (m_activeCursor == toBeRemoved->get())
         m_activeCursor = nullptr;
     if (m_activeBezierC0 == toBeRemoved->get())
@@ -85,6 +85,7 @@ void Scene::removeEntity(EntityID id)
     }
     toBeRemoved->swap(m_entities.back());
     m_entities.pop_back();
+    return true;
 }
 
 auto Scene::getVisibleEntities()

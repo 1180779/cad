@@ -21,7 +21,7 @@ public:
     std::optional<Entity*> getEntity(EntityID id);
     std::optional<Entity*> getEntityByName(const std::string &name);
     std::optional<Entity*> getEntityByPointHandle(PointHandle handle);
-    void removeEntity(EntityID id);
+    bool removeEntity(EntityID id);
 
     void syncPointSelectionToRegistry();
 

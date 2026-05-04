@@ -26,6 +26,7 @@
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
 #include "PointRegistry.hpp"
+#include "ViewportTypes.hpp"
 #include "cad_math/helpers.hpp"
 #include "components/BezierC0Component.hpp"
 #include "components/CursorComponent.hpp"
@@ -169,8 +170,8 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event)
         else
         {
             // Try to pick a control point for direct dragging
-            const PointHandle hit = pickPoint(event->pos());
-            if (hit != InvalidPointHandle)
+            if (const PointHandle hit = pickPoint(event->pos());
+                hit != InvalidPointHandle)
             {
                 m_draggedPoint = hit;
                 m_activeDrag = DragMode::PointDrag;
@@ -378,7 +379,7 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
     {
         if (m_transformMode == TransformMode::None)
             return;
-        m_axisConstraint = (m_axisConstraint == axis)
+        m_axisConstraint = m_axisConstraint == axis
                                ? AxisConstraint::None
                                : axis;
         emit transformModeChanged(m_transformMode, axisLabel(m_axisConstraint));
@@ -420,7 +421,7 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
         toggleConstraint(AxisConstraint::Z);
         break;
     case InputAction::ToggleCoordSpace:
-        m_coordSpace = (m_coordSpace == CoordSpace::World)
+        m_coordSpace = m_coordSpace == CoordSpace::World
                            ? CoordSpace::Local
                            : CoordSpace::World;
         update();
@@ -509,10 +510,11 @@ void OpenGLWidget::deleteSelectedEntities()
         toDelete.push_back(e->getId());
     }
 
+    bool anyRemoved = false;
     for (const EntityID id : toDelete)
-        removeEntity(id);
+        anyRemoved |= removeEntityInternal(id);
 
-    if (!toDelete.empty())
+    if (anyRemoved)
     {
         emit sceneChanged();
         update();
@@ -684,7 +686,7 @@ void OpenGLWidget::beginTransform(const TransformMode mode)
     {
         if (!e->isSelected()) continue;
 
-        // Bezier curve: move all its control points rather than the curve entity itself
+        // Bézier curve: move all its control points rather than the curve entity itself
         if (const auto bc = e->getComponent<BezierC0Component>())
         {
             for (const auto h : bc.value()->getControlPoints())
@@ -692,9 +694,8 @@ void OpenGLWidget::beginTransform(const TransformMode mode)
                 if (const auto ptEntity = m_scene.getEntityByPointHandle(h))
                 {
                     const EntityID ptId = ptEntity.value()->getId();
-                    const bool already = std::any_of(
-                        m_transformSnapshots.begin(),
-                        m_transformSnapshots.end(),
+                    const bool already = std::ranges::any_of(
+                        m_transformSnapshots,
                         [ptId](const EntitySnapshot &s) { return s.id == ptId; });
                     if (!already)
                     {
@@ -964,14 +965,25 @@ void OpenGLWidget::wrapMouseIfNeeded(const QPoint currentPos, const QPoint delta
     QCursor::setPos(mapToGlobal(newPos));
 }
 
-void OpenGLWidget::removeEntity(const EntityID id)
+bool OpenGLWidget::removeEntityInternal(const EntityID id)
 {
     m_cameraController.removeCamera(id);
-    m_scene.removeEntity(id);
+    return m_scene.removeEntity(id);
+}
+
+bool OpenGLWidget::removeEntity(const EntityID id)
+{
+    const bool removed = removeEntityInternal(id);
+    if (removed)
+        emit sceneChanged();
+    return removed;
 }
 
 bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event)
 {
+    if (const QWidget *focus = QApplication::focusWidget(); focus && focus != this)
+        return QObject::eventFilter(obj, event);
+
     if (event->type() == QEvent::KeyPress)
     {
         const auto keyEvent = dynamic_cast<QKeyEvent*>(event);

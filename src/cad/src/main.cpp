@@ -1,6 +1,5 @@
 #include <QApplication>
 #include <QComboBox>
-#include <QLabel>
 #include <QVBoxLayout>
 
 #include "CameraFactory.hpp"
@@ -15,6 +14,7 @@
 #include "gui/EntityPropertiesWidget.hpp"
 #include "gui/GridSettingsWidget.hpp"
 #include "gui/SceneHierarchyWidget.hpp"
+#include "gui/StatusBarWidget.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -32,10 +32,8 @@ int main(int argc, char *argv[])
     glWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     leftControlsLayout->addWidget(glWidget);
 
-    constexpr auto transformModeDefaultString = "Mode: NA";
-    const auto transformModeLabel = new QLabel(transformModeDefaultString);
-    transformModeLabel->setAlignment(Qt::AlignLeft);
-    leftControlsLayout->addWidget(transformModeLabel);
+    const auto statusBar = new StatusBarWidget;
+    leftControlsLayout->addWidget(statusBar);
 
     // right panel: tabbed widget
     const auto tabWidget = new QTabWidget;
@@ -97,6 +95,7 @@ int main(int argc, char *argv[])
 
     glWidget->getCameraController().addCamera("Blender", std::move(blenderCameraStrategy));
     glWidget->getCameraController().addCamera("Cad", std::move(cadCameraStrat));
+    statusBar->setCameraName(QString::fromStdString(glWidget->getCameraController().getActiveName()));
 
     hierarchyWidget->setScene(&glWidget->getScene());
     hierarchyWidget->setCameraController(&glWidget->getCameraController());
@@ -181,26 +180,43 @@ int main(int argc, char *argv[])
     QObject::connect(
         glWidget,
         &OpenGLWidget::transformModeChanged,
-        transformModeLabel,
-        [transformModeLabel](const TransformMode mode, const QString &axisInfo)
+        statusBar,
+        &StatusBarWidget::setTransformMode);
+
+    QObject::connect(
+        glWidget,
+        &OpenGLWidget::clickToAddModeChanged,
+        statusBar,
+        &StatusBarWidget::setClickToAddMode);
+
+    QObject::connect(
+        &glWidget->getCameraController(),
+        &CameraController::cameraChanged,
+        statusBar,
+        [statusBar](const std::string &name) { statusBar->setCameraName(QString::fromStdString(name)); });
+
+    QObject::connect(
+        glWidget,
+        &OpenGLWidget::viewportSelectionChanged,
+        statusBar,
+        [glWidget, statusBar]
         {
-            switch (mode)
-            {
-            case TransformMode::Translate: transformModeLabel->setText("Mode: Translate  (G)");
-                break;
-            case TransformMode::Rotate:
-                {
-                    const QString axis = axisInfo.isEmpty()
-                                             ? "View"
-                                             : axisInfo;
-                    transformModeLabel->setText(QString("Mode: Rotate  (R)  |  Axis: " + axis));
-                }
-                break;
-            case TransformMode::Scale: transformModeLabel->setText("Mode: Scale  (S)");
-                break;
-            case TransformMode::None: transformModeLabel->setText(transformModeDefaultString);
-                break;
-            }
+            int count = 0;
+            for (const auto &e : glWidget->getScene().getEntities())
+                if (e->isSelected()) ++count;
+            statusBar->setSelectionCount(count);
+        });
+
+    QObject::connect(
+        glWidget,
+        &OpenGLWidget::sceneChanged,
+        statusBar,
+        [glWidget, statusBar]
+        {
+            if (const Entity *active = glWidget->getScene().getActiveBezierC0())
+                statusBar->setActiveBezierName(QString::fromStdString(active->getName()));
+            else
+                statusBar->setActiveBezierName({});
         });
 
     QObject::connect(
@@ -341,6 +357,7 @@ int main(int argc, char *argv[])
         [glWidget](Entity *e)
         {
             glWidget->getScene().setActiveBezierC0(e);
+            emit glWidget->sceneChanged();
         });
 
     QObject::connect(
