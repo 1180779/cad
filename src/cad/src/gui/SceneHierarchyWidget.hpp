@@ -16,7 +16,7 @@ public:
     void setCameraController(CameraController *cameraController);
     void addEntityToList(const std::unique_ptr<Entity> &e) const;
 
-    signals:
+signals :
 
     void selectionChanged(QList<Entity*> entities);
     void deleteEntityRequested(Entity *e);
@@ -26,6 +26,9 @@ public:
     void createTorusRequested();
     void createCursorRequested();
     void createPointRequested();
+    void createBezierC0Requested();
+    void setAsActiveBezierC0Requested(Entity *e);
+    void addSelectedPointsToBezierC0Requested(Entity *curve);
 
 public slots:
     void refresh();

@@ -42,6 +42,8 @@ enum class InputAction
     Select,
     CursorPlace,
     RightClick,
+
+    ToggleClickToAdd,
 };
 
 struct InputBinding
@@ -135,6 +137,7 @@ inline InputMap::InputMap()
     bind(InputAction::CameraOrbit, {Qt::MiddleButton, Qt::NoModifier});
     bind(InputAction::CameraPan, {Qt::MiddleButton, Qt::ShiftModifier});
     bind(InputAction::CameraZoomDrag, {Qt::MiddleButton, Qt::ControlModifier});
+    bind(InputAction::ToggleClickToAdd, {Qt::Key_P, Qt::NoModifier});
     bind(InputAction::Select, {Qt::LeftButton, Qt::NoModifier});
     bind(InputAction::CursorPlace, {Qt::LeftButton, Qt::ShiftModifier});
     bind(InputAction::RightClick, {Qt::RightButton, Qt::NoModifier});

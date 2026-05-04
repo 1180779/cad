@@ -1,16 +1,17 @@
 #include "EntityPropertiesWidget.hpp"
-#include "TransformWidget.hpp"
-#include "TorusWidget.hpp"
-#include "ProjectionCameraWidget.hpp"
-#include "PointPropertiesWidget.hpp"
-#include "../components/TransformComponent.hpp"
-#include "../components/GeometryComponent.hpp"
-#include "../components/BlenderCameraComponent.hpp"
-#include "../components/PointComponent.hpp"
-#include <QVBoxLayout>
-
+#include "BezierC0Widget.hpp"
 #include "CadCameraWidget.hpp"
+#include "PointPropertiesWidget.hpp"
+#include "ProjectionCameraWidget.hpp"
+#include "TorusWidget.hpp"
+#include "TransformWidget.hpp"
+#include "../components/BezierC0Component.hpp"
+#include "../components/BlenderCameraComponent.hpp"
 #include "../components/CadCameraComponent.hpp"
+#include "../components/GeometryComponent.hpp"
+#include "../components/PointComponent.hpp"
+#include "../components/TransformComponent.hpp"
+#include <QVBoxLayout>
 
 EntityPropertiesWidget::EntityPropertiesWidget(QWidget *parent)
     : QWidget(parent)
@@ -69,6 +70,13 @@ void EntityPropertiesWidget::setEntity(Entity *entity)
         widget->setPoint(&m_scene->getPointRegistry(), pc.value()->m_handle);
         m_layout->addWidget(widget);
         connect(widget, &PointPropertiesWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+    }
+
+    if (const auto bezier = m_entity->getComponent<BezierC0Component>())
+    {
+        const auto widget = new BezierC0Widget(bezier.value(), m_scene);
+        m_layout->addWidget(widget);
+        connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }
 }
 

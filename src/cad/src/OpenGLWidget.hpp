@@ -34,6 +34,7 @@ enum class DragMode
     BoxSelect,
     ClickSelect,
     CursorPlace,
+    PointDrag,
 };
 
 class OpenGLWidget : public QOpenGLWidget
@@ -64,16 +65,25 @@ public:
         update();
     }
 
-    void setCursorPlacementStrategy(std::unique_ptr<ICursorPlacementStrategy> strategy)
+    void setCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy)
     {
         m_cursorPlacementStrategy = std::move(strategy);
     }
 
-signals:
+    [[nodiscard]] bool isClickToAddMode() const { return m_clickToAddMode; }
+
+    void setClickToAddMode(const bool active)
+    {
+        m_clickToAddMode = active;
+        emit clickToAddModeChanged(active);
+    }
+
+    signals:
     void selectedEntityChanged(Entity *entity);
     void viewportSelectionChanged();
     void sceneChanged();
     void transformModeChanged(TransformMode mode, QString axisInfo);
+    void clickToAddModeChanged(bool active);
 
     void createTorusRequested();
     void createCursorRequested();
@@ -141,7 +151,9 @@ private:
     QPoint m_boxSelectStart;
     QPoint m_boxSelectCurrent;
 
-    std::unique_ptr<ICursorPlacementStrategy> m_cursorPlacementStrategy;
+    std::unique_ptr<IViewportPositionStrategy> m_cursorPlacementStrategy;
+    PointHandle m_draggedPoint = 0; // valid only in PointDrag mode
+    bool m_clickToAddMode = false; // when true, LMB click places a new point at the cursor
 
     PivotMode m_pivotMode = PivotMode::MedianPoint;
     CoordSpace m_coordSpace = CoordSpace::World;

@@ -21,6 +21,10 @@ target_link_libraries(ellipse
         TBB::tbb
 )
 
+target_include_directories(ellipse PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
 add_custom_target(EllipseCopyShaders
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders

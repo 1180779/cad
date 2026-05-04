@@ -7,10 +7,13 @@
 #include "CheckMacros.hpp"
 #include "GlCommon.hpp"
 #include "Scene.hpp"
+#include "BezierUtils.hpp"
+#include "components/BezierC0Component.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include <cad_math/vec2.hpp>
 #include <cad_math/vec3.hpp>
+#include <cmath>
 
 
 void RenderSystem::initialize()
@@ -18,23 +21,42 @@ void RenderSystem::initialize()
     SHADER_ATTACHING_CHECK(m_basicShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/basicShader.vert"));
     SHADER_ATTACHING_CHECK(m_basicShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/basicShader.frag"));
 
-    SHADER_ATTACHING_CHECK(m_wireframeShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/wireframeShader.vert"));
-    SHADER_ATTACHING_CHECK(m_wireframeShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/wireframeShader.frag"));
+    SHADER_ATTACHING_CHECK(
+        m_wireframeShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/wireframe/wireframeShader.vert"));
+    SHADER_ATTACHING_CHECK(
+        m_wireframeShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/wireframe/wireframeShader.frag"));
 
-    SHADER_ATTACHING_CHECK(m_axesShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/axesShader.vert"));
-    SHADER_ATTACHING_CHECK(m_axesShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/axesShader.frag"));
+    SHADER_ATTACHING_CHECK(m_axesShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/axis/axisShader.vert"));
+    SHADER_ATTACHING_CHECK(m_axesShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/axis/axisShader.frag"));
 
-    SHADER_ATTACHING_CHECK(m_gridShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/gridShader.vert"));
-    SHADER_ATTACHING_CHECK(m_gridShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/gridShader.frag"));
+    SHADER_ATTACHING_CHECK(m_gridShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/grid/gridShader.vert"));
+    SHADER_ATTACHING_CHECK(m_gridShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/grid/gridShader.frag"));
 
     SHADER_ATTACHING_CHECK(
-        m_selectionRectShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/selectionRectShader.vert"));
+        m_selectionRectShader->attachShaderFromFile(
+            GL_VERTEX_SHADER,
+            "shaders/selectionRect/selectionRectShader.vert"));
     SHADER_ATTACHING_CHECK(
-        m_selectionRectShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/selectionRectShader.frag"));
+        m_selectionRectShader->attachShaderFromFile(
+            GL_FRAGMENT_SHADER,
+            "shaders/selectionRect/selectionRectShader.frag"
+        ));
 
-    SHADER_ATTACHING_CHECK(m_pointShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/pointShader.vert"));
-    SHADER_ATTACHING_CHECK(m_pointShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/pointShader.frag"));
+    SHADER_ATTACHING_CHECK(m_pointShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/point/pointShader.vert"));
+    SHADER_ATTACHING_CHECK(m_pointShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/point/pointShader.frag"));
 
+    SHADER_ATTACHING_CHECK(
+        m_bezierCurveShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/bezierCurve/bezierCurveShader.vert"));
+    SHADER_ATTACHING_CHECK(
+        m_bezierCurveShader->attachShaderFromFile(
+            GL_TESS_CONTROL_SHADER,
+            "shaders/bezierCurve/bezierCurveShader.tesc"));
+    SHADER_ATTACHING_CHECK(
+        m_bezierCurveShader->attachShaderFromFile(
+            GL_TESS_EVALUATION_SHADER,
+            "shaders/bezierCurve/bezierCurveShader.tese"));
+    SHADER_ATTACHING_CHECK(
+        m_bezierCurveShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/bezierCurve/bezierCurveShader.frag"));
 
     SHADER_COMPILATION_CHECK(m_basicShader->compile());
     SHADER_COMPILATION_CHECK(m_wireframeShader->compile());
@@ -42,6 +64,7 @@ void RenderSystem::initialize()
     SHADER_COMPILATION_CHECK(m_gridShader->compile());
     SHADER_COMPILATION_CHECK(m_selectionRectShader->compile());
     SHADER_COMPILATION_CHECK(m_pointShader->compile());
+    SHADER_COMPILATION_CHECK(m_bezierCurveShader->compile());
 
     m_pivotAxes.m_length = 0.5f;
     m_pivotAxes.regenerateMesh();
@@ -149,7 +172,6 @@ void RenderSystem::renderControlPoints(
     QOpenGLFunctions_4_5_Core *const gl) const
 {
     auto &pointRegistry = scene.getPointRegistry();
-    pointRegistry.syncToGpu();
     if (!pointRegistry.empty())
     {
         m_pointShader->bind();
@@ -165,6 +187,114 @@ void RenderSystem::renderControlPoints(
         gl->glBindVertexArray(0);
         m_pointShader->release();
     }
+}
+
+void RenderSystem::renderC0BezierCurves(
+    Scene &scene,
+    const cadm::mat4 &view,
+    const cadm::mat4 &projection,
+    const cadm::mat4 &VP) const
+{
+    // TODO: refactor to not bind shaders multiple times
+    const auto gl = GL();
+    for (const auto &e : scene.getEntities())
+    {
+        const auto bezier = e->getComponent<BezierC0Component>();
+        if (!bezier) continue;
+        const auto *pBezier = bezier.value();
+
+        if (const int segments = pBezier->segmentCount();
+            segments > 0 || pBezier->trailingEdges() > 0)
+        {
+            m_bezierCurveShader->bind();
+            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniformMat4("MVP", VP));
+            SHADER_SET_UNIFORM_CHECK(
+                m_bezierCurveShader->setUniform1(
+                    "u_highlightStrength",
+                    e->isSelected()
+                        ? s_selectionHS
+                        : s_noSelectionHS));
+
+            const int trailing = pBezier->trailingEdges();
+            const int totalPatches = segments + (trailing > 0
+                                                     ? 1
+                                                     : 0);
+
+            // Compute max numInstances across all patches for a single draw call.
+            const auto &cps = pBezier->getControlPoints();
+            auto &registry = scene.getPointRegistry();
+            int maxInstances = 1;
+            for (int p = 0; p < totalPatches; ++p)
+            {
+                const int base = p * 3;
+                const cadm::vec3 pts[4] = {
+                    registry.getPosition(cps[base]),
+                    registry.getPosition(cps[base + 1]),
+                    registry.getPosition(cps[std::min(base + 2, static_cast<int>(cps.size()) - 1)]),
+                    registry.getPosition(cps[std::min(base + 3, static_cast<int>(cps.size()) - 1)]),
+                };
+                const int pixels = BezierUtils::screenExtent(pts, view, projection, m_viewportW, m_viewportH);
+                maxInstances = std::max(
+                    maxInstances,
+                    static_cast<int>(std::ceil(static_cast<cadm::cadf>(pixels) / 64.0f)));
+            }
+
+            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("numInstances", maxInstances));
+            SHADER_SET_UNIFORM_CHECK(
+                m_bezierCurveShader->setUniform1(
+                    "uLastDegree",
+                    trailing > 0
+                        ? trailing
+                        : 3));
+            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastPrimitive", totalPatches - 1));
+
+            gl->glPatchParameteri(GL_PATCH_VERTICES, 4);
+            gl->glBindVertexArray(pBezier->m_patchVAO);
+            gl->glDrawElementsInstanced(
+                GL_PATCHES,
+                pBezier->getPatchIndexCount(),
+                GL_UNSIGNED_INT,
+                nullptr,
+                maxInstances);
+            gl->glBindVertexArray(0);
+            m_bezierCurveShader->release();
+        }
+
+        // Draw control polygon
+        if (pBezier->getShowPolygon() && pBezier->getPolygonIndexCount() > 0)
+        {
+            m_wireframeShader->bind();
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::mat4::identity()));
+            SHADER_SET_UNIFORM_CHECK(
+                m_wireframeShader->setUniform1(
+                    "u_highlightStrength",
+                    e->isSelected()
+                        ? s_selectionHS
+                        : s_noSelectionHS));
+            static constexpr cadm::vec4 polygonColor{0.3f, 0.6f, 1.0f, 1.0f};
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", polygonColor));
+            gl->glBindVertexArray(pBezier->m_polygonVAO);
+            gl->glDrawElements(
+                GL_LINES,
+                pBezier->getPolygonIndexCount(),
+                GL_UNSIGNED_INT,
+                nullptr);
+            gl->glBindVertexArray(0);
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+            m_wireframeShader->release();
+        }
+    }
+}
+
+void RenderSystem::renderBezierCurves(
+    Scene &scene,
+    const cadm::mat4 &view,
+    const cadm::mat4 &projection) const
+{
+    const cadm::mat4 VP = projection * view;
+    renderC0BezierCurves(scene, view, projection, VP);
 }
 
 void RenderSystem::renderInfiniteAxes(
@@ -220,7 +350,7 @@ void RenderSystem::render(
     Scene &scene,
     const cadm::mat4 &view,
     const cadm::mat4 &projection,
-    const cadm::mat4 &invVP) const
+    const cadm::mat4 &invVP)
 {
     const auto gl = GL();
 
@@ -235,10 +365,13 @@ void RenderSystem::render(
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
 
     regenerateGeometry(scene);
+    scene.getPointRegistry().syncToGpu();
 
     renderLineGeometry(scene, gl);
     GET_GL_ERRORS();
     renderTriangleGeometry(scene, gl);
+    GET_GL_ERRORS();
+    renderBezierCurves(scene, view, projection);
     GET_GL_ERRORS();
     renderControlPoints(scene, view, projection, gl);
 

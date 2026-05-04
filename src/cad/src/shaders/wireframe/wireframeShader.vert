@@ -7,11 +7,12 @@ layout (location = 2) in vec4 aColor;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform vec4 u_overrideColor;// if alpha > 0, overrides per-vertex color
 
 out vec4 color;
 
 void main()
 {
-    color = aColor;
+    color = u_overrideColor.a > 0.0 ? u_overrideColor : aColor;
     gl_Position = projection * view * model * vec4(aPos, 1.0);
 }

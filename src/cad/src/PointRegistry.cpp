@@ -4,6 +4,8 @@
 
 #include "PointRegistry.hpp"
 
+#include <ranges>
+
 #include "CheckMacros.hpp"
 #include "GlCommon.hpp"
 
@@ -62,6 +64,13 @@ void PointRegistry::removePoint(const PointHandle handle)
     m_dirtyPositions.erase(handle);
     m_dirtySelected.erase(handle);
     m_structuralDirty = true;
+
+    // snapshot before iterating: callbacks may unsubscribe during dispatch
+    for (const auto callbacks = m_removeCallbacks;
+         const auto &cb : callbacks | std::views::values)
+    {
+        cb(handle);
+    }
 }
 
 void PointRegistry::setPosition(const PointHandle handle, const cadm::vec3 position)
@@ -70,6 +79,34 @@ void PointRegistry::setPosition(const PointHandle handle, const cadm::vec3 posit
         return;
     m_positions[handle] = position;
     m_dirtyPositions.insert(handle);
+    for (auto &cb : m_positionCallbacks | std::views::values)
+    {
+        cb(handle);
+    }
+}
+
+int PointRegistry::subscribeToPositionChanges(PositionChangedCallback cb)
+{
+    const auto id = m_nextSubId++;
+    m_positionCallbacks[id] = std::move(cb);
+    return id;
+}
+
+void PointRegistry::unsubscribeFromPositionChanges(const CallbackId id)
+{
+    m_positionCallbacks.erase(id);
+}
+
+int PointRegistry::subscribeToRemove(RemoveCallback cb)
+{
+    const auto id = m_nextSubId++;
+    m_removeCallbacks[id] = std::move(cb);
+    return id;
+}
+
+void PointRegistry::unsubscribeFromRemove(const CallbackId id)
+{
+    m_removeCallbacks.erase(id);
 }
 
 cadm::vec3 PointRegistry::getPosition(const PointHandle handle) const

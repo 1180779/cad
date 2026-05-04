@@ -5,21 +5,25 @@
 #ifndef CAD_POINTREGISTRY_HPP
 #define CAD_POINTREGISTRY_HPP
 
+#include <functional>
 #include <limits>
 #include <qopenglfunctions_4_5_core.h>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include <cad_math/vec3.hpp>
 #include <GL/gl.h>
 
-// Stable index into PointRegistry's slot array. Remains valid even after other
-// points are removed. Bézier curves and surfaces store these to reference
-// shared control points.
+#include "Callbacks.hpp"
+
+/// Stable index into PointRegistry's slot array. Remains valid even after other
+/// points are removed. Bézier curves and surfaces store these to reference
+/// shared control points.
 using PointHandle = uint32_t;
 static constexpr PointHandle InvalidPointHandle = std::numeric_limits<uint32_t>::max();
 
-// Scene-level registry of all control points.
+/// Scene-level registry of all control points.
 class PointRegistry
 {
 public:
@@ -38,8 +42,17 @@ public:
     void setSelected(PointHandle handle, bool selected);
     void clearSelection();
 
+    using PositionChangedCallback = std::function<void(PointHandle)>;
+    int subscribeToPositionChanges(PositionChangedCallback cb);
+    void unsubscribeFromPositionChanges(CallbackId id);
+
+    using RemoveCallback = std::function<void(PointHandle)>;
+    int subscribeToRemove(RemoveCallback cb);
+    void unsubscribeFromRemove(CallbackId id);
+
     void syncToGpu();
     [[nodiscard]] GLuint getVAO() const { return m_VAO; }
+    [[nodiscard]] GLuint getPositionVBO() const { return m_positionVBO; }
     [[nodiscard]] GLuint getEBO() const { return m_EBO; }
     [[nodiscard]] uint32_t aliveCount() const { return static_cast<uint32_t>(m_aliveHandles.size()); }
 
@@ -53,18 +66,26 @@ private:
     void flushDirtyPositions(QOpenGLFunctions_4_5_Core *gl);
     void flushDirtySelection(QOpenGLFunctions_4_5_Core *gl);
 
-    std::vector<cadm::vec3> m_positions; // position for each point (handle/slot)
-    std::vector<float> m_selected; // selection state for each point (handle/slot); 0.0f or 1.0f
-    std::vector<bool> m_alive; // alive status for each point (handle/slots) (whether the slot is taken or not)
-    std::vector<PointHandle> m_freeList; // list of free handles (slots)
-    std::vector<PointHandle> m_aliveHandles;
+    /// position for each point (handle/slot)
+    std::vector<cadm::vec3> m_positions;
 
-    // When alive set changes EBO needs to be rebuilt
-    // TODO: replace this with partial changes if possible
+    /// selection state for each point (handle/slot); 0.0f or 1.0f
+    std::vector<float> m_selected;
+
+    /// alive status for each point (handle/slots) (whether the slot is taken or not)
+    std::vector<bool> m_alive;
+
+    /// list of free handles (slots)
+    std::vector<PointHandle> m_freeList;
+    std::vector<PointHandle> m_aliveHandles;
 
     std::unordered_set<PointHandle> m_dirtyPositions;
     std::unordered_set<PointHandle> m_dirtySelected;
     bool m_structuralDirty = false;
+
+    CallbackId m_nextSubId = 0;
+    std::unordered_map<CallbackId, PositionChangedCallback> m_positionCallbacks;
+    std::unordered_map<CallbackId, RemoveCallback> m_removeCallbacks;
 
     GLuint m_VAO = 0;
     GLuint m_positionVBO = 0;

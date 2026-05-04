@@ -4,6 +4,7 @@
 
 #include "GeometryFactory.hpp"
 
+#include "components/BezierC0Component.hpp"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
@@ -49,4 +50,17 @@ Entity* GeometryFactory::createCursor(const cadm::vec3 &position, const std::str
 Entity* GeometryFactory::createPoint(const cadm::vec3 &position, const std::string &name) const
 {
     return m_scene.createPoint(position, name);
+}
+
+Entity* GeometryFactory::createBezierC0(
+    const std::vector<PointHandle> &controlPoints,
+    const std::string &name) const
+{
+    const auto entity = m_scene.createEntity(name);
+    auto *bezier = entity->addComponent<BezierC0Component>(&m_scene.getPointRegistry());
+    for (const auto h : controlPoints)
+    {
+        bezier->addControlPoint(h);
+    }
+    return entity;
 }

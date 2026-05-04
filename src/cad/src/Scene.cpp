@@ -76,6 +76,8 @@ void Scene::removeEntity(EntityID id)
     if (toBeRemoved == m_entities.end()) return;
     if (m_activeCursor == toBeRemoved->get())
         m_activeCursor = nullptr;
+    if (m_activeBezierC0 == toBeRemoved->get())
+        m_activeBezierC0 = nullptr;
     if (const auto pc = (*toBeRemoved)->getComponent<PointComponent>())
     {
         m_pointEntityMap.erase(pc.value()->m_handle);

@@ -16,7 +16,7 @@
 // with the camera's view direction is chosen.
 //
 // Returns nullopt when the ray is nearly parallel to all active planes
-class GridPlanePlacementStrategy final : public ICursorPlacementStrategy
+class GridPlanePlacementStrategy final : public IViewportPositionStrategy
 {
 public:
     explicit GridPlanePlacementStrategy(const int gridPlanesMask)

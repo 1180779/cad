@@ -4,6 +4,8 @@
 #include <QVBoxLayout>
 
 #include "CameraFactory.hpp"
+#include "components/BezierC0Component.hpp"
+#include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
@@ -287,9 +289,20 @@ int main(int argc, char *argv[])
     auto spawnPoint = [glWidget, spawnPos]
     {
         const GeometryFactory factory(glWidget->getScene());
-        void(factory.createPoint(spawnPos()));
-        emit
-        glWidget->sceneChanged();
+        auto *point = factory.createPoint(spawnPos());
+
+        // Auto-add to active Bézier curves
+        if (const auto *pc = point->getComponent<PointComponent>().value_or(nullptr))
+        {
+            const Scene &sc = glWidget->getScene();
+            if (Entity *activeBezierC0 = sc.getActiveBezierC0())
+            {
+                if (const auto bezierOpt = activeBezierC0->getComponent<BezierC0Component>())
+                    bezierOpt.value()->addControlPoint(pc->m_handle);
+            }
+        }
+
+        emit glWidget->sceneChanged();
         glWidget->update();
     };
 
@@ -299,6 +312,55 @@ int main(int argc, char *argv[])
     QObject::connect(glWidget, &OpenGLWidget::createTorusRequested, glWidget, spawnTorus);
     QObject::connect(glWidget, &OpenGLWidget::createCursorRequested, glWidget, spawnCursor);
     QObject::connect(glWidget, &OpenGLWidget::createPointRequested, glWidget, spawnPoint);
+
+    // Bezier C0 signals
+    QObject::connect(
+        hierarchyWidget,
+        &SceneHierarchyWidget::createBezierC0Requested,
+        glWidget,
+        [glWidget]
+        {
+            // Collect currently selected point handles
+            std::vector<PointHandle> handles;
+            for (const auto &e : glWidget->getScene().getEntities())
+            {
+                if (!e->isSelected()) continue;
+                if (const auto pc = e->getComponent<PointComponent>())
+                    handles.push_back(pc.value()->m_handle);
+            }
+            const GeometryFactory factory(glWidget->getScene());
+            void(factory.createBezierC0(handles, "BezierC0"));
+            emit glWidget->sceneChanged();
+            glWidget->update();
+        });
+
+    QObject::connect(
+        hierarchyWidget,
+        &SceneHierarchyWidget::setAsActiveBezierC0Requested,
+        glWidget,
+        [glWidget](Entity *e)
+        {
+            glWidget->getScene().setActiveBezierC0(e);
+        });
+
+    QObject::connect(
+        hierarchyWidget,
+        &SceneHierarchyWidget::addSelectedPointsToBezierC0Requested,
+        glWidget,
+        [glWidget](Entity *curveEntity)
+        {
+            const auto bezierOpt = curveEntity->getComponent<BezierC0Component>();
+            if (!bezierOpt) return;
+            auto *bezier = bezierOpt.value();
+            for (const auto &e : glWidget->getScene().getEntities())
+            {
+                if (!e->isSelected()) continue;
+                if (const auto pc = e->getComponent<PointComponent>())
+                    bezier->addControlPoint(pc.value()->m_handle);
+            }
+            emit glWidget->sceneChanged();
+            glWidget->update();
+        });
 
     QObject::connect(
         &glWidget->getCameraController(),

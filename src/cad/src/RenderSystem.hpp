@@ -19,7 +19,7 @@ class RenderSystem
 public:
     void initialize();
     static void regenerateGeometry(const Scene &scene);
-    void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVP) const;
+    void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVP);
     void renderSelectionRect(
         cadm::cadf x0Ndc,
         cadm::cadf y0Ndc,
@@ -61,6 +61,15 @@ private:
         const cadm::mat4 &view,
         const cadm::mat4 &projection,
         QOpenGLFunctions_4_5_Core *gl) const;
+    void renderC0BezierCurves(
+        Scene &scene,
+        const cadm::mat4 &view,
+        const cadm::mat4 &projection,
+        const cadm::mat4 &VP) const;
+    void renderBezierCurves(
+        Scene &scene,
+        const cadm::mat4 &view,
+        const cadm::mat4 &projection) const;
 
     AxesGeometry m_pivotAxes;
 
@@ -70,6 +79,7 @@ private:
     std::unique_ptr<ShaderProgram> m_gridShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_selectionRectShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_pointShader = std::make_unique<ShaderProgram>();
+    std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
 
     int m_gridPlanes{1};

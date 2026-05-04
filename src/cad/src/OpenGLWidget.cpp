@@ -27,6 +27,7 @@
 #include "GlCommon.hpp"
 #include "PointRegistry.hpp"
 #include "cad_math/helpers.hpp"
+#include "components/BezierC0Component.hpp"
 #include "components/CursorComponent.hpp"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
@@ -140,6 +141,25 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event)
     case InputAction::Select:
         if (m_transformMode != TransformMode::None)
             return;
+        if (m_clickToAddMode)
+        {
+            // Resolve 3D position, move active cursor there, then emit createPointRequested
+            if (m_cursorPlacementStrategy)
+            {
+                auto *cam = m_cameraController.getActiveStrategy();
+                const auto invView = cam->getView().inversedView();
+                const auto invProj = cam->getInvProjection();
+                if (const auto pos = m_cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj);
+                    pos.has_value())
+                {
+                    if (Entity *cursor = m_scene.getActiveCursor())
+                        if (const auto tc = cursor->getComponent<TransformComponent>())
+                            tc.value()->setTranslation(pos.value());
+                    emit createPointRequested();
+                }
+            }
+            return;
+        }
         if (m_boxSelectMode)
         {
             m_activeDrag = DragMode::BoxSelect;
@@ -148,7 +168,17 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event)
         }
         else
         {
-            m_activeDrag = DragMode::ClickSelect;
+            // Try to pick a control point for direct dragging
+            const PointHandle hit = pickPoint(event->pos());
+            if (hit != InvalidPointHandle)
+            {
+                m_draggedPoint = hit;
+                m_activeDrag = DragMode::PointDrag;
+            }
+            else
+            {
+                m_activeDrag = DragMode::ClickSelect;
+            }
         }
         return;
     case InputAction::CursorPlace:
@@ -179,6 +209,20 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
     case DragMode::BoxSelect:
         m_boxSelectCurrent = currentPos;
         update();
+        return;
+    case DragMode::PointDrag:
+        if (m_cursorPlacementStrategy)
+        {
+            auto *cam = m_cameraController.getActiveStrategy();
+            const auto invView = cam->getView().inversedView();
+            const auto invProj = cam->getInvProjection();
+            if (const auto pos = m_cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj);
+                pos.has_value())
+            {
+                m_scene.getPointRegistry().setPosition(m_draggedPoint, pos.value());
+                update();
+            }
+        }
         return;
     case DragMode::CursorPlace:
         if (Entity *cursor = m_scene.getActiveCursor())
@@ -239,6 +283,27 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
 
     switch (finishedDrag)
     {
+    case DragMode::PointDrag:
+        {
+            const auto diff = event->pos() - m_pressPosition;
+            if (const auto dist2 = diff.x() * diff.x() + diff.y() * diff.y();
+                dist2 <= s_clickRadiusPx * s_clickRadiusPx)
+            {
+                // Treat as a selection click on the point
+                const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
+                    InputAction::CursorPlace;
+                selectPoint(m_draggedPoint, additive);
+            }
+            else
+            {
+                // Finalize drag — sync registry (already updated incrementally)
+                m_scene.getPointRegistry().syncToGpu();
+                emit sceneChanged();
+                update();
+            }
+        }
+        return;
+
     case DragMode::BoxSelect:
         m_boxSelectMode = false;
         performBoxSelect();
@@ -378,6 +443,9 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
             menu.addAction("New Point", [this] { emit createPointRequested(); });
             menu.exec(QCursor::pos());
         }
+        break;
+    case InputAction::ToggleClickToAdd:
+        setClickToAddMode(!m_clickToAddMode);
         break;
     case InputAction::CameraToggleProjection:
         m_cameraController.getActiveStrategy()->toggleProjection();
@@ -568,12 +636,23 @@ std::optional<cadm::vec3> OpenGLWidget::computePivot() const
     {
         if (!e->isSelected()) continue;
         if (const auto pc = e->getComponent<PointComponent>())
+        {
             sum = sum + registry.getPosition(pc.value()->m_handle);
+            ++count;
+        }
         else if (const auto tc = e->getComponent<TransformComponent>())
+        {
             sum = sum + tc.value()->getTranslation();
-        else
-            continue;
-        ++count;
+            ++count;
+        }
+        else if (const auto bc = e->getComponent<BezierC0Component>())
+        {
+            for (const auto h : bc.value()->getControlPoints())
+            {
+                sum = sum + registry.getPosition(h);
+                ++count;
+            }
+        }
     }
     if (count == 0) return std::nullopt;
     return sum * (static_cast<cadm::cadf>(1.0) / static_cast<cadm::cadf>(count));
@@ -604,6 +683,29 @@ void OpenGLWidget::beginTransform(const TransformMode mode)
     for (const auto &e : m_scene.getEntities())
     {
         if (!e->isSelected()) continue;
+
+        // Bezier curve: move all its control points rather than the curve entity itself
+        if (const auto bc = e->getComponent<BezierC0Component>())
+        {
+            for (const auto h : bc.value()->getControlPoints())
+            {
+                if (const auto ptEntity = m_scene.getEntityByPointHandle(h))
+                {
+                    const EntityID ptId = ptEntity.value()->getId();
+                    const bool already = std::any_of(
+                        m_transformSnapshots.begin(),
+                        m_transformSnapshots.end(),
+                        [ptId](const EntitySnapshot &s) { return s.id == ptId; });
+                    if (!already)
+                    {
+                        EntitySnapshot snap;
+                        snap.fillFromEntity(registry, ptEntity.value());
+                        m_transformSnapshots.push_back(snap);
+                    }
+                }
+            }
+            continue;
+        }
 
         EntitySnapshot snap;
         if (!snap.fillFromEntity(registry, e.get()))

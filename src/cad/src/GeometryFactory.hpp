@@ -6,7 +6,9 @@
 #define CAD_GEOMETRYFACTORY_H
 
 #include "Scene.hpp"
+#include "PointRegistry.hpp"
 #include <cad_math/vec3.hpp>
+#include <vector>
 
 class GeometryFactory final
 {
@@ -36,6 +38,10 @@ public:
     Entity* createPoint(
         const cadm::vec3 &position = {0, 0, 0},
         const std::string &name = "Point") const;
+
+    Entity* createBezierC0(
+        const std::vector<PointHandle> &controlPoints = {},
+        const std::string &name = "BezierC0") const;
 
 private:
     Scene &m_scene;

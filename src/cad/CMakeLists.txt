@@ -3,7 +3,8 @@ file(GLOB_RECURSE CAD_SOURCES
         src/*.hpp
 )
 
-add_executable(cad ${CAD_SOURCES})
+add_executable(cad ${CAD_SOURCES}
+        src/Callbacks.hpp)
 
 target_link_libraries(cad
         Qt::Core
@@ -13,6 +14,10 @@ target_link_libraries(cad
         cad_math
         common
         TBB::tbb
+)
+
+target_include_directories(cad PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 add_custom_target(CadCopyShaders

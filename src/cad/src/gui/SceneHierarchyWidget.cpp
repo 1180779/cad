@@ -3,6 +3,7 @@
 #include <QVBoxLayout>
 #include <QListWidget>
 #include <unordered_set>
+#include "../components/BezierC0Component.hpp"
 #include "../components/CursorComponent.hpp"
 #include "../components/CameraComponent.hpp"
 #include "../components/PointComponent.hpp"
@@ -141,6 +142,9 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
         connect(createCursorAction, &QAction::triggered, this, &SceneHierarchyWidget::createCursorRequested);
         const auto *createPointAction = menu.addAction("New Point");
         connect(createPointAction, &QAction::triggered, this, &SceneHierarchyWidget::createPointRequested);
+        menu.addSeparator();
+        const auto *createBezierC0Action = menu.addAction("New Bezier C0");
+        connect(createBezierC0Action, &QAction::triggered, this, &SceneHierarchyWidget::createBezierC0Requested);
         menu.exec(m_listWidget->mapToGlobal(pos));
         return;
     }
@@ -151,8 +155,10 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
     const bool isCursor = e->hasComponent<CursorComponent>();
     const bool isCamera = e->hasComponent<CameraComponent>();
     const bool isPoint = e->hasComponent<PointComponent>();
+    const bool isBezierC0 = e->hasComponent<BezierC0Component>();
     const bool isActiveCursor = m_scene && m_scene->getActiveCursor() == e;
     const bool isActiveCamera = m_cameraController && m_cameraController->isActiveCamera(e->getId());
+    const bool isActiveBezierC0 = m_scene && m_scene->getActiveBezierC0() == e;
 
     if (isPoint)
     {
@@ -174,6 +180,16 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
         auto *action = menu.addAction("Set as active camera");
         action->setEnabled(!isActiveCamera);
         connect(action, &QAction::triggered, this, [this, e] { emit setAsCameraRequested(e->getId()); });
+    }
+    else if (isBezierC0)
+    {
+        auto *activeAction = menu.addAction("Set as active curve (auto-add points)");
+        activeAction->setEnabled(!isActiveBezierC0);
+        connect(activeAction, &QAction::triggered, this, [this, e] { emit setAsActiveBezierC0Requested(e); });
+        const auto *addAction = menu.addAction("Add selected points to curve");
+        connect(addAction, &QAction::triggered, this, [this, e] { emit addSelectedPointsToBezierC0Requested(e); });
+        const auto *deleteAction = menu.addAction("Delete");
+        connect(deleteAction, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });
     }
     else
     {
