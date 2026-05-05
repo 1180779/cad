@@ -19,7 +19,7 @@ BezierC0Component::~BezierC0Component()
         gl->glDeleteVertexArrays(1, &m_patchVAO);
     }
 
-    m_polygonLineBuf.deleteGpu(gl);
+    m_polygonIndexBuf.deleteGpu(gl);
     if (m_polygonVAO != 0)
     {
         gl->glDeleteVertexArrays(1, &m_polygonVAO);
@@ -40,8 +40,54 @@ void BezierC0Component::addControlPoint(const PointHandle h)
             removeControlPoint(sh);
         });
     m_removeControlPointCallbacks[h] = subId;
+
+    const int n = static_cast<int>(m_controlPoints.size());
     m_controlPoints.push_back(h);
-    markStructuralDirty();
+    m_needsUpdate = true;
+    m_polygonIndexBuf.append(static_cast<uint32_t>(h));
+
+    if (n == 0)
+        return;
+    if (n == 1)
+    {
+        // 1 to 2 points
+        // trailing becomes 1, append [p0, p1, p1, p1]
+        m_patchIndexBuf.append(static_cast<uint32_t>(m_controlPoints[0]));
+        m_patchIndexBuf.append(static_cast<uint32_t>(h));
+        m_patchIndexBuf.append(static_cast<uint32_t>(h));
+        m_patchIndexBuf.append(static_cast<uint32_t>(h));
+        return;
+    }
+
+    switch (trailingEdges())
+    {
+    case 0:
+        {
+            // append new trailing patch.
+            const auto prev = static_cast<uint32_t>(m_controlPoints[n - 1]);
+            const auto cur = static_cast<uint32_t>(h);
+            m_patchIndexBuf.append(prev);
+            m_patchIndexBuf.append(cur);
+            m_patchIndexBuf.append(cur);
+            m_patchIndexBuf.append(cur);
+        }
+        break;
+    case 1:
+        {
+            // [a, b, b, b] to [a, b, new, new]
+            const auto cur = static_cast<uint32_t>(h);
+            m_patchIndexBuf.set(m_patchIndexBuf.size() - 2, cur);
+            m_patchIndexBuf.set(m_patchIndexBuf.size() - 1, cur);
+        }
+        break;
+    default:
+        {
+            // trailing becomes complete segment
+            // [a, b, c, c] to [a, b, c, new]
+            m_patchIndexBuf.set(m_patchIndexBuf.size() - 1, static_cast<uint32_t>(h));
+        }
+        break;
+    }
 }
 
 void BezierC0Component::removeAssociatedCallback(const PointHandle h)
@@ -55,25 +101,81 @@ void BezierC0Component::removeAssociatedCallback(const PointHandle h)
     m_removeControlPointCallbacks.erase(h);
 }
 
+void BezierC0Component::removeLastPointIncremental()
+{
+    const int n = static_cast<int>(m_controlPoints.size());
+    m_needsUpdate = true;
+
+    // update polygon
+    if (n >= 1)
+        m_polygonIndexBuf.popBack();
+
+    // update patch
+    if (n < 2)
+        return;
+    switch (trailingEdges())
+    {
+    case 1:
+        {
+            // [a, b, b, b]
+            // remove trailing patch entirely
+            m_patchIndexBuf.popBack();
+            m_patchIndexBuf.popBack();
+            m_patchIndexBuf.popBack();
+            m_patchIndexBuf.popBack();
+            break;
+        }
+    case 2:
+        {
+            // [a, b, c, c] to [a, b, b, b]
+            const auto prev = static_cast<uint32_t>(m_controlPoints[n - 3]);
+            m_patchIndexBuf.set(m_patchIndexBuf.size() - 2, prev);
+            m_patchIndexBuf.set(m_patchIndexBuf.size() - 1, prev);
+            break;
+        }
+    default:
+        {
+            // last segment is complete
+            // [a, b, c, d] to trailing [a, b, c, c]
+            const auto prev = static_cast<uint32_t>(m_controlPoints[n - 2]);
+            m_patchIndexBuf.set(m_patchIndexBuf.size() - 1, prev);
+        }
+    }
+}
+
 void BezierC0Component::removeControlPointAt(const int index)
 {
     if (index < 0 || index >= static_cast<int>(m_controlPoints.size())) return;
 
     const auto h = m_controlPoints[index];
+    const bool isLast = index == static_cast<int>(m_controlPoints.size()) - 1;
+
+    if (isLast)
+        removeLastPointIncremental();
+
     m_controlPoints.erase(m_controlPoints.begin() + index);
     removeAssociatedCallback(h);
-    markStructuralDirty();
+
+    if (!isLast)
+        markStructuralDirty();
 }
 
 void BezierC0Component::removeControlPoint(const PointHandle h)
 {
-    if (const auto it = std::ranges::find(m_controlPoints, h);
-        it != m_controlPoints.end())
-    {
-        m_controlPoints.erase(it);
-        removeAssociatedCallback(h);
+    const auto it = std::ranges::find(m_controlPoints, h);
+    if (it == m_controlPoints.end())
+        return;
+
+    const bool isLast = it == m_controlPoints.end() - 1;
+
+    if (isLast)
+        removeLastPointIncremental();
+
+    m_controlPoints.erase(it);
+    removeAssociatedCallback(h);
+
+    if (!isLast)
         markStructuralDirty();
-    }
 }
 
 void BezierC0Component::setShowPolygon(const bool v)
@@ -146,13 +248,10 @@ void BezierC0Component::rebuildPolygonLines()
 {
     const int n = static_cast<int>(m_controlPoints.size());
     std::vector<uint32_t> indices;
-    indices.reserve(static_cast<size_t>(std::max(0, n - 1)) * 2);
-    for (int i = 0; i + 1 < n; ++i)
-    {
+    indices.reserve(static_cast<size_t>(n));
+    for (int i = 0; i < n; ++i)
         indices.push_back(static_cast<uint32_t>(m_controlPoints[i]));
-        indices.push_back(static_cast<uint32_t>(m_controlPoints[i + 1]));
-    }
-    m_polygonLineBuf.assign(std::move(indices));
+    m_polygonIndexBuf.assign(std::move(indices));
 }
 
 void BezierC0Component::setupPatchVao(QOpenGLFunctions_4_5_Core *const gl)
@@ -175,7 +274,7 @@ void BezierC0Component::setupPolygonVao(QOpenGLFunctions_4_5_Core *const gl)
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_registry->getPositionVBO());
     gl->glEnableVertexAttribArray(0);
     gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_polygonLineBuf.vboId());
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_polygonIndexBuf.vboId());
     gl->glBindVertexArray(0);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -197,7 +296,7 @@ void BezierC0Component::syncToGpu()
 
     // Both EBOs must sync outside any bound VAO to avoid clobbering VAO state
     m_patchIndexBuf.syncToGpu(gl);
-    m_polygonLineBuf.syncToGpu(gl);
+    m_polygonIndexBuf.syncToGpu(gl);
 
     if (m_patchVAO == 0)
         setupPatchVao(gl);

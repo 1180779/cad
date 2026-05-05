@@ -39,6 +39,10 @@ public:
     /// @note triggers full GPU realloc on next sync
     void clear();
 
+    /// Remove the last element
+    /// @note no GPU work; draw count comes from size()
+    void popBack();
+
     [[nodiscard]] int size() const { return static_cast<int>(m_data.size()); }
     [[nodiscard]] bool empty() const { return m_data.empty(); }
     T& operator[](int i) { return m_data[i]; }
@@ -111,6 +115,15 @@ void GpuBuffer<T, Target, DefaultUsage>::clear()
     m_data.clear();
     m_structuralDirty = true;
     m_dirtySlots.clear();
+}
+
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::popBack()
+{
+    if (m_data.empty()) return;
+    const int removed = static_cast<int>(m_data.size()) - 1;
+    m_dirtySlots.erase(removed);
+    m_data.pop_back();
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>

@@ -261,7 +261,7 @@ void RenderSystem::renderC0BezierCurves(
         }
 
         // Draw control polygon
-        if (pBezier->getShowPolygon() && pBezier->getPolygonIndexCount() > 0)
+        if (pBezier->getShowPolygon() && pBezier->getPolygonIndexCount() >= 2)
         {
             m_wireframeShader->bind();
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
@@ -277,7 +277,7 @@ void RenderSystem::renderC0BezierCurves(
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", polygonColor));
             gl->glBindVertexArray(pBezier->m_polygonVAO);
             gl->glDrawElements(
-                GL_LINES,
+                GL_LINE_STRIP,
                 pBezier->getPolygonIndexCount(),
                 GL_UNSIGNED_INT,
                 nullptr);

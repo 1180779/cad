@@ -40,7 +40,7 @@ public:
     uint32_t m_polygonVAO = 0;
 
     [[nodiscard]] int getPatchIndexCount() const { return m_patchIndexBuf.size(); }
-    [[nodiscard]] int getPolygonIndexCount() const { return m_polygonLineBuf.size(); }
+    [[nodiscard]] int getPolygonIndexCount() const { return m_polygonIndexBuf.size(); }
 
     /// Rebuild EBO index lists from the current control point list (CPU only)
     void regenerateMesh() override;
@@ -56,11 +56,12 @@ private:
     bool m_showPolygon = false;
 
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_patchIndexBuf;
-    GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_polygonLineBuf;
+    GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_polygonIndexBuf;
 
     bool m_structuralDirty = true;
 
     void removeAssociatedCallback(PointHandle h);
+    void removeLastPointIncremental();
     void markStructuralDirty();
 
     void rebuildPatchIndices();
