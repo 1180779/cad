@@ -43,6 +43,15 @@ public:
     /// @note no GPU work; draw count comes from size()
     void popBack();
 
+    /// Remove the element at idx, shifting the tail left
+    /// @note marks shifted slots dirty.
+    void eraseAt(int idx);
+
+    /// Replace contents by diffing against existing data
+    /// @note finds the first differing slot and marks everything from there to the end of the new data dirty.
+    /// Falls back to assign() only when the new size exceeds current capacity.
+    void diffAssign(std::vector<T> data);
+
     [[nodiscard]] int size() const { return static_cast<int>(m_data.size()); }
     [[nodiscard]] bool empty() const { return m_data.empty(); }
     T& operator[](int i) { return m_data[i]; }
@@ -124,6 +133,51 @@ void GpuBuffer<T, Target, DefaultUsage>::popBack()
     const int removed = static_cast<int>(m_data.size()) - 1;
     m_dirtySlots.erase(removed);
     m_data.pop_back();
+}
+
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::eraseAt(const int idx)
+{
+    const int newSize = static_cast<int>(m_data.size()) - 1;
+    m_data.erase(m_data.begin() + idx);
+    if (m_structuralDirty)
+        return;
+
+    m_dirtySlots.erase(newSize);
+    for (int i = idx; i < newSize; ++i)
+        m_dirtySlots.insert(i);
+}
+
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::diffAssign(std::vector<T> data)
+{
+    const int newSize = static_cast<int>(data.size());
+    if (newSize > m_capacity)
+    {
+        assign(std::move(data));
+        return;
+    }
+
+    const int oldSize = static_cast<int>(m_data.size());
+    const int commonLen = std::min(oldSize, newSize);
+    int firstDiff = commonLen;
+    for (int i = 0; i < commonLen; ++i)
+    {
+        if (data[i] != m_data[i])
+        {
+            firstDiff = i;
+            break;
+        }
+    }
+
+    m_data = std::move(data);
+
+    // remove dirty slots that no longer exist
+    for (int i = newSize; i < oldSize; ++i)
+        m_dirtySlots.erase(i);
+
+    for (int i = firstDiff; i < newSize; ++i)
+        m_dirtySlots.insert(i);
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>

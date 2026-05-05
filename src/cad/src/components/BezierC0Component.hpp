@@ -58,11 +58,9 @@ private:
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_patchIndexBuf;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_polygonIndexBuf;
 
-    bool m_structuralDirty = true;
-
     void removeAssociatedCallback(PointHandle h);
     void removeLastPointIncremental();
-    void markStructuralDirty();
+    void removeMidPointPartial(int removedIndex);
 
     void rebuildPatchIndices();
     void rebuildPolygonLines();

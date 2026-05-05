@@ -44,7 +44,7 @@ void BezierC0Component::addControlPoint(const PointHandle h)
     const int n = static_cast<int>(m_controlPoints.size());
     m_controlPoints.push_back(h);
     m_needsUpdate = true;
-    m_polygonIndexBuf.append(static_cast<uint32_t>(h));
+    m_polygonIndexBuf.append(h);
 
     if (n == 0)
         return;
@@ -52,19 +52,19 @@ void BezierC0Component::addControlPoint(const PointHandle h)
     {
         // 1 to 2 points
         // trailing becomes 1, append [p0, p1, p1, p1]
-        m_patchIndexBuf.append(static_cast<uint32_t>(m_controlPoints[0]));
-        m_patchIndexBuf.append(static_cast<uint32_t>(h));
-        m_patchIndexBuf.append(static_cast<uint32_t>(h));
-        m_patchIndexBuf.append(static_cast<uint32_t>(h));
+        m_patchIndexBuf.append(m_controlPoints[0]);
+        m_patchIndexBuf.append(h);
+        m_patchIndexBuf.append(h);
+        m_patchIndexBuf.append(h);
         return;
     }
 
-    switch (trailingEdges())
+    switch ((n - 1) % 3)
     {
     case 0:
         {
             // append new trailing patch.
-            const auto prev = static_cast<uint32_t>(m_controlPoints[n - 1]);
+            const auto prev = m_controlPoints[n - 1];
             const auto cur = static_cast<uint32_t>(h);
             m_patchIndexBuf.append(prev);
             m_patchIndexBuf.append(cur);
@@ -84,7 +84,7 @@ void BezierC0Component::addControlPoint(const PointHandle h)
         {
             // trailing becomes complete segment
             // [a, b, c, c] to [a, b, c, new]
-            m_patchIndexBuf.set(m_patchIndexBuf.size() - 1, static_cast<uint32_t>(h));
+            m_patchIndexBuf.set(m_patchIndexBuf.size() - 1, h);
         }
         break;
     }
@@ -128,7 +128,7 @@ void BezierC0Component::removeLastPointIncremental()
     case 2:
         {
             // [a, b, c, c] to [a, b, b, b]
-            const auto prev = static_cast<uint32_t>(m_controlPoints[n - 3]);
+            const auto prev = m_controlPoints[n - 2];
             m_patchIndexBuf.set(m_patchIndexBuf.size() - 2, prev);
             m_patchIndexBuf.set(m_patchIndexBuf.size() - 1, prev);
             break;
@@ -137,7 +137,7 @@ void BezierC0Component::removeLastPointIncremental()
         {
             // last segment is complete
             // [a, b, c, d] to trailing [a, b, c, c]
-            const auto prev = static_cast<uint32_t>(m_controlPoints[n - 2]);
+            const auto prev = m_controlPoints[n - 2];
             m_patchIndexBuf.set(m_patchIndexBuf.size() - 1, prev);
         }
     }
@@ -157,7 +157,7 @@ void BezierC0Component::removeControlPointAt(const int index)
     removeAssociatedCallback(h);
 
     if (!isLast)
-        markStructuralDirty();
+        removeMidPointPartial(index);
 }
 
 void BezierC0Component::removeControlPoint(const PointHandle h)
@@ -166,6 +166,7 @@ void BezierC0Component::removeControlPoint(const PointHandle h)
     if (it == m_controlPoints.end())
         return;
 
+    const int index = static_cast<int>(it - m_controlPoints.begin());
     const bool isLast = it == m_controlPoints.end() - 1;
 
     if (isLast)
@@ -175,7 +176,14 @@ void BezierC0Component::removeControlPoint(const PointHandle h)
     removeAssociatedCallback(h);
 
     if (!isLast)
-        markStructuralDirty();
+        removeMidPointPartial(index);
+}
+
+void BezierC0Component::removeMidPointPartial(const int removedIndex)
+{
+    m_needsUpdate = true;
+    m_polygonIndexBuf.eraseAt(removedIndex);
+    rebuildPatchIndices();
 }
 
 void BezierC0Component::setShowPolygon(const bool v)
@@ -197,12 +205,6 @@ int BezierC0Component::trailingEdges() const
     const int n = static_cast<int>(m_controlPoints.size());
     if (n < 2) return 0;
     return (n - 1) % 3;
-}
-
-void BezierC0Component::markStructuralDirty()
-{
-    m_needsUpdate = true;
-    m_structuralDirty = true;
 }
 
 void BezierC0Component::rebuildPatchIndices()
@@ -241,7 +243,7 @@ void BezierC0Component::rebuildPatchIndices()
         }
     }
 
-    m_patchIndexBuf.assign(std::move(indices));
+    m_patchIndexBuf.diffAssign(std::move(indices));
 }
 
 void BezierC0Component::rebuildPolygonLines()
@@ -282,19 +284,12 @@ void BezierC0Component::setupPolygonVao(QOpenGLFunctions_4_5_Core *const gl)
 
 void BezierC0Component::regenerateMesh()
 {
-    if (!m_structuralDirty)
-        return;
-
-    rebuildPatchIndices();
-    rebuildPolygonLines();
-    m_structuralDirty = false;
 }
 
 void BezierC0Component::syncToGpu()
 {
     const auto gl = GL();
 
-    // Both EBOs must sync outside any bound VAO to avoid clobbering VAO state
     m_patchIndexBuf.syncToGpu(gl);
     m_polygonIndexBuf.syncToGpu(gl);
 
