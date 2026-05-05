@@ -19,13 +19,24 @@
 /// GpuBuffer has no destructor because that would require an active GL context,
 /// which cannot be guaranteed at arbitrary destruction time.
 /// Owners must call deleteGpu() explicitly in their own GL-context-aware destructor.
-template <typename T, GLenum Target = GL_ARRAY_BUFFER>
+template <typename T, GLenum Target = GL_ARRAY_BUFFER, GLenum DefaultUsage = GL_DYNAMIC_DRAW>
 class GpuBuffer final
 {
 public:
+    /// Append one element
+    /// @note marks dirty (or structurally dirty if over capacity)
     void append(T item);
+
+    /// Overwrite an element at idx
+    /// @note marks slot dirty
     void set(int idx, T item);
+
+    /// Replace the entire buffer
+    /// @note triggers full GPU realloc on next sync
     void assign(std::vector<T> data);
+
+    /// Empty the buffer
+    /// @note triggers full GPU realloc on next sync
     void clear();
 
     [[nodiscard]] int size() const { return static_cast<int>(m_data.size()); }
@@ -36,11 +47,12 @@ public:
 
     [[nodiscard]] GLuint vboId() const { return m_vbo; }
 
-    /// Sync the cpu buffer to the gpu if needed
-    void syncToGpu(QOpenGLFunctions_4_5_Core *gl, GLenum usage = GL_DYNAMIC_DRAW);
+    /// Upload pending changes to the GPU:
+    /// reallocates if structural dirty, otherwise partial sub-data update
+    void syncToGpu(QOpenGLFunctions_4_5_Core *gl, GLenum usage = DefaultUsage);
 
-    /// Clear the gpu buffer
-    /// Does not clear the cpu buffer
+    /// Delete the GPU buffer object
+    /// @note does not touch CPU data. Must be called before destruction.
     void deleteGpu(QOpenGLFunctions_4_5_Core *gl);
 
     /// Destructor with the assertion that resources are not leaked. Does not free the gpu buffers.
@@ -63,8 +75,8 @@ private:
     static constexpr int s_growFactor = 2;
 };
 
-template <typename T, GLenum Target>
-void GpuBuffer<T, Target>::append(T item)
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::append(T item)
 {
     m_data.push_back(std::move(item));
     if (const auto newIdx = static_cast<int>(m_data.size()) - 1;
@@ -78,31 +90,31 @@ void GpuBuffer<T, Target>::append(T item)
     }
 }
 
-template <typename T, GLenum Target>
-void GpuBuffer<T, Target>::set(int idx, T item)
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::set(int idx, T item)
 {
     m_data[idx] = std::move(item);
     m_dirtySlots.insert(idx);
 }
 
-template <typename T, GLenum Target>
-void GpuBuffer<T, Target>::assign(std::vector<T> data)
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::assign(std::vector<T> data)
 {
     m_data = std::move(data);
     m_structuralDirty = true;
     m_dirtySlots.clear();
 }
 
-template <typename T, GLenum Target>
-void GpuBuffer<T, Target>::clear()
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::clear()
 {
     m_data.clear();
     m_structuralDirty = true;
     m_dirtySlots.clear();
 }
 
-template <typename T, GLenum Target>
-void GpuBuffer<T, Target>::reallocateGpu(QOpenGLFunctions_4_5_Core *gl, const GLenum usage, const int n)
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::reallocateGpu(QOpenGLFunctions_4_5_Core *gl, const GLenum usage, const int n)
 {
     int newCap = m_capacity == 0
                      ? s_initialCapacity
@@ -125,8 +137,8 @@ void GpuBuffer<T, Target>::reallocateGpu(QOpenGLFunctions_4_5_Core *gl, const GL
     m_dirtySlots.clear();
 }
 
-template <typename T, GLenum Target>
-void GpuBuffer<T, Target>::partialGpuSync(QOpenGLFunctions_4_5_Core *gl)
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::partialGpuSync(QOpenGLFunctions_4_5_Core *gl)
 {
     // group dirty slots that are next to each other
     std::vector sorted(m_dirtySlots.begin(), m_dirtySlots.end());
@@ -166,8 +178,8 @@ void GpuBuffer<T, Target>::partialGpuSync(QOpenGLFunctions_4_5_Core *gl)
     m_dirtySlots.clear();
 }
 
-template <typename T, GLenum Target>
-void GpuBuffer<T, Target>::syncToGpu(QOpenGLFunctions_4_5_Core *gl, const GLenum usage)
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::syncToGpu(QOpenGLFunctions_4_5_Core *gl, const GLenum usage)
 {
     if (m_vbo == 0)
     {
@@ -186,8 +198,8 @@ void GpuBuffer<T, Target>::syncToGpu(QOpenGLFunctions_4_5_Core *gl, const GLenum
     }
 }
 
-template <typename T, GLenum Target>
-void GpuBuffer<T, Target>::deleteGpu(QOpenGLFunctions_4_5_Core *gl)
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::deleteGpu(QOpenGLFunctions_4_5_Core *gl)
 {
     if (m_vbo != 0)
     {
@@ -197,8 +209,8 @@ void GpuBuffer<T, Target>::deleteGpu(QOpenGLFunctions_4_5_Core *gl)
     }
 }
 
-template <typename T, GLenum Target>
-GpuBuffer<T, Target>::~GpuBuffer()
+template <typename T, GLenum Target, GLenum DefaultUsage>
+GpuBuffer<T, Target, DefaultUsage>::~GpuBuffer()
 {
     assert(m_vbo == 0 && "GpuBuffer destroyed with live VBO; resources leaked; call deleteGpu() first");
 }

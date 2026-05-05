@@ -42,7 +42,11 @@ public:
     [[nodiscard]] int getPatchIndexCount() const { return m_patchIndexBuf.size(); }
     [[nodiscard]] int getPolygonIndexCount() const { return m_polygonLineBuf.size(); }
 
+    /// Rebuild EBO index lists from the current control point list (CPU only)
     void regenerateMesh() override;
+
+    /// Upload dirty EBO data to GPU
+    /// @note lazily creates VAOs on the first call
     void syncToGpu() override;
 
 private:
@@ -56,7 +60,7 @@ private:
 
     bool m_structuralDirty = true;
 
-    void removeAssociatedCallback(std::vector<unsigned>::value_type h);
+    void removeAssociatedCallback(PointHandle h);
     void markStructuralDirty();
 
     void rebuildPatchIndices();

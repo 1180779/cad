@@ -44,13 +44,13 @@ void BezierC0Component::addControlPoint(const PointHandle h)
     markStructuralDirty();
 }
 
-void BezierC0Component::removeAssociatedCallback(const std::vector<unsigned>::value_type h)
+void BezierC0Component::removeAssociatedCallback(const PointHandle h)
 {
     const auto subIdIter = m_removeControlPointCallbacks.find(h);
     if (subIdIter == m_removeControlPointCallbacks.end())
         return;
 
-    const auto subId = subIdIter->first;
+    const auto subId = subIdIter->second;
     m_registry->unsubscribeFromRemove(subId);
     m_removeControlPointCallbacks.erase(h);
 }
@@ -183,11 +183,12 @@ void BezierC0Component::setupPolygonVao(QOpenGLFunctions_4_5_Core *const gl)
 
 void BezierC0Component::regenerateMesh()
 {
-    if (m_structuralDirty)
-    {
-        rebuildPatchIndices();
-        rebuildPolygonLines();
-    }
+    if (!m_structuralDirty)
+        return;
+
+    rebuildPatchIndices();
+    rebuildPolygonLines();
+    m_structuralDirty = false;
 }
 
 void BezierC0Component::syncToGpu()
@@ -198,21 +199,8 @@ void BezierC0Component::syncToGpu()
     m_patchIndexBuf.syncToGpu(gl);
     m_polygonLineBuf.syncToGpu(gl);
 
-    if (m_structuralDirty)
-    {
-        if (m_patchVAO != 0)
-        {
-            gl->glDeleteVertexArrays(1, &m_patchVAO);
-            m_patchVAO = 0;
-        }
-        if (m_polygonVAO != 0)
-        {
-            gl->glDeleteVertexArrays(1, &m_polygonVAO);
-            m_polygonVAO = 0;
-        }
+    if (m_patchVAO == 0)
         setupPatchVao(gl);
+    if (m_polygonVAO == 0)
         setupPolygonVao(gl);
-
-        m_structuralDirty = false;
-    }
 }
