@@ -16,8 +16,7 @@
 #include "vec3.hpp"
 #include "vec4.hpp"
 
-namespace cadm
-{
+namespace cadm {
     // Projects a 3D world position to 2D screen coordinates.
     // Assumes OpenGL NDC convention: x and y in [-1, 1], z in [-1, 1].
     // Returns std::nullopt if the point is behind the camera (w <= 0).
@@ -27,15 +26,16 @@ namespace cadm
         const mat4 &view,
         const mat4 &projection,
         const int width,
-        const int height)
-    {
+        const int height
+    ) {
         const auto clip = projection * view * vec4(worldPos.x, worldPos.y, worldPos.z, 1.0f);
-        if (clip.w <= 0.0f) return std::nullopt;
+        if (clip.w <= 0.0f) { return std::nullopt; }
         const cadf ndcX = clip.x / clip.w;
         const cadf ndcY = clip.y / clip.w;
         return vec2i(
             static_cast<int>((ndcX + 1.0f) / 2.0f * static_cast<cadf>(width)),
-            static_cast<int>((1.0f - ndcY) / 2.0f * static_cast<cadf>(height)));
+            static_cast<int>((1.0f - ndcY) / 2.0f * static_cast<cadf>(height))
+        );
     }
 
     // Unprojects a 2D screen point at a specific NDC depth to a World Space position.
@@ -44,17 +44,17 @@ namespace cadm
     inline vec3 unprojectPoint(
         const vec2i point,
         const cadf ndcZ,
-        const mat4 &invVP,
+        const mat4 &invVp,
         const int width,
-        const int height)
-    {
+        const int height
+    ) {
         const cadf halfWidth = static_cast<cadf>(width / 2.0);
         const cadf halfHeight = static_cast<cadf>(height / 2.0);
 
         const cadf ndcX = (static_cast<cadf>(point.x) - halfWidth) / halfWidth;
         const cadf ndcY = (halfHeight - static_cast<cadf>(point.y)) / halfHeight;
 
-        vec4 world = invVP * vec4(ndcX, ndcY, ndcZ, 1.0);
+        vec4 world = invVp * vec4(ndcX, ndcY, ndcZ, 1.0);
         world /= world.w;
         return {world.x, world.y, world.z};
     }
@@ -67,14 +67,15 @@ namespace cadm
         const cadf zNear,
         const mat4 &invWorldPV,
         const int width,
-        const int height)
-    {
+        const int height
+    ) {
         const cadf halfWidth = static_cast<cadf>(width / 2.0);
         const cadf halfHeight = static_cast<cadf>(height / 2.0);
 
         const vec2 ndcPoint(
             (static_cast<cadf>(point.x) - halfWidth) / halfWidth,
-            (halfHeight - static_cast<cadf>(point.y)) / halfHeight);
+            (halfHeight - static_cast<cadf>(point.y)) / halfHeight
+        );
 
         vec4 unprojectedNearPoint(ndcPoint.x, ndcPoint.y, zNear, 1.0);
         unprojectedNearPoint = invWorldPV * unprojectedNearPoint;
@@ -89,8 +90,7 @@ namespace cadm
     }
 
     // Extracts ZYX Euler angles (rx, ry, rz) from rotation matrix M = Rz * Ry * Rx.
-    inline vec3 eulerZYXFromRotMat(const mat3 &m)
-    {
+    inline vec3 eulerZYXFromRotMat(const mat3 &m) {
         // https://en.wikipedia.org/wiki/Euler_angles
         const auto m20 = m.row(2)[0];
         const auto m00 = m.row(0)[0];
@@ -114,11 +114,10 @@ namespace cadm
         const vec3 &dir,
         const vec3 &normal,
         const cadf offset,
-        const cadf parallelThreshold = feps)
-    {
+        const cadf parallelThreshold = feps
+    ) {
         const auto denom = normal.dot(dir);
-        if (std::abs(denom) < parallelThreshold)
-            return std::nullopt;
+        if (std::abs(denom) < parallelThreshold) { return std::nullopt; }
         return (offset - normal.dot(origin)) / denom;
     }
 }

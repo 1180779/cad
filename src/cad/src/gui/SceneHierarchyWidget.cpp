@@ -4,6 +4,7 @@
 #include <QListWidget>
 #include <unordered_set>
 #include "../components/BezierC0Component.hpp"
+#include "../components/bezierC2Component.hpp"
 #include "../components/CursorComponent.hpp"
 #include "../components/CameraComponent.hpp"
 #include "../components/PointComponent.hpp"
@@ -28,7 +29,7 @@ SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
 
 void SceneHierarchyWidget::setScene(Scene *scene)
 {
-    if (m_scene == scene) return;
+    if (m_scene == scene) { return; }
     m_scene = scene;
     populateList();
 }
@@ -43,15 +44,16 @@ void SceneHierarchyWidget::addEntityToList(const std::unique_ptr<Entity> &e) con
 
 void SceneHierarchyWidget::refresh()
 {
-    if (!m_scene) return;
+    if (!m_scene) { return; }
 
     m_refreshing = true;
 
     std::unordered_set<Entity*> inScene;
-    for (const auto &e : m_scene->getEntities())
+    for (const auto &e : m_scene->getEntities()) {
         inScene.insert(e.get());
+    }
 
-    // Update current entities (delete; update name)
+    // update current entities (delete; update name)
     for (int i = m_listWidget->count() - 1; i >= 0; --i)
     {
         auto *item = m_listWidget->item(i);
@@ -66,10 +68,10 @@ void SceneHierarchyWidget::refresh()
         }
     }
 
-    // Add missing entities
+    // add missing entities
     for (const auto &e : m_scene->getEntities())
     {
-        if (!inScene.contains(e.get())) continue;
+        if (!inScene.contains(e.get())) { continue; }
         addEntityToList(e);
     }
 
@@ -78,19 +80,21 @@ void SceneHierarchyWidget::refresh()
 
 void SceneHierarchyWidget::onItemSelectionChanged()
 {
-    if (m_refreshing) return;
+    if (m_refreshing) { return; }
     QList<Entity*> selected;
-    for (const auto item : m_listWidget->selectedItems())
+    for (const auto item : m_listWidget->selectedItems()) {
         selected.append(item->data(Qt::UserRole).value<Entity*>());
+    }
     emit selectionChanged(selected);
 }
 
 void SceneHierarchyWidget::onItemChanged(const QListWidgetItem *item) const
 {
     // Update entity name
-    if (m_refreshing) return;
-    if (auto *e = item->data(Qt::UserRole).value<Entity*>())
+    if (m_refreshing) { return; }
+    if (auto *e = item->data(Qt::UserRole).value<Entity*>()) {
         e->setName(item->text().toStdString());
+    }
 }
 
 void SceneHierarchyWidget::populateList()
@@ -117,7 +121,7 @@ void SceneHierarchyWidget::setCameraController(CameraController *cameraControlle
 
 void SceneHierarchyWidget::syncSelectionFromScene()
 {
-    if (!m_scene) return;
+    if (!m_scene) { return; }
 
     m_refreshing = true;
     for (int i = 0; i < m_listWidget->count(); ++i)
@@ -145,59 +149,56 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
         menu.addSeparator();
         const auto *createBezierC0Action = menu.addAction("New Bezier C0");
         connect(createBezierC0Action, &QAction::triggered, this, &SceneHierarchyWidget::createBezierC0Requested);
+        const auto *createBezierC2Action = menu.addAction("New Bezier C2");
+        connect(createBezierC2Action, &QAction::triggered, this, &SceneHierarchyWidget::createBezierC2Requested);
         menu.exec(m_listWidget->mapToGlobal(pos));
         return;
     }
 
     auto *e = item->data(Qt::UserRole).value<Entity*>();
-    if (!e) return;
+    if (!e) { return; }
 
     const bool isCursor = e->hasComponent<CursorComponent>();
     const bool isCamera = e->hasComponent<CameraComponent>();
     const bool isPoint = e->hasComponent<PointComponent>();
-    const bool isBezierC0 = e->hasComponent<BezierC0Component>();
+    const bool isViableNewPointsTarget = e->hasComponent<INewPointsTargetBase>();
     const bool isActiveCursor = m_scene && m_scene->getActiveCursor() == e;
     const bool isActiveCamera = m_cameraController && m_cameraController->isActiveCamera(e->getId());
-    const bool isActiveBezierC0 = m_scene && m_scene->getActiveBezierC0() == e;
 
-    if (isPoint)
-    {
-        const auto *focusAction = menu.addAction("Focus camera");
-        connect(focusAction, &QAction::triggered, this, [this, e] { emit focusCameraRequested(e); });
-        const auto *action = menu.addAction("Delete");
-        connect(action, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });
-    }
-    else if (isCursor)
-    {
+    if (isCursor) {
         auto *action = menu.addAction("Set as active cursor");
         action->setEnabled(!isActiveCursor);
         connect(action, &QAction::triggered, this, [this, e] { emit setAsCursorRequested(e); });
-        const auto *focusAction = menu.addAction("Focus camera");
-        connect(focusAction, &QAction::triggered, this, [this, e] { emit focusCameraRequested(e); });
     }
-    else if (isCamera)
-    {
+
+    if (isCamera) {
         auto *action = menu.addAction("Set as active camera");
         action->setEnabled(!isActiveCamera);
         connect(action, &QAction::triggered, this, [this, e] { emit setAsCameraRequested(e->getId()); });
     }
-    else if (isBezierC0)
-    {
-        auto *activeAction = menu.addAction("Set as active curve (auto-add points)");
-        activeAction->setEnabled(!isActiveBezierC0);
-        connect(activeAction, &QAction::triggered, this, [this, e] { emit setAsActiveBezierC0Requested(e); });
+
+    if (isViableNewPointsTarget) {
+        const bool isNewPointsTarget = m_scene && m_scene->getNewPointsTargetEntity() == e;
+        auto *activeAction = menu.addAction("Set as new points target (auto-add points)");
+        activeAction->setEnabled(!isNewPointsTarget);
+        connect(activeAction, &QAction::triggered, this, [this, e] { emit setAsNewPointsTargetEntityRequested(e); });
         const auto *addAction = menu.addAction("Add selected points to curve");
-        connect(addAction, &QAction::triggered, this, [this, e] { emit addSelectedPointsToBezierC0Requested(e); });
-        const auto *deleteAction = menu.addAction("Delete");
-        connect(deleteAction, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });
+        connect(
+            addAction,
+            &QAction::triggered,
+            this,
+            [this, e] { emit addSelectedPointsToNewPointsTargetEntityRequested(e); }
+        );
     }
-    else
-    {
+
+    if (!isCamera) {
         const auto *focusAction = menu.addAction("Focus camera");
         connect(focusAction, &QAction::triggered, this, [this, e] { emit focusCameraRequested(e); });
-        auto *action = menu.addAction("Delete");
-        action->setEnabled(!isActiveCursor && !isActiveCamera);
-        connect(action, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });
+    }
+
+    if (!isCursor && !isCamera) {
+        const auto *deleteAction = menu.addAction("Delete");
+        connect(deleteAction, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });
     }
 
     menu.exec(m_listWidget->mapToGlobal(pos));

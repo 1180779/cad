@@ -89,7 +89,7 @@ void addIntColor8BitParameter(
         {
             bool ok;
             const int val = text.toInt(&ok);
-            if (ok) setter(val);
+            if (ok) { setter(val); }
         });
 
     layout->addWidget(label);

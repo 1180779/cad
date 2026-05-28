@@ -19,7 +19,9 @@ class RenderSystem
 public:
     void initialize();
     static void regenerateGeometry(const Scene &scene);
-    void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVP);
+
+    void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVp) const;
+
     void renderSelectionRect(
         cadm::cadf x0Ndc,
         cadm::cadf y0Ndc,
@@ -35,7 +37,9 @@ public:
         int axesMask,
         const cadm::mat4 &view,
         const cadm::mat4 &projection,
-        const cadm::mat4 &invVP) const;
+        const cadm::mat4 &invVp
+    ) const;
+
     void shutdown();
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
@@ -49,11 +53,14 @@ public:
     }
 
 private:
-    void renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVP) const;
+    void renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVp) const;
+
     void renderInfiniteAxes(
         const cadm::mat4 &view,
         const cadm::mat4 &projection,
-        const cadm::mat4 &invVP) const;
+        const cadm::mat4 &invVp
+    ) const;
+
     void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
     void renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
     void renderControlPoints(
@@ -65,7 +72,16 @@ private:
         Scene &scene,
         const cadm::mat4 &view,
         const cadm::mat4 &projection,
-        const cadm::mat4 &VP) const;
+        const cadm::mat4 &vp
+    ) const;
+
+    void renderC2BezierCurves(
+        const Scene &scene,
+        const cadm::mat4 &view,
+        const cadm::mat4 &projection,
+        const cadm::mat4 &vp
+    ) const;
+
     void renderBezierCurves(
         Scene &scene,
         const cadm::mat4 &view,

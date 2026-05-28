@@ -50,6 +50,8 @@ public:
     int subscribeToRemove(RemoveCallback cb);
     void unsubscribeFromRemove(CallbackId id);
 
+    void initialize();
+
     void syncToGpu();
     [[nodiscard]] GLuint getVAO() const { return m_VAO; }
     [[nodiscard]] GLuint getPositionVBO() const { return m_positionVBO; }
@@ -81,7 +83,7 @@ private:
 
     std::unordered_set<PointHandle> m_dirtyPositions;
     std::unordered_set<PointHandle> m_dirtySelected;
-    bool m_structuralDirty = false;
+    bool m_structuralDirty = true;
 
     CallbackId m_nextSubId = 0;
     std::unordered_map<CallbackId, PositionChangedCallback> m_positionCallbacks;

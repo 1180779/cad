@@ -12,16 +12,12 @@
 CadCameraStrategy::CadCameraStrategy(
     Entity *cameraEntity,
     const std::function<int()> &widthGetter,
-    const std::function<int()> &heightGetter)
-    : ICameraStrategy(cameraEntity, widthGetter, heightGetter)
-{
-}
+    const std::function<int()> &heightGetter
+) : ICameraStrategy(cameraEntity, widthGetter, heightGetter) {}
 
-cadm::mat4 CadCameraStrategy::getView()
-{
+cadm::mat4 CadCameraStrategy::getView() {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
         return cadm::mat4::identity();
     }
@@ -30,11 +26,9 @@ cadm::mat4 CadCameraStrategy::getView()
     return view;
 }
 
-cadm::mat4 CadCameraStrategy::getProjection()
-{
+cadm::mat4 CadCameraStrategy::getProjection() {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
         return cadm::mat4::identity();
     }
@@ -48,15 +42,14 @@ cadm::mat4 CadCameraStrategy::getProjection()
         -static_cast<cadm::cadf>(height / 2.0),
         static_cast<cadm::cadf>(height / 2.0),
         pCamera->getNearPlane(),
-        pCamera->getFarPlane());
+        pCamera->getFarPlane()
+    );
     return projection;
 }
 
-void CadCameraStrategy::setLookTarget(const cadm::vec3 target)
-{
+void CadCameraStrategy::setLookTarget(const cadm::vec3 target) {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
         return;
     }
@@ -66,12 +59,12 @@ void CadCameraStrategy::setLookTarget(const cadm::vec3 target)
     pCamera->setPosition(newPosition);
     pCamera->setTarget(target);
 
-    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>())
+    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>()) {
         transform.value()->setTranslation(newPosition);
+    }
 }
 
-void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent *const pCamera) const
-{
+void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent *const pCamera) const {
     // TODO(raycast-pivot): rotation pivot should be the ray-scene intersection point under the cursor.
     //  Currently rotates around target
     const auto polarAngleChange = -static_cast<cadm::cadf>(mouseDelta.y()) * pCamera->getRotationSpeed();
@@ -99,14 +92,10 @@ void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent 
     pCamera->setUp(finalUp);
 
     if (const auto transform = m_cameraEntity->getComponent<TransformComponent>();
-        transform.has_value())
-    {
-        transform.value()->setTranslation(newPosition);
-    }
+        transform.has_value()) { transform.value()->setTranslation(newPosition); }
 }
 
-void CadCameraStrategy::handlePan(const QPoint mouseDelta, CadCameraComponent *const pCamera) const
-{
+void CadCameraStrategy::handlePan(const QPoint mouseDelta, CadCameraComponent *const pCamera) const {
     const cadm::cadf changeX = -pCamera->getAspectRatio() * pCamera->getOrthoHeight() * static_cast<cadm::cadf>(
         mouseDelta.x()) / static_cast<cadm::cadf>(m_widthGetter());
     const cadm::cadf changeY = pCamera->getOrthoHeight() * static_cast<cadm::cadf>(mouseDelta.y()) / static_cast<
@@ -116,19 +105,16 @@ void CadCameraStrategy::handlePan(const QPoint mouseDelta, CadCameraComponent *c
     pCamera->setTarget(pCamera->getTarget() + translationChange);
 }
 
-bool CadCameraStrategy::handleCameraMove(const CameraAction action, const QPoint mouseDelta)
-{
+bool CadCameraStrategy::handleCameraMove(const CameraAction action, const QPoint mouseDelta) {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-    if (!camera.has_value())
-    {
+    if (!camera.has_value()) {
         EXPECTED_COMPONENT_MISSING();
         return false;
     }
 
     const auto pCamera = camera.value();
 
-    switch (action)
-    {
+    switch (action) {
     case CameraAction::Orbit:
         handleOrbit(mouseDelta, pCamera);
         return true;
@@ -137,7 +123,8 @@ bool CadCameraStrategy::handleCameraMove(const CameraAction action, const QPoint
         return true;
     case CameraAction::ZoomDrag:
         const cadm::cadf factor = std::exp(
-            static_cast<cadm::cadf>(-mouseDelta.y()) * static_cast<cadm::cadf>(0.01));
+            static_cast<cadm::cadf>(-mouseDelta.y()) * static_cast<cadm::cadf>(0.01)
+        );
         pCamera->setOrthoHeight(pCamera->getOrthoHeight() * factor);
         return true;
     }
@@ -145,17 +132,14 @@ bool CadCameraStrategy::handleCameraMove(const CameraAction action, const QPoint
     return false;
 }
 
-bool CadCameraStrategy::handleCameraKeyAction(const CameraKeyAction action)
-{
+bool CadCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-    if (!camera)
-        return false;
+    if (!camera) { return false; }
     const auto pCamera = camera.value();
     const auto step = m_translationStep * pCamera->getOrthoHeight();
 
     cadm::vec3 offset;
-    switch (action)
-    {
+    switch (action) {
     case CameraKeyAction::MoveUp:
         offset = pCamera->up() * step;
         break;
@@ -168,25 +152,24 @@ bool CadCameraStrategy::handleCameraKeyAction(const CameraKeyAction action)
     case CameraKeyAction::MoveRight:
         offset = pCamera->right() * step;
         break;
-    default: return false;
+    default:
+        return false;
     }
 
     pCamera->setPosition(pCamera->getPosition() + offset);
     pCamera->setTarget(pCamera->getTarget() + offset);
-    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>())
+    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>()) {
         transform.value()->setTranslation(pCamera->getPosition());
+    }
     return true;
 }
 
-bool CadCameraStrategy::handleWheelEvent(QWheelEvent *event)
-{
+bool CadCameraStrategy::handleWheelEvent(QWheelEvent *event) {
     const int delta = event->angleDelta().y();
-    if (delta == 0)
-        return false;
+    if (delta == 0) { return false; }
 
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
         return false;
     }
@@ -199,13 +182,11 @@ bool CadCameraStrategy::handleWheelEvent(QWheelEvent *event)
     const auto oldHeight = pCamera->getOrthoHeight();
     const auto oldWidth = oldHeight * pCamera->getAspectRatio();
 
-    if (delta > 0)
-    {
+    if (delta > 0) {
         const auto newOrthoHeight = pCamera->getOrthoHeight() / pCamera->getZoomFactor();
         pCamera->setOrthoHeight(newOrthoHeight);
     }
-    else
-    {
+    else {
         const auto newOrthoHeight = pCamera->getOrthoHeight() * pCamera->getZoomFactor();
         pCamera->setOrthoHeight(newOrthoHeight);
     }
@@ -225,8 +206,7 @@ bool CadCameraStrategy::handleWheelEvent(QWheelEvent *event)
     pCamera->setPosition(position);
     pCamera->setTarget(target);
 
-    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>())
-    {
+    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>()) {
         transform.value()->setTranslation(position);
     }
     return true;

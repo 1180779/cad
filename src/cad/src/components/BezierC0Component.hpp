@@ -10,16 +10,18 @@
 #include "GeometryComponent.hpp"
 #include "PointRegistry.hpp"
 #include "GpuBuffer.hpp"
+#include "INewPointsTargetComponent.hpp"
 
 /// Multi-segment cubic Bézier curve with C0 continuity between segments.
 /// Control points are shared point entities referenced by PointHandle.
-class BezierC0Component final : public GeometryComponent
-{
+class BezierC0Component final : public GeometryComponent,
+                                public INewPointsTargetComponent<BezierC0Component> {
 public:
     explicit BezierC0Component(PointRegistry *registry);
     ~BezierC0Component() override;
 
-    void addControlPoint(PointHandle h);
+    void addControlPoint(PointHandle h) override;
+
     void removeControlPointAt(int index);
     void removeControlPoint(PointHandle h);
 
@@ -29,15 +31,12 @@ public:
 
     [[nodiscard]] int segmentCount() const;
 
+    [[nodiscard]] GLuint getPatchVao() const { return m_patchVao; }
+    [[nodiscard]] GLuint getPolygonVao() const { return m_polygonVao; }
+
     /// Get the number of edges of the trailing segment
     /// @return 0 = no trailing, 1 = linear, 2 = quadratic
     [[nodiscard]] int trailingEdges() const;
-
-    /// Patch VAO; binds PointRegistry's position VBO, EBO holds PointHandle patch sequences
-    uint32_t m_patchVAO = 0;
-
-    /// Polygon VAO; binds PointRegistry's position VBO, EBO holds PointHandle line pairs
-    uint32_t m_polygonVAO = 0;
 
     [[nodiscard]] int getPatchIndexCount() const { return m_patchIndexBuf.size(); }
     [[nodiscard]] int getPolygonIndexCount() const { return m_polygonIndexBuf.size(); }
@@ -50,6 +49,12 @@ public:
     void syncToGpu() override;
 
 private:
+    /// Patch VAO; binds PointRegistry's position VBO, EBO holds PointHandle patch sequences
+    uint32_t m_patchVao = 0;
+
+    /// Polygon VAO; binds PointRegistry's position VBO, EBO holds PointHandle line pairs
+    uint32_t m_polygonVao = 0;
+
     PointRegistry *m_registry;
     std::vector<PointHandle> m_controlPoints;
     std::map<PointHandle, CallbackId> m_removeControlPointCallbacks;

@@ -6,10 +6,8 @@
 
 #include "../CheckMacros.hpp"
 
-GeometryComponent::~GeometryComponent()
-{
-    if (m_VAO != 0)
-    {
+GeometryComponent::~GeometryComponent() {
+    if (m_VAO != 0) {
         const auto gl = GL();
         const GLuint buffers[3] = {m_VBO, m_EBO_Lines, m_EBO_Triangles};
         gl->glDeleteBuffers(3, buffers);
@@ -17,12 +15,10 @@ GeometryComponent::~GeometryComponent()
     }
 }
 
-void GeometryComponent::syncToGpu()
-{
+void GeometryComponent::syncToGpu() {
     const auto gl = GL();
 
-    if (m_VAO == 0)
-    {
+    if (m_VAO == 0) {
         GLuint buffers[3];
         gl->glGenBuffers(3, buffers);
         m_VBO = buffers[0];
@@ -37,21 +33,24 @@ void GeometryComponent::syncToGpu()
         GL_ARRAY_BUFFER,
         static_cast<GLsizeiptr>(m_vertices.size() * sizeof(Vertex)),
         m_vertices.data(),
-        GL_STATIC_DRAW);
+        GL_STATIC_DRAW
+    );
 
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO_Triangles);
     gl->glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
         static_cast<GLsizeiptr>(m_triangleIndices.size() * sizeof(uint32_t)),
         m_triangleIndices.data(),
-        GL_STATIC_DRAW);
+        GL_STATIC_DRAW
+    );
 
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO_Lines);
     gl->glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
         static_cast<GLsizeiptr>(m_lineIndices.size() * sizeof(uint32_t)),
         m_lineIndices.data(),
-        GL_STATIC_DRAW);
+        GL_STATIC_DRAW
+    );
 
     gl->glEnableVertexAttribArray(0);
     gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 10 * GL_CADM_VT_SIZE, nullptr);
@@ -62,7 +61,8 @@ void GeometryComponent::syncToGpu()
         GL_CADM_VT_TYPE,
         GL_FALSE,
         10 * GL_CADM_VT_SIZE,
-        reinterpret_cast<void*>(3 * GL_CADM_VT_SIZE));
+        reinterpret_cast<void*>(3 * GL_CADM_VT_SIZE)
+    );
     gl->glEnableVertexAttribArray(2);
     gl->glVertexAttribPointer(
         2,
@@ -70,7 +70,8 @@ void GeometryComponent::syncToGpu()
         GL_CADM_VT_TYPE,
         GL_FALSE,
         10 * GL_CADM_VT_SIZE,
-        reinterpret_cast<void*>(6 * GL_CADM_VT_SIZE));
+        reinterpret_cast<void*>(6 * GL_CADM_VT_SIZE)
+    );
 
     GET_GL_ERRORS();
     gl->glBindVertexArray(0);
@@ -78,49 +79,37 @@ void GeometryComponent::syncToGpu()
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-TorusGeometry::TorusGeometry()
-{
-    regenerateMesh();
-}
+TorusGeometry::TorusGeometry() { regenerateMesh(); }
 
-void TorusGeometry::setMajorRadius(const cadm::cadf majorRadius)
-{
-    if (m_majorRadius == majorRadius)
-        return;
+void TorusGeometry::setMajorRadius(const cadm::cadf majorRadius) {
+    if (m_majorRadius == majorRadius) { return; }
     m_majorRadius = majorRadius;
     m_needsUpdate = true;
     emit majorRadiusChanged(m_majorRadius);
 }
 
-void TorusGeometry::setMinorRadius(const cadm::cadf minorRadius)
-{
-    if (m_minorRadius == minorRadius)
-        return;
+void TorusGeometry::setMinorRadius(const cadm::cadf minorRadius) {
+    if (m_minorRadius == minorRadius) { return; }
     m_minorRadius = minorRadius;
     m_needsUpdate = true;
     emit minorRadiusChanged(m_minorRadius);
 }
 
-void TorusGeometry::setMajorSegments(const uint32_t majorSegments)
-{
-    if (m_majorSegments == majorSegments)
-        return;
+void TorusGeometry::setMajorSegments(const uint32_t majorSegments) {
+    if (m_majorSegments == majorSegments) { return; }
     m_majorSegments = majorSegments;
     m_needsUpdate = true;
     emit majorSegmentsChanged(static_cast<int>(m_majorSegments));
 }
 
-void TorusGeometry::setMinorSegments(const uint32_t minorSegments)
-{
-    if (m_minorSegments == minorSegments)
-        return;
+void TorusGeometry::setMinorSegments(const uint32_t minorSegments) {
+    if (m_minorSegments == minorSegments) { return; }
     m_minorSegments = minorSegments;
     m_needsUpdate = true;
     emit minorSegmentsChanged(static_cast<int>(m_minorSegments));
 }
 
-void TorusGeometry::regenerateMesh()
-{
+void TorusGeometry::regenerateMesh() {
     auto vertices = generateVertices();
     auto indices = generateIndicesForWireframe();
     m_lineIndices.swap(indices);
@@ -128,17 +117,14 @@ void TorusGeometry::regenerateMesh()
     m_needsUpdate = true;
 }
 
-std::vector<Vertex> TorusGeometry::generateVertices() const
-{
+std::vector<Vertex> TorusGeometry::generateVertices() const {
     std::vector<Vertex> vertices;
     const auto majorAngleStep = static_cast<cadm::cadf>(2 * std::numbers::pi / m_majorSegments);
     const auto minorAngleStep = static_cast<cadm::cadf>(2 * std::numbers::pi / m_minorSegments);
 
-    for (std::size_t i = 0; i < m_majorSegments; ++i)
-    {
+    for (std::size_t i = 0; i < m_majorSegments; ++i) {
         const cadm::cadf majorAngle = static_cast<cadm::cadf>(i) * majorAngleStep;
-        for (std::size_t j = 0; j < m_minorSegments; ++j)
-        {
+        for (std::size_t j = 0; j < m_minorSegments; ++j) {
             const cadm::cadf minorAngle = static_cast<cadm::cadf>(j) * minorAngleStep;
 
             const cadm::vec3 majorRadiusPosition{
@@ -157,13 +143,10 @@ std::vector<Vertex> TorusGeometry::generateVertices() const
     return vertices;
 }
 
-std::vector<std::uint32_t> TorusGeometry::generateIndicesForWireframe() const
-{
+std::vector<std::uint32_t> TorusGeometry::generateIndicesForWireframe() const {
     std::vector<std::uint32_t> indices;
-    for (std::uint32_t i = 0; i < m_majorSegments; ++i)
-    {
-        for (std::uint32_t j = 0; j < m_minorSegments; ++j)
-        {
+    for (std::uint32_t i = 0; i < m_majorSegments; ++i) {
+        for (std::uint32_t j = 0; j < m_minorSegments; ++j) {
             const std::uint32_t currentVertexIdx = i * m_minorSegments + j;
 
             // connect to the next vertex along the minor ring
@@ -180,8 +163,7 @@ std::vector<std::uint32_t> TorusGeometry::generateIndicesForWireframe() const
     return indices;
 }
 
-void AxesGeometry::regenerateMesh()
-{
+void AxesGeometry::regenerateMesh() {
     m_vertices.clear();
     m_lineIndices.clear();
 

@@ -11,8 +11,9 @@
 
 PointRegistry::~PointRegistry()
 {
-    if (m_VAO == 0)
+    if (m_VAO == 0) {
         return;
+    }
     const auto gl = GL();
     const GLuint buffers[3] = {m_positionVBO, m_selectedVBO, m_EBO};
     gl->glDeleteBuffers(3, buffers);
@@ -48,8 +49,9 @@ PointHandle PointRegistry::addPoint(const cadm::vec3 position)
 
 void PointRegistry::removePoint(const PointHandle handle)
 {
-    if (handle >= m_alive.size() || !m_alive[handle])
+    if (handle >= m_alive.size() || !m_alive[handle]) {
         return;
+    }
 
     m_alive[handle] = false;
     m_freeList.push_back(handle);
@@ -75,8 +77,9 @@ void PointRegistry::removePoint(const PointHandle handle)
 
 void PointRegistry::setPosition(const PointHandle handle, const cadm::vec3 position)
 {
-    if (handle >= m_alive.size() || !m_alive[handle])
+    if (handle >= m_alive.size() || !m_alive[handle]) {
         return;
+    }
     m_positions[handle] = position;
     m_dirtyPositions.insert(handle);
     for (auto &cb : m_positionCallbacks | std::views::values)
@@ -126,13 +129,15 @@ bool PointRegistry::isSelected(const PointHandle handle) const
 
 void PointRegistry::setSelected(const PointHandle handle, const bool selected)
 {
-    if (handle >= m_alive.size() || !m_alive[handle])
+    if (handle >= m_alive.size() || !m_alive[handle]) {
         return;
+    }
     const float value = selected
                             ? 1.0f
                             : 0.0f;
-    if (std::abs(m_selected[handle] - value) <= cadm::feps)
+    if (std::abs(m_selected[handle] - value) <= cadm::feps) {
         return;
+    }
     m_selected[handle] = value;
     m_dirtySelected.insert(handle);
 }
@@ -189,14 +194,16 @@ void PointRegistry::generateBuffers(QOpenGLFunctions_4_5_Core *const gl)
 
 void PointRegistry::ensureGpuCapacity(const size_t requiredSlots)
 {
-    if (requiredSlots <= m_gpuCapacity)
+    if (requiredSlots <= m_gpuCapacity) {
         return;
+    }
 
     size_t newCapacity = m_gpuCapacity == 0
                              ? s_initialCapacity
                              : m_gpuCapacity * s_growFactor;
-    while (newCapacity < requiredSlots)
+    while (newCapacity < requiredSlots) {
         newCapacity *= s_growFactor;
+    }
 
     const auto gl = GL();
     if (m_VAO == 0)
@@ -276,10 +283,33 @@ void PointRegistry::flushDirtySelection(QOpenGLFunctions_4_5_Core *const gl)
     m_dirtySelected.clear();
 }
 
+void PointRegistry::initialize() {
+    const auto gl = GL();
+    if (m_VAO == 0) { generateBuffers(gl); }
+
+    constexpr auto posBytes = static_cast<GLsizeiptr>(s_initialCapacity * 3 * GL_CADM_VT_SIZE);
+    constexpr auto selBytes = static_cast<GLsizeiptr>(s_initialCapacity * sizeof(float));
+    reallocatePositionVBO(gl, posBytes);
+    reallocateSelectionVBO(gl, selBytes);
+
+    gl->glBindVertexArray(m_VAO);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, m_positionVBO);
+    gl->glEnableVertexAttribArray(0);
+    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectedVBO);
+    gl->glEnableVertexAttribArray(1);
+    gl->glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(float), nullptr);
+    gl->glBindVertexArray(0);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    m_gpuCapacity = s_initialCapacity;
+}
+
 void PointRegistry::syncToGpu()
 {
-    if (m_aliveHandles.empty() && m_gpuCapacity == 0)
+    if (m_aliveHandles.empty() && m_gpuCapacity == 0) {
         return;
+    }
 
     ensureGpuCapacity(m_positions.size());
 

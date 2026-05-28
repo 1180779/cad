@@ -31,7 +31,8 @@ public slots:
     void setClickToAddMode(bool active) const;
     void setCameraName(const QString &name) const;
     void setSelectionCount(int count) const;
-    void setActiveBezierName(const QString &name) const;
+
+    void setActiveNewPointsTargetName(const QString &name) const;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -39,7 +40,7 @@ protected:
 private:
     QLabel *m_modeLabel;
     QLabel *m_cameraLabel;
-    QLabel *m_bezierLabel;
+    QLabel *m_newPointsTargetLabel;
     QLabel *m_selectionLabel;
 
     void refreshModeLabel(TransformMode mode, const QString &axisInfo, bool clickToAdd) const;

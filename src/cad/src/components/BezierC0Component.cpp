@@ -14,16 +14,10 @@ BezierC0Component::~BezierC0Component()
 {
     const auto gl = GL();
     m_patchIndexBuf.deleteGpu(gl);
-    if (m_patchVAO != 0)
-    {
-        gl->glDeleteVertexArrays(1, &m_patchVAO);
-    }
+    if (m_patchVao != 0) { gl->glDeleteVertexArrays(1, &m_patchVao); }
 
     m_polygonIndexBuf.deleteGpu(gl);
-    if (m_polygonVAO != 0)
-    {
-        gl->glDeleteVertexArrays(1, &m_polygonVAO);
-    }
+    if (m_polygonVao != 0) { gl->glDeleteVertexArrays(1, &m_polygonVao); }
 
     for (const auto subId : m_removeControlPointCallbacks | std::views::values)
     {
@@ -46,8 +40,9 @@ void BezierC0Component::addControlPoint(const PointHandle h)
     m_needsUpdate = true;
     m_polygonIndexBuf.append(h);
 
-    if (n == 0)
+    if (n == 0) {
         return;
+    }
     if (n == 1)
     {
         // 1 to 2 points
@@ -93,8 +88,9 @@ void BezierC0Component::addControlPoint(const PointHandle h)
 void BezierC0Component::removeAssociatedCallback(const PointHandle h)
 {
     const auto subIdIter = m_removeControlPointCallbacks.find(h);
-    if (subIdIter == m_removeControlPointCallbacks.end())
+    if (subIdIter == m_removeControlPointCallbacks.end()) {
         return;
+    }
 
     const auto subId = subIdIter->second;
     m_registry->unsubscribeFromRemove(subId);
@@ -107,12 +103,14 @@ void BezierC0Component::removeLastPointIncremental()
     m_needsUpdate = true;
 
     // update polygon
-    if (n >= 1)
+    if (n >= 1) {
         m_polygonIndexBuf.popBack();
+    }
 
     // update patch
-    if (n < 2)
+    if (n < 2) {
         return;
+    }
     switch (trailingEdges())
     {
     case 1:
@@ -145,38 +143,45 @@ void BezierC0Component::removeLastPointIncremental()
 
 void BezierC0Component::removeControlPointAt(const int index)
 {
-    if (index < 0 || index >= static_cast<int>(m_controlPoints.size())) return;
+    if (index < 0 || index >= static_cast<int>(m_controlPoints.size())) { return; }
 
+    m_needsUpdate = true;
     const auto h = m_controlPoints[index];
     const bool isLast = index == static_cast<int>(m_controlPoints.size()) - 1;
 
-    if (isLast)
+    if (isLast) {
         removeLastPointIncremental();
+    }
 
     m_controlPoints.erase(m_controlPoints.begin() + index);
     removeAssociatedCallback(h);
 
-    if (!isLast)
+    if (!isLast) {
         removeMidPointPartial(index);
+    }
 }
 
 void BezierC0Component::removeControlPoint(const PointHandle h)
 {
     const auto it = std::ranges::find(m_controlPoints, h);
-    if (it == m_controlPoints.end())
+    if (it == m_controlPoints.end()) {
         return;
+    }
 
+    m_needsUpdate = true;
     const int index = static_cast<int>(it - m_controlPoints.begin());
     const bool isLast = it == m_controlPoints.end() - 1;
 
-    if (isLast)
+    if (isLast) {
         removeLastPointIncremental();
+    }
 
     m_controlPoints.erase(it);
     removeAssociatedCallback(h);
 
-    if (!isLast)
+    if (!isLast) {
         removeMidPointPartial(index);
+    }
 }
 
 void BezierC0Component::removeMidPointPartial(const int removedIndex)
@@ -203,7 +208,7 @@ int BezierC0Component::segmentCount() const
 int BezierC0Component::trailingEdges() const
 {
     const int n = static_cast<int>(m_controlPoints.size());
-    if (n < 2) return 0;
+    if (n < 2) { return 0; }
     return (n - 1) % 3;
 }
 
@@ -251,15 +256,19 @@ void BezierC0Component::rebuildPolygonLines()
     const int n = static_cast<int>(m_controlPoints.size());
     std::vector<uint32_t> indices;
     indices.reserve(static_cast<size_t>(n));
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < n; ++i) {
         indices.push_back(static_cast<uint32_t>(m_controlPoints[i]));
+    }
     m_polygonIndexBuf.assign(std::move(indices));
 }
 
 void BezierC0Component::setupPatchVao(QOpenGLFunctions_4_5_Core *const gl)
 {
-    gl->glGenVertexArrays(1, &m_patchVAO);
-    gl->glBindVertexArray(m_patchVAO);
+    assert(m_registry->getPositionVBO() != 0);
+    assert(m_patchIndexBuf.vboId() != 0);
+
+    gl->glGenVertexArrays(1, &m_patchVao);
+    gl->glBindVertexArray(m_patchVao);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_registry->getPositionVBO());
     gl->glEnableVertexAttribArray(0);
     gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
@@ -271,8 +280,11 @@ void BezierC0Component::setupPatchVao(QOpenGLFunctions_4_5_Core *const gl)
 
 void BezierC0Component::setupPolygonVao(QOpenGLFunctions_4_5_Core *const gl)
 {
-    gl->glGenVertexArrays(1, &m_polygonVAO);
-    gl->glBindVertexArray(m_polygonVAO);
+    assert(m_registry->getPositionVBO() != 0);
+    assert(m_polygonIndexBuf.vboId() != 0);
+
+    gl->glGenVertexArrays(1, &m_polygonVao);
+    gl->glBindVertexArray(m_polygonVao);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_registry->getPositionVBO());
     gl->glEnableVertexAttribArray(0);
     gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
@@ -293,8 +305,10 @@ void BezierC0Component::syncToGpu()
     m_patchIndexBuf.syncToGpu(gl);
     m_polygonIndexBuf.syncToGpu(gl);
 
-    if (m_patchVAO == 0)
+    if (m_patchVao == 0) {
         setupPatchVao(gl);
-    if (m_polygonVAO == 0)
+    }
+    if (m_polygonVao == 0) {
         setupPolygonVao(gl);
+    }
 }

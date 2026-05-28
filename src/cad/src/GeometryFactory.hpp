@@ -10,13 +10,9 @@
 #include <cad_math/vec3.hpp>
 #include <vector>
 
-class GeometryFactory final
-{
+class GeometryFactory final {
 public:
-    explicit GeometryFactory(Scene &scene)
-        : m_scene(scene)
-    {
-    }
+    explicit GeometryFactory(Scene &scene) : m_scene(scene) {}
 
     Entity* createTorus(
         float majorRadius,
@@ -24,24 +20,34 @@ public:
         int majorSegments,
         int minorSegments,
         const cadm::vec3 &position = {0, 0, 0},
-        const std::string &name = "Torus") const;
+        const std::string &name = "Torus"
+    ) const;
 
     Entity* createAxis(
         float length = 5.0f,
         const cadm::vec3 &position = {0, 0, 0},
-        const std::string &name = "Axes") const;
+        const std::string &name = "Axes"
+    ) const;
 
     Entity* createCursor(
         const cadm::vec3 &position = {0, 0, 0},
-        const std::string &name = "Cursor") const;
+        const std::string &name = "Cursor"
+    ) const;
 
     Entity* createPoint(
         const cadm::vec3 &position = {0, 0, 0},
-        const std::string &name = "Point") const;
+        const std::string &name = "Point"
+    ) const;
 
     Entity* createBezierC0(
         const std::vector<PointHandle> &controlPoints = {},
-        const std::string &name = "BezierC0") const;
+        const std::string &name = "BezierC0"
+    ) const;
+
+    Entity* createBezierC2(
+        const std::vector<PointHandle> &controlPoints = {},
+        const std::string &name = "BezierC2"
+    ) const;
 
 private:
     Scene &m_scene;

@@ -23,7 +23,7 @@ std::optional<Entity*> Scene::getEntity(EntityID id)
         {
             return e->getId() == id;
         });
-    if (result != m_entities.end()) return result->get();
+    if (result != m_entities.end()) { return result->get(); }
     return std::nullopt;
 }
 
@@ -35,7 +35,7 @@ std::optional<Entity*> Scene::getEntityByName(const std::string &name)
         {
             return e->getName() == name;
         });
-    if (byName != m_entities.end()) return byName->get();
+    if (byName != m_entities.end()) { return byName->get(); }
     return std::nullopt;
 }
 
@@ -51,7 +51,7 @@ Entity* Scene::createPoint(const cadm::vec3 position, const std::string &name)
 std::optional<Entity*> Scene::getEntityByPointHandle(const PointHandle handle)
 {
     const auto it = m_pointEntityMap.find(handle);
-    if (it == m_pointEntityMap.end()) return std::nullopt;
+    if (it == m_pointEntityMap.end()) { return std::nullopt; }
     return getEntity(it->second);
 }
 
@@ -59,8 +59,9 @@ void Scene::syncPointSelectionToRegistry()
 {
     for (const auto &e : m_entities)
     {
-        if (const auto pc = e->getComponent<PointComponent>())
+        if (const auto pc = e->getComponent<PointComponent>()) {
             m_pointRegistry.setSelected(pc.value()->m_handle, e->isSelected());
+        }
     }
 }
 
@@ -73,11 +74,12 @@ bool Scene::removeEntity(EntityID id)
         {
             return e->getId() == id;
         });
-    if (toBeRemoved == m_entities.end()) return false;
-    if (m_activeCursor == toBeRemoved->get())
+    if (toBeRemoved == m_entities.end()) { return false; }
+    if (m_activeCursor == toBeRemoved->get()) {
         m_activeCursor = nullptr;
-    if (m_activeBezierC0 == toBeRemoved->get())
-        m_activeBezierC0 = nullptr;
+    }
+    if (m_newPointsTargetEntity == toBeRemoved->get()) { m_newPointsTargetEntity = nullptr; }
+    m_selectedEntities.erase(toBeRemoved->get());
     if (const auto pc = (*toBeRemoved)->getComponent<PointComponent>())
     {
         m_pointEntityMap.erase(pc.value()->m_handle);
@@ -97,11 +99,13 @@ auto Scene::getVisibleEntities()
         });
 }
 
-auto Scene::getSelectedEntities()
-{
-    return m_entities | std::views::filter(
-        [](const std::unique_ptr<Entity> &e)
-        {
-            return e->isSelected();
-        });
+void Scene::setSelected(Entity *e, const bool selected) {
+    e->setSelected(selected, SelectionKey{});
+    if (selected) { m_selectedEntities.insert(e); }
+    else { m_selectedEntities.erase(e); }
+}
+
+void Scene::clearSelection() {
+    for (auto *e : m_selectedEntities) { e->setSelected(false, SelectionKey{}); }
+    m_selectedEntities.clear();
 }

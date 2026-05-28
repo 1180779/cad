@@ -12,6 +12,7 @@
 #include <optional>
 #include <ranges>
 #include <unordered_map>
+#include <unordered_set>
 
 class Scene
 {
@@ -23,17 +24,24 @@ public:
     std::optional<Entity*> getEntityByPointHandle(PointHandle handle);
     bool removeEntity(EntityID id);
 
+    /// Set selection state on an entity and keep the selection set in sync
+    void setSelected(Entity *e, bool selected);
+
+    /// Deselect all entities and clear the selection set
+    void clearSelection();
+
     void syncPointSelectionToRegistry();
 
     const std::vector<std::unique_ptr<Entity>>& getEntities() const { return m_entities; }
+    [[nodiscard]] const std::unordered_set<Entity*>& getSelectedEntities() const { return m_selectedEntities; }
+
     auto getVisibleEntities();
-    auto getSelectedEntities();
 
     Entity* getActiveCursor() const { return m_activeCursor; }
     void setActiveCursor(Entity *cursor) { m_activeCursor = cursor; }
 
-    Entity* getActiveBezierC0() const { return m_activeBezierC0; }
-    void setActiveBezierC0(Entity *e) { m_activeBezierC0 = e; }
+    Entity* getNewPointsTargetEntity() const { return m_newPointsTargetEntity; }
+    void setNewPointsTargetEntity(Entity *e) { m_newPointsTargetEntity = e; }
 
     PointRegistry& getPointRegistry() { return m_pointRegistry; }
     const PointRegistry& getPointRegistry() const { return m_pointRegistry; }
@@ -44,8 +52,10 @@ private:
     std::unordered_map<PointHandle, EntityID> m_pointEntityMap;
     EntityID m_nextEntityId = 1;
     Entity *m_activeCursor = nullptr;
-    Entity *m_activeBezierC0 = nullptr;
+
+    Entity *m_newPointsTargetEntity = nullptr;
     PointRegistry m_pointRegistry;
+    std::unordered_set<Entity*> m_selectedEntities;
 };
 
 #endif //CAD_SCENE_H

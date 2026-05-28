@@ -25,8 +25,9 @@ namespace cadm
 
         constexpr mat()
         {
-            for (auto &cell : data)
+            for (auto &cell : data) {
                 cell = 0;
+            }
         }
 
         constexpr mat(

@@ -36,8 +36,9 @@ namespace cadm
         friend constexpr Derived operator-(const Derived &v) noexcept
         {
             Derived res = static_cast<const Derived&>(v);
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 res[i] = -res[i];
+            }
             return res;
         }
 
@@ -48,8 +49,9 @@ namespace cadm
             for (int i = 0; i < N; ++i)
             {
                 auto diff = std::abs(lhs[i] - rhs[i]);
-                if (diff > eps)
+                if (diff > eps) {
                     return false;
+                }
             }
             return true;
         }
@@ -61,8 +63,9 @@ namespace cadm
 
         constexpr Derived& operator+=(const Derived &rhs)
         {
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 (*this)[i] += rhs.data[i];
+            }
             return static_cast<Derived&>(*this);
         }
 
@@ -74,8 +77,9 @@ namespace cadm
 
         constexpr Derived& operator-=(const Derived &rhs)
         {
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 (*this)[i] -= rhs.data[i];
+            }
             return static_cast<Derived&>(*this);
         }
 
@@ -87,8 +91,9 @@ namespace cadm
 
         constexpr Derived& operator*=(const Derived &rhs)
         {
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 (*this)[i] *= rhs.data[i];
+            }
             return static_cast<Derived&>(*this);
         }
 
@@ -100,8 +105,9 @@ namespace cadm
 
         constexpr Derived& operator/=(const Derived &rhs)
         {
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 (*this)[i] /= rhs.data[i];
+            }
             return static_cast<Derived&>(*this);
         }
 
@@ -115,8 +121,9 @@ namespace cadm
 
         constexpr Derived& operator+=(const cadf rhs)
         {
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 (*this)[i] += rhs;
+            }
             return static_cast<Derived&>(*this);
         }
 
@@ -130,8 +137,9 @@ namespace cadm
 
         constexpr Derived& operator-=(const cadf rhs)
         {
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 (*this)[i] -= rhs;
+            }
             return static_cast<Derived&>(*this);
         }
 
@@ -143,8 +151,9 @@ namespace cadm
 
         constexpr Derived& operator*=(const cadf rhs)
         {
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 (*this)[i] *= rhs;
+            }
             return static_cast<Derived&>(*this);
         }
 
@@ -158,8 +167,9 @@ namespace cadm
 
         constexpr Derived& operator/=(const cadf rhs)
         {
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 (*this)[i] /= rhs;
+            }
             return static_cast<Derived&>(*this);
         }
 
@@ -176,8 +186,9 @@ namespace cadm
         {
             const auto lengthSq = lengthSquared();
             assert(lengthSq > eps * eps && "normalize() called on a zero or near-zero vector");
-            if (std::abs(lengthSq - static_cast<T>(1)) < eps)
+            if (std::abs(lengthSq - static_cast<T>(1)) < eps) {
                 return;
+            }
 
             *this /= std::sqrt(lengthSq);
         }
@@ -196,8 +207,9 @@ namespace cadm
         [[nodiscard]] Derived safeNormalized(const Derived &fallback) const noexcept
         {
             const auto lengthSq = lengthSquared();
-            if (lengthSq < eps * eps)
+            if (lengthSq < eps * eps) {
                 return fallback;
+            }
             return static_cast<const Derived&>(*this) / std::sqrt(lengthSq);
         }
 
@@ -210,16 +222,18 @@ namespace cadm
         constexpr T lengthSquared() const noexcept
         {
             T res{};
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 res += (*this)[i] * (*this)[i];
+            }
             return res;
         }
 
         constexpr T dot(const Derived &other) const noexcept
         {
             T res = 0;
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; ++i) {
                 res += other.data[i] * (*this)[i];
+            }
             return res;
         }
     };

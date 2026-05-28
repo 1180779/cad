@@ -25,17 +25,18 @@ StatusBarWidget::StatusBarWidget(QWidget *parent)
 
     m_modeLabel = new QLabel("Mode: --", this);
     m_cameraLabel = new QLabel("Camera: --", this);
-    m_bezierLabel = new QLabel("Bezier: --", this);
+    m_newPointsTargetLabel = new QLabel("Bezier: --", this);
     m_selectionLabel = new QLabel("", this);
 
-    for (QLabel *label : {m_modeLabel, m_cameraLabel, m_bezierLabel, m_selectionLabel})
+    for (QLabel *label : {m_modeLabel, m_cameraLabel, m_newPointsTargetLabel, m_selectionLabel}) {
         label->setContentsMargins(8, 0, 8, 0);
+    }
 
     layout->addWidget(m_modeLabel);
     layout->addWidget(makeSeparator(this));
     layout->addWidget(m_cameraLabel);
     layout->addWidget(makeSeparator(this));
-    layout->addWidget(m_bezierLabel);
+    layout->addWidget(m_newPointsTargetLabel);
     layout->addWidget(makeSeparator(this));
     layout->addWidget(m_selectionLabel);
     layout->addStretch();
@@ -108,10 +109,10 @@ void StatusBarWidget::setSelectionCount(const int count) const
             : "");
 }
 
-void StatusBarWidget::setActiveBezierName(const QString &name) const
-{
-    m_bezierLabel->setText(
+void StatusBarWidget::setActiveNewPointsTargetName(const QString &name) const {
+    m_newPointsTargetLabel->setText(
         name.isEmpty()
-            ? "Bezier: --"
-            : "Bezier: " + name);
+            ? "NewPointsTarget: --"
+            : "NewPointsTarget: " + name
+    );
 }

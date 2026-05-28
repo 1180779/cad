@@ -26,8 +26,9 @@ namespace cadm
 
         constexpr mat()
         {
-            for (auto &cell : data)
+            for (auto &cell : data) {
                 cell = 0;
+            }
         }
 
         constexpr mat(
@@ -262,12 +263,15 @@ namespace cadm
 
         constexpr void inverseScale()
         {
-            if ((*this)(0, 0) != 0.0)
+            if ((*this)(0, 0) != 0.0) {
                 (*this)(0, 0) = static_cast<cadf>(1.0 / (*this)(0, 0));
-            if ((*this)(1, 1) != 0.0)
+            }
+            if ((*this)(1, 1) != 0.0) {
                 (*this)(1, 1) = static_cast<cadf>(1.0 / (*this)(1, 1));
-            if ((*this)(2, 2) != 0.0)
+            }
+            if ((*this)(2, 2) != 0.0) {
                 (*this)(2, 2) = static_cast<cadf>(1.0 / (*this)(2, 2));
+            }
         }
 
         [[nodiscard]] constexpr mat inversedScale() const

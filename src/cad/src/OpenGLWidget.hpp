@@ -18,8 +18,7 @@
 #include "cursor/ICursorPlacementStrategy.hpp"
 #include "input/InputMap.hpp"
 
-enum class DragMode
-{
+enum class DragMode {
     None,
     CameraOrbit,
     CameraPan,
@@ -30,12 +29,12 @@ enum class DragMode
     PointDrag,
 };
 
-class OpenGLWidget : public QOpenGLWidget
-{
+class OpenGLWidget : public QOpenGLWidget {
     Q_OBJECT
 
 public:
     explicit OpenGLWidget(QWidget *parent = nullptr);
+
     ~OpenGLWidget() override;
 
     CameraController& getCameraController() { return m_cameraController; }
@@ -50,60 +49,79 @@ public:
     void setPivotMode(const PivotMode mode) { m_pivotMode = mode; }
     void setCoordSpace(const CoordSpace space) { m_coordSpace = space; }
 
-    void setGridPlanes(const int planes)
-    {
+    void setGridPlanes(const int planes) {
         m_renderSystem.setGridPlanes(planes);
-        if (m_cursorPlacementStrategy)
-            m_cursorPlacementStrategy->onGridPlanesChanged(planes);
+        if (m_cursorPlacementStrategy) { m_cursorPlacementStrategy->onGridPlanesChanged(planes); }
         update();
     }
 
-    void setCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy)
-    {
+    void setCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy) {
         m_cursorPlacementStrategy = std::move(strategy);
     }
 
     [[nodiscard]] bool isClickToAddMode() const { return m_clickToAddMode; }
 
-    void setClickToAddMode(const bool active)
-    {
+    void setClickToAddMode(const bool active) {
         m_clickToAddMode = active;
         emit clickToAddModeChanged(active);
     }
 
 signals:
-    void selectedEntityChanged(Entity *entity);
     void viewportSelectionChanged();
+
+    /// Emitted when entities are added, removed, or renamed
+    /// @note subscribe to this to sync entities (usually rebuild lists etc.)
     void sceneChanged();
+
+    /// Emitted when geometry or properties change without structural scene changes
+    /// (e.g., point drag in progress, cursor placement)
+    /// @note subscribe to this to sync the properties of displayed object properties
+    void geometryChanged();
+
     void transformModeChanged(TransformMode mode, QString axisInfo);
+
     void clickToAddModeChanged(bool active);
 
     void createTorusRequested();
+
     void createCursorRequested();
+
     void createPointRequested();
 
 protected:
     void paintGL() override;
+
     void resizeGL(int width, int height) override;
+
     void initializeGL() override;
 
     void mousePressEvent(QMouseEvent *event) override;
+
     void mouseMoveEvent(QMouseEvent *event) override;
+
     void mouseReleaseEvent(QMouseEvent *event) override;
+
     void wheelEvent(QWheelEvent *event) override;
+
     void keyPressEvent(QKeyEvent *event) override;
+
     void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
     void performBoxSelect();
+
     void deleteSelectedEntities();
+
     PointHandle pickPoint(QPoint screenPos) const;
+
     void selectPoint(PointHandle hit, bool additive);
 
     [[nodiscard]] std::optional<cadm::vec3> computePivot() const;
 
     void handleTransformRotate(int dx, PointRegistry &registry);
+
     void handleTransformTranslate(QPoint currentMousePos, PointRegistry &registry);
+
     void handleTransformScale(int dx, PointRegistry &registry);
 
     static QString axisLabel(AxisConstraint constraint);
@@ -124,6 +142,7 @@ private:
     static constexpr int s_clickRadiusPx = 8;
 
     void wrapMouseIfNeeded(QPoint currentPos, QPoint delta);
+
     bool removeEntityInternal(EntityID id);
 
     cadm::cadf m_sensitivity{0.001};
@@ -161,6 +180,5 @@ private:
     QPoint m_transformStartMousePos;
     cadm::vec3 m_transformPivot;
 };
-
 
 #endif //CAD_RENDERINGWINDOW_H

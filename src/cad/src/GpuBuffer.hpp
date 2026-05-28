@@ -20,8 +20,7 @@
 /// which cannot be guaranteed at arbitrary destruction time.
 /// Owners must call deleteGpu() explicitly in their own GL-context-aware destructor.
 template <typename T, GLenum Target = GL_ARRAY_BUFFER, GLenum DefaultUsage = GL_DYNAMIC_DRAW>
-class GpuBuffer final
-{
+class GpuBuffer final {
 public:
     /// Append one element
     /// @note marks dirty (or structurally dirty if over capacity)
@@ -89,71 +88,55 @@ private:
 };
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::append(T item)
-{
+void GpuBuffer<T, Target, DefaultUsage>::append(T item) {
     m_data.push_back(std::move(item));
     if (const auto newIdx = static_cast<int>(m_data.size()) - 1;
-        newIdx < m_capacity)
-    {
-        m_dirtySlots.insert(newIdx);
-    }
-    else
-    {
-        m_structuralDirty = true;
-    }
+        newIdx < m_capacity) { m_dirtySlots.insert(newIdx); }
+    else { m_structuralDirty = true; }
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::set(int idx, T item)
-{
+void GpuBuffer<T, Target, DefaultUsage>::set(int idx, T item) {
     m_data[idx] = std::move(item);
     m_dirtySlots.insert(idx);
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::assign(std::vector<T> data)
-{
+void GpuBuffer<T, Target, DefaultUsage>::assign(std::vector<T> data) {
     m_data = std::move(data);
     m_structuralDirty = true;
     m_dirtySlots.clear();
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::clear()
-{
+void GpuBuffer<T, Target, DefaultUsage>::clear() {
     m_data.clear();
     m_structuralDirty = true;
     m_dirtySlots.clear();
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::popBack()
-{
-    if (m_data.empty()) return;
+void GpuBuffer<T, Target, DefaultUsage>::popBack() {
+    if (m_data.empty()) { return; }
     const int removed = static_cast<int>(m_data.size()) - 1;
     m_dirtySlots.erase(removed);
     m_data.pop_back();
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::eraseAt(const int idx)
-{
+void GpuBuffer<T, Target, DefaultUsage>::eraseAt(const int idx) {
     const int newSize = static_cast<int>(m_data.size()) - 1;
     m_data.erase(m_data.begin() + idx);
-    if (m_structuralDirty)
-        return;
+    if (m_structuralDirty) { return; }
 
     m_dirtySlots.erase(newSize);
-    for (int i = idx; i < newSize; ++i)
-        m_dirtySlots.insert(i);
+    for (int i = idx; i < newSize; ++i) { m_dirtySlots.insert(i); }
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::diffAssign(std::vector<T> data)
-{
+void GpuBuffer<T, Target, DefaultUsage>::diffAssign(std::vector<T> data) {
     const int newSize = static_cast<int>(data.size());
-    if (newSize > m_capacity)
-    {
+    if (newSize > m_capacity) {
         assign(std::move(data));
         return;
     }
@@ -161,10 +144,8 @@ void GpuBuffer<T, Target, DefaultUsage>::diffAssign(std::vector<T> data)
     const int oldSize = static_cast<int>(m_data.size());
     const int commonLen = std::min(oldSize, newSize);
     int firstDiff = commonLen;
-    for (int i = 0; i < commonLen; ++i)
-    {
-        if (data[i] != m_data[i])
-        {
+    for (int i = 0; i < commonLen; ++i) {
+        if (data[i] != m_data[i]) {
             firstDiff = i;
             break;
         }
@@ -173,30 +154,21 @@ void GpuBuffer<T, Target, DefaultUsage>::diffAssign(std::vector<T> data)
     m_data = std::move(data);
 
     // remove dirty slots that no longer exist
-    for (int i = newSize; i < oldSize; ++i)
-        m_dirtySlots.erase(i);
+    for (int i = newSize; i < oldSize; ++i) { m_dirtySlots.erase(i); }
 
-    for (int i = firstDiff; i < newSize; ++i)
-        m_dirtySlots.insert(i);
+    for (int i = firstDiff; i < newSize; ++i) { m_dirtySlots.insert(i); }
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::reallocateGpu(QOpenGLFunctions_4_5_Core *gl, const GLenum usage, const int n)
-{
+void GpuBuffer<T, Target, DefaultUsage>::reallocateGpu(QOpenGLFunctions_4_5_Core *gl, const GLenum usage, const int n) {
     int newCap = m_capacity == 0
                      ? s_initialCapacity
                      : m_capacity;
-    while (newCap < n)
-    {
-        newCap *= s_growFactor;
-    }
+    while (newCap < n) { newCap *= s_growFactor; }
 
     gl->glBindBuffer(Target, m_vbo);
     gl->glBufferData(Target, static_cast<GLsizeiptr>(newCap * sizeof(T)), nullptr, usage);
-    if (n > 0)
-    {
-        gl->glBufferSubData(Target, 0, static_cast<GLsizeiptr>(n * sizeof(T)), m_data.data());
-    }
+    if (n > 0) { gl->glBufferSubData(Target, 0, static_cast<GLsizeiptr>(n * sizeof(T)), m_data.data()); }
     gl->glBindBuffer(Target, 0);
 
     m_capacity = newCap;
@@ -205,8 +177,7 @@ void GpuBuffer<T, Target, DefaultUsage>::reallocateGpu(QOpenGLFunctions_4_5_Core
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::partialGpuSync(QOpenGLFunctions_4_5_Core *gl)
-{
+void GpuBuffer<T, Target, DefaultUsage>::partialGpuSync(QOpenGLFunctions_4_5_Core *gl) {
     // group dirty slots that are next to each other
     std::vector sorted(m_dirtySlots.begin(), m_dirtySlots.end());
     std::ranges::sort(sorted);
@@ -215,20 +186,16 @@ void GpuBuffer<T, Target, DefaultUsage>::partialGpuSync(QOpenGLFunctions_4_5_Cor
 
     int blockStart = sorted[0];
     int blockEnd = sorted[0]; // inclusive
-    for (int k = 1; k < static_cast<int>(sorted.size()); ++k)
-    {
-        if (sorted[k] == blockEnd + 1)
-        {
-            ++blockEnd;
-        }
-        else
-        {
+    for (int k = 1; k < static_cast<int>(sorted.size()); ++k) {
+        if (sorted[k] == blockEnd + 1) { ++blockEnd; }
+        else {
             const auto runLen = blockEnd - blockStart + 1;
             gl->glBufferSubData(
                 Target,
                 static_cast<GLintptr>(blockStart) * static_cast<GLintptr>(sizeof(T)),
                 static_cast<GLsizeiptr>(runLen) * sizeof(T),
-                &m_data[blockStart]);
+                &m_data[blockStart]
+            );
             blockStart = blockEnd = sorted[k];
         }
     }
@@ -239,37 +206,29 @@ void GpuBuffer<T, Target, DefaultUsage>::partialGpuSync(QOpenGLFunctions_4_5_Cor
         Target,
         static_cast<GLintptr>(blockStart) * static_cast<GLintptr>(sizeof(T)),
         static_cast<GLsizeiptr>(runLen) * sizeof(T),
-        &m_data[blockStart]);
+        &m_data[blockStart]
+    );
 
     gl->glBindBuffer(Target, 0);
     m_dirtySlots.clear();
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::syncToGpu(QOpenGLFunctions_4_5_Core *gl, const GLenum usage)
-{
-    if (m_vbo == 0)
-    {
+void GpuBuffer<T, Target, DefaultUsage>::syncToGpu(QOpenGLFunctions_4_5_Core *gl, const GLenum usage) {
+    if (m_vbo == 0) {
         gl->glGenBuffers(1, &m_vbo);
         m_structuralDirty = true;
     }
 
     if (const auto n = static_cast<int>(m_data.size());
-        m_structuralDirty || n > m_capacity)
-    {
-        reallocateGpu(gl, usage, n);
-    }
-    else if (!m_dirtySlots.empty())
-    {
-        partialGpuSync(gl);
-    }
+        m_structuralDirty || n > m_capacity) { reallocateGpu(gl, usage, n); }
+    else
+        if (!m_dirtySlots.empty()) { partialGpuSync(gl); }
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-void GpuBuffer<T, Target, DefaultUsage>::deleteGpu(QOpenGLFunctions_4_5_Core *gl)
-{
-    if (m_vbo != 0)
-    {
+void GpuBuffer<T, Target, DefaultUsage>::deleteGpu(QOpenGLFunctions_4_5_Core *gl) {
+    if (m_vbo != 0) {
         gl->glDeleteBuffers(1, &m_vbo);
         m_vbo = 0;
         m_capacity = 0;
@@ -277,8 +236,7 @@ void GpuBuffer<T, Target, DefaultUsage>::deleteGpu(QOpenGLFunctions_4_5_Core *gl
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>
-GpuBuffer<T, Target, DefaultUsage>::~GpuBuffer()
-{
+GpuBuffer<T, Target, DefaultUsage>::~GpuBuffer() {
     assert(m_vbo == 0 && "GpuBuffer destroyed with live VBO; resources leaked; call deleteGpu() first");
 }
 

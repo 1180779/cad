@@ -29,10 +29,13 @@ BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget 
     m_pointList->setMaximumHeight(120);
     layout->addWidget(m_pointList);
 
-    m_removeButton = new QPushButton("Remove selected from curve");
-    layout->addWidget(m_removeButton);
+    m_detachButton = new QPushButton("Remove selected from curve");
+    layout->addWidget(m_detachButton);
 
-    refreshList();
+    m_pointPropertiesWidget = new PointPropertiesWidget(&scene->getPointRegistry(), this);
+    layout->addWidget(m_pointPropertiesWidget);
+
+    populatePointList();
 
     connect(
         m_showPolygonCheckbox,
@@ -42,20 +45,22 @@ BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget 
         {
             m_bezier->setShowPolygon(checked);
             emit propertyChanged();
-        });
+        }
+    );
 
     connect(
-        m_removeButton,
+        m_detachButton,
         &QPushButton::clicked,
         this,
         [this]
         {
             const int row = m_pointList->currentRow();
-            if (row < 0) return;
+            if (row < 0) { return; }
             m_bezier->removeControlPointAt(row);
-            refreshList();
+            populatePointList();
             emit propertyChanged();
-        });
+        }
+    );
 
     connect(
         m_pointList,
@@ -63,31 +68,44 @@ BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget 
         this,
         [this]
         {
-            if (!m_scene) return;
+            const auto selectedItems = m_pointList->selectedItems();
+            const PointHandle firstSelectedPoint = selectedItems.isEmpty()
+                                                       ? InvalidPointHandle
+                                                       : selectedItems.first()->data(Qt::UserRole).value<PointHandle>();
+            if (!m_scene) { return; }
             QList<Entity*> selected;
             for (const auto *item : m_pointList->selectedItems())
             {
                 const auto h = item->data(Qt::UserRole).value<PointHandle>();
-                if (const auto opt = m_scene->getEntityByPointHandle(h))
+                if (const auto opt = m_scene->getEntityByPointHandle(h)) {
                     selected.append(opt.value());
+                }
             }
+            m_pointPropertiesWidget->setPoint(
+                selected.count() == 1
+                    ? firstSelectedPoint
+                    : InvalidPointHandle
+            );
             emit pointSelectionChanged(selected);
-        });
+        }
+    );
+
+    connect(m_pointPropertiesWidget, &PointPropertiesWidget::propertyChanged, this, &ComponentWidget::propertyChanged);
 }
 
-void BezierC0Widget::refreshList()
-{
+void BezierC0Widget::populatePointList() {
     m_pointList->clear();
     m_itemMap.clear();
     const auto &cps = m_bezier->getControlPoints();
     for (int i = 0; i < static_cast<int>(cps.size()); ++i)
     {
-        const PointHandle h = cps[i];
+        const auto h = cps[i];
         QString name = QString("Point #%1").arg(h);
         if (m_scene)
         {
-            if (const auto entityOpt = m_scene->getEntityByPointHandle(h))
+            if (const auto entityOpt = m_scene->getEntityByPointHandle(h)) {
                 name = QString::fromStdString(entityOpt.value()->getName());
+            }
         }
         const auto item = new QListWidgetItem(QString("[%1] %2").arg(i).arg(name));
         item->setData(Qt::UserRole, QVariant::fromValue(h));
@@ -96,12 +114,24 @@ void BezierC0Widget::refreshList()
     }
 }
 
-void BezierC0Widget::syncSelection()
-{
-    if (!m_scene) return;
+void BezierC0Widget::syncSelectionFromScene() {
+    if (!m_scene) { return; }
+    PointHandle firstSelectedPoint = InvalidPointHandle;
+    int selectedCount = 0;
     for (const auto &[h, item] : m_itemMap)
     {
-        if (const auto opt = m_scene->getEntityByPointHandle(h))
-            item->setSelected(opt.value()->isSelected());
+        if (const auto opt = m_scene->getEntityByPointHandle(h)) {
+            const auto isItemSelected = opt.value()->isSelected();
+            if (isItemSelected) {
+                selectedCount++;
+                if (firstSelectedPoint == InvalidPointHandle) { firstSelectedPoint = h; }
+            }
+            item->setSelected(isItemSelected);
+        }
     }
+    m_pointPropertiesWidget->setPoint(
+        selectedCount == 1
+            ? firstSelectedPoint
+            : InvalidPointHandle
+    );
 }

@@ -8,9 +8,7 @@
 #include <QGroupBox>
 #include <QVBoxLayout>
 
-GridSettingsWidget::GridSettingsWidget(QWidget *parent)
-    : QWidget(parent)
-{
+GridSettingsWidget::GridSettingsWidget(QWidget *parent) : QWidget(parent) {
     const auto outerLayout = new QVBoxLayout(this);
     outerLayout->setAlignment(Qt::AlignTop);
 
@@ -36,16 +34,14 @@ GridSettingsWidget::GridSettingsWidget(QWidget *parent)
     connect(m_yzPlane, &QCheckBox::toggled, this, &GridSettingsWidget::onCheckboxToggled);
 }
 
-int GridSettingsWidget::getGridPlanes() const
-{
+int GridSettingsWidget::getGridPlanes() const {
     int planes = 0;
-    if (m_xyPlane->isChecked()) planes |= 1 << 0;
-    if (m_xzPlane->isChecked()) planes |= 1 << 1;
-    if (m_yzPlane->isChecked()) planes |= 1 << 2;
+    if (m_xyPlane->isChecked()) { planes |= 1 << 0; }
+    if (m_xzPlane->isChecked()) { planes |= 1 << 1; }
+    if (m_yzPlane->isChecked()) { planes |= 1 << 2; }
     return planes;
 }
 
-void GridSettingsWidget::onCheckboxToggled()
-{
+void GridSettingsWidget::onCheckboxToggled() {
     emit gridPlanesChanged(getGridPlanes());
 }

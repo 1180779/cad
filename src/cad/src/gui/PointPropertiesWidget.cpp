@@ -4,53 +4,54 @@
 
 #include "PointPropertiesWidget.hpp"
 
-#include <QFormLayout>
+#include <QAbstractButton>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 
-PointPropertiesWidget::PointPropertiesWidget(QWidget *parent)
-    : QWidget(parent)
-{
-    const auto form = new QFormLayout(this);
+PointPropertiesWidget::PointPropertiesWidget(PointRegistry *registry, QWidget *parent) : QWidget(parent),
+    m_registry{registry} {
+    const auto layout = new QHBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(4);
 
-    m_x = new ModifierDoubleSpinBox();
-    m_y = new ModifierDoubleSpinBox();
-    m_z = new ModifierDoubleSpinBox();
-
-    for (auto *sb : {m_x, m_y, m_z})
-    {
+    const auto setupSb = [&](const QString &label, ModifierDoubleSpinBox *&sb) {
+        layout->addWidget(new QLabel(label));
+        sb = new ModifierDoubleSpinBox();
         sb->setRange(s_coordMin, s_coordMax);
         sb->setSingleStep(s_coordStep);
         sb->setDecimals(4);
-        sb->setFixedWidth(s_spinWidth);
+        sb->setFixedWidth(s_widgetWidth);
         sb->setKeyboardTracking(true);
-    }
+        sb->setButtonSymbols(QAbstractSpinBox::UpDownArrows);
+        layout->addWidget(sb);
+    };
 
-    const auto row = new QHBoxLayout();
-    row->addWidget(m_x);
-    row->addWidget(m_y);
-    row->addWidget(m_z);
-    form->addRow(new QLabel("Position"), row);
+    setupSb("X:", m_x);
+    setupSb("Y:", m_y);
+    setupSb("Z:", m_z);
 
     connect(m_x, &QDoubleSpinBox::valueChanged, this, &PointPropertiesWidget::onXChanged);
     connect(m_y, &QDoubleSpinBox::valueChanged, this, &PointPropertiesWidget::onYChanged);
     connect(m_z, &QDoubleSpinBox::valueChanged, this, &PointPropertiesWidget::onZChanged);
 
-    QWidget::setVisible(false);
+    setEnabled(false);
 }
 
-void PointPropertiesWidget::setPoint(PointRegistry *registry, const PointHandle handle)
-{
-    m_registry = registry;
+void PointPropertiesWidget::refresh() { setPoint(m_handle); }
+
+void PointPropertiesWidget::setPoint(const PointHandle handle) {
     m_handle = handle;
 
-    const bool valid = registry && handle != InvalidPointHandle && registry->isAlive(handle);
-    setVisible(valid);
+    const bool valid = m_registry != nullptr && handle != InvalidPointHandle && m_registry->isAlive(handle);
+    setEnabled(valid);
+    // setVisible(valid);
 
-    if (!valid)
+    if (!valid) {
         return;
+    }
 
-    const auto pos = registry->getPosition(handle);
+    const auto pos = m_registry->getPosition(handle);
 
     m_x->blockSignals(true);
     m_y->blockSignals(true);
@@ -67,7 +68,7 @@ void PointPropertiesWidget::setPoint(PointRegistry *registry, const PointHandle 
 
 void PointPropertiesWidget::onXChanged(const double value)
 {
-    if (!m_registry || m_handle == InvalidPointHandle) return;
+    if (!m_registry || m_handle == InvalidPointHandle) { return; }
     auto pos = m_registry->getPosition(m_handle);
     pos.x = static_cast<cadm::cadf>(value);
     m_registry->setPosition(m_handle, pos);
@@ -76,7 +77,7 @@ void PointPropertiesWidget::onXChanged(const double value)
 
 void PointPropertiesWidget::onYChanged(const double value)
 {
-    if (!m_registry || m_handle == InvalidPointHandle) return;
+    if (!m_registry || m_handle == InvalidPointHandle) { return; }
     auto pos = m_registry->getPosition(m_handle);
     pos.y = static_cast<cadm::cadf>(value);
     m_registry->setPosition(m_handle, pos);
@@ -85,7 +86,7 @@ void PointPropertiesWidget::onYChanged(const double value)
 
 void PointPropertiesWidget::onZChanged(const double value)
 {
-    if (!m_registry || m_handle == InvalidPointHandle) return;
+    if (!m_registry || m_handle == InvalidPointHandle) { return; }
     auto pos = m_registry->getPosition(m_handle);
     pos.z = static_cast<cadm::cadf>(value);
     m_registry->setPosition(m_handle, pos);

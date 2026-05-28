@@ -223,8 +223,9 @@ namespace cadm
 
         friend constexpr Derived operator-(Derived lhs)
         {
-            for (std::size_t i = 0; i < C; ++i)
+            for (std::size_t i = 0; i < C; ++i) {
                 lhs.col(i) = -lhs.col(i);
+            }
             return lhs;
         }
 
@@ -232,23 +233,26 @@ namespace cadm
         {
             for (std::size_t i = 0; i < C; ++i)
             {
-                if (lhs.col(i) != rhs.col(i))
+                if (lhs.col(i) != rhs.col(i)) {
                     return false;
+                }
             }
             return true;
         }
 
         friend constexpr Derived operator+(Derived lhs, const Derived &rhs)
         {
-            for (std::size_t i = 0; i < C; ++i)
+            for (std::size_t i = 0; i < C; ++i) {
                 lhs.col(i) += rhs.col(i);
+            }
             return lhs;
         }
 
         friend constexpr Derived operator-(Derived lhs, const Derived &rhs)
         {
-            for (std::size_t i = 0; i < C; ++i)
+            for (std::size_t i = 0; i < C; ++i) {
                 lhs.col(i) -= rhs.col(i);
+            }
             return lhs;
         }
 
@@ -309,8 +313,9 @@ namespace cadm
             for (std::size_t j = 0; j < C; ++j)
             {
                 const auto qj = v.col(j).normalized();
-                for (std::size_t k = j + 1; k < C; ++k)
+                for (std::size_t k = j + 1; k < C; ++k) {
                     v.col(k) -= qj.dot(v.col(k)) * qj;
+                }
             }
             return v;
         }
@@ -318,8 +323,9 @@ namespace cadm
         [[nodiscard]] constexpr Derived normalizedColumns() const noexcept
         {
             Derived result = *static_cast<const Derived*>(this);
-            for (std::size_t i = 0; i < C; ++i)
+            for (std::size_t i = 0; i < C; ++i) {
                 result.col(i) = result.col(i).normalized();
+            }
             return result;
         }
 

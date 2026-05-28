@@ -107,48 +107,54 @@ void OpenGLWidget::initializeGL()
 
 void OpenGLWidget::setA(const cadm::cadf a)
 {
-    if (m_a == a)
+    if (m_a == a) {
         return;
+    }
     m_a = a;
     updateRenderParams();
 }
 
 void OpenGLWidget::setB(const cadm::cadf b)
 {
-    if (m_b == b)
+    if (m_b == b) {
         return;
+    }
     m_b = b;
     updateRenderParams();
 }
 
 void OpenGLWidget::setC(const cadm::cadf c)
 {
-    if (m_c == c)
+    if (m_c == c) {
         return;
+    }
     m_c = c;
     updateRenderParams();
 }
 
 void OpenGLWidget::setTranslation(const cadm::vec3 &translation)
 {
-    if (m_translation == translation)
+    if (m_translation == translation) {
         return;
+    }
     m_translation = translation;
     updateRenderParams();
 }
 
 void OpenGLWidget::setRotation(const cadm::vec3 &rotation)
 {
-    if (m_rotation == rotation)
+    if (m_rotation == rotation) {
         return;
+    }
     m_rotation = rotation;
     updateRenderParams();
 }
 
 void OpenGLWidget::setScale(const cadm::vec3 &scale)
 {
-    if (m_scale == scale)
+    if (m_scale == scale) {
         return;
+    }
     m_scale = scale;
     updateRenderParams();
 }
@@ -161,56 +167,63 @@ void OpenGLWidget::setAdaptationSize(const unsigned char adaptationSize)
 
 void OpenGLWidget::setM(const cadm::cadf m)
 {
-    if (m_m == m)
+    if (m_m == m) {
         return;
+    }
     m_m = m;
     updateRenderParams();
 }
 
 void OpenGLWidget::setAmbientR(const int r)
 {
-    if (m_ambient.r == r)
+    if (m_ambient.r == r) {
         return;
+    }
     m_ambient.r = r;
     updateRenderParams();
 }
 
 void OpenGLWidget::setAmbientG(const int g)
 {
-    if (m_ambient.g == g)
+    if (m_ambient.g == g) {
         return;
+    }
     m_ambient.g = g;
     updateRenderParams();
 }
 
 void OpenGLWidget::setAmbientB(const int b)
 {
-    if (m_ambient.b == b)
+    if (m_ambient.b == b) {
         return;
+    }
     m_ambient.b = b;
     updateRenderParams();
 }
 
 void OpenGLWidget::resetScale()
 {
-    if (m_scale == cadm::vec3(1.0, 1.0, 1.0))
+    if (m_scale == cadm::vec3(1.0, 1.0, 1.0)) {
         return;
+    }
     m_scale = cadm::vec3(1.0, 1.0, 1.0);
     updateRenderParams();
 }
 
 void OpenGLWidget::resetRotation()
 {
-    if (m_rotation == cadm::vec3(0.0, 0.0, 0.0))
+    if (m_rotation == cadm::vec3(0.0, 0.0, 0.0)) {
         return;
+    }
     m_rotation = cadm::vec3(0.0, 0.0, 0.0);
     updateRenderParams();
 }
 
 void OpenGLWidget::resetTranslation()
 {
-    if (m_translation == cadm::vec3(0.0, 0.0, 0.0))
+    if (m_translation == cadm::vec3(0.0, 0.0, 0.0)) {
         return;
+    }
     m_translation = cadm::vec3(0.0, 0.0, 0.0);
     updateRenderParams();
 }
@@ -280,8 +293,9 @@ void OpenGLWidget::performRaycasting(
 
                 if (prevAdaptationStep && step < state.adaptationSize)
                 {
-                    if (px % prevAdaptationStep.value() == 0 && py % prevAdaptationStep.value() == 0)
+                    if (px % prevAdaptationStep.value() == 0 && py % prevAdaptationStep.value() == 0) {
                         continue;
+                    }
                 }
 
                 // (O + t*Dir)^T * D' (O + t*Dir) = 0
@@ -366,8 +380,9 @@ std::optional<cadm::cadf> OpenGLWidget::solveQuadraticMinPositive(
 {
     if (std::abs(a) < cadm::eps)
     {
-        if (std::abs(b) < cadm::eps)
+        if (std::abs(b) < cadm::eps) {
             return std::nullopt;
+        }
         const auto result = -c / b;
         return result >= 0
                    ? std::optional(result)
@@ -375,8 +390,9 @@ std::optional<cadm::cadf> OpenGLWidget::solveQuadraticMinPositive(
     }
 
     const cadm::cadf disc = b * b - 4.0 * a * c;
-    if (disc < 0)
+    if (disc < 0) {
         return std::nullopt;
+    }
 
     const cadm::cadf sqrtDisc = std::sqrt(disc);
 
@@ -389,12 +405,15 @@ std::optional<cadm::cadf> OpenGLWidget::solveQuadraticMinPositive(
                                    : 0.0;
 
     // return the smaller non-negative root
-    if (result1 >= 0 && result2 >= 0)
+    if (result1 >= 0 && result2 >= 0) {
         return std::min(result1, result2);
-    if (result1 >= 0)
+    }
+    if (result1 >= 0) {
         return result1;
-    if (result2 >= 0)
+    }
+    if (result2 >= 0) {
         return result2;
+    }
 
     return std::nullopt;
 }
@@ -429,8 +448,9 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event)
 void OpenGLWidget::wheelEvent(QWheelEvent *event)
 {
     const int delta = event->angleDelta().y();
-    if (delta == 0)
+    if (delta == 0) {
         return;
+    }
 
     const cadm::cadf scaleMult = delta > 0
                                      ? m_zoomFactor
@@ -438,12 +458,15 @@ void OpenGLWidget::wheelEvent(QWheelEvent *event)
 
     if (m_xPressed || m_yPressed || m_zPressed)
     {
-        if (m_xPressed)
+        if (m_xPressed) {
             m_scale.x *= scaleMult;
-        if (m_yPressed)
+        }
+        if (m_yPressed) {
             m_scale.y *= scaleMult;
-        if (m_zPressed)
+        }
+        if (m_zPressed) {
             m_scale.z *= scaleMult;
+        }
     }
     else
     {
@@ -482,18 +505,21 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
         m_translation.z += m_translationStep;
         break;
     case Qt::Key_X:
-        if (event->isAutoRepeat())
+        if (event->isAutoRepeat()) {
             return;
+        }
         m_xPressed = true;
         return;
     case Qt::Key_Y:
-        if (event->isAutoRepeat())
+        if (event->isAutoRepeat()) {
             return;
+        }
         m_yPressed = true;
         return;
     case Qt::Key_Z:
-        if (event->isAutoRepeat())
+        if (event->isAutoRepeat()) {
             return;
+        }
         m_zPressed = true;
         return;
     default:

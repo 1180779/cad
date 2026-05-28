@@ -3,7 +3,9 @@ file(GLOB_RECURSE CAD_SOURCES
         src/*.hpp
 )
 
-add_executable(cad ${CAD_SOURCES})
+add_executable(cad ${CAD_SOURCES}
+        src/camera/CameraController.cpp
+        src/BSplineToBezierConverter.cpp)
 
 target_link_libraries(cad
         Qt::Core

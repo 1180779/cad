@@ -145,13 +145,15 @@ inline InputMap::InputMap()
 
 inline void InputMap::bind(const InputAction action, const InputBinding &binding)
 {
-    if (std::holds_alternative<Qt::Key>(binding.input))
+    if (std::holds_alternative<Qt::Key>(binding.input)) {
         m_keyBindings[{std::get<Qt::Key>(binding.input), binding.modifiers}] = {action, binding.allowAutoRepeat};
-    else
+    }
+    else {
         m_mouseBindings[{std::get<Qt::MouseButton>(binding.input), binding.modifiers}] = {
             action,
             binding.allowAutoRepeat
         };
+    }
 }
 
 inline std::optional<InputAction> InputMap::matchAction(
@@ -160,8 +162,9 @@ inline std::optional<InputAction> InputMap::matchAction(
     const bool isAutoRepeat) const
 {
     if (const auto it = m_keyBindings.find({key, mods});
-        it != m_keyBindings.cend() && (it->allowAutoRepeat || !isAutoRepeat))
+        it != m_keyBindings.cend() && (it->allowAutoRepeat || !isAutoRepeat)) {
         return it->action;
+    }
     return std::nullopt;
 }
 
@@ -170,7 +173,8 @@ inline std::optional<InputAction> InputMap::matchAction(
     const Qt::KeyboardModifiers mods) const
 {
     if (const auto it = m_mouseBindings.find({button, mods});
-        it != m_mouseBindings.cend())
+        it != m_mouseBindings.cend()) {
         return it->action;
+    }
     return std::nullopt;
 }
