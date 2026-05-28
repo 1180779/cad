@@ -9,10 +9,8 @@
 
 #include "GlCommon.hpp"
 
-inline const char* GLErrorToString(const GLenum error)
-{
-    switch (error)
-    {
+inline const char* GLErrorToString(const GLenum error) {
+    switch (error) {
     case GL_INVALID_ENUM:
         return "GL_INVALID_ENUM";
     case GL_INVALID_VALUE:
@@ -28,17 +26,12 @@ inline const char* GLErrorToString(const GLenum error)
     }
 }
 
-inline bool LogGLErrorsIfAny(const char *file, const int line)
-{
+inline bool LogGLErrorsIfAny(const char *file, const int line) {
     bool hasError = false;
     const auto gl = GL();
-    if (!gl)
-    {
-        return false;
-    }
+    if (!gl) { return false; }
 
-    for (GLenum error = gl->glGetError(); error != GL_NO_ERROR; error = gl->glGetError())
-    {
+    for (GLenum error = gl->glGetError(); error != GL_NO_ERROR; error = gl->glGetError()) {
         hasError = true;
         qWarning() << "OpenGL error" << GLErrorToString(error) << "(" << static_cast<unsigned int>(error) << ") at"
             << file << "," << line;

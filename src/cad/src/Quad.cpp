@@ -5,9 +5,7 @@
 #include "Quad.hpp"
 #include <array>
 
-Quad::Quad()
-    : m_vao(0), m_vbo(0)
-{
+Quad::Quad() : m_vao(0), m_vbo(0) {
     constexpr std::array<GLfloat, 20> vertices = {
         // positions        // texture Coords
         -1.0f,
@@ -49,15 +47,13 @@ Quad::Quad()
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-Quad::~Quad()
-{
+Quad::~Quad() {
     const auto gl = GL();
     gl->glDeleteVertexArrays(1, &m_vao);
     gl->glDeleteBuffers(1, &m_vbo);
 }
 
-void Quad::draw() const
-{
+void Quad::draw() const {
     const auto gl = GL();
     gl->glBindVertexArray(m_vao);
     gl->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

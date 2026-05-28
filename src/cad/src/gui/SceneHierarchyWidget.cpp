@@ -9,9 +9,7 @@
 #include "../components/CameraComponent.hpp"
 #include "../components/PointComponent.hpp"
 
-SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
-    : QWidget(parent)
-{
+SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent) : QWidget(parent) {
     const auto layout = new QVBoxLayout(this);
     m_listWidget = new QListWidget(this);
     m_listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -24,53 +22,44 @@ SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
         m_listWidget,
         &QListWidget::customContextMenuRequested,
         this,
-        &SceneHierarchyWidget::onContextMenuRequested);
+        &SceneHierarchyWidget::onContextMenuRequested
+    );
 }
 
-void SceneHierarchyWidget::setScene(Scene *scene)
-{
+void SceneHierarchyWidget::setScene(Scene *scene) {
     if (m_scene == scene) { return; }
     m_scene = scene;
     populateList();
 }
 
-void SceneHierarchyWidget::addEntityToList(const std::unique_ptr<Entity> &e) const
-{
+void SceneHierarchyWidget::addEntityToList(const std::unique_ptr<Entity> &e) const {
     const auto item = new QListWidgetItem(QString::fromStdString(e->getName()));
     item->setData(Qt::UserRole, QVariant::fromValue(e.get()));
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     m_listWidget->addItem(item);
 }
 
-void SceneHierarchyWidget::refresh()
-{
+void SceneHierarchyWidget::refresh() {
     if (!m_scene) { return; }
 
     m_refreshing = true;
 
     std::unordered_set<Entity*> inScene;
-    for (const auto &e : m_scene->getEntities()) {
-        inScene.insert(e.get());
-    }
+    for (const auto &e : m_scene->getEntities()) { inScene.insert(e.get()); }
 
     // update current entities (delete; update name)
-    for (int i = m_listWidget->count() - 1; i >= 0; --i)
-    {
+    for (int i = m_listWidget->count() - 1; i >= 0; --i) {
         auto *item = m_listWidget->item(i);
-        if (auto *e = item->data(Qt::UserRole).value<Entity*>(); !inScene.contains(e))
-        {
-            delete m_listWidget->takeItem(i);
-        }
-        else
-        {
+        if (auto *e = item->data(Qt::UserRole).value<Entity*>();
+            !inScene.contains(e)) { delete m_listWidget->takeItem(i); }
+        else {
             item->setText(QString::fromStdString(e->getName()));
             inScene.erase(e);
         }
     }
 
     // add missing entities
-    for (const auto &e : m_scene->getEntities())
-    {
+    for (const auto &e : m_scene->getEntities()) {
         if (!inScene.contains(e.get())) { continue; }
         addEntityToList(e);
     }
@@ -78,8 +67,7 @@ void SceneHierarchyWidget::refresh()
     m_refreshing = false;
 }
 
-void SceneHierarchyWidget::onItemSelectionChanged()
-{
+void SceneHierarchyWidget::onItemSelectionChanged() {
     if (m_refreshing) { return; }
     QList<Entity*> selected;
     for (const auto item : m_listWidget->selectedItems()) {
@@ -88,44 +76,33 @@ void SceneHierarchyWidget::onItemSelectionChanged()
     emit selectionChanged(selected);
 }
 
-void SceneHierarchyWidget::onItemChanged(const QListWidgetItem *item) const
-{
+void SceneHierarchyWidget::onItemChanged(const QListWidgetItem *item) const {
     // Update entity name
     if (m_refreshing) { return; }
-    if (auto *e = item->data(Qt::UserRole).value<Entity*>()) {
-        e->setName(item->text().toStdString());
-    }
+    if (auto *e = item->data(Qt::UserRole).value<Entity*>()) { e->setName(item->text().toStdString()); }
 }
 
-void SceneHierarchyWidget::populateList()
-{
+void SceneHierarchyWidget::populateList() {
     m_refreshing = true;
     m_listWidget->clear();
-    if (!m_scene)
-    {
+    if (!m_scene) {
         m_refreshing = false;
         return;
     }
 
-    for (const auto &e : m_scene->getEntities())
-    {
-        addEntityToList(e);
-    }
+    for (const auto &e : m_scene->getEntities()) { addEntityToList(e); }
     m_refreshing = false;
 }
 
-void SceneHierarchyWidget::setCameraController(CameraController *cameraController)
-{
+void SceneHierarchyWidget::setCameraController(CameraController *cameraController) {
     m_cameraController = cameraController;
 }
 
-void SceneHierarchyWidget::syncSelectionFromScene()
-{
+void SceneHierarchyWidget::syncSelectionFromScene() {
     if (!m_scene) { return; }
 
     m_refreshing = true;
-    for (int i = 0; i < m_listWidget->count(); ++i)
-    {
+    for (int i = 0; i < m_listWidget->count(); ++i) {
         auto *item = m_listWidget->item(i);
         const auto *entity = item->data(Qt::UserRole).value<Entity*>();
         item->setSelected(entity && entity->isSelected());
@@ -133,8 +110,7 @@ void SceneHierarchyWidget::syncSelectionFromScene()
     m_refreshing = false;
 }
 
-void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos)
-{
+void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
     QMenu menu(this);
 
     const auto *item = m_listWidget->itemAt(pos);

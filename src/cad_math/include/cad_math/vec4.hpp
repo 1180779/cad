@@ -10,55 +10,34 @@
 #include "vec_base.hpp"
 #include "vec3.hpp"
 
-namespace cadm
-{
+namespace cadm {
     template <>
-    struct vec<4, cadf> : vec_base<vec<4, cadf>, 4, cadf>
-    {
-        union
-        {
-            struct
-            {
+    struct vec<4, cadf> : vec_base<vec<4, cadf>, 4, cadf> {
+        union {
+            struct {
                 cadf x, y, z, w;
             };
 
-            struct
-            {
+            struct {
                 cadf r, g, b, a;
             };
 
             std::array<cadf, 4> data;
         };
 
-        constexpr vec()
-            : x(0), y(0), z(0), w(0)
-        {
-        }
+        constexpr vec() : x(0), y(0), z(0), w(0) {}
 
-        constexpr vec(const cadf x, const cadf y, const cadf z, const cadf w)
-            : x(x), y(y), z(z), w(w)
-        {
-        }
+        constexpr vec(const cadf x, const cadf y, const cadf z, const cadf w) : x(x), y(y), z(z), w(w) {}
 
-        constexpr vec(const vec3 &v, const cadf w)
-            : x(v.x), y(v.y), z(v.z), w(w)
-        {
-        }
+        constexpr vec(const vec3 &v, const cadf w) : x(v.x), y(v.y), z(v.z), w(w) {}
 
-        constexpr vec(const cadf x, const vec3 &v)
-            : x(x), y(v.x), z(v.y), w(v.z)
-        {
-        }
+        constexpr vec(const cadf x, const vec3 &v) : x(x), y(v.x), z(v.y), w(v.z) {}
 
-        [[nodiscard]] constexpr vec cross(const vec &other) const
-        {
+        [[nodiscard]] constexpr vec cross(const vec &other) const {
             return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
         }
 
-        [[nodiscard]] constexpr vec3 xyz() const
-        {
-            return {x, y, z};
-        }
+        [[nodiscard]] constexpr vec3 xyz() const { return {x, y, z}; }
 
         constexpr static vec unitX() noexcept { return {1.0, 0.0, 0.0, 0.0}; }
         constexpr static vec unitY() noexcept { return {0.0, 1.0, 0.0, 0.0}; }

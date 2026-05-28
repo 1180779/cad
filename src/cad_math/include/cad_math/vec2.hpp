@@ -10,35 +10,24 @@
 #include <cad_math/vec_base.hpp>
 #include <cad_math/common.hpp>
 
-namespace cadm
-{
+namespace cadm {
     template <>
-    struct vec<2, cadf> : vec_base<vec<2, cadf>, 2, cadf>
-    {
-        union
-        {
-            struct
-            {
+    struct vec<2, cadf> : vec_base<vec<2, cadf>, 2, cadf> {
+        union {
+            struct {
                 cadf x, y;
             };
 
-            struct
-            {
+            struct {
                 cadf r, g;
             };
 
             std::array<cadf, 2> data;
         };
 
-        constexpr vec()
-            : x(0), y(0)
-        {
-        }
+        constexpr vec() : x(0), y(0) {}
 
-        constexpr vec(const cadf x, const cadf y)
-            : x(x), y(y)
-        {
-        }
+        constexpr vec(const cadf x, const cadf y) : x(x), y(y) {}
 
         constexpr static vec unitX() noexcept { return {1.0, 0.0}; }
         constexpr static vec unitY() noexcept { return {0.0, 1.0}; }

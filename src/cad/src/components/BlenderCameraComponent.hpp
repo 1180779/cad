@@ -13,23 +13,25 @@
 
 #include "CameraComponent.hpp"
 
-class BlenderCameraComponent final : public QObject, public CameraComponent
-{
-    Q_OBJECT
-
-    Q_PROPERTY(double radius READ getRadius WRITE setRadius NOTIFY radiusChanged)
+class BlenderCameraComponent final : public QObject, public CameraComponent {
+    Q_OBJECT Q_PROPERTY(double radius READ getRadius WRITE setRadius NOTIFY radiusChanged)
 
     Q_PROPERTY(double fov READ getFov WRITE setFov NOTIFY fovChanged)
 
     Q_PROPERTY(double nearPlane READ getNearPlane WRITE setNearPlane NOTIFY nearPlaneChanged)
+
     Q_PROPERTY(double farPlane READ getFarPlane WRITE setFarPlane NOTIFY farPlaneChanged)
 
     Q_PROPERTY(double targetX READ getTargetX WRITE setTargetX NOTIFY targetXChanged)
+
     Q_PROPERTY(double targetY READ getTargetY WRITE setTargetY NOTIFY targetYChanged)
+
     Q_PROPERTY(double targetZ READ getTargetZ WRITE setTargetZ NOTIFY targetZChanged)
 
     Q_PROPERTY(double zoomFactor READ getZoomFactor WRITE setZoomFactor NOTIFY zoomFactorChanged)
+
     Q_PROPERTY(bool isOrtho READ isOrtho WRITE setIsOrtho NOTIFY isOrthoChanged)
+
     Q_PROPERTY(double orthoHeight READ getOrthoHeight WRITE setOrthoHeight NOTIFY orthoHeightChanged)
 
 public:
@@ -48,14 +50,14 @@ public:
     static constexpr cadm::cadf s_orthoHeightMin = 0.01;
     static constexpr cadm::cadf s_orthoHeightMax = 1000.0;
 
-    explicit BlenderCameraComponent(QObject *parent = nullptr)
-        : QObject(parent)
-    {
-    }
+    explicit BlenderCameraComponent(QObject *parent = nullptr) : QObject(parent) {}
 
     [[nodiscard]] cadm::vec3 forward() const;
+
     [[nodiscard]] cadm::vec3 right() const;
+
     [[nodiscard]] cadm::vec3 up() const;
+
     [[nodiscard]] cadm::vec3 getPosition() const;
 
     [[nodiscard]] cadm::cadf getRadius() const { return m_radius; }
@@ -73,17 +75,25 @@ public:
     [[nodiscard]] cadm::cadf getOrthoHeight() const { return m_orthoHeight; }
 
     void setTarget(const cadm::vec3 &value);
+
     void setTargetX(cadm::cadf value);
+
     void setTargetY(cadm::cadf value);
+
     void setTargetZ(cadm::cadf value);
 
     void setRadius(cadm::cadf value);
+
     void setFov(cadm::cadf value);
+
     void setNearPlane(cadm::cadf value);
+
     void setFarPlane(cadm::cadf value);
 
     void setZoomFactor(cadm::cadf factor);
+
     void setIsOrtho(bool value);
+
     void setOrthoHeight(cadm::cadf value);
 
 private:
@@ -100,20 +110,28 @@ private:
     bool m_isOrtho = false;
     cadm::cadf m_orthoHeight = 5.0;
 
-    signals :
+    signals  :
+
+    
+
     void radiusChanged(double radius);
 
     void fovChanged(double fov);
 
     void nearPlaneChanged(double plane);
+
     void farPlaneChanged(double plane);
 
     void targetXChanged(double x);
+
     void targetYChanged(double y);
+
     void targetZChanged(double z);
 
     void zoomFactorChanged(double height);
+
     void isOrthoChanged(bool isOrtho);
+
     void orthoHeightChanged(double height);
 
     void propertyUpdated();
@@ -121,6 +139,5 @@ private:
 private:
     friend class BlenderCameraStrategy;
 };
-
 
 #endif //CAD_CAMERA_HPP

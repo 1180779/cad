@@ -5,8 +5,7 @@
 #ifndef CAD_COMMON_H
 #define CAD_COMMON_H
 
-namespace cadm
-{
+namespace cadm {
     using cadf = float;
 
     constexpr float feps = 1e-6f;

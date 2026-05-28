@@ -1,5 +1,5 @@
 # CMake build directories
-cmake-build-*/
+cmake-build-**/
 build/
 out/
 
@@ -25,7 +25,6 @@ Testing/
 
 # IDE - JetBrains (CLion, etc.)
 .idea/
-cmake-build-*/
 
 # Qt generated files
 *_autogen/
@@ -35,7 +34,3 @@ ui_*.h
 
 # Catch2 - FetchContent downloaded dependencies
 _deps/
-
-# Executables
-/CLAUDE.md
-.claude

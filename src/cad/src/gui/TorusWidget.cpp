@@ -1,9 +1,7 @@
 #include "TorusWidget.hpp"
 #include <QLabel>
 
-TorusWidget::TorusWidget(TorusGeometry *torus, QWidget *parent)
-    : ComponentWidget(torus, parent), m_torus(torus)
-{
+TorusWidget::TorusWidget(TorusGeometry *torus, QWidget *parent) : ComponentWidget(torus, parent), m_torus(torus) {
     const auto layout = new QFormLayout(this);
 
     setUpMajorRadiusControls(layout);
@@ -22,33 +20,32 @@ TorusWidget::TorusWidget(TorusGeometry *torus, QWidget *parent)
     connect(m_torus, &TorusGeometry::minorSegmentsChanged, this, &TorusWidget::onMinorSegmentsChanged);
 }
 
-void TorusWidget::onMajorRadiusChanged(const double value) const
-{
+void TorusWidget::onMajorRadiusChanged(const double value) const {
     m_majorRadius->setValue(value);
     m_minorRadius->setMaximum(value - s_minorRadiusMin);
-    emit const_cast<TorusWidget*>(this)->propertyChanged();
+    emit
+    const_cast<TorusWidget*>(this)->propertyChanged();
 }
 
-void TorusWidget::onMinorRadiusChanged(const double value) const
-{
+void TorusWidget::onMinorRadiusChanged(const double value) const {
     m_minorRadius->setValue(value);
-    emit const_cast<TorusWidget*>(this)->propertyChanged();
+    emit
+    const_cast<TorusWidget*>(this)->propertyChanged();
 }
 
-void TorusWidget::onMajorSegmentsChanged(const int value) const
-{
+void TorusWidget::onMajorSegmentsChanged(const int value) const {
     m_majorSegments->setValue(value);
-    emit const_cast<TorusWidget*>(this)->propertyChanged();
+    emit
+    const_cast<TorusWidget*>(this)->propertyChanged();
 }
 
-void TorusWidget::onMinorSegmentsChanged(const int value) const
-{
+void TorusWidget::onMinorSegmentsChanged(const int value) const {
     m_minorSegments->setValue(value);
-    emit const_cast<TorusWidget*>(this)->propertyChanged();
+    emit
+    const_cast<TorusWidget*>(this)->propertyChanged();
 }
 
-void TorusWidget::setUpMajorRadiusControls(QFormLayout *const layout)
-{
+void TorusWidget::setUpMajorRadiusControls(QFormLayout * const layout) {
     m_majorRadius = new ModifierDoubleSpinBox();
     m_majorRadius->setMinimum(s_majorRadiusMin);
     m_majorRadius->setMaximum(s_majorRadiusMax);
@@ -59,8 +56,7 @@ void TorusWidget::setUpMajorRadiusControls(QFormLayout *const layout)
     layout->addRow(new QLabel("Major Radius"), m_majorRadius);
 }
 
-void TorusWidget::setUpMinorRadiusControls(QFormLayout *const layout)
-{
+void TorusWidget::setUpMinorRadiusControls(QFormLayout * const layout) {
     m_minorRadius = new ModifierDoubleSpinBox();
     m_minorRadius->setMinimum(s_minorRadiusMin);
     m_minorRadius->setMaximum(m_torus->getMajorRadius() - s_minorRadiusMin);
@@ -71,8 +67,7 @@ void TorusWidget::setUpMinorRadiusControls(QFormLayout *const layout)
     layout->addRow(new QLabel("Minor Radius"), m_minorRadius);
 }
 
-void TorusWidget::setUpMajorSegmentsControls(QFormLayout *const layout)
-{
+void TorusWidget::setUpMajorSegmentsControls(QFormLayout * const layout) {
     m_majorSegments = new ModifierSpinBox();
     m_majorSegments->setMinimum(s_majorSegmentsMin);
     m_majorSegments->setMaximum(s_majorSegmentsMax);
@@ -82,8 +77,7 @@ void TorusWidget::setUpMajorSegmentsControls(QFormLayout *const layout)
     layout->addRow(new QLabel("Major Segments"), m_majorSegments);
 }
 
-void TorusWidget::setUpMinorSegmentsControls(QFormLayout *const layout)
-{
+void TorusWidget::setUpMinorSegmentsControls(QFormLayout * const layout) {
     m_minorSegments = new ModifierSpinBox();
     m_minorSegments->setMinimum(s_minorSegmentsMin);
     m_minorSegments->setMaximum(s_minorSegmentsMax);

@@ -16,9 +16,7 @@
 #include <cad_math/vec3.hpp>
 #include <cmath>
 
-
-void RenderSystem::initialize()
-{
+void RenderSystem::initialize() {
     SHADER_ATTACHING_CHECK(m_basicShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/basicShader.vert"));
     SHADER_ATTACHING_CHECK(m_basicShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/basicShader.frag"));
 
@@ -113,10 +111,8 @@ void RenderSystem::renderInfiniteGrid(
     m_gridShader->release();
 }
 
-void RenderSystem::regenerateGeometry(const Scene &scene)
-{
-    for (const auto &e : scene.getEntities())
-    {
+void RenderSystem::regenerateGeometry(const Scene &scene) {
+    for (const auto &e : scene.getEntities()) {
         const auto geometry = e->getComponent<GeometryComponent>();
         if (!geometry) { continue; }
         if (auto *geo = geometry.value();
@@ -128,10 +124,8 @@ void RenderSystem::regenerateGeometry(const Scene &scene)
     }
 }
 
-void RenderSystem::renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *const gl) const
-{
-    for (const auto &e : scene.getEntities())
-    {
+void RenderSystem::renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *const gl) const {
+    for (const auto &e : scene.getEntities()) {
         const auto geometry = e->getComponent<GeometryComponent>();
         const auto transform = e->getComponent<TransformComponent>();
         if (!geometry || !transform) { continue; }
@@ -139,7 +133,12 @@ void RenderSystem::renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_C
         if (pGeo->m_lineIndices.empty()) { continue; }
 
         SHADER_SET_UNIFORM_CHECK(
-            m_wireframeShader->setUniform1("u_highlightStrength", e->isSelected() ? s_selectionHS : s_noSelectionHS)
+            m_wireframeShader->setUniform1(
+                "u_highlightStrength",
+                e->isSelected()
+                    ? s_selectionHS
+                    : s_noSelectionHS
+            )
         );
         SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
         gl->glBindVertexArray(pGeo->m_VAO);
@@ -148,11 +147,9 @@ void RenderSystem::renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_C
     }
 }
 
-void RenderSystem::renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *const gl) const
-{
+void RenderSystem::renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *const gl) const {
     gl->glDepthMask(GL_FALSE);
-    for (const auto &e : scene.getEntities())
-    {
+    for (const auto &e : scene.getEntities()) {
         const auto geometry = e->getComponent<GeometryComponent>();
         const auto transform = e->getComponent<TransformComponent>();
         if (!geometry || !transform) { continue; }
@@ -160,7 +157,12 @@ void RenderSystem::renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4
         if (pGeo->m_triangleIndices.empty()) { continue; }
 
         SHADER_SET_UNIFORM_CHECK(
-            m_wireframeShader->setUniform1("u_highlightStrength", e->isSelected() ? s_selectionHS : s_noSelectionHS)
+            m_wireframeShader->setUniform1(
+                "u_highlightStrength",
+                e->isSelected()
+                    ? s_selectionHS
+                    : s_noSelectionHS
+            )
         );
         SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
         gl->glBindVertexArray(pGeo->m_VAO);
@@ -182,11 +184,10 @@ void RenderSystem::renderControlPoints(
     Scene &scene,
     const cadm::mat4 &view,
     const cadm::mat4 &projection,
-    QOpenGLFunctions_4_5_Core *const gl) const
-{
+    QOpenGLFunctions_4_5_Core *const gl
+) const {
     auto &pointRegistry = scene.getPointRegistry();
-    if (!pointRegistry.empty())
-    {
+    if (!pointRegistry.empty()) {
         m_pointShader->bind();
         SHADER_SET_UNIFORM_CHECK(m_pointShader->setUniformMat4("view", view));
         SHADER_SET_UNIFORM_CHECK(m_pointShader->setUniformMat4("projection", projection));
@@ -211,15 +212,13 @@ void RenderSystem::renderC0BezierCurves(
 ) const {
     // TODO: refactor to not bind shaders multiple times
     const auto gl = GL();
-    for (const auto &e : scene.getEntities())
-    {
+    for (const auto &e : scene.getEntities()) {
         const auto bezier = e->getComponent<BezierC0Component>();
         if (!bezier) { continue; }
         const auto *pBezier = bezier.value();
 
         if (const int segments = pBezier->segmentCount();
-            segments > 0 || pBezier->trailingEdges() > 0)
-        {
+            segments > 0 || pBezier->trailingEdges() > 0) {
             m_bezierCurveShader->bind();
             SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniformMat4("MVP", vp));
             SHADER_SET_UNIFORM_CHECK(
@@ -244,8 +243,7 @@ void RenderSystem::renderC0BezierCurves(
 
             // render each patch with its own adaptive tessellation count
             SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastPrimitive", 0));
-            for (int p = 0; p < totalPatches; ++p)
-            {
+            for (int p = 0; p < totalPatches; ++p) {
                 const int base = p * 3;
                 const cadm::vec3 pts[4] = {
                     registry.getPosition(cps[base]),
@@ -284,8 +282,7 @@ void RenderSystem::renderC0BezierCurves(
         }
 
         // draw control polygon
-        if (pBezier->getShowPolygon() && pBezier->getPolygonIndexCount() >= 2)
-        {
+        if (pBezier->getShowPolygon() && pBezier->getPolygonIndexCount() >= 2) {
             m_wireframeShader->bind();
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
@@ -447,8 +444,8 @@ void RenderSystem::renderC2BezierCurves(
 void RenderSystem::renderBezierCurves(
     Scene &scene,
     const cadm::mat4 &view,
-    const cadm::mat4 &projection) const
-{
+    const cadm::mat4 &projection
+) const {
     const cadm::mat4 vp = projection * view;
     renderC0BezierCurves(scene, view, projection, vp);
     renderC2BezierCurves(scene, view, projection, vp);
@@ -539,8 +536,8 @@ void RenderSystem::renderSelectionRect(
     const cadm::cadf x0Ndc,
     const cadm::cadf y0Ndc,
     const cadm::cadf x1Ndc,
-    const cadm::cadf y1Ndc) const
-{
+    const cadm::cadf y1Ndc
+) const {
     const cadm::cadf verts[8] = {
         x0Ndc,
         y0Ndc,
@@ -575,8 +572,8 @@ void RenderSystem::renderSelectionRect(
 void RenderSystem::renderPivotMarker(
     const cadm::vec3 &pos,
     const cadm::mat4 &view,
-    const cadm::mat4 &projection) const
-{
+    const cadm::mat4 &projection
+) const {
     const auto gl = GL();
     const cadm::mat4 model = cadm::mat4::translation(pos);
 
@@ -598,15 +595,13 @@ void RenderSystem::renderPivotMarker(
     m_wireframeShader->release();
 }
 
-void RenderSystem::shutdown()
-{
+void RenderSystem::shutdown() {
     UNIQUE_PTR_RELEASE_CHECK(m_basicShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_wireframeShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_axesShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_gridShader.release());
 
-    if (m_selectionRectVAO != 0)
-    {
+    if (m_selectionRectVAO != 0) {
         const auto gl = GL();
         gl->glDeleteBuffers(1, &m_selectionRectVBO);
         gl->glDeleteVertexArrays(1, &m_selectionRectVAO);

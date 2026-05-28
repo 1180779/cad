@@ -5,8 +5,7 @@
 
 #include "../components/Entity.hpp"
 
-class ComponentWidget : public QWidget
-{
+class ComponentWidget : public QWidget {
     Q_OBJECT
 
 public:
@@ -16,7 +15,7 @@ public:
 
     signals  :
 
-
+    
 
     void propertyChanged();
 

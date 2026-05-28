@@ -18,15 +18,18 @@ class BezierC0Component final : public GeometryComponent,
                                 public INewPointsTargetComponent<BezierC0Component> {
 public:
     explicit BezierC0Component(PointRegistry *registry);
+
     ~BezierC0Component() override;
 
     void addControlPoint(PointHandle h) override;
 
     void removeControlPointAt(int index);
+
     void removeControlPoint(PointHandle h);
 
     [[nodiscard]] const std::vector<PointHandle>& getControlPoints() const { return m_controlPoints; }
     [[nodiscard]] bool getShowPolygon() const { return m_showPolygon; }
+
     void setShowPolygon(bool v);
 
     [[nodiscard]] int segmentCount() const;
@@ -64,13 +67,17 @@ private:
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_polygonIndexBuf;
 
     void removeAssociatedCallback(PointHandle h);
+
     void removeLastPointIncremental();
+
     void removeMidPointPartial(int removedIndex);
 
     void rebuildPatchIndices();
+
     void rebuildPolygonLines();
 
     void setupPatchVao(QOpenGLFunctions_4_5_Core *gl);
+
     void setupPolygonVao(QOpenGLFunctions_4_5_Core *gl);
 };
 

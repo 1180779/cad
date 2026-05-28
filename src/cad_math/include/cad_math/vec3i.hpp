@@ -9,35 +9,24 @@
 
 #include "vec_base.hpp"
 
-namespace cadm
-{
+namespace cadm {
     template <>
-    struct vec<3, int> : cadm::vec_base<vec<3, int>, 3, int>
-    {
-        union
-        {
-            struct
-            {
+    struct vec<3, int> : cadm::vec_base<vec<3, int>, 3, int> {
+        union {
+            struct {
                 int x, y, z;
             };
 
-            struct
-            {
+            struct {
                 int r, g, b;
             };
 
             std::array<int, 3> data;
         };
 
-        constexpr vec()
-            : x(0), y(0), z(0)
-        {
-        }
+        constexpr vec() : x(0), y(0), z(0) {}
 
-        constexpr vec(const int x, const int y, const int z)
-            : x(x), y(y), z(z)
-        {
-        }
+        constexpr vec(const int x, const int y, const int z) : x(x), y(y), z(z) {}
 
         constexpr static vec unitX() noexcept { return {1, 0, 0}; }
         constexpr static vec unitY() noexcept { return {0, 1, 0}; }

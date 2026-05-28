@@ -7,23 +7,32 @@
 #include <common/ModifierSpinBox.hpp>
 #include "../components/GeometryComponent.hpp"
 
-class TorusWidget : public ComponentWidget
-{
+class TorusWidget : public ComponentWidget {
     Q_OBJECT
 
 public:
     explicit TorusWidget(TorusGeometry *torus, QWidget *parent = nullptr);
 
-private slots:
+private
+    slots  :
+
+    
+
     void onMajorRadiusChanged(double value) const;
+
     void onMinorRadiusChanged(double value) const;
+
     void onMajorSegmentsChanged(int value) const;
+
     void onMinorSegmentsChanged(int value) const;
 
 private:
     void setUpMajorRadiusControls(QFormLayout *layout);
+
     void setUpMinorRadiusControls(QFormLayout *layout);
+
     void setUpMajorSegmentsControls(QFormLayout *layout);
+
     void setUpMinorSegmentsControls(QFormLayout *layout);
 
     static constexpr double s_minorRadiusMin = 0.1;

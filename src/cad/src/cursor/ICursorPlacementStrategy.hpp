@@ -12,8 +12,7 @@
 /// Generic strategy for resolving a mouse event to a 3D world-space position.
 ///
 /// Used for cursor placement, control-point dragging, and click-to-add modes.
-class IViewportPositionStrategy
-{
+class IViewportPositionStrategy {
 public:
     virtual ~IViewportPositionStrategy() = default;
 
@@ -22,11 +21,10 @@ public:
         int viewportW,
         int viewportH,
         const cadm::mat4 &invView,
-        const cadm::mat4 &invProj) = 0;
+        const cadm::mat4 &invProj
+    ) = 0;
 
-    virtual void onGridPlanesChanged(int mask)
-    {
-    }
+    virtual void onGridPlanesChanged(int mask) {}
 };
 
 #endif //CAD_ICURSORPLACEMENTSTRATEGY_HPP

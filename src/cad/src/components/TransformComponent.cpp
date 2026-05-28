@@ -6,20 +6,15 @@
 
 TransformComponent::TransformComponent() = default;
 
-TransformComponent::TransformComponent(const cadm::vec3 &translation)
-    : m_translation(translation)
-{
-}
+TransformComponent::TransformComponent(const cadm::vec3 &translation) : m_translation(translation) {}
 
-TransformComponent::TransformComponent(const cadm::vec3 &translation, const cadm::vec3 &rotation)
-    : m_translation(translation), m_rotation(rotation)
-{
-}
+TransformComponent::TransformComponent(const cadm::vec3 &translation, const cadm::vec3 &rotation) : m_translation(
+        translation
+    ),
+    m_rotation(rotation) {}
 
-const cadm::mat4& TransformComponent::getModelMatrix() const
-{
-    if (m_isDirty)
-    {
+const cadm::mat4& TransformComponent::getModelMatrix() const {
+    if (m_isDirty) {
         m_isDirty = false;
         m_modelMatrix = cadm::mat4::translation(m_translation)
             * cadm::mat4::rotZYX(m_rotation)
@@ -28,8 +23,7 @@ const cadm::mat4& TransformComponent::getModelMatrix() const
     return m_modelMatrix;
 }
 
-void TransformComponent::setTranslation(const cadm::vec3 &translation)
-{
+void TransformComponent::setTranslation(const cadm::vec3 &translation) {
     if (m_translation == translation) { return; }
     m_translation = translation;
     m_isDirty = true;
@@ -38,8 +32,7 @@ void TransformComponent::setTranslation(const cadm::vec3 &translation)
     emit translationZChanged(m_translation.z);
 }
 
-void TransformComponent::setScale(const cadm::vec3 &scale)
-{
+void TransformComponent::setScale(const cadm::vec3 &scale) {
     if (m_scale == scale) { return; }
     m_scale = scale;
     m_isDirty = true;
@@ -48,8 +41,7 @@ void TransformComponent::setScale(const cadm::vec3 &scale)
     emit scaleZChanged(m_scale.z);
 }
 
-void TransformComponent::setRotation(const cadm::vec3 &rotation)
-{
+void TransformComponent::setRotation(const cadm::vec3 &rotation) {
     if (m_rotation == rotation) { return; }
     m_rotation = rotation;
     m_isDirty = true;

@@ -14,10 +14,10 @@
 
 class Scene;
 
-class RenderSystem
-{
+class RenderSystem {
 public:
     void initialize();
+
     static void regenerateGeometry(const Scene &scene);
 
     void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVp) const;
@@ -26,11 +26,15 @@ public:
         cadm::cadf x0Ndc,
         cadm::cadf y0Ndc,
         cadm::cadf x1Ndc,
-        cadm::cadf y1Ndc) const;
+        cadm::cadf y1Ndc
+    ) const;
+
     void renderPivotMarker(
         const cadm::vec3 &pos,
         const cadm::mat4 &view,
-        const cadm::mat4 &projection) const;
+        const cadm::mat4 &projection
+    ) const;
+
     void renderTransformAxis(
         const cadm::vec3 &pivot,
         const cadm::mat4 &axisModel,
@@ -46,8 +50,7 @@ public:
     void setGridPlanes(const int planes) { m_gridPlanes = planes; }
     [[nodiscard]] int getGridPlanes() const { return m_gridPlanes; }
 
-    void setViewport(const int w, const int h)
-    {
+    void setViewport(const int w, const int h) {
         m_viewportW = w;
         m_viewportH = h;
     }
@@ -62,12 +65,16 @@ private:
     ) const;
 
     void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+
     void renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+
     void renderControlPoints(
         Scene &scene,
         const cadm::mat4 &view,
         const cadm::mat4 &projection,
-        QOpenGLFunctions_4_5_Core *gl) const;
+        QOpenGLFunctions_4_5_Core *gl
+    ) const;
+
     void renderC0BezierCurves(
         Scene &scene,
         const cadm::mat4 &view,
@@ -85,7 +92,8 @@ private:
     void renderBezierCurves(
         Scene &scene,
         const cadm::mat4 &view,
-        const cadm::mat4 &projection) const;
+        const cadm::mat4 &projection
+    ) const;
 
     AxesGeometry m_pivotAxes;
 

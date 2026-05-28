@@ -7,8 +7,7 @@
 #include "../camera/CameraController.hpp"
 
 /// @brief widget displaying the list of the entities from the scene
-class SceneHierarchyWidget : public QWidget
-{
+class SceneHierarchyWidget : public QWidget {
     Q_OBJECT
 
 public:
@@ -21,17 +20,26 @@ public:
     /// @param cameraController the CameraController for the scene
     void setCameraController(CameraController *cameraController);
 
-signals :
+    signals  :
+
+    
+
     void selectionChanged(QList<Entity*> entities);
 
     void deleteEntityRequested(Entity *e);
+
     void setAsCursorRequested(Entity *e);
+
     void setAsCameraRequested(EntityID id);
+
     void focusCameraRequested(Entity *e);
 
     void createTorusRequested();
+
     void createCursorRequested();
+
     void createPointRequested();
+
     void createBezierC0Requested();
 
     void createBezierC2Requested();
@@ -40,8 +48,10 @@ signals :
 
     void addSelectedPointsToNewPointsTargetEntityRequested(Entity *e);
 
-public slots:
+public
+    slots  :
     /// @brief update the m_listWidget to be in sync with the m_scene entities
+
     
 
     void refresh();
@@ -50,8 +60,13 @@ public slots:
     /// (m_scene is the source of the selection truth here)
     void syncSelectionFromScene();
 
-private slots:
+private
+    slots  :
+
+    
+
     void onItemSelectionChanged();
+
     void onItemChanged(const QListWidgetItem *item) const;
 
     /// @brief show context menu with generic entity actions (add new entity etc.)

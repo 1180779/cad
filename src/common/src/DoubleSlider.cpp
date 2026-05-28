@@ -4,25 +4,19 @@
 
 #include "../include/common/DoubleSlider.hpp"
 
-DoubleSlider::DoubleSlider(QWidget *parent)
-    : QSlider(parent)
-{
+DoubleSlider::DoubleSlider(QWidget *parent) : QSlider(parent) {
     connect(this, &QSlider::valueChanged, this, &DoubleSlider::notifyValueChanged);
 }
 
-void DoubleSlider::setMappingRange(const double start, const double end)
-{
-    if (start > end) {
-        return;
-    }
+void DoubleSlider::setMappingRange(const double start, const double end) {
+    if (start > end) { return; }
 
     m_mappingRangeStart = start;
     m_mappingRangeEnd = end;
     m_mappingRangeLength = end - start;
 }
 
-void DoubleSlider::setValue(double value)
-{
+void DoubleSlider::setValue(double value) {
     value = std::clamp(value, m_mappingRangeStart, m_mappingRangeEnd);
 
     const int intRangeLength = maximum() - minimum();
@@ -30,15 +24,13 @@ void DoubleSlider::setValue(double value)
     QSlider::setValue(minimum() + intValue);
 }
 
-double DoubleSlider::value() const
-{
+double DoubleSlider::value() const {
     const int intRangeLength = maximum() - minimum();
     const int intValue = QSlider::value() - minimum();
     return static_cast<double>(intValue) / intRangeLength * m_mappingRangeLength + m_mappingRangeStart;
 }
 
-void DoubleSlider::notifyValueChanged(const int value)
-{
+void DoubleSlider::notifyValueChanged(const int value) {
     const double doubleValue = static_cast<double>(value - minimum()) / (maximum() - minimum()) * m_mappingRangeLength
         + m_mappingRangeStart;
     emit doubleValueChanged(doubleValue);

@@ -10,14 +10,15 @@
 #include <cad_math/helpers.hpp>
 #include <numbers>
 
-namespace
-{
+namespace {
     using namespace cadm;
 
     constexpr cadf kPi = std::numbers::pi_v<cadf>;
 
-    TEST_CASE("eulerZYXFromRotMat", "[math][euler]")
-    {
+    TEST_CASE(
+        "eulerZYXFromRotMat",
+        "[math][euler]"
+    ) {
         SECTION("Identity")
         {
             const auto m = mat3::identity();
@@ -59,8 +60,10 @@ namespace
         }
     }
 
-    TEST_CASE("vec3 basic operations", "[math][vec3]")
-    {
+    TEST_CASE(
+        "vec3 basic operations",
+        "[math][vec3]"
+    ) {
         vec3 v1(1.0f, 2.0f, 3.0f);
         vec3 v2(4.0f, 5.0f, 6.0f);
 
@@ -103,8 +106,10 @@ namespace
         }
     }
 
-    TEST_CASE("vec4 basic operations", "[math][vec4]")
-    {
+    TEST_CASE(
+        "vec4 basic operations",
+        "[math][vec4]"
+    ) {
         vec4 v1(1.0f, 2.0f, 3.0f, 4.0f);
         vec4 v2(5.0f, 6.0f, 7.0f, 8.0f);
 
@@ -118,8 +123,10 @@ namespace
         }
     }
 
-    TEST_CASE("mat4 basic operations", "[math][mat4]")
-    {
+    TEST_CASE(
+        "mat4 basic operations",
+        "[math][mat4]"
+    ) {
         mat4 m1 = mat4::identity();
         mat4 m2(
             vec4(1, 5, 9, 13),
@@ -146,8 +153,10 @@ namespace
         }
     }
 
-    TEST_CASE("mat4 inverse", "[math][mat4]")
-    {
+    TEST_CASE(
+        "mat4 inverse",
+        "[math][mat4]"
+    ) {
         SECTION("Identity Inverse")
         {
             mat4 m = mat4::identity();
@@ -182,8 +191,10 @@ namespace
         }
     }
 
-    TEST_CASE("mat4 inverseSafe", "[math][mat4]")
-    {
+    TEST_CASE(
+        "mat4 inverseSafe",
+        "[math][mat4]"
+    ) {
         SECTION("Invertible Matrix")
         {
             mat4 m = mat4::identity();
@@ -221,8 +232,10 @@ namespace
         }
     }
 
-    TEST_CASE("mat_row_ref operator overloading", "[math][mat4][row_ref]")
-    {
+    TEST_CASE(
+        "mat_row_ref operator overloading",
+        "[math][mat4][row_ref]"
+    ) {
         SECTION("Compound assignment operators")
         {
             mat4 m = mat4::identity();

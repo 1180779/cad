@@ -11,8 +11,7 @@
 #include "ViewportTypes.hpp"
 
 /// Vim-like status bar widget with the most relevant information available at a glance.
-class StatusBarWidget final : public QWidget
-{
+class StatusBarWidget final : public QWidget {
     Q_OBJECT
 
 public:
@@ -26,10 +25,17 @@ public:
     static constexpr auto s_activeStyle =
         "color: #ff00ff; font-weight: bold;";
 
-public slots:
+public
+    slots  :
+
+    
+
     void setTransformMode(TransformMode mode, const QString &axisInfo) const;
+
     void setClickToAddMode(bool active) const;
+
     void setCameraName(const QString &name) const;
+
     void setSelectionCount(int count) const;
 
     void setActiveNewPointsTargetName(const QString &name) const;

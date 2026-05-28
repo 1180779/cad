@@ -47,9 +47,7 @@ void PointPropertiesWidget::setPoint(const PointHandle handle) {
     setEnabled(valid);
     // setVisible(valid);
 
-    if (!valid) {
-        return;
-    }
+    if (!valid) { return; }
 
     const auto pos = m_registry->getPosition(handle);
 
@@ -66,8 +64,7 @@ void PointPropertiesWidget::setPoint(const PointHandle handle) {
     m_z->blockSignals(false);
 }
 
-void PointPropertiesWidget::onXChanged(const double value)
-{
+void PointPropertiesWidget::onXChanged(const double value) {
     if (!m_registry || m_handle == InvalidPointHandle) { return; }
     auto pos = m_registry->getPosition(m_handle);
     pos.x = static_cast<cadm::cadf>(value);
@@ -75,8 +72,7 @@ void PointPropertiesWidget::onXChanged(const double value)
     emit propertyChanged();
 }
 
-void PointPropertiesWidget::onYChanged(const double value)
-{
+void PointPropertiesWidget::onYChanged(const double value) {
     if (!m_registry || m_handle == InvalidPointHandle) { return; }
     auto pos = m_registry->getPosition(m_handle);
     pos.y = static_cast<cadm::cadf>(value);
@@ -84,8 +80,7 @@ void PointPropertiesWidget::onYChanged(const double value)
     emit propertyChanged();
 }
 
-void PointPropertiesWidget::onZChanged(const double value)
-{
+void PointPropertiesWidget::onZChanged(const double value) {
     if (!m_registry || m_handle == InvalidPointHandle) { return; }
     auto pos = m_registry->getPosition(m_handle);
     pos.z = static_cast<cadm::cadf>(value);

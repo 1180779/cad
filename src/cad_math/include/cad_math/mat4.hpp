@@ -10,26 +10,18 @@
 
 #include "mat3.hpp"
 
-namespace cadm
-{
+namespace cadm {
     template <std::size_t R, std::size_t C, typename T>
     struct mat;
 
     template <>
-    struct mat<4, 4, cadf> : public mat_base<mat, mat<4, 4, cadf>, vec4, vec4, 4, 4, cadf>
-    {
-        union
-        {
+    struct mat<4, 4, cadf> : public mat_base<mat, mat<4, 4, cadf>, vec4, vec4, 4, 4, cadf> {
+        union {
             cadf data[16]{};
             vec4 columns[4];
         };
 
-        constexpr mat()
-        {
-            for (auto &cell : data) {
-                cell = 0;
-            }
-        }
+        constexpr mat() { for (auto &cell : data) { cell = 0; } }
 
         constexpr mat(
             const cadf x0,
@@ -47,24 +39,22 @@ namespace cadm
             const cadf w0,
             const cadf w1,
             const cadf w2,
-            const cadf w3)
-        {
+            const cadf w3
+        ) {
             columns[0] = vec4(x0, x1, x2, x3);
             columns[1] = vec4(y0, y1, y2, y3);
             columns[2] = vec4(z0, z1, z2, z3);
             columns[3] = vec4(w0, w1, w2, w3);
         }
 
-        constexpr mat(const vec4 &c0, const vec4 &c1, const vec4 &c2, const vec4 &c3)
-        {
+        constexpr mat(const vec4 &c0, const vec4 &c1, const vec4 &c2, const vec4 &c3) {
             columns[0] = c0;
             columns[1] = c1;
             columns[2] = c2;
             columns[3] = c3;
         }
 
-        constexpr static mat identity()
-        {
+        constexpr static mat identity() {
             return mat{
                 vec4::unitX(),
                 vec4::unitY(),
@@ -77,8 +67,7 @@ namespace cadm
         // https://www.3dgep.com/understanding-the-view-matrix/
 
         // Look at matrix for Right Handed coordinate system
-        constexpr static mat lookAtRH(const vec3 &eye, const vec3 &target, const vec3 &up)
-        {
+        constexpr static mat lookAtRH(const vec3 &eye, const vec3 &target, const vec3 &up) {
             const vec3 zAxis = (eye - target).normalized(); // backward (away from target)
             const vec3 xAxis = up.cross(zAxis).normalized(); // right
             const vec3 yAxis = zAxis.cross(xAxis); // up
@@ -97,8 +86,8 @@ namespace cadm
             const cadf bottom,
             const cadf top,
             const cadf near,
-            const cadf far)
-        {
+            const cadf far
+        ) {
             return {
                 vec4(static_cast<cadf>(2.0 / (right - left)), 0.0, 0.0, 0.0),
                 vec4(0.0, static_cast<cadf>(2.0 / (top - bottom)), 0.0, 0.0),
@@ -107,7 +96,8 @@ namespace cadm
                     -(right + left) / (right - left),
                     -(top + bottom) / (top - bottom),
                     -(far + near) / (far - near),
-                    1.0)
+                    1.0
+                )
             };
         }
 
@@ -117,8 +107,7 @@ namespace cadm
         // TODO: check if constexpr is allowed here in MSVC
 
         // projection minus one to one
-        static mat projectionMO(const cadf aspect, const cadf fov, const cadf near, const cadf far)
-        {
+        static mat projectionMO(const cadf aspect, const cadf fov, const cadf near, const cadf far) {
             const cadf ctg = std::cos(fov / 2) / std::sin(fov / 2);
             return {
                 vec4(ctg / aspect, 0, 0, 0),
@@ -130,13 +119,9 @@ namespace cadm
 
         constexpr static mat scale(const vec3 &s) { return scale(s.x, s.y, s.z); }
 
-        constexpr static mat scale(const cadf sx, const cadf sy, const cadf sz)
-        {
-            return diag(sx, sy, sz, 1.0);
-        }
+        constexpr static mat scale(const cadf sx, const cadf sy, const cadf sz) { return diag(sx, sy, sz, 1.0); }
 
-        constexpr static mat diag(const cadf d0, const cadf d1, const cadf d2, const cadf d3)
-        {
+        constexpr static mat diag(const cadf d0, const cadf d1, const cadf d2, const cadf d3) {
             return mat{
                 {d0, 0, 0, 0},
                 {0, d1, 0, 0},
@@ -147,8 +132,7 @@ namespace cadm
 
         constexpr static mat translation(const vec3 &t) { return translation(t.x, t.y, t.z); }
 
-        constexpr static mat translation(const cadf tx, const cadf ty, const cadf tz)
-        {
+        constexpr static mat translation(const cadf tx, const cadf ty, const cadf tz) {
             return {
                 vec4::unitX(),
                 vec4::unitY(),
@@ -157,8 +141,7 @@ namespace cadm
             };
         }
 
-        static mat rotX(const cadf alpha)
-        {
+        static mat rotX(const cadf alpha) {
             const cadf c = std::cos(alpha);
             const cadf s = std::sin(alpha);
 
@@ -170,8 +153,7 @@ namespace cadm
             };
         }
 
-        static mat rotY(const cadf alpha)
-        {
+        static mat rotY(const cadf alpha) {
             const cadf c = std::cos(alpha);
             const cadf s = std::sin(alpha);
 
@@ -183,8 +165,7 @@ namespace cadm
             };
         }
 
-        static mat rotZ(const cadf alpha)
-        {
+        static mat rotZ(const cadf alpha) {
             const cadf c = std::cos(alpha);
             const cadf s = std::sin(alpha);
 
@@ -196,21 +177,14 @@ namespace cadm
             };
         }
 
-        static mat rotZYX(const vec3 &xyz)
-        {
-            return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x);
-        }
+        static mat rotZYX(const vec3 &xyz) { return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x); }
 
-        static mat rotZYX(const cadf x, const cadf y, const cadf z)
-        {
-            return rotZ(z) * rotY(y) * rotX(x);
-        }
+        static mat rotZYX(const cadf x, const cadf y, const cadf z) { return rotZ(z) * rotY(y) * rotX(x); }
 
         // Rodrigues rotation matrix around axis `u` by angle `phi` (radians).
         //
         // Precondition: `u` must be a unit vector.
-        static mat rotAxis(const cadf phi, const vec3 &u)
-        {
+        static mat rotAxis(const cadf phi, const vec3 &u) {
             assert(std::abs(u.lengthSquared() - cadf{1}) < eps && "rotAxis: axis must be a unit vector");
             const auto sin = std::sin(phi);
             const auto cos = std::cos(phi);
@@ -238,8 +212,7 @@ namespace cadm
             };
         }
 
-        [[nodiscard]] constexpr mat3 upperLeft3x3() const
-        {
+        [[nodiscard]] constexpr mat3 upperLeft3x3() const {
             return {
                 vec3(col(0)[0], col(0)[1], col(0)[2]),
                 vec3(col(1)[0], col(1)[1], col(1)[2]),
@@ -247,57 +220,37 @@ namespace cadm
             };
         }
 
-        constexpr void inverseTranslation()
-        {
+        constexpr void inverseTranslation() {
             (*this)(0, 3) = -(*this)(0, 3);
             (*this)(1, 3) = -(*this)(1, 3);
             (*this)(2, 3) = -(*this)(2, 3);
         }
 
-        [[nodiscard]] constexpr mat inversedTranslation() const
-        {
+        [[nodiscard]] constexpr mat inversedTranslation() const {
             auto copy = *this;
             copy.inverseTranslation();
             return copy;
         }
 
-        constexpr void inverseScale()
-        {
-            if ((*this)(0, 0) != 0.0) {
-                (*this)(0, 0) = static_cast<cadf>(1.0 / (*this)(0, 0));
-            }
-            if ((*this)(1, 1) != 0.0) {
-                (*this)(1, 1) = static_cast<cadf>(1.0 / (*this)(1, 1));
-            }
-            if ((*this)(2, 2) != 0.0) {
-                (*this)(2, 2) = static_cast<cadf>(1.0 / (*this)(2, 2));
-            }
+        constexpr void inverseScale() {
+            if ((*this)(0, 0) != 0.0) { (*this)(0, 0) = static_cast<cadf>(1.0 / (*this)(0, 0)); }
+            if ((*this)(1, 1) != 0.0) { (*this)(1, 1) = static_cast<cadf>(1.0 / (*this)(1, 1)); }
+            if ((*this)(2, 2) != 0.0) { (*this)(2, 2) = static_cast<cadf>(1.0 / (*this)(2, 2)); }
         }
 
-        [[nodiscard]] constexpr mat inversedScale() const
-        {
+        [[nodiscard]] constexpr mat inversedScale() const {
             auto copy = *this;
             copy.inverseScale();
             return copy;
         }
 
-        constexpr void inverseRotation()
-        {
-            transpose();
-        }
+        constexpr void inverseRotation() { transpose(); }
 
-        [[nodiscard]] constexpr mat inversedRotation() const
-        {
-            return transposed();
-        }
+        [[nodiscard]] constexpr mat inversedRotation() const { return transposed(); }
 
-        void inverseView()
-        {
-            *this = inversedView();
-        }
+        void inverseView() { *this = inversedView(); }
 
-        [[nodiscard]] constexpr mat inversedView() const
-        {
+        [[nodiscard]] constexpr mat inversedView() const {
             const auto col0 = col(0).xyz();
             const auto col1 = col(1).xyz();
             const auto col2 = col(2).xyz();
@@ -315,13 +268,9 @@ namespace cadm
             };
         }
 
-        void inverseProjectionMO()
-        {
-            *this = inversedProjectionMO();
-        }
+        void inverseProjectionMO() { *this = inversedProjectionMO(); }
 
-        [[nodiscard]] mat inversedProjectionMO() const
-        {
+        [[nodiscard]] mat inversedProjectionMO() const {
             const auto a = col(0)[0];
             const auto b = col(1)[1];
             const auto c = col(2)[2];
@@ -335,13 +284,9 @@ namespace cadm
             };
         }
 
-        void inverseOrtho()
-        {
-            *this = inversedOrtho();
-        }
+        void inverseOrtho() { *this = inversedOrtho(); }
 
-        [[nodiscard]] constexpr mat inversedOrtho() const
-        {
+        [[nodiscard]] constexpr mat inversedOrtho() const {
             const auto a = col(0)[0];
             const auto b = col(1)[1];
             const auto c = col(2)[2];

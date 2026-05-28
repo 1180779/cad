@@ -7,9 +7,8 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 
-CadCameraWidget::CadCameraWidget(CadCameraComponent *camera, QWidget *parent)
-    : ComponentWidget{camera, parent}, m_camera{camera}
-{
+CadCameraWidget::CadCameraWidget(CadCameraComponent *camera, QWidget *parent) : ComponentWidget{camera, parent},
+    m_camera{camera} {
     const auto layout = new QFormLayout(this);
     setUpPositionControls(layout);
     setUpTargetControls(layout);
@@ -35,93 +34,79 @@ CadCameraWidget::CadCameraWidget(CadCameraComponent *camera, QWidget *parent)
     connect(m_camera, &CadCameraComponent::propertyUpdated, this, &CadCameraWidget::propertyChanged);
 }
 
-
-void CadCameraWidget::onPositionXChanged(const double value) const
-{
+void CadCameraWidget::onPositionXChanged(const double value) const {
     m_positionX->blockSignals(true);
     m_positionX->setValue(value);
     m_positionX->blockSignals(false);
 }
 
-void CadCameraWidget::onPositionYChanged(const double value) const
-{
+void CadCameraWidget::onPositionYChanged(const double value) const {
     m_positionY->blockSignals(true);
     m_positionY->setValue(value);
     m_positionY->blockSignals(false);
 }
 
-void CadCameraWidget::onPositionZChanged(const double value) const
-{
+void CadCameraWidget::onPositionZChanged(const double value) const {
     m_positionZ->blockSignals(true);
     m_positionZ->setValue(value);
     m_positionZ->blockSignals(false);
 }
 
-void CadCameraWidget::onTargetXChanged(const double value) const
-{
+void CadCameraWidget::onTargetXChanged(const double value) const {
     m_targetX->blockSignals(true);
     m_targetX->setValue(value);
     m_targetX->blockSignals(false);
 }
 
-void CadCameraWidget::onTargetYChanged(const double value) const
-{
+void CadCameraWidget::onTargetYChanged(const double value) const {
     m_targetY->blockSignals(true);
     m_targetY->setValue(value);
     m_targetY->blockSignals(false);
 }
 
-void CadCameraWidget::onTargetZChanged(const double value) const
-{
+void CadCameraWidget::onTargetZChanged(const double value) const {
     m_targetZ->blockSignals(true);
     m_targetZ->setValue(value);
     m_targetZ->blockSignals(false);
 }
 
-void CadCameraWidget::onWorldUpXChanged(const double value) const
-{
+void CadCameraWidget::onWorldUpXChanged(const double value) const {
     m_worldUpX->blockSignals(true);
     m_worldUpX->setValue(value);
     m_worldUpX->blockSignals(false);
 }
 
-void CadCameraWidget::onWorldUpYChanged(const double value) const
-{
+void CadCameraWidget::onWorldUpYChanged(const double value) const {
     m_worldUpY->blockSignals(true);
     m_worldUpY->setValue(value);
     m_worldUpY->blockSignals(false);
 }
 
-void CadCameraWidget::onWorldUpZChanged(const double value) const
-{
+void CadCameraWidget::onWorldUpZChanged(const double value) const {
     m_worldUpZ->blockSignals(true);
     m_worldUpZ->setValue(value);
     m_worldUpZ->blockSignals(false);
 }
 
-void CadCameraWidget::onNearPlaneChanged(const double value) const
-{
+void CadCameraWidget::onNearPlaneChanged(const double value) const {
     m_nearPlane->blockSignals(true);
     m_nearPlane->setValue(value);
     m_nearPlane->blockSignals(false);
 }
 
-void CadCameraWidget::onFarPlaneChanged(const double value) const
-{
+void CadCameraWidget::onFarPlaneChanged(const double value) const {
     m_farPlane->blockSignals(true);
     m_farPlane->setValue(value);
     m_farPlane->blockSignals(false);
 }
 
-void CadCameraWidget::onOrthoHeightChanged(const double value) const
-{
+void CadCameraWidget::onOrthoHeightChanged(const double value) const {
     m_orthoHeight->blockSignals(true);
     m_orthoHeight->setValue(value);
     m_orthoHeight->blockSignals(false);
 }
 
-void CadCameraWidget::setUpPositionControls(QFormLayout *layout)
-{
+void CadCameraWidget::setUpPositionControls(QFormLayout *layout) {
     m_positionX = new QDoubleSpinBox();
     m_positionY = new QDoubleSpinBox();
     m_positionZ = new QDoubleSpinBox();
@@ -150,17 +135,20 @@ void CadCameraWidget::setUpPositionControls(QFormLayout *layout)
         m_positionX,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setPositionX);
+        &CadCameraComponent::setPositionX
+    );
     connect(
         m_positionY,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setPositionY);
+        &CadCameraComponent::setPositionY
+    );
     connect(
         m_positionZ,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setPositionZ);
+        &CadCameraComponent::setPositionZ
+    );
 
     const auto targetLayout = new QHBoxLayout();
     targetLayout->addWidget(m_positionX);
@@ -169,8 +157,7 @@ void CadCameraWidget::setUpPositionControls(QFormLayout *layout)
     layout->addRow(new QLabel("Position"), targetLayout);
 }
 
-void CadCameraWidget::setUpTargetControls(QFormLayout *layout)
-{
+void CadCameraWidget::setUpTargetControls(QFormLayout *layout) {
     m_targetX = new QDoubleSpinBox();
     m_targetY = new QDoubleSpinBox();
     m_targetZ = new QDoubleSpinBox();
@@ -199,17 +186,20 @@ void CadCameraWidget::setUpTargetControls(QFormLayout *layout)
         m_targetX,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setTargetX);
+        &CadCameraComponent::setTargetX
+    );
     connect(
         m_targetY,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setTargetY);
+        &CadCameraComponent::setTargetY
+    );
     connect(
         m_targetZ,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setTargetZ);
+        &CadCameraComponent::setTargetZ
+    );
 
     const auto targetLayout = new QHBoxLayout();
     targetLayout->addWidget(m_targetX);
@@ -218,8 +208,7 @@ void CadCameraWidget::setUpTargetControls(QFormLayout *layout)
     layout->addRow(new QLabel("Target"), targetLayout);
 }
 
-void CadCameraWidget::setUpWorldUpControls(QFormLayout *layout)
-{
+void CadCameraWidget::setUpWorldUpControls(QFormLayout *layout) {
     m_worldUpX = new QDoubleSpinBox();
     m_worldUpY = new QDoubleSpinBox();
     m_worldUpZ = new QDoubleSpinBox();
@@ -248,17 +237,20 @@ void CadCameraWidget::setUpWorldUpControls(QFormLayout *layout)
         m_worldUpX,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setWorldUpX);
+        &CadCameraComponent::setWorldUpX
+    );
     connect(
         m_worldUpY,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setWorldUpY);
+        &CadCameraComponent::setWorldUpY
+    );
     connect(
         m_worldUpZ,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setWorldUpZ);
+        &CadCameraComponent::setWorldUpZ
+    );
 
     const auto worldUpLayout = new QHBoxLayout();
     worldUpLayout->addWidget(m_worldUpX);
@@ -267,8 +259,7 @@ void CadCameraWidget::setUpWorldUpControls(QFormLayout *layout)
     layout->addRow(new QLabel("WorldUp"), worldUpLayout);
 }
 
-void CadCameraWidget::setUpProjectionControls(QFormLayout *layout)
-{
+void CadCameraWidget::setUpProjectionControls(QFormLayout *layout) {
     m_orthoHeight = new QDoubleSpinBox();
     m_orthoHeight->setRange(s_orthoHeightMin, s_orthoHeightMax);
     m_orthoHeight->setSingleStep(s_orthoHeightStep);
@@ -278,10 +269,8 @@ void CadCameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_orthoHeight,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         this,
-        [this](const double value)
-        {
-            m_camera->setOrthoHeight(value);
-        });
+        [this](const double value) { m_camera->setOrthoHeight(value); }
+    );
     layout->addRow("OrthoHeight", m_orthoHeight);
 
     m_nearPlane = new QDoubleSpinBox();
@@ -293,7 +282,8 @@ void CadCameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_nearPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setNearPlane);
+        &CadCameraComponent::setNearPlane
+    );
     layout->addRow("Near Plane", m_nearPlane);
 
     m_farPlane = new QDoubleSpinBox();
@@ -305,6 +295,7 @@ void CadCameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_farPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &CadCameraComponent::setFarPlane);
+        &CadCameraComponent::setFarPlane
+    );
     layout->addRow("Far Plane", m_farPlane);
 }

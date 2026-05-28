@@ -11,35 +11,48 @@
 #include <cad_math/vec3.hpp>
 #include <cad_math/mat4.hpp>
 
-class TransformComponent final : public QObject, public Component
-{
+class TransformComponent final : public QObject, public Component {
     Q_OBJECT
 
 public:
     TransformComponent();
+
     explicit TransformComponent(const cadm::vec3 &translation);
+
     TransformComponent(const cadm::vec3 &translation, const cadm::vec3 &rotation);
 
     [[nodiscard]] const cadm::mat4& getModelMatrix() const;
+
     [[nodiscard]] cadm::vec3 getTranslation() const { return m_translation; }
     [[nodiscard]] cadm::vec3 getScale() const { return m_scale; }
     [[nodiscard]] cadm::vec3 getRotation() const { return m_rotation; }
 
     void setTranslation(const cadm::vec3 &translation);
+
     void setScale(const cadm::vec3 &scale);
+
     void setRotation(const cadm::vec3 &rotation);
 
-signals:
+    signals  :
+
+    
+
     void translationXChanged(double value);
+
     void translationYChanged(double value);
+
     void translationZChanged(double value);
 
     void scaleXChanged(double value);
+
     void scaleYChanged(double value);
+
     void scaleZChanged(double value);
 
     void rotationXChanged(double value);
+
     void rotationYChanged(double value);
+
     void rotationZChanged(double value);
 
 private:

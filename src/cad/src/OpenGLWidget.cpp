@@ -53,16 +53,16 @@ void OpenGLWidget::paintGL() {
 
     if (const auto pivot = computePivot()) { m_renderSystem.renderPivotMarker(pivot.value(), view, projection); }
 
-    if (m_transformMode != TransformMode::None) {
+    if (m_transformMode != TransformMode::none) {
         int axesMask = 0;
         switch (m_axisConstraint) {
-        case AxisConstraint::X:
+        case AxisConstraint::x:
             axesMask |= 1;
             break;
-        case AxisConstraint::Y:
+        case AxisConstraint::y:
             axesMask |= 2;
             break;
-        case AxisConstraint::Z:
+        case AxisConstraint::z:
             axesMask |= 4;
             break;
         default:
@@ -71,7 +71,7 @@ void OpenGLWidget::paintGL() {
 
         if (axesMask != 0) {
             cadm::mat4 axisModel = cadm::mat4::identity();
-            if (m_coordSpace == CoordSpace::Local && !m_transformSnapshots.empty()) {
+            if (m_coordSpace == CoordSpace::local && !m_transformSnapshots.empty()) {
                 const auto &r = m_transformSnapshots[0].origRotMat;
                 axisModel = cadm::mat4{
                     cadm::vec4(r.columns[0], 0),
@@ -123,17 +123,17 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
     if (!action) { return; }
 
     switch (*action) {
-    case InputAction::CameraOrbit:
+    case InputAction::cameraOrbit:
         m_activeDrag = DragMode::CameraOrbit;
         return;
-    case InputAction::CameraPan:
+    case InputAction::cameraPan:
         m_activeDrag = DragMode::CameraPan;
         return;
-    case InputAction::CameraZoomDrag:
+    case InputAction::cameraZoomDrag:
         m_activeDrag = DragMode::CameraZoomDrag;
         return;
-    case InputAction::Select:
-        if (m_transformMode != TransformMode::None) { return; }
+    case InputAction::select:
+        if (m_transformMode != TransformMode::none) { return; }
         if (m_clickToAddMode) {
             // resolve 3D position, move active cursor there, then emit createPointRequested
             if (m_cursorPlacementStrategy) {
@@ -167,8 +167,8 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
             else { m_activeDrag = DragMode::ClickSelect; }
         }
         return;
-    case InputAction::CursorPlace:
-        if (m_transformMode != TransformMode::None) { return; }
+    case InputAction::cursorPlace:
+        if (m_transformMode != TransformMode::none) { return; }
         m_activeDrag = DragMode::CursorPlace;
     default:
         break;
@@ -181,7 +181,7 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
     const auto delta = currentPos - m_lastMousePosition;
     m_lastMousePosition = currentPos;
 
-    if (m_transformMode != TransformMode::None) {
+    if (m_transformMode != TransformMode::none) {
         applyTransform(currentPos);
         wrapMouseIfNeeded(currentPos, delta);
         update();
@@ -238,15 +238,15 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
-    if (m_transformMode != TransformMode::None) {
+    if (m_transformMode != TransformMode::none) {
         const auto action = m_inputMap.matchAction(event->button(), event->modifiers());
-        if (action == InputAction::Select) {
+        if (action == InputAction::select) {
             confirmTransform();
             update();
             return;
         }
 
-        if (action == InputAction::RightClick) {
+        if (action == InputAction::rightClick) {
             cancelTransform();
             update();
             return;
@@ -263,7 +263,7 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
             dist2 <= s_clickRadiusPx * s_clickRadiusPx) {
             // treat as a selection click on the point
             const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-                InputAction::CursorPlace;
+                InputAction::cursorPlace;
             selectPoint(m_draggedPoint, additive);
         }
         else {
@@ -287,7 +287,7 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
             dist2 > s_clickRadiusPx * s_clickRadiusPx) { return; }
 
         const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-            InputAction::CursorPlace;
+            InputAction::cursorPlace;
 
         if (const PointHandle hit = pickPoint(event->pos());
             hit != InvalidPointHandle) { selectPoint(hit, additive); }
@@ -323,69 +323,69 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event) {
     auto toggleBeginTransform = [&](const TransformMode mode) {
         if (m_transformMode == mode) { cancelTransform(); }
         else {
-            if (m_transformMode != TransformMode::None) { confirmTransform(); }
+            if (m_transformMode != TransformMode::none) { confirmTransform(); }
             beginTransform(mode);
         }
         update();
     };
 
     auto toggleConstraint = [&](const AxisConstraint axis) {
-        if (m_transformMode == TransformMode::None) { return; }
+        if (m_transformMode == TransformMode::none) { return; }
         m_axisConstraint = m_axisConstraint == axis
-                               ? AxisConstraint::None
+                               ? AxisConstraint::none
                                : axis;
         emit transformModeChanged(m_transformMode, axisLabel(m_axisConstraint));
         update();
     };
 
     switch (*action) {
-    case InputAction::CancelTransform:
-        if (m_transformMode != TransformMode::None) {
+    case InputAction::cancelTransform:
+        if (m_transformMode != TransformMode::none) {
             cancelTransform();
             update();
         }
         break;
-    case InputAction::ConfirmTransform:
-        if (m_transformMode != TransformMode::None) {
+    case InputAction::confirmTransform:
+        if (m_transformMode != TransformMode::none) {
             confirmTransform();
             update();
         }
         break;
-    case InputAction::BeginTranslate:
-        toggleBeginTransform(TransformMode::Translate);
+    case InputAction::beginTranslate:
+        toggleBeginTransform(TransformMode::translate);
         break;
-    case InputAction::BeginRotate:
-        toggleBeginTransform(TransformMode::Rotate);
+    case InputAction::beginRotate:
+        toggleBeginTransform(TransformMode::rotate);
         break;
-    case InputAction::BeginScale:
-        toggleBeginTransform(TransformMode::Scale);
+    case InputAction::beginScale:
+        toggleBeginTransform(TransformMode::scale);
         break;
-    case InputAction::ConstrainX:
-        toggleConstraint(AxisConstraint::X);
+    case InputAction::constrainX:
+        toggleConstraint(AxisConstraint::x);
         break;
-    case InputAction::ConstrainY:
-        toggleConstraint(AxisConstraint::Y);
+    case InputAction::constrainY:
+        toggleConstraint(AxisConstraint::y);
         break;
-    case InputAction::ConstrainZ:
-        toggleConstraint(AxisConstraint::Z);
+    case InputAction::constrainZ:
+        toggleConstraint(AxisConstraint::z);
         break;
-    case InputAction::ToggleCoordSpace:
-        m_coordSpace = m_coordSpace == CoordSpace::World
-                           ? CoordSpace::Local
-                           : CoordSpace::World;
+    case InputAction::toggleCoordSpace:
+        m_coordSpace = m_coordSpace == CoordSpace::world
+                           ? CoordSpace::local
+                           : CoordSpace::world;
         update();
         break;
-    case InputAction::SwitchCamera:
+    case InputAction::switchCamera:
         m_cameraController.switchToNext();
         update();
         break;
-    case InputAction::DeleteSelected:
+    case InputAction::deleteSelected:
         deleteSelectedEntities();
         break;
-    case InputAction::SetBoxSelectMode:
+    case InputAction::setBoxSelectMode:
         m_boxSelectMode = true;
         break;
-    case InputAction::CreateMenu: {
+    case InputAction::createMenu: {
         QMenu menu(this);
         menu.addAction("New Torus", [this] { emit createTorusRequested(); });
         menu.addAction("New Cursor", [this] { emit createCursorRequested(); });
@@ -393,23 +393,23 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event) {
         menu.exec(QCursor::pos());
     }
     break;
-    case InputAction::ToggleClickToAdd:
+    case InputAction::toggleClickToAdd:
         setClickToAddMode(!m_clickToAddMode);
         break;
-    case InputAction::CameraToggleProjection:
+    case InputAction::cameraToggleProjection:
         m_cameraController.getActiveStrategy()->toggleProjection();
         update();
         break;
-    case InputAction::CameraMoveUp:
+    case InputAction::cameraMoveUp:
         if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveUp)) { update(); }
         break;
-    case InputAction::CameraMoveDown:
+    case InputAction::cameraMoveDown:
         if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveDown)) { update(); }
         break;
-    case InputAction::CameraMoveLeft:
+    case InputAction::cameraMoveLeft:
         if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveLeft)) { update(); }
         break;
-    case InputAction::CameraMoveRight:
+    case InputAction::cameraMoveRight:
         if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveRight)) { update(); }
         break;
     default:
@@ -427,7 +427,7 @@ void OpenGLWidget::keyReleaseEvent(QKeyEvent *event) {
     }
 
     switch (*action) {
-    case InputAction::SetBoxSelectMode:
+    case InputAction::setBoxSelectMode:
         m_boxSelectMode = false;
         break;
     default:
@@ -527,7 +527,7 @@ void OpenGLWidget::performBoxSelect() {
 }
 
 std::optional<cadm::vec3> OpenGLWidget::computePivot() const {
-    if (m_pivotMode == PivotMode::ActiveCursor) {
+    if (m_pivotMode == PivotMode::activeCursor) {
         if (Entity *cursor = m_scene.getActiveCursor()) {
             if (const auto tc = cursor->getComponent<TransformComponent>()) { return tc.value()->getTranslation(); }
         }
@@ -560,11 +560,11 @@ std::optional<cadm::vec3> OpenGLWidget::computePivot() const {
 
 QString OpenGLWidget::axisLabel(const AxisConstraint constraint) {
     switch (constraint) {
-    case AxisConstraint::X:
+    case AxisConstraint::x:
         return "X";
-    case AxisConstraint::Y:
+    case AxisConstraint::y:
         return "Y";
-    case AxisConstraint::Z:
+    case AxisConstraint::z:
         return "Z";
     default:
         return {};
@@ -620,21 +620,21 @@ void OpenGLWidget::handleTransformRotate(const int dx, PointRegistry &registry) 
     );
 
     for (const auto &snap : m_transformSnapshots) {
-        const bool useLocal = m_coordSpace == CoordSpace::Local && snap.isTransformEntity;
+        const bool useLocal = m_coordSpace == CoordSpace::local && snap.isTransformEntity;
 
         cadm::vec3 axis;
         switch (m_axisConstraint) {
-        case AxisConstraint::X:
+        case AxisConstraint::x:
             axis = useLocal
                        ? snap.origRotMat.columns[0]
                        : cadm::vec3::unitX();
             break;
-        case AxisConstraint::Y:
+        case AxisConstraint::y:
             axis = useLocal
                        ? snap.origRotMat.columns[1]
                        : cadm::vec3::unitY();
             break;
-        case AxisConstraint::Z:
+        case AxisConstraint::z:
             axis = useLocal
                        ? snap.origRotMat.columns[2]
                        : cadm::vec3::unitZ();
@@ -685,25 +685,25 @@ void OpenGLWidget::handleTransformTranslate(const QPoint currentMousePos, PointR
     const cadm::vec3 rawDelta = unprojectAt(currentMousePos) - unprojectAt(m_transformStartMousePos);
 
     for (const auto &snap : m_transformSnapshots) {
-        const bool useLocal = m_coordSpace == CoordSpace::Local && snap.isTransformEntity;
+        const bool useLocal = m_coordSpace == CoordSpace::local && snap.isTransformEntity;
 
         cadm::vec3 delta = rawDelta;
         switch (m_axisConstraint) {
-        case AxisConstraint::X: {
+        case AxisConstraint::x: {
             const cadm::vec3 ax = useLocal
                                       ? snap.origRotMat.columns[0]
                                       : cadm::vec3::unitX();
             delta = ax * ax.dot(rawDelta);
             break;
         }
-        case AxisConstraint::Y: {
+        case AxisConstraint::y: {
             const cadm::vec3 ax = useLocal
                                       ? snap.origRotMat.columns[1]
                                       : cadm::vec3::unitY();
             delta = ax * ax.dot(rawDelta);
             break;
         }
-        case AxisConstraint::Z: {
+        case AxisConstraint::z: {
             const cadm::vec3 ax = useLocal
                                       ? snap.origRotMat.columns[2]
                                       : cadm::vec3::unitZ();
@@ -736,7 +736,7 @@ void OpenGLWidget::handleTransformScale(const int dx, PointRegistry &registry) {
     );
 
     for (const auto &snap : m_transformSnapshots) {
-        const cadm::vec3 pivot = (m_coordSpace == CoordSpace::Local && snap.isTransformEntity)
+        const cadm::vec3 pivot = (m_coordSpace == CoordSpace::local && snap.isTransformEntity)
                                      ? snap.origPos
                                      : m_transformPivot;
         const cadm::vec3 newPos = pivot + (snap.origPos - pivot) * scaleFactor;
@@ -759,21 +759,21 @@ void OpenGLWidget::handleTransformScale(const int dx, PointRegistry &registry) {
 }
 
 void OpenGLWidget::applyTransform(const QPoint currentMousePos) {
-    if (m_transformMode == TransformMode::None || m_transformSnapshots.empty()) { return; }
+    if (m_transformMode == TransformMode::none || m_transformSnapshots.empty()) { return; }
 
     const int dx = currentMousePos.x() - m_transformStartMousePos.x();
     auto &registry = m_scene.getPointRegistry();
 
     switch (m_transformMode) {
-    case TransformMode::None: // will never hit; just to silence the warning
+    case TransformMode::none: // will never hit; just to silence the warning
         break;
-    case TransformMode::Rotate:
+    case TransformMode::rotate:
         handleTransformRotate(dx, registry);
         break;
-    case TransformMode::Scale:
+    case TransformMode::scale:
         handleTransformScale(dx, registry);
         break;
-    case TransformMode::Translate:
+    case TransformMode::translate:
         handleTransformTranslate(currentMousePos, registry);
         break;
     }
@@ -786,18 +786,18 @@ void OpenGLWidget::cancelTransform() {
         if (!entity) { continue; }
         snap.restoreEntity(registry, entity.value());
     }
-    m_transformMode = TransformMode::None;
-    m_axisConstraint = AxisConstraint::None;
+    m_transformMode = TransformMode::none;
+    m_axisConstraint = AxisConstraint::none;
     m_transformSnapshots.clear();
-    emit transformModeChanged(TransformMode::None, {});
+    emit transformModeChanged(TransformMode::none, {});
     emit sceneChanged();
 }
 
 void OpenGLWidget::confirmTransform() {
-    m_transformMode = TransformMode::None;
-    m_axisConstraint = AxisConstraint::None;
+    m_transformMode = TransformMode::none;
+    m_axisConstraint = AxisConstraint::none;
     m_transformSnapshots.clear();
-    emit transformModeChanged(TransformMode::None, {});
+    emit transformModeChanged(TransformMode::none, {});
     emit sceneChanged();
 }
 
@@ -822,7 +822,7 @@ void OpenGLWidget::wrapMouseIfNeeded(const QPoint currentPos, const QPoint delta
 
     if (newPos == currentPos) { return; }
 
-    if (m_transformMode != TransformMode::None) {
+    if (m_transformMode != TransformMode::none) {
         const QPoint wrapDelta = newPos - currentPos;
         m_transformStartMousePos += wrapDelta;
     }

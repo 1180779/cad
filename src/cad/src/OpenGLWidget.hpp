@@ -172,10 +172,10 @@ private:
     /// when true, LMB click places a new point at the cursor
     bool m_clickToAddMode = false;
 
-    PivotMode m_pivotMode = PivotMode::MedianPoint;
-    CoordSpace m_coordSpace = CoordSpace::World;
-    TransformMode m_transformMode = TransformMode::None;
-    AxisConstraint m_axisConstraint = AxisConstraint::None;
+    PivotMode m_pivotMode = PivotMode::medianPoint;
+    CoordSpace m_coordSpace = CoordSpace::world;
+    TransformMode m_transformMode = TransformMode::none;
+    AxisConstraint m_axisConstraint = AxisConstraint::none;
     std::vector<EntitySnapshot> m_transformSnapshots;
     QPoint m_transformStartMousePos;
     cadm::vec3 m_transformPivot;

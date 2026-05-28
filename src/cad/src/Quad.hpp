@@ -7,17 +7,17 @@
 
 #include "GlCommon.hpp"
 
-class Quad
-{
+class Quad {
 public:
     explicit Quad();
+
     ~Quad();
+
     void draw() const;
 
 private:
     GLuint m_vao;
     GLuint m_vbo;
 };
-
 
 #endif //CAD_QUAD_H

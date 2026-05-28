@@ -8,6 +8,7 @@
 #include <QOpenGLFunctions_4_5_Core>
 
 void GLSetDefaults();
+
 QOpenGLFunctions_4_5_Core* GL();
 
 #endif //CAD_GL_H

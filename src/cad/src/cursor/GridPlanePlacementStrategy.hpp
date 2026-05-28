@@ -16,13 +16,9 @@
 // with the camera's view direction is chosen.
 //
 // Returns nullopt when the ray is nearly parallel to all active planes
-class GridPlanePlacementStrategy final : public IViewportPositionStrategy
-{
+class GridPlanePlacementStrategy final : public IViewportPositionStrategy {
 public:
-    explicit GridPlanePlacementStrategy(const int gridPlanesMask)
-        : m_gridPlanesMask(gridPlanesMask)
-    {
-    }
+    explicit GridPlanePlacementStrategy(const int gridPlanesMask) : m_gridPlanesMask(gridPlanesMask) {}
 
     void onGridPlanesChanged(int mask) override { m_gridPlanesMask = mask; }
 
@@ -31,7 +27,8 @@ public:
         int viewportW,
         int viewportH,
         const cadm::mat4 &invView,
-        const cadm::mat4 &invProj) override;
+        const cadm::mat4 &invProj
+    ) override;
 
 private:
     int m_gridPlanesMask;

@@ -14,14 +14,18 @@
 #include <unordered_map>
 #include <unordered_set>
 
-class Scene
-{
+class Scene {
 public:
     Entity* createEntity(const std::string &name = "Entity");
+
     Entity* createPoint(cadm::vec3 position, const std::string &name = "Point");
+
     std::optional<Entity*> getEntity(EntityID id);
+
     std::optional<Entity*> getEntityByName(const std::string &name);
+
     std::optional<Entity*> getEntityByPointHandle(PointHandle handle);
+
     bool removeEntity(EntityID id);
 
     /// Set selection state on an entity and keep the selection set in sync

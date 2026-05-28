@@ -8,13 +8,9 @@
 #include "Entity.hpp"
 #include "../PointRegistry.hpp"
 
-class PointComponent final : public Component
-{
+class PointComponent final : public Component {
 public:
-    explicit PointComponent(const PointHandle handle)
-        : m_handle(handle)
-    {
-    }
+    explicit PointComponent(const PointHandle handle) : m_handle(handle) {}
 
     PointHandle m_handle;
 };

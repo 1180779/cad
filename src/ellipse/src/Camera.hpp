@@ -11,22 +11,26 @@
 #include <cad_math/vec3.hpp>
 #include <cad_math/mat4.hpp>
 
-
-class Camera
-{
+class Camera {
 public:
     Camera(const cadm::vec3 &position, const cadm::vec3 &target, const cadm::vec3 &up);
 
     [[nodiscard]] cadm::mat4 getViewMatrix() const;
+
     [[nodiscard]] cadm::mat4 getProjectionMatrix() const;
 
     void setPosition(const cadm::vec3 &position);
+
     void setTarget(const cadm::vec3 &target);
+
     void setUp(const cadm::vec3 &up);
 
     void setFov(cadm::cadf fov);
+
     void setAspectRatio(cadm::cadf aspectRatio);
+
     void setNearPlane(cadm::cadf nearPlane);
+
     void setFarPlane(cadm::cadf farPlane);
 
     [[nodiscard]] cadm::vec3 getPosition() const { return m_position; }
@@ -38,10 +42,7 @@ public:
     [[nodiscard]] cadm::cadf getNearPlane() const { return m_nearPlane; }
     [[nodiscard]] cadm::cadf getFarPlane() const { return m_farPlane; }
 
-    [[nodiscard]] cadm::vec3 getForwardVector() const
-    {
-        return (m_target - m_position).normalized();
-    }
+    [[nodiscard]] cadm::vec3 getForwardVector() const { return (m_target - m_position).normalized(); }
 
 private:
     cadm::vec3 m_position;

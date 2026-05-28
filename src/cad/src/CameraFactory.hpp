@@ -8,14 +8,9 @@
 #include "cad_math/vec3.hpp"
 #include "components/Entity.hpp"
 
-
-class CameraFactory final
-{
+class CameraFactory final {
 public:
-    explicit CameraFactory(Scene &scene)
-        : m_scene(scene)
-    {
-    }
+    explicit CameraFactory(Scene &scene) : m_scene(scene) {}
 
     [[nodiscard]] Entity* createBlenderCamera(
         cadm::cadf radius,
@@ -35,6 +30,5 @@ public:
 private:
     Scene &m_scene;
 };
-
 
 #endif //CAD_CAMERAFACTORY_HPP

@@ -4,17 +4,14 @@
 #include <QPainter>
 #include <QStyleOption>
 
-static QLabel* makeSeparator(QWidget *parent)
-{
+static QLabel* makeSeparator(QWidget *parent) {
     const auto sep = new QLabel("|", parent);
     sep->setStyleSheet(StatusBarWidget::s_separatorStyle);
     sep->setContentsMargins(4, 0, 4, 0);
     return sep;
 }
 
-StatusBarWidget::StatusBarWidget(QWidget *parent)
-    : QWidget(parent)
-{
+StatusBarWidget::StatusBarWidget(QWidget *parent) : QWidget(parent) {
     setFixedHeight(s_barHeight);
     setStyleSheet(s_barStyle);
     setAutoFillBackground(true);
@@ -42,51 +39,42 @@ StatusBarWidget::StatusBarWidget(QWidget *parent)
     layout->addStretch();
 }
 
-void StatusBarWidget::paintEvent(QPaintEvent *)
-{
+void StatusBarWidget::paintEvent(QPaintEvent *) {
     QStyleOption opt;
     opt.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
 
-void StatusBarWidget::setTransformMode(const TransformMode mode, const QString &axisInfo) const
-{
+void StatusBarWidget::setTransformMode(const TransformMode mode, const QString &axisInfo) const {
     refreshModeLabel(mode, axisInfo, false);
 }
 
-void StatusBarWidget::setClickToAddMode(const bool active) const
-{
-    refreshModeLabel(TransformMode::None, {}, active);
-}
+void StatusBarWidget::setClickToAddMode(const bool active) const { refreshModeLabel(TransformMode::none, {}, active); }
 
-void StatusBarWidget::refreshModeLabel(const TransformMode mode, const QString &axisInfo, const bool clickToAdd) const
-{
+void StatusBarWidget::refreshModeLabel(const TransformMode mode, const QString &axisInfo, const bool clickToAdd) const {
     QString text;
-    if (clickToAdd)
-    {
+    if (clickToAdd) {
         text = "Mode: Add Point";
         m_modeLabel->setStyleSheet(s_activeStyle);
     }
-    else
-    {
-        switch (mode)
-        {
-        case TransformMode::Translate:
+    else {
+        switch (mode) {
+        case TransformMode::translate:
             text = "Mode: Translate (G)";
             m_modeLabel->setStyleSheet(s_activeStyle);
             break;
-        case TransformMode::Rotate:
+        case TransformMode::rotate:
             text = QString("Mode: Rotate (R)") + (axisInfo.isEmpty()
                                                       ? ""
                                                       : "  Axis: " + axisInfo);
             m_modeLabel->setStyleSheet(s_activeStyle);
             break;
-        case TransformMode::Scale:
+        case TransformMode::scale:
             text = "Mode: Scale (S)";
             m_modeLabel->setStyleSheet(s_activeStyle);
             break;
-        case TransformMode::None:
+        case TransformMode::none:
         default:
             text = "Mode: --";
             m_modeLabel->setStyleSheet("");
@@ -96,17 +84,14 @@ void StatusBarWidget::refreshModeLabel(const TransformMode mode, const QString &
     m_modeLabel->setText(text);
 }
 
-void StatusBarWidget::setCameraName(const QString &name) const
-{
-    m_cameraLabel->setText("Camera: " + name);
-}
+void StatusBarWidget::setCameraName(const QString &name) const { m_cameraLabel->setText("Camera: " + name); }
 
-void StatusBarWidget::setSelectionCount(const int count) const
-{
+void StatusBarWidget::setSelectionCount(const int count) const {
     m_selectionLabel->setText(
         count > 0
             ? QString::number(count) + " selected"
-            : "");
+            : ""
+    );
 }
 
 void StatusBarWidget::setActiveNewPointsTargetName(const QString &name) const {

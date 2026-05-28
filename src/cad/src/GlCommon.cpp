@@ -8,8 +8,7 @@
 
 #include "GlCommon.hpp"
 
-void GLSetDefaults()
-{
+void GLSetDefaults() {
     QSurfaceFormat format;
     format.setVersion(4, 5);
     format.setProfile(QSurfaceFormat::CoreProfile);
@@ -19,28 +18,24 @@ void GLSetDefaults()
     QSurfaceFormat::setDefaultFormat(format);
 }
 
-QOpenGLFunctions_4_5_Core* GL()
-{
+QOpenGLFunctions_4_5_Core* GL() {
     QOpenGLVersionProfile profile;
     profile.setVersion(4, 5);
     profile.setProfile(QSurfaceFormat::CoreProfile);
 
     auto *ctx = QOpenGLContext::currentContext();
-    if (!ctx)
-    {
+    if (!ctx) {
         qWarning() << "GL() called without a current QOpenGLContext!";
         return nullptr;
     }
 
     auto *gl45 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_4_5_Core>(ctx);
-    if (!gl45)
-    {
+    if (!gl45) {
         qWarning() << "OpenGL 4.5 Core not supported";
         return nullptr;
     }
 
-    if (!gl45->initializeOpenGLFunctions())
-    {
+    if (!gl45->initializeOpenGLFunctions()) {
         qWarning() << "Failed to initialize OpenGL functions";
         return nullptr;
     }

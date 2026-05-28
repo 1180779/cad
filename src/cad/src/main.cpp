@@ -17,8 +17,7 @@
 #include "gui/SceneHierarchyWidget.hpp"
 #include "gui/StatusBarWidget.hpp"
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     GLSetDefaults();
     QApplication a(argc, argv);
 
@@ -61,15 +60,15 @@ int main(int argc, char *argv[])
 
     const auto pivotLabel = new QLabel("Transform pivot:");
     const auto pivotCombo = new QComboBox;
-    pivotCombo->addItem("Median point", static_cast<int>(PivotMode::MedianPoint));
-    pivotCombo->addItem("Active cursor", static_cast<int>(PivotMode::ActiveCursor));
+    pivotCombo->addItem("Median point", static_cast<int>(PivotMode::medianPoint));
+    pivotCombo->addItem("Active cursor", static_cast<int>(PivotMode::activeCursor));
     viewportTabLayout->addWidget(pivotLabel);
     viewportTabLayout->addWidget(pivotCombo);
 
     const auto coordSpaceLabel = new QLabel("Transform space:");
     const auto coordSpaceCombo = new QComboBox;
-    coordSpaceCombo->addItem("World", static_cast<int>(CoordSpace::World));
-    coordSpaceCombo->addItem("Local", static_cast<int>(CoordSpace::Local));
+    coordSpaceCombo->addItem("World", static_cast<int>(CoordSpace::world));
+    coordSpaceCombo->addItem("Local", static_cast<int>(CoordSpace::local));
     viewportTabLayout->addWidget(coordSpaceLabel);
     viewportTabLayout->addWidget(coordSpaceCombo);
 
@@ -87,12 +86,14 @@ int main(int argc, char *argv[])
     auto blenderCameraStrategy = std::make_unique<BlenderCameraStrategy>(
         blenderCamera,
         [&] { return glWidget->width(); },
-        [&] { return glWidget->height(); });
+        [&] { return glWidget->height(); }
+    );
     const auto cadCamera = cameraFactory.createCadCamera({0, 0, -10}, {}, cadm::vec3::unitY());
     auto cadCameraStrat = std::make_unique<CadCameraStrategy>(
         cadCamera,
         [&] { return glWidget->width(); },
-        [&] { return glWidget->height(); });
+        [&] { return glWidget->height(); }
+    );
 
     glWidget->getCameraController().addCamera("Blender", std::move(blenderCameraStrategy));
     glWidget->getCameraController().addCamera("Cad", std::move(cadCameraStrat));
@@ -106,86 +107,92 @@ int main(int argc, char *argv[])
         glWidget,
         &OpenGLWidget::sceneChanged,
         hierarchyWidget,
-        &SceneHierarchyWidget::refresh);
+        &SceneHierarchyWidget::refresh
+    );
 
     QObject::connect(
         glWidget,
         &OpenGLWidget::viewportSelectionChanged,
         hierarchyWidget,
-        &SceneHierarchyWidget::syncSelectionFromScene);
+        &SceneHierarchyWidget::syncSelectionFromScene
+    );
 
     QObject::connect(
         glWidget,
         &OpenGLWidget::viewportSelectionChanged,
         entityPropertiesWidget,
-        [glWidget, entityPropertiesWidget]
-        {
+        [glWidget, entityPropertiesWidget] {
             const auto &sel = glWidget->getScene().getSelectedEntities();
             entityPropertiesWidget->setEntity(
                 sel.size() == 1
                     ? *sel.begin()
-                    : nullptr);
-        });
+                    : nullptr
+            );
+        }
+    );
 
     QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::selectionChanged,
         entityPropertiesWidget,
-        [entityPropertiesWidget](const QList<Entity*> &selected)
-        {
+        [entityPropertiesWidget](const QList<Entity*> &selected) {
             entityPropertiesWidget->setEntity(
                 selected.size() == 1
                     ? selected.first()
-                    : nullptr);
-        });
+                    : nullptr
+            );
+        }
+    );
 
     QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::selectionChanged,
         glWidget,
-        [glWidget](const QList<Entity*> &selected)
-        {
+        [glWidget](const QList<Entity*> &selected) {
             glWidget->getScene().clearSelection();
             for (auto *e : selected) { glWidget->getScene().setSelected(e, true); }
             glWidget->getScene().syncPointSelectionToRegistry();
             glWidget->update();
-        });
+        }
+    );
 
     QObject::connect(
         entityPropertiesWidget,
         &EntityPropertiesWidget::propertyChanged,
         glWidget,
-        [glWidget, hierarchyWidget]
-        {
+        [glWidget, hierarchyWidget] {
             hierarchyWidget->refresh();
             glWidget->update();
-        });
+        }
+    );
 
     QObject::connect(
         entityPropertiesWidget,
         &EntityPropertiesWidget::pointSelectionChanged,
         glWidget,
-        [glWidget, hierarchyWidget, entityPropertiesWidget](const QList<Entity*> &selected)
-        {
+        [glWidget, hierarchyWidget, entityPropertiesWidget](const QList<Entity*> &selected) {
             glWidget->getScene().clearSelection();
             for (auto *e : selected) { glWidget->getScene().setSelected(e, true); }
             glWidget->getScene().syncPointSelectionToRegistry();
             hierarchyWidget->syncSelectionFromScene();
             entityPropertiesWidget->syncBezierSelection();
             glWidget->update();
-        });
+        }
+    );
 
     QObject::connect(
         glWidget,
         &OpenGLWidget::viewportSelectionChanged,
         entityPropertiesWidget,
-        &EntityPropertiesWidget::syncBezierSelection);
+        &EntityPropertiesWidget::syncBezierSelection
+    );
 
     QObject::connect(
         glWidget,
         &OpenGLWidget::sceneChanged,
         entityPropertiesWidget,
-        &EntityPropertiesWidget::refreshComponents);
+        &EntityPropertiesWidget::refreshComponents
+    );
 
     QObject::connect(
         glWidget,
@@ -198,32 +205,35 @@ int main(int argc, char *argv[])
         gridSettingsWidget,
         &GridSettingsWidget::gridPlanesChanged,
         glWidget,
-        &OpenGLWidget::setGridPlanes);
+        &OpenGLWidget::setGridPlanes
+    );
 
     QObject::connect(
         glWidget,
         &OpenGLWidget::transformModeChanged,
         statusBar,
-        &StatusBarWidget::setTransformMode);
+        &StatusBarWidget::setTransformMode
+    );
 
     QObject::connect(
         glWidget,
         &OpenGLWidget::clickToAddModeChanged,
         statusBar,
-        &StatusBarWidget::setClickToAddMode);
+        &StatusBarWidget::setClickToAddMode
+    );
 
     QObject::connect(
         &glWidget->getCameraController(),
         &CameraController::cameraChanged,
         statusBar,
-        [statusBar](const std::string &name) { statusBar->setCameraName(QString::fromStdString(name)); });
+        [statusBar](const std::string &name) { statusBar->setCameraName(QString::fromStdString(name)); }
+    );
 
     QObject::connect(
         glWidget,
         &OpenGLWidget::viewportSelectionChanged,
         statusBar,
-        [glWidget, statusBar]
-        {
+        [glWidget, statusBar] {
             statusBar->setSelectionCount(
                 static_cast<int>(glWidget->getScene().getSelectedEntities().size())
             );
@@ -234,8 +244,7 @@ int main(int argc, char *argv[])
         glWidget,
         &OpenGLWidget::sceneChanged,
         statusBar,
-        [glWidget, statusBar]
-        {
+        [glWidget, statusBar] {
             if (const Entity *e = glWidget->getScene().getNewPointsTargetEntity()) {
                 statusBar->setActiveNewPointsTargetName(QString::fromStdString(e->getName()));
             }
@@ -247,61 +256,56 @@ int main(int argc, char *argv[])
         pivotCombo,
         &QComboBox::currentIndexChanged,
         glWidget,
-        [glWidget, pivotCombo](const int index)
-        {
+        [glWidget, pivotCombo](const int index) {
             glWidget->setPivotMode(static_cast<PivotMode>(pivotCombo->itemData(index).toInt()));
-        });
+        }
+    );
 
     QObject::connect(
         coordSpaceCombo,
         &QComboBox::currentIndexChanged,
         glWidget,
-        [glWidget, coordSpaceCombo](const int index)
-        {
+        [glWidget, coordSpaceCombo](const int index) {
             glWidget->setCoordSpace(static_cast<CoordSpace>(coordSpaceCombo->itemData(index).toInt()));
-        });
+        }
+    );
 
     QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::deleteEntityRequested,
         glWidget,
-        [glWidget, hierarchyWidget](const Entity *e)
-        {
+        [glWidget, hierarchyWidget](const Entity *e) {
             glWidget->removeEntity(e->getId());
             hierarchyWidget->refresh();
             glWidget->update();
-        });
+        }
+    );
 
     QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::setAsCursorRequested,
         glWidget,
-        [glWidget](Entity *e)
-        {
-            glWidget->getScene().setActiveCursor(e);
-        });
+        [glWidget](Entity *e) { glWidget->getScene().setActiveCursor(e); }
+    );
 
     QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::setAsCameraRequested,
         glWidget,
-        [glWidget](const EntityID id)
-        {
-            glWidget->getCameraController().switchTo(id);
-        });
+        [glWidget](const EntityID id) { glWidget->getCameraController().switchTo(id); }
+    );
 
     QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::focusCameraRequested,
         glWidget,
-        [glWidget](Entity *e)
-        {
+        [glWidget](Entity *e) {
             glWidget->getCameraController().lookAtEntity(e, glWidget->getScene().getPointRegistry());
             glWidget->update();
-        });
+        }
+    );
 
-    auto spawnPos = [glWidget]() -> cadm::vec3
-    {
+    auto spawnPos = [glWidget]() -> cadm::vec3 {
         if (auto *activeCursor = glWidget->getScene().getActiveCursor()) {
             if (const auto t = activeCursor->getComponent<TransformComponent>()) { return t.value()->getTranslation(); }
         }
@@ -316,8 +320,7 @@ int main(int argc, char *argv[])
         glWidget->update();
     };
 
-    auto spawnCursor = [glWidget, spawnPos]
-    {
+    auto spawnCursor = [glWidget, spawnPos] {
         const GeometryFactory factory(glWidget->getScene());
         void(factory.createCursor(spawnPos()));
         emit
@@ -325,16 +328,14 @@ int main(int argc, char *argv[])
         glWidget->update();
     };
 
-    auto spawnPoint = [glWidget, spawnPos]
-    {
+    auto spawnPoint = [glWidget, spawnPos] {
         const GeometryFactory factory(glWidget->getScene());
         auto *point = factory.createPoint(spawnPos());
 
         // Auto-add to active new points target
         if (const auto *pc = point->getComponent<PointComponent>().value_or(nullptr)) {
             const Scene &sc = glWidget->getScene();
-            if (Entity *newPointsTargetEntity = sc.getNewPointsTargetEntity())
-            {
+            if (Entity *newPointsTargetEntity = sc.getNewPointsTargetEntity()) {
                 if (const auto bezierOpt = newPointsTargetEntity->getComponent<INewPointsTargetBase>()) {
                     bezierOpt.value()->addControlPoint(pc->m_handle);
                 }
@@ -357,32 +358,29 @@ int main(int argc, char *argv[])
         hierarchyWidget,
         &SceneHierarchyWidget::createBezierC0Requested,
         glWidget,
-        [glWidget]
-        {
+        [glWidget] {
             // Collect currently selected point handles
             std::vector<PointHandle> handles;
-            for (const auto &e : glWidget->getScene().getEntities())
-            {
-                if (!e->isSelected()) {
-                    continue;
-                }
+            for (const auto &e : glWidget->getScene().getEntities()) {
+                if (!e->isSelected()) { continue; }
                 if (const auto pc = e->getComponent<PointComponent>()) { handles.push_back(pc.value()->m_handle); }
             }
             const GeometryFactory factory(glWidget->getScene());
             void(factory.createBezierC0(handles, "BezierC0"));
             emit glWidget->sceneChanged();
             glWidget->update();
-        });
+        }
+    );
 
     QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::setAsNewPointsTargetEntityRequested,
         glWidget,
-        [glWidget](Entity *e)
-        {
+        [glWidget](Entity *e) {
             glWidget->getScene().setNewPointsTargetEntity(e);
             emit glWidget->sceneChanged();
-        });
+        }
+    );
 
     QObject::connect(
         hierarchyWidget,
@@ -411,12 +409,8 @@ int main(int argc, char *argv[])
         [glWidget] {
             std::vector<PointHandle> handles;
             for (const auto &e : glWidget->getScene().getEntities()) {
-                if (!e->isSelected()) {
-                    continue;
-                }
-                if (const auto pc = e->getComponent<PointComponent>()) {
-                    handles.push_back(pc.value()->m_handle);
-                }
+                if (!e->isSelected()) { continue; }
+                if (const auto pc = e->getComponent<PointComponent>()) { handles.push_back(pc.value()->m_handle); }
             }
             const GeometryFactory factory(glWidget->getScene());
             void(factory.createBezierC2(handles, "BezierC2"));

@@ -24,35 +24,45 @@ using PointHandle = uint32_t;
 static constexpr PointHandle InvalidPointHandle = std::numeric_limits<uint32_t>::max();
 
 /// Scene-level registry of all control points.
-class PointRegistry
-{
+class PointRegistry {
 public:
     ~PointRegistry();
 
     PointHandle addPoint(cadm::vec3 position);
+
     void removePoint(PointHandle handle);
+
     void setPosition(PointHandle handle, cadm::vec3 position);
 
     [[nodiscard]] cadm::vec3 getPosition(PointHandle handle) const;
+
     [[nodiscard]] bool isAlive(PointHandle handle) const;
+
     [[nodiscard]] bool isSelected(PointHandle handle) const;
+
     [[nodiscard]] const std::vector<PointHandle>& aliveHandles() const { return m_aliveHandles; }
     [[nodiscard]] bool empty() const { return m_aliveHandles.empty(); }
 
     void setSelected(PointHandle handle, bool selected);
+
     void clearSelection();
 
     using PositionChangedCallback = std::function<void(PointHandle)>;
+
     int subscribeToPositionChanges(PositionChangedCallback cb);
+
     void unsubscribeFromPositionChanges(CallbackId id);
 
     using RemoveCallback = std::function<void(PointHandle)>;
+
     int subscribeToRemove(RemoveCallback cb);
+
     void unsubscribeFromRemove(CallbackId id);
 
     void initialize();
 
     void syncToGpu();
+
     [[nodiscard]] GLuint getVAO() const { return m_VAO; }
     [[nodiscard]] GLuint getPositionVBO() const { return m_positionVBO; }
     [[nodiscard]] GLuint getEBO() const { return m_EBO; }
@@ -60,12 +70,17 @@ public:
 
 private:
     void reallocatePositionVBO(QOpenGLFunctions_4_5_Core *gl, GLsizeiptr posBytes) const;
+
     void reallocateSelectionVBO(QOpenGLFunctions_4_5_Core *gl, GLsizeiptr selBytes) const;
+
     void generateBuffers(QOpenGLFunctions_4_5_Core *gl);
 
     void ensureGpuCapacity(size_t requiredSlots);
+
     void rebuildEBO() const;
+
     void flushDirtyPositions(QOpenGLFunctions_4_5_Core *gl);
+
     void flushDirtySelection(QOpenGLFunctions_4_5_Core *gl);
 
     /// position for each point (handle/slot)
