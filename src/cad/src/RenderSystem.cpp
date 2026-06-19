@@ -9,7 +9,7 @@
 #include "Scene.hpp"
 #include "BezierUtils.hpp"
 #include "components/BezierC0Component.hpp"
-#include "components/bezierC2Component.hpp"
+#include "components/BezierC2Component.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include <cad_math/Vec2.hpp>

@@ -7,7 +7,7 @@
 #include "TorusWidget.hpp"
 #include "TransformWidget.hpp"
 #include "../components/BezierC0Component.hpp"
-#include "../components/bezierC2Component.hpp"
+#include "../components/BezierC2Component.hpp"
 #include "../components/BlenderCameraComponent.hpp"
 #include "../components/CadCameraComponent.hpp"
 #include "../components/GeometryComponent.hpp"

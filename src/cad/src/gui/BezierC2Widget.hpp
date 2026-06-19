@@ -14,7 +14,7 @@
 #include <unordered_map>
 
 #include "ComponentWidget.hpp"
-#include "../components/bezierC2Component.hpp"
+#include "../components/BezierC2Component.hpp"
 #include "../Scene.hpp"
 
 class BezierC2Widget final : public ComponentWidget {

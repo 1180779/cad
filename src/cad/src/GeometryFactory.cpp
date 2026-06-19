@@ -5,7 +5,7 @@
 #include "GeometryFactory.hpp"
 
 #include "components/BezierC0Component.hpp"
-#include "components/bezierC2Component.hpp"
+#include "components/BezierC2Component.hpp"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"

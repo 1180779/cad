@@ -2,7 +2,7 @@
 // Created on 5/5/26.
 //
 
-#include "bezierC2Component.hpp"
+#include "BezierC2Component.hpp"
 
 #include <algorithm>
 #include <ranges>

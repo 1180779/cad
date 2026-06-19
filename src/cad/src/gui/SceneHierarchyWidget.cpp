@@ -4,7 +4,7 @@
 #include <QListWidget>
 #include <unordered_set>
 #include "../components/BezierC0Component.hpp"
-#include "../components/bezierC2Component.hpp"
+#include "../components/BezierC2Component.hpp"
 #include "../components/CursorComponent.hpp"
 #include "../components/CameraComponent.hpp"
 #include "../components/PointComponent.hpp"
