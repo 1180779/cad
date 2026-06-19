@@ -4,7 +4,7 @@
 #include "commands/CommandStack.hpp"
 
 namespace {
-    /// Test command that adds delta to a shared accumulator on executing and subtracts it on undo. 
+    /// @brief Test command that adds delta to a shared accumulator on executing and subtracts it on undo. 
     /// Optionally merges with another AddCommand
     class AddCommand final : public Command {
     public:

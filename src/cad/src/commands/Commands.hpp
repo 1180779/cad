@@ -22,7 +22,7 @@ class Scene;
 
 /// @brief 
 /// Create an entity. First, execute() runs builder (e.g., a GeometryFactory call) to allocate the entity; 
-/// its spec is captured, so redo rebuilds it identically.
+/// its spec is captured, so redo rebuilds it identically
 class CreateEntityCommand final : public Command {
 public:
     CreateEntityCommand(Scene &scene, std::function<Entity * (Scene&)> builder) : m_scene(scene),

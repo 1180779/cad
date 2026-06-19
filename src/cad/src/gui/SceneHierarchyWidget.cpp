@@ -91,7 +91,7 @@ void SceneHierarchyWidget::onItemSelectionChanged() {
 }
 
 void SceneHierarchyWidget::onItemChanged(const QListWidgetItem *item) const {
-    // Update entity name
+    // update entity name
     if (m_refreshing) {
         return;
     }

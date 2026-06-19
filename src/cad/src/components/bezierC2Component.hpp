@@ -16,7 +16,7 @@
 #include "INewPointsTargetComponent.hpp"
 #include "../BSplineToBezierConverter.hpp"
 
-/// Multi-segment cubic Bézier curve with C2 continuity between segments.
+/// @brief Multi-segment cubic Bézier curve with C2 continuity between segments.
 ///
 /// Can be manipulated by manipulating De Boor points or Bernstein control points. 
 /// The Bernstein control points are virtual and are not part of the scene.
@@ -24,7 +24,7 @@
 /// For supported parametrization modes see ParametrizationMode.
 ///
 /// for n de Boor points (n >= 4) there are n-3 cubic segments.
-/// Segment i uses de Boor points d_i...d_{i+3}.
+/// Segment i uses de Boor points d_i...d_{i+3}
 class BezierC2Component final : public GeometryComponent,
                                 public INewPointsTargetComponent<BezierC2Component> {
 public:
@@ -66,7 +66,7 @@ public:
 
     void setParametrizationMode(ParametrizationMode mode);
 
-    /// @brief move the Bernstein control point at bernsteinIndex to newPos.
+    /// @brief Move the Bernstein control point at bernsteinIndex to newPos.
     /// @details 
     /// Back-computes the affected de Boor point(s) in the registry 
     /// and marks the Bernstein cache dirty

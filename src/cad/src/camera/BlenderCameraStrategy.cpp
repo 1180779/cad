@@ -86,8 +86,8 @@ bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QP
 
     switch (action) {
     case CameraAction::Orbit: {
-        // Horizontal: rotate around world Y
-        // Vertical: rotate around camera's current local X
+        // horizontal: rotate around world Y
+        // vertical: rotate around camera's current local X
         const cadm::cadf yawAngle = -static_cast<cadm::cadf>(delta.x()) * s_sensitivity;
         const cadm::cadf pitchAngle = -static_cast<cadm::cadf>(delta.y()) * s_sensitivity;
         pCamera->m_orbitRot = (cadm::mat3::rotY(yawAngle) * pCamera->m_orbitRot
@@ -206,7 +206,8 @@ void BlenderCameraStrategy::toggleProjection() {
     const auto pCamera = camera.value();
 
     if (!pCamera->isOrtho()) {
-        // Switching to ortho: compute orthoHeight that matches the perspective visible height at target distance
+        // switching to ortho: compute orthoHeight that matches the perspective visible height at target distance
+
         const auto orthoHeight = static_cast<cadm::cadf>(2.0 * pCamera->getRadius() *
             std::tan(pCamera->getFov() / 2.0));
         pCamera->setOrthoHeight(orthoHeight);

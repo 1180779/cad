@@ -6,7 +6,7 @@
 #include <Qt>
 
 enum class InputAction {
-    // Transform mode
+    // transform mode
 
     beginTranslate,
     beginRotate,
@@ -19,7 +19,7 @@ enum class InputAction {
     confirmTransform,
     cancelTransform,
 
-    // Viewport
+    // viewport
 
     deleteSelected,
     toggleCoordSpace,
@@ -32,7 +32,7 @@ enum class InputAction {
     setObjectSelectMode,
     setBoxSelectMode,
 
-    // Camera
+    // camera
 
     cameraOrbit,
     cameraPan,
@@ -43,7 +43,7 @@ enum class InputAction {
     cameraMoveRight,
     cameraToggleProjection,
 
-    // Viewport actions
+    // viewport actions
 
     select,
     cursorPlace,
@@ -64,21 +64,22 @@ public:
 
     void bind(InputAction action, const InputBinding &binding);
 
-    // Returns the action bound to this input. Filters out non-repeating bindings when isAutoRepeat is true.
+    /// @brief Returns the action bound to this input. 
+    /// Filters out non-repeating bindings when isAutoRepeat is true
     [[nodiscard]] std::optional<InputAction> matchAction(
         Qt::Key key,
         Qt::KeyboardModifiers mods,
         bool isAutoRepeat = false
     ) const;
 
-    // Returns the action bound to this input.
+    /// @brief Returns the action bound to this input
     [[nodiscard]] std::optional<InputAction> matchAction(Qt::MouseButton button, Qt::KeyboardModifiers mods) const;
 
     // TODO: Key release events should not match on modifiers, because the user may release modifier keys
     //  before releasing the main key. Currently this is not a problem because all release-sensitive bindings
     //  use NoModifier. If modifier-sensitive held-key bindings are added, consider
     //  tracking active key actions in the widget (QSet<InputAction> m_heldKeyActions) and clearing them
-    //  on release without re-matching through the InputMap.
+    //  on release without re-matching through the InputMap
 
 private:
     struct KeyCombo {

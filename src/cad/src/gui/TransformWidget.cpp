@@ -20,7 +20,8 @@ TransformWidget::TransformWidget(TransformComponent *transform, QWidget *parent)
         layout->addRow(new QLabel(label), row);
     };
 
-    /// setUpTranslationControls
+    // setUpTranslationControls
+
     const auto translation = m_transform->getTranslation();
     m_translationX = makeAxisSpin(s_translationStep, s_translationMin, s_translationMax, false, translation.x);
     m_translationY = makeAxisSpin(s_translationStep, s_translationMin, s_translationMax, false, translation.y);
@@ -30,7 +31,8 @@ TransformWidget::TransformWidget(TransformComponent *transform, QWidget *parent)
     connect(m_translationZ, &QDoubleSpinBox::valueChanged, this, &TransformWidget::onTranslationZChanged);
     addAxisRow("Translation", m_translationX, m_translationY, m_translationZ);
 
-    /// setUpScaleControls
+    // setUpScaleControls
+
     const auto scale = m_transform->getScale();
     m_scaleX = makeAxisSpin(s_scaleStep, s_scaleMin, s_scaleMax, false, scale.x);
     m_scaleY = makeAxisSpin(s_scaleStep, s_scaleMin, s_scaleMax, false, scale.y);
@@ -40,7 +42,8 @@ TransformWidget::TransformWidget(TransformComponent *transform, QWidget *parent)
     connect(m_scaleZ, &QDoubleSpinBox::valueChanged, this, &TransformWidget::onScaleZChanged);
     addAxisRow("Scale", m_scaleX, m_scaleY, m_scaleZ);
 
-    /// setUpRotationControls
+    // setUpRotationControls
+
     constexpr double radToDeg = 180.0 / std::numbers::pi;
     const auto rotation = m_transform->getRotation();
     m_rotationX = makeAxisSpin(s_angleStep, s_angleMin, s_angleMax, true, rotation.x * radToDeg);

@@ -18,7 +18,7 @@
 
 class Scene;
 
-// One struct per-component kind.
+// one struct per-component kind.
 // An entity is described by a *list* of these, mirroring the runtime component bag
 // (an entity may hold any combination)
 
@@ -64,7 +64,7 @@ std::variant<TransformData, PointData, TorusData, AxesData, CursorData, BezierC0
 /// @brief 
 /// Plain-data description of an entity: 
 /// identity plus the list of components it holds. 
-/// Sufficient to rebuild the entity exactly (same EntityID / PointHandle).
+/// Sufficient to rebuild the entity exactly (same EntityID / PointHandle)
 struct EntitySpec {
     EntityID id{};
     std::string name;

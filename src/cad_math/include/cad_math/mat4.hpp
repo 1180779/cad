@@ -70,7 +70,7 @@ namespace cadm {
         // useful article to revisit view matrix:
         // https://www.3dgep.com/understanding-the-view-matrix/
 
-        // Look at matrix for Right Handed coordinate system
+        /// @brief Look at matrix for Right-Handed coordinate system
         constexpr static mat lookAtRH(const vec3 &eye, const vec3 &target, const vec3 &up) {
             const vec3 zAxis = (eye - target).normalized(); // backward (away from target)
             const vec3 xAxis = up.cross(zAxis).normalized(); // right
@@ -195,9 +195,9 @@ namespace cadm {
             return rotZ(z) * rotY(y) * rotX(x);
         }
 
-        // Rodrigues rotation matrix around axis `u` by angle `phi` (radians).
-        //
-        // Precondition: `u` must be a unit vector.
+        /// @brief Rodrigues rotation matrix around axis `u` by angle `phi` (radians)
+        ///
+        /// @pre u must be a unit vector
         static mat rotAxis(const cadf phi, const vec3 &u) {
             assert(std::abs(u.lengthSquared() - cadf{1}) < eps && "rotAxis: axis must be a unit vector");
             const auto sin = std::sin(phi);

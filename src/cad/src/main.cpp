@@ -398,8 +398,9 @@ int main(int argc, char *argv[]) {
 
     auto spawnPoint = [glWidget, spawnPos] {
         Scene &sc = glWidget->getScene();
-        // builder runs synchronously inside push(); 
-        // capture the new handle for the optional follow-up "add to active target" command.
+        // builder runs synchronously inside push();
+        // capture the new handle for the optional follow-up "add to active target" command
+
         PointHandle createdHandle = InvalidPointHandle;
         glWidget->getCommandStack().push(
             std::make_unique<CreateEntityCommand>(

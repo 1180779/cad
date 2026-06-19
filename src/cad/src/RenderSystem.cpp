@@ -82,7 +82,8 @@ void RenderSystem::initialize() {
 
     m_screenQuad = std::make_unique<Quad>();
 
-    // Selection rect
+    // selection rect
+
     const auto gl = GL();
     gl->glGenVertexArrays(1, &m_selectionRectVAO);
     gl->glGenBuffers(1, &m_selectionRectVBO);
@@ -142,8 +143,8 @@ void RenderSystem::renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_C
             m_wireframeShader->setUniform1(
                 "u_highlightStrength",
                 e->isSelected()
-                    ? s_selectionHS
-                    : s_noSelectionHS
+                ? s_selectionHS
+                : s_noSelectionHS
             )
         );
         SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
@@ -170,8 +171,8 @@ void RenderSystem::renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4
             m_wireframeShader->setUniform1(
                 "u_highlightStrength",
                 e->isSelected()
-                    ? s_selectionHS
-                    : s_noSelectionHS
+                ? s_selectionHS
+                : s_noSelectionHS
             )
         );
         SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
@@ -237,8 +238,8 @@ void RenderSystem::renderC0BezierCurves(
                 m_bezierCurveShader->setUniform1(
                     "u_highlightStrength",
                     e->isSelected()
-                        ? s_selectionHS
-                        : s_noSelectionHS
+                    ? s_selectionHS
+                    : s_noSelectionHS
                 )
             );
 
@@ -279,8 +280,8 @@ void RenderSystem::renderC0BezierCurves(
                     m_bezierCurveShader->setUniform1(
                         "uLastDegree",
                         isTrailing
-                            ? trailing
-                            : 3
+                        ? trailing
+                        : 3
                     )
                 );
                 gl->glDrawElementsInstanced(
@@ -305,8 +306,8 @@ void RenderSystem::renderC0BezierCurves(
                 m_wireframeShader->setUniform1(
                     "u_highlightStrength",
                     e->isSelected()
-                        ? s_selectionHS
-                        : s_noSelectionHS
+                    ? s_selectionHS
+                    : s_noSelectionHS
                 )
             );
             static constexpr cadm::vec4 polygonColor{0.3f, 0.6f, 1.0f, 1.0f};
@@ -349,8 +350,8 @@ void RenderSystem::renderC2BezierCurves(
                 m_bezierCurveShader->setUniform1(
                     "u_highlightStrength",
                     e->isSelected()
-                        ? s_selectionHS
-                        : s_noSelectionHS
+                    ? s_selectionHS
+                    : s_noSelectionHS
                 )
             );
             SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastDegree", 3));
@@ -396,8 +397,8 @@ void RenderSystem::renderC2BezierCurves(
                 m_wireframeShader->setUniform1(
                     "u_highlightStrength",
                     e->isSelected()
-                        ? s_selectionHS
-                        : s_noSelectionHS
+                    ? s_selectionHS
+                    : s_noSelectionHS
                 )
             );
             static constexpr cadm::vec4 bernsteinPointColor{0.9f, 0.9f, 0.2f, 1.0f};
@@ -420,8 +421,8 @@ void RenderSystem::renderC2BezierCurves(
                     m_wireframeShader->setUniform1(
                         "u_highlightStrength",
                         e->isSelected()
-                            ? s_selectionHS
-                            : s_noSelectionHS
+                        ? s_selectionHS
+                        : s_noSelectionHS
                     )
                 );
                 static constexpr cadm::vec4 bernsteinPolyColor{0.9f, 0.8f, 0.1f, 1.0f};
@@ -444,8 +445,8 @@ void RenderSystem::renderC2BezierCurves(
                 m_wireframeShader->setUniform1(
                     "u_highlightStrength",
                     e->isSelected()
-                        ? s_selectionHS
-                        : s_noSelectionHS
+                    ? s_selectionHS
+                    : s_noSelectionHS
                 )
             );
             static constexpr cadm::vec4 deBoorColor{0.9f, 0.6f, 0.1f, 1.0f};
@@ -575,11 +576,11 @@ void RenderSystem::renderSelectionRect(
     m_selectionRectShader->bind();
     gl->glBindVertexArray(m_selectionRectVAO);
 
-    // Fill
+    // fill
     SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectColor));
     gl->glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-    // Outline
+    // outline
     SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectOutlineColor));
     gl->glDrawArrays(GL_LINE_LOOP, 0, 4);
 

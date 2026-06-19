@@ -147,17 +147,17 @@ private:
 
     static QString axisLabel(AxisConstraint constraint);
 
-    /// save entity states and begin transform operation
+    /// @brief Save entity states and begin transform operation
     void beginTransform(TransformMode mode);
 
-    /// update the entities based on the state saved at the beginning of the transform
+    /// @brief Update the entities based on the state saved at the beginning of the transform
     /// this way no numerical errors are accumulated
     void applyTransform(QPoint currentMousePos);
 
-    /// restore the state of entities at the beginning of the transform operation
+    /// @brief Restore the state of entities at the beginning of the transform operation
     void cancelTransform();
 
-    /// confirm the transform; clear the states saved at the beginning of the transform
+    /// @brief Confirm the transform; clear the states saved at the beginning of the transform
     void confirmTransform();
 
     static constexpr int s_clickRadiusPx = 8;
@@ -174,7 +174,7 @@ private:
     CameraController m_cameraController{this};
     InputMap m_inputMap;
 
-    /// holds currently active drag i.e., the drag that is taking place right now
+    /// @brief Holds currently active drag i.e., the drag that is taking place right now
     DragMode m_activeDrag{DragMode::None};
     cadm::cadf m_zoomFactor{1.1};
 
@@ -188,14 +188,14 @@ private:
 
     std::unique_ptr<IViewportPositionStrategy> m_cursorPlacementStrategy;
 
-    /// valid only in PointDrag mode
+    /// @brief Valid only in PointDrag mode
     PointHandle m_draggedPoint = 0;
-    /// position of the dragged point when the drag began (for undo)
+    /// @brief Position of the dragged point when the drag began (for undo)
     cadm::vec3 m_draggedPointStart;
-    /// active cursor translation when a cursor-placement drag began (for undo)
+    /// @brief Active cursor translation when a cursor-placement drag began (for undo)
     cadm::vec3 m_cursorPlaceStart;
 
-    /// when true, LMB click places a new point at the cursor
+    /// @brief When true, LMB click places a new point at the cursor
     bool m_clickToAddMode = false;
 
     PivotMode m_pivotMode = PivotMode::medianPoint;
@@ -203,7 +203,7 @@ private:
     TransformMode m_transformMode = TransformMode::none;
     AxisConstraint m_axisConstraint = AxisConstraint::none;
     std::vector<EntitySnapshot> m_transformSnapshots;
-    /// whether the active transform actually moved anything (gate undo entry)
+    /// @brief Whether the active transform actually moved anything (gate undo entry)
     bool m_transformApplied = false;
     QPoint m_transformStartMousePos;
     cadm::vec3 m_transformPivot;

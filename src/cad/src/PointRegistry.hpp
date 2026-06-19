@@ -18,9 +18,9 @@
 #include "Callbacks.hpp"
 #include "GpuBuffer.hpp"
 
-/// Stable index into PointRegistry's slot array. Remains valid even after other
+/// @brief Stable index into PointRegistry's slot array. Remains valid even after other
 /// points are removed. Bézier curves and surfaces store these to reference
-/// shared control points.
+/// shared control points
 using PointHandle = uint32_t;
 
 static constexpr PointHandle InvalidPointHandle = std::numeric_limits<uint32_t>::max();
@@ -114,19 +114,19 @@ private:
 
     void flushDirtySelection(QOpenGLFunctions_4_5_Core *gl);
 
-    /// position for each point (handle/slot)
+    /// @brief Position for each point (handle/slot)
     std::vector<cadm::vec3> m_positions;
 
-    /// selection state for each point (handle/slot); 0.0f or 1.0f
+    /// @brief Selection state for each point (handle/slot); 0.0f or 1.0f
     std::vector<float> m_selected;
 
-    /// alive status for each point (handle/slots) (whether the slot is taken or not)
+    /// @brief Alive status for each point (handle/slots) (whether the slot is taken or not)
     std::vector<bool> m_alive;
 
-    /// list of free handles (slots)
+    /// @brief List of free handles (slots)
     std::vector<PointHandle> m_freeList;
 
-    /// packed list of live slot indices, used as the draw index buffer (EBO).
+    /// @brief Packed list of live slot indices, used as the draw index buffer (EBO).
     /// The position/selection VBOs are sparse (indexed by a handle), so this gather
     /// buffer selects only live slots at draw time
     GpuBuffer<PointHandle, GL_ELEMENT_ARRAY_BUFFER> m_indexBuffer;

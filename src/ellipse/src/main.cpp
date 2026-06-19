@@ -169,7 +169,8 @@ int main(int argc, char *argv[]) {
     auto glWidget = new OpenGLWidget;
     leftControlsLayout->addWidget(glWidget);
 
-    // Ellipse Parameters group of widgets
+    // ellipse Parameters group of widgets
+
     const auto ellipseParametersGroup = new QGroupBox("Ellipse Parameters");
     ellipseParametersGroup->setMaximumWidth(rightWidgetsMaxSize);
     const auto ellipseParametersLayout = new QVBoxLayout;
@@ -202,7 +203,8 @@ int main(int argc, char *argv[]) {
 
     rightControlsLayout->addWidget(ellipseParametersGroup, 0, Qt::AlignTop);
 
-    // Adaptive rendering group of widgets
+    // adaptive rendering group of widgets
+
     const auto adaptiveRenderingGroup = new QGroupBox("Adaptive rendering");
     adaptiveRenderingGroup->setMaximumWidth(rightWidgetsMaxSize);
 

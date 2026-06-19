@@ -18,7 +18,7 @@
 ///
 /// GpuBuffer has no destructor because that would require an active GL context,
 /// which cannot be guaranteed at arbitrary destruction time.
-/// Owners must call deleteGpu() explicitly in their own GL-context-aware destructor.
+/// Owners must call deleteGpu() explicitly in their own GL-context-aware destructor
 template <typename T, GLenum Target = GL_ARRAY_BUFFER, GLenum DefaultUsage = GL_DYNAMIC_DRAW>
 class GpuBuffer final {
 public:
@@ -43,17 +43,17 @@ public:
     void popBack();
 
     /// Remove the element at idx, shifting the tail left
-    /// @note marks shifted slots dirty.
+    /// @note marks shifted slots dirty
     void eraseAt(int idx);
 
     /// Remove the element at idx by swapping the last element into its place.
     /// @note order is NOT preserved; touches at most one slot (cheaper than eraseAt).
-    /// Use when the buffer is an unordered set (e.g., a gather/index buffer).
+    /// Use when the buffer is an unordered set (e.g., a gather/index buffer)
     void swapPopAt(int idx);
 
     /// Replace contents by diffing against existing data
     /// @note finds the first differing slot and marks everything from there to the end of the new data dirty.
-    /// Falls back to assign() only when the new size exceeds current capacity.
+    /// Falls back to assign() only when the new size exceeds current capacity
     void diffAssign(std::vector<T> data);
 
     [[nodiscard]] int size() const {
@@ -85,10 +85,10 @@ public:
     void syncToGpu(QOpenGLFunctions_4_5_Core *gl, GLenum usage = DefaultUsage);
 
     /// Delete the GPU buffer object
-    /// @note does not touch CPU data. Must be called before destruction.
+    /// @note does not touch CPU data. Must be called before destruction
     void deleteGpu(QOpenGLFunctions_4_5_Core *gl);
 
-    /// Destructor with the assertion that resources are not leaked. Does not free the gpu buffers.
+    /// Destructor with the assertion that resources are not leaked. Does not free the gpu buffers
     ~GpuBuffer();
 
 private:

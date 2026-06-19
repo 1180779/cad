@@ -53,7 +53,8 @@ void BezierC0Component::addControlPoint(const PointHandle h) {
 
     switch ((n - 1) % 3) {
     case 0: {
-        // append new trailing patch.
+        // append new trailing patch
+       
         const auto prev = m_controlPoints[n - 1];
         const auto cur = static_cast<uint32_t>(h);
         m_patchIndexBuf.append(prev);

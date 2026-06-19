@@ -92,8 +92,8 @@ DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityI
         m_specs.push_back(std::move(spec));
     }
 
-    // Curves not being deleted that reference a deleted point lose membership via
-    // the registry remove-callback; snapshot them so undo can restore exact order.
+    // curves not being deleted that reference a deleted point lose membership via
+    // the registry remove-callback; snapshot them so undo can restore exact order
     if (!deletedPoints.empty()) {
         for (const auto &e : scene.getEntities()) {
             if (deleting.contains(e->getId())) {
@@ -122,7 +122,7 @@ void DeleteEntityCommand::execute() {
 }
 
 void DeleteEntityCommand::undo() {
-    // Points first so curves can re-reference live handles.
+    // points first so curves can re-reference live handles
     for (const auto &spec : m_specs) {
         if (spec.isPoint()) {
             rebuildEntity(m_scene, spec);

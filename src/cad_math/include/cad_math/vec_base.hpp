@@ -163,9 +163,9 @@ namespace cadm {
 
         // ===== common methods =====
 
-        /// @brief Normalizes in-place. 
+        /// @brief Normalizes in-place 
         /// 
-        /// @pre length must not be zero or near-zero.
+        /// @pre Length must not be zero or near-zero
         void normalize() noexcept {
             const auto lengthSq = lengthSquared();
             assert(lengthSq > eps * eps && "normalize() called on a zero or near-zero vector");
@@ -178,14 +178,14 @@ namespace cadm {
 
         /// @brief Returns a normalized copy.
         ///
-        /// @pre length must not be zero or near-zero.
+        /// @pre Length must not be zero or near-zero
         [[nodiscard]] Derived normalized() const noexcept {
             Derived res = static_cast<const Derived&>(*this);
             res.normalize();
             return res;
         }
 
-        /// @brief Returns a normalized copy, or `fallback` if the vector length is <= eps.
+        /// @brief Returns a normalized copy, or `fallback` if the vector length is <= eps
         [[nodiscard]] Derived safeNormalized(const Derived &fallback) const noexcept {
             const auto lengthSq = lengthSquared();
             if (lengthSq < eps * eps) {

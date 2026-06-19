@@ -93,7 +93,7 @@ void bsplineToBezier::chordLength(
     // build knot vector (n + 4 knots).
     // Active range: knots[3]...knots[n], each interior span = corresponding chord length.
     // Boundary knots extend beyond the active range with the nearest chord spacing,
-    // so Boehm's alpha formula has valid denominators at the first and last segments.
+    // so Boehm's alpha formula has valid denominators at the first and last segments
     std::vector<float> knots(n + 4);
     knots[3] = 0.f;
     for (int i = 4; i <= n; ++i) {

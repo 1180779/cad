@@ -246,7 +246,7 @@ void PointRegistry::ensureGpuCapacity(const size_t requiredSlots) {
     reallocatePositionVBO(gl, posBytes);
     reallocateSelectionVBO(gl, selBytes);
 
-    // Rebind VAO attribute pointers to the new VBOs
+    // rebind VAO attribute pointers to the new VBOs
     gl->glBindVertexArray(m_VAO);
 
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_positionVBO);

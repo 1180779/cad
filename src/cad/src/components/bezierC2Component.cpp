@@ -104,9 +104,9 @@ void BezierC2Component::setBernsteinPosition(const int bernsteinIndex, const cad
     const int local = bernsteinIndex % 4;
     const int segment = bernsteinIndex / 4;
 
-    // All inverses use the uniform-knot formula. In chord-length mode the result is
+    // all inverses use the uniform-knot formula. In chord-length mode the result is
     // approximate (the de Boor point shifts, the curve recomputes with new chord lengths),
-    // but it gives meaningful interactive control.
+    // but it gives meaningful interactive control
     if (local == 0) {
         // b0 = (d0 + 4*d1 + d2)/6  →  d0 = 6*b0 - 4*d1 - d2
         const cadm::vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
@@ -171,7 +171,8 @@ void BezierC2Component::recomputeBernstein() {
 
     m_bernsteinVbo.assign(m_bernsteinPositions);
 
-    // Sequential patch EBO: 0,1,2,3, 4,5,6,7, ...
+    // sequential patch EBO: 0,1,2,3, 4,5,6,7, ...
+   
     const int totalBernstein = static_cast<int>(m_bernsteinPositions.size());
     std::vector<uint32_t> patchIdx(static_cast<size_t>(totalBernstein));
     for (int i = 0; i < totalBernstein; ++i) {

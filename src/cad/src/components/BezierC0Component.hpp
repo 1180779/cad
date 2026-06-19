@@ -12,8 +12,8 @@
 #include "GpuBuffer.hpp"
 #include "INewPointsTargetComponent.hpp"
 
-/// Multi-segment cubic Bézier curve with C0 continuity between segments.
-/// Control points are shared point entities referenced by PointHandle.
+/// @brief Multi-segment cubic Bézier curve with C0 continuity between segments.
+/// Control points are shared point entities referenced by PointHandle
 class BezierC0Component final : public GeometryComponent,
                                 public INewPointsTargetComponent<BezierC0Component> {
 public:

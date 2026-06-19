@@ -5,7 +5,7 @@
 #include "BlenderCameraComponent.hpp"
 
 cadm::vec3 BlenderCameraComponent::forward() const {
-    // Camera looks along -Z in local space; orbitRot col2 is +Z; forward = -Z = -col2
+    // camera looks along -Z in local space; orbitRot col2 is +Z; forward = -Z = -col2
     return -m_orbitRot.columns[2];
 }
 

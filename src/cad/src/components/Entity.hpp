@@ -18,8 +18,8 @@
 
 using EntityID = uint32_t;
 
-/// Opaque token that only Scene can construct, used to restrict Entity::setSelected
-/// to Scene::setSelected / Scene::clearSelection callers.
+/// @brief Opaque token that only Scene can construct, used to restrict Entity::setSelected
+/// to Scene::setSelected / Scene::clearSelection callers
 class SelectionKey final {
     SelectionKey() = default;
 
@@ -70,7 +70,8 @@ public:
     template <typename T, typename... Args>
     T* addComponent(Args &&... args);
 
-    /// returns the component of the entity or [std::nullopt] if the entity does not have a component of the desired type
+    /// @brief Returns the component of the entity 
+    /// or [std::nullopt] if the entity does not have a component of the desired type
     template <typename T>
     std::optional<T*> getComponent();
 

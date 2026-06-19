@@ -41,10 +41,7 @@ public:
 
     void setRotation(const cadm::vec3 &rotation);
 
-    signals  :
-
-    
-
+signals :
     void translationXChanged(double value);
 
     void translationYChanged(double value);
@@ -66,8 +63,9 @@ public:
 private:
     cadm::vec3 m_translation{};
 
-    // Euler angles for now
+    // euler angles for now
     // TODO: replace with quaternions
+
     cadm::vec3 m_rotation{}; // Z, Y, X
     cadm::vec3 m_scale{1.0f, 1.0f, 1.0f};
 

@@ -282,7 +282,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
         else if (m_selectedKind == SelectedPointKind::Bernstein &&
             m_selectedBernstein >= 0) {
             // a Bernstein edit back-computes several de Boor points; snapshot them
-            // so undo can restore the lot. apply re-runs the back-computation.
+            // so undo can restore the lot. apply re-runs the back-computation
             auto *lBezier = m_bezier;
             auto *lScene = m_scene;
             const int idx = m_selectedBernstein;

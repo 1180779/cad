@@ -128,7 +128,7 @@ public:
 
 private:
     cadm::cadf m_radius{5.0};
-    // Position = target + orbitRot*(0,0,radius).
+    /// @brief Position = target + orbitRot*(0,0,radius)
     cadm::mat3 m_orbitRot = cadm::mat3::identity();
 
     cadm::vec3 m_target{};

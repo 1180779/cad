@@ -245,7 +245,7 @@ namespace cadm {
             return result;
         }
 
-        // Modified Gram-Schmidt orthonormalization of columns
+        /// @brief Modified Gram-Schmidt orthonormalization of columns
         [[nodiscard]] Derived orthonormalized() const requires (R == C) {
             // https://www.math.uci.edu/~ttrogdon/105A/html/Lecture23.html
             Derived v = *static_cast<const Derived*>(this);

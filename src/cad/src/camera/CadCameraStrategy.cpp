@@ -84,7 +84,8 @@ void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent 
     newRelPos = newRelPos.safeNormalized(cadm::vec3::unitZ()) * relPosition.length();
     const auto newPosition = pivot + newRelPos;
 
-    // Re-orthogonalize up
+    // re-orthogonalize up
+
     const auto newForward = (-newRelPos).safeNormalized(cadm::vec3::unitZ());
     const auto finalUp = (newUp - newForward * newUp.dot(newForward)).safeNormalized(pCamera->getWorldUp());
 

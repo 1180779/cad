@@ -9,18 +9,18 @@
 
 #include "ICursorPlacementStrategy.hpp"
 
-// Resolves cursor placement by intersecting the mouse ray with the most
-// view-facing active grid plane.
-//
-// When multiple planes are active the one whose normal is most aligned
-// with the camera's view direction is chosen.
-//
-// Returns nullopt when the ray is nearly parallel to all active planes
+/// @brief Resolves cursor placement by intersecting the mouse ray with the most
+/// view-facing active grid plane.
+///
+/// When multiple planes are active, the one whose normal is most aligned
+/// with the camera's view direction is chosen.
+///
+/// Returns nullopt when the ray is nearly parallel to all active planes
 class GridPlanePlacementStrategy final : public IViewportPositionStrategy {
 public:
     explicit GridPlanePlacementStrategy(const int gridPlanesMask) : m_gridPlanesMask(gridPlanesMask) {}
 
-    void onGridPlanesChanged(int mask) override {
+    void onGridPlanesChanged(const int mask) override {
         m_gridPlanesMask = mask;
     }
 

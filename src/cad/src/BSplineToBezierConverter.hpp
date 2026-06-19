@@ -11,9 +11,9 @@
 #include <cad_math/vec3.hpp>
 #include "PointRegistry.hpp"
 
-/// @brief how parameter values are assigned to knot intervals between de Boor points
+/// @brief How parameter values are assigned to knot intervals between de Boor points
 enum class ParametrizationMode {
-    /// @brief uniform parametrization
+    /// @brief Uniform parametrization
     ///
     /// @details
     /// Each knot interval has width 1.
@@ -27,7 +27,7 @@ enum class ParametrizationMode {
     /// Prone to loops/cusps when de Boor points are unevenly spaced
     uniform,
 
-    /// @brief parametrization from chord length
+    /// @brief Parametrization from chord length
     /// 
     /// @details 
     /// Knot interval proportional to ||d_{i + 1} - d_i|| (chord length).
@@ -37,7 +37,7 @@ enum class ParametrizationMode {
 };
 
 namespace bsplineToBezier {
-    /// @brief convert one B-spline segment (uniform knots) to Bernstein control points.
+    /// @brief Convert one B-spline segment (uniform knots) to Bernstein control points.
     /// @param d0, d1, d2, d3  four consecutive de Boor points for this segment
     /// @param view span into which the four Bezier control points (b0,b1,b2,b3) will be saved
     void uniformSegment(
@@ -49,7 +49,7 @@ namespace bsplineToBezier {
     );
 
     namespace detail {
-        /// @brief insert knot tHat once into a degree-p B-spline (Boehm's algorithm).
+        /// @brief Insert knot tHat once into a degree-p B-spline (Boehm's algorithm).
         /// Span k is the largest i such that knots[i] <= tHat < knots[i+1]
         void insertKnot(
             std::vector<cadm::vec3> &pts,
@@ -59,7 +59,7 @@ namespace bsplineToBezier {
         );
     }
 
-    /// @brief convert all segments of an open cubic B-spline to piecewise Bezier using
+    /// @brief Convert all segments of an open cubic B-spline to piecewise Bezier using
     /// chord-length knot intervals and Boehm knot insertion
     ///
     /// @param handles de Boor point handles in order (n >= 4 required)
@@ -71,7 +71,7 @@ namespace bsplineToBezier {
         std::vector<cadm::vec3> &out
     );
 
-    /// @brief convert all segments of an open cubic B-spline to piecewise Bezier with uniform parametrization
+    /// @brief Convert all segments of an open cubic B-spline to piecewise Bezier with uniform parametrization
     ///
     /// @param handles de Boor point handles in order (n >= 4 required)
     /// @param registry position source
@@ -82,7 +82,7 @@ namespace bsplineToBezier {
         std::vector<cadm::vec3> &out
     );
 
-    /// @brief dispatch to the appropriate converter
+    /// @brief Dispatch to the appropriate converter
     void convert(
         ParametrizationMode mode,
         std::span<const PointHandle> handles,

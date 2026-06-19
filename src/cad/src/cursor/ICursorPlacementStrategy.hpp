@@ -9,9 +9,9 @@
 #include <cad_math/mat4.hpp>
 #include <cad_math/vec3.hpp>
 
-/// Generic strategy for resolving a mouse event to a 3D world-space position.
+/// @brief Generic strategy for resolving a mouse event to a 3D world-space position.
 ///
-/// Used for cursor placement, control-point dragging, and click-to-add modes.
+/// Used for cursor placement, control-point dragging, and click-to-add modes
 class IViewportPositionStrategy {
 public:
     virtual ~IViewportPositionStrategy() = default;

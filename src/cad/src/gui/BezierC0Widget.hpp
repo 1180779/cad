@@ -16,7 +16,7 @@
 #include "../components/BezierC0Component.hpp"
 #include "../Scene.hpp"
 
-class BezierC0Widget : public ComponentWidget {
+class BezierC0Widget final : public ComponentWidget {
     Q_OBJECT
 
 public:
@@ -29,32 +29,29 @@ public:
         }
     }
 
-    /// @brief refresh the list items in the m_pointList list based on points from the m_bezier
+    /// @brief Refresh the list items in the m_pointList list based on points from the m_bezier
     void populatePointList();
 
-    /// @brief sync the selection of list items in the m_pointList from the m_scene entities
+    /// @brief Sync the selection of list items in the m_pointList from the m_scene entities
     void syncSelectionFromScene();
 
-    signals  :
-
-    
-
+signals :
     void pointSelectionChanged(QList<Entity*> selected);
 
 private:
-    /// @brief associated bezier component
+    /// @brief Associated bezier component
     BezierC0Component *m_bezier;
 
-    /// @brief source scene
+    /// @brief Source scene
     Scene *m_scene;
 
     QCheckBox *m_showPolygonCheckbox{};
     QListWidget *m_pointList{};
 
-    /// @brief map of points handles and items of the m_pointList items
+    /// @brief Map of points handles and items of the m_pointList items
     std::unordered_map<PointHandle, QListWidgetItem*> m_itemMap;
 
-    /// @brief button to detach a point handle from the curve
+    /// @brief Button to detach a point handle from the curve
     QPushButton *m_detachButton{};
 
     /// @brief PointPropertiesWidget providing details for the currently selected point from the curve

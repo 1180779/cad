@@ -11,7 +11,7 @@ namespace cadm {
     constexpr float feps = 1e-6f;
     constexpr double deps = 1e-12;
 
-    // General-purpose epsilon for float comparisons and geometric checks.
+    /// @brief General-purpose epsilon for float comparisons and geometric checks
     constexpr cadf eps = feps;
 }
 

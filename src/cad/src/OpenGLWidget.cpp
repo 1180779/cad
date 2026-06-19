@@ -40,7 +40,7 @@ OpenGLWidget::OpenGLWidget(QWidget *parent) : QOpenGLWidget(parent),
                                                   std::make_unique<GridPlanePlacementStrategy>(1 /*XY plane*/)
                                               ) {
     setFocusPolicy(Qt::StrongFocus);
-    // Refresh the viewport and dependent panels after any undo/redo/push.
+    // refresh the viewport and dependent panels after any undo/redo/push
     m_commandStack.onChange = [this] {
         m_scene.syncPointSelectionToRegistry();
         emit sceneChanged();
@@ -727,7 +727,7 @@ void OpenGLWidget::beginTransform(const TransformMode mode) {
             continue;
         }
 
-        // Bézier curve: move all its control points rather than the curve entity itself
+        // Bezier curve: move all its control points rather than the curve entity itself
         if (const auto bc = e->getComponent<BezierC0Component>()) {
             for (const auto h : bc.value()->getControlPoints()) {
                 if (const auto ptEntity = m_scene.getEntityByPointHandle(h)) {

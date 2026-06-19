@@ -10,7 +10,7 @@
 
 #include "ViewportTypes.hpp"
 
-/// Vim-like status bar widget with the most relevant information available at a glance.
+/// @brief Vim-like status bar widget with the most relevant information available at a glance
 class StatusBarWidget final : public QWidget {
     Q_OBJECT
 

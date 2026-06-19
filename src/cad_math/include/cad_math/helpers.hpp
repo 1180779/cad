@@ -17,10 +17,10 @@
 #include "vec4.hpp"
 
 namespace cadm {
-    // Projects a 3D world position to 2D screen coordinates.
-    // Assumes OpenGL NDC convention: x and y in [-1, 1], z in [-1, 1].
-    // Returns std::nullopt if the point is behind the camera (w <= 0).
-    // Top left is the (0, 0) point.
+    /// @brief Projects a 3D world position to 2D screen coordinates.
+    /// Assumes OpenGL NDC convention: x and y in [-1, 1], z in [-1, 1].
+    /// Returns std::nullopt if the point is behind the camera (w <= 0).
+    /// Top left is the (0, 0) point
     inline std::optional<vec2i> projectToScreenGL(
         const vec3 &worldPos,
         const mat4 &view,
@@ -40,9 +40,9 @@ namespace cadm {
         );
     }
 
-    // Unprojects a 2D screen point at a specific NDC depth to a World Space position.
-    // ndcZ: the clip-space Z to unproject at (e.g. pivot depth from VP * pivotPos).
-    // Top left is the (0, 0) point.
+    /// @brief Unprojects a 2D screen point at a specific NDC depth to a World Space position.
+    /// ndcZ: the clip-space Z to unproject at (e.g. pivot depth from VP * pivotPos).
+    /// Top left is the (0, 0) point
     inline vec3 unprojectPoint(
         const vec2i point,
         const cadf ndcZ,
@@ -61,9 +61,9 @@ namespace cadm {
         return {world.x, world.y, world.z};
     }
 
-    // Unprojects a 2D screen point with a given NDC depth z to World Space ray.
+    // @brief Unprojects a 2D screen point with a given NDC depth z to World Space ray.
     // z should be the lower value (-1 for OpenGL or 1 for DirectX/Vulkan) depending on the projection matrix.
-    // Top left is the (0, 0) point.
+    // Top left is the (0, 0) point
     inline ray4 unprojectRay(
         const vec2i point,
         const cadf zNear,
@@ -91,7 +91,8 @@ namespace cadm {
         return {unprojectedNearPoint, rayDir};
     }
 
-    // Extracts ZYX Euler angles (rx, ry, rz) from rotation matrix M = Rz * Ry * Rx.
+    // extracts ZYX Euler angles (rx, ry, rz) from rotation matrix M = Rz * Ry * Rx
+
     inline vec3 eulerZYXFromRotMat(const mat3 &m) {
         // https://en.wikipedia.org/wiki/Euler_angles
         const auto m20 = m.row(2)[0];
@@ -107,10 +108,10 @@ namespace cadm {
         return {gamma, beta, alpha};
     }
 
-    // Intersects a ray (origin + t*dir) with the infinite plane dot(normal, p) = offset.
-    // Returns the parameter t at the intersection point, or nullopt when the ray is
-    // parallel to the plane.
-    // The hit position is: origin + dir * t.
+    /// @brief Intersects a ray (origin + t*dir) with the infinite plane dot(normal, p) = offset.
+    /// Returns the parameter t at the intersection point, or nullopt when the ray is
+    /// parallel to the plane.
+    /// The hit position is: origin + dir * t
     inline std::optional<cadf> intersectRayPlane(
         const vec3 &origin,
         const vec3 &dir,

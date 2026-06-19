@@ -49,7 +49,7 @@ private
     void onZChanged(double value);
 
 private:
-    /// axis: 0=x, 1=y, 2=z
+    /// @brief Axis: 0=x, 1=y, 2=z
     void applyCoordEdit(int axis, double value);
 
 private:
