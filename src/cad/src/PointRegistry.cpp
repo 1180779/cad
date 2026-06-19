@@ -176,7 +176,8 @@ void PointRegistry::clearSelection() {
 
 void PointRegistry::reallocatePositionVBO(
     QOpenGLFunctions_4_5_Core * const gl,
-    
+
+
 const GLsizeiptr posBytes
 )
 const
@@ -195,7 +196,8 @@ const
 
 void PointRegistry::reallocateSelectionVBO(
     QOpenGLFunctions_4_5_Core * const gl,
-    
+
+
 const GLsizeiptr selBytes
 )
 const

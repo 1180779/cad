@@ -20,7 +20,11 @@ namespace cadm {
             vec3 columns[3];
         };
 
-        constexpr mat() { for (auto &cell : data) { cell = 0; } }
+        constexpr mat() {
+            for (auto &cell : data) {
+                cell = 0;
+            }
+        }
 
         constexpr mat(
             const cadf x0,
@@ -58,9 +62,13 @@ namespace cadm {
             };
         }
 
-        constexpr static mat scale(const vec2 &s) { return scale(s.x, s.y); }
+        constexpr static mat scale(const vec2 &s) {
+            return scale(s.x, s.y);
+        }
 
-        constexpr static mat scale(const cadf sx, const cadf sy) { return diag(sx, sy, 1.0); }
+        constexpr static mat scale(const cadf sx, const cadf sy) {
+            return diag(sx, sy, 1.0);
+        }
 
         constexpr static mat diag(const cadf m0, const cadf m1, const cadf m2) {
             return {
@@ -76,7 +84,9 @@ namespace cadm {
             };
         }
 
-        constexpr static mat translation(const vec2 &t) { return translation(t.x, t.y); }
+        constexpr static mat translation(const vec2 &t) {
+            return translation(t.x, t.y);
+        }
 
         constexpr static mat translation(const cadf tx, const cadf ty) {
             return {
@@ -126,9 +136,13 @@ namespace cadm {
             };
         }
 
-        static mat rotZYX(const vec3 &xyz) { return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x); }
+        static mat rotZYX(const vec3 &xyz) {
+            return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x);
+        }
 
-        static mat rotZYX(const cadf rx, const cadf ry, const cadf rz) { return rotZ(rz) * rotY(ry) * rotX(rx); }
+        static mat rotZYX(const cadf rx, const cadf ry, const cadf rz) {
+            return rotZ(rz) * rotY(ry) * rotX(rx);
+        }
 
         static mat rotZ(const cadf alpha) {
             const cadf c = std::cos(alpha);

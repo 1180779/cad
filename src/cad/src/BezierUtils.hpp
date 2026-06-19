@@ -26,14 +26,18 @@ namespace bezierUtils {
         bool anyVisible = false;
         for (int i = 0; i < 4; ++i) {
             const auto sp = cadm::projectToScreenGL(pts[i], view, proj, vpW, vpH);
-            if (!sp) { continue; }
+            if (!sp) {
+                continue;
+            }
             anyVisible = true;
             minX = std::min(minX, sp->x);
             maxX = std::max(maxX, sp->x);
             minY = std::min(minY, sp->y);
             maxY = std::max(maxY, sp->y);
         }
-        if (!anyVisible) { return std::nullopt; }
+        if (!anyVisible) {
+            return std::nullopt;
+        }
         return std::max(maxX - minX, maxY - minY);
     }
 }

@@ -28,9 +28,17 @@ namespace cadm {
 
         constexpr vec(const cadf x, const cadf y, const cadf z) : x(x), y(y), z(z) {}
 
-        constexpr static vec unitX() noexcept { return {1.0, 0.0, 0.0}; }
-        constexpr static vec unitY() noexcept { return {0.0, 1.0, 0.0}; }
-        constexpr static vec unitZ() noexcept { return {0.0, 0.0, 1.0}; }
+        constexpr static vec unitX() noexcept {
+            return {1.0, 0.0, 0.0};
+        }
+
+        constexpr static vec unitY() noexcept {
+            return {0.0, 1.0, 0.0};
+        }
+
+        constexpr static vec unitZ() noexcept {
+            return {0.0, 0.0, 1.0};
+        }
 
         [[nodiscard]] constexpr vec cross(const vec &other) const {
             return {y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x};

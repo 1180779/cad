@@ -60,7 +60,9 @@ cadm::mat4 BlenderCameraStrategy::getInvProjection() {
         EXPECTED_COMPONENT_MISSING();
         return cadm::mat4::identity();
     }
-    if (camera.value()->isOrtho()) { return getProjection().inversedOrtho(); }
+    if (camera.value()->isOrtho()) {
+        return getProjection().inversedOrtho();
+    }
     return getProjection().inversedProjectionMO();
 }
 
@@ -90,12 +92,15 @@ bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QP
         const cadm::cadf pitchAngle = -static_cast<cadm::cadf>(delta.y()) * s_sensitivity;
         pCamera->m_orbitRot = (cadm::mat3::rotY(yawAngle) * pCamera->m_orbitRot
             * cadm::mat3::rotX(pitchAngle)).orthonormalized();
-        emit pCamera->propertyUpdated();
+        emit
+        pCamera->propertyUpdated();
         return true;
     }
     case CameraAction::Pan: {
         cadm::cadf scale;
-        if (pCamera->isOrtho()) { scale = pCamera->getOrthoHeight() / static_cast<cadm::cadf>(m_heightGetter()); }
+        if (pCamera->isOrtho()) {
+            scale = pCamera->getOrthoHeight() / static_cast<cadm::cadf>(m_heightGetter());
+        }
         else {
             // hWorld = 2 * radius * tan(fov / 2)
             // scale = hWorld / hScreen
@@ -122,7 +127,9 @@ bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QP
 
 bool BlenderCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
-    if (!camera) { return false; }
+    if (!camera) {
+        return false;
+    }
     const auto pCamera = camera.value();
     const auto step = m_translationStep * (pCamera->isOrtho()
                                                ? pCamera->getOrthoHeight()
@@ -155,7 +162,9 @@ bool BlenderCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) 
 
 bool BlenderCameraStrategy::handleWheelEvent(QWheelEvent *event) {
     const int delta = event->angleDelta().y();
-    if (delta == 0) { return false; }
+    if (delta == 0) {
+        return false;
+    }
 
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
     if (!camera) {
@@ -166,14 +175,22 @@ bool BlenderCameraStrategy::handleWheelEvent(QWheelEvent *event) {
     if (const auto pCamera = camera.value();
         pCamera->isOrtho()) {
         auto newOrthoHeight = pCamera->getOrthoHeight();
-        if (delta > 0) { newOrthoHeight /= pCamera->getZoomFactor(); }
-        else { newOrthoHeight *= pCamera->getZoomFactor(); }
+        if (delta > 0) {
+            newOrthoHeight /= pCamera->getZoomFactor();
+        }
+        else {
+            newOrthoHeight *= pCamera->getZoomFactor();
+        }
         pCamera->setOrthoHeight(newOrthoHeight);
     }
     else {
         auto newRadius = pCamera->getRadius();
-        if (delta > 0) { newRadius /= pCamera->getZoomFactor(); }
-        else { newRadius *= pCamera->getZoomFactor(); }
+        if (delta > 0) {
+            newRadius /= pCamera->getZoomFactor();
+        }
+        else {
+            newRadius *= pCamera->getZoomFactor();
+        }
         pCamera->setRadius(newRadius);
     }
 

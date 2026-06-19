@@ -77,9 +77,13 @@ public:
 
     /// @brief get available camera strategies
     /// @return available camera strategies
-    [[nodiscard]] const std::vector<CameraStrategyEntry>& getStrategies() const { return m_cameras; }
+    [[nodiscard]] const std::vector<CameraStrategyEntry>& getStrategies() const {
+        return m_cameras;
+    }
 
-signals:
+    signals :
+    
+
     void cameraChanged(const std::string &name);
 
 private:

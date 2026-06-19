@@ -21,7 +21,11 @@ namespace cadm {
             vec4 columns[4];
         };
 
-        constexpr mat() { for (auto &cell : data) { cell = 0; } }
+        constexpr mat() {
+            for (auto &cell : data) {
+                cell = 0;
+            }
+        }
 
         constexpr mat(
             const cadf x0,
@@ -117,9 +121,13 @@ namespace cadm {
             };
         }
 
-        constexpr static mat scale(const vec3 &s) { return scale(s.x, s.y, s.z); }
+        constexpr static mat scale(const vec3 &s) {
+            return scale(s.x, s.y, s.z);
+        }
 
-        constexpr static mat scale(const cadf sx, const cadf sy, const cadf sz) { return diag(sx, sy, sz, 1.0); }
+        constexpr static mat scale(const cadf sx, const cadf sy, const cadf sz) {
+            return diag(sx, sy, sz, 1.0);
+        }
 
         constexpr static mat diag(const cadf d0, const cadf d1, const cadf d2, const cadf d3) {
             return mat{
@@ -130,7 +138,9 @@ namespace cadm {
             };
         }
 
-        constexpr static mat translation(const vec3 &t) { return translation(t.x, t.y, t.z); }
+        constexpr static mat translation(const vec3 &t) {
+            return translation(t.x, t.y, t.z);
+        }
 
         constexpr static mat translation(const cadf tx, const cadf ty, const cadf tz) {
             return {
@@ -177,9 +187,13 @@ namespace cadm {
             };
         }
 
-        static mat rotZYX(const vec3 &xyz) { return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x); }
+        static mat rotZYX(const vec3 &xyz) {
+            return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x);
+        }
 
-        static mat rotZYX(const cadf x, const cadf y, const cadf z) { return rotZ(z) * rotY(y) * rotX(x); }
+        static mat rotZYX(const cadf x, const cadf y, const cadf z) {
+            return rotZ(z) * rotY(y) * rotX(x);
+        }
 
         // Rodrigues rotation matrix around axis `u` by angle `phi` (radians).
         //
@@ -233,9 +247,15 @@ namespace cadm {
         }
 
         constexpr void inverseScale() {
-            if ((*this)(0, 0) != 0.0) { (*this)(0, 0) = static_cast<cadf>(1.0 / (*this)(0, 0)); }
-            if ((*this)(1, 1) != 0.0) { (*this)(1, 1) = static_cast<cadf>(1.0 / (*this)(1, 1)); }
-            if ((*this)(2, 2) != 0.0) { (*this)(2, 2) = static_cast<cadf>(1.0 / (*this)(2, 2)); }
+            if ((*this)(0, 0) != 0.0) {
+                (*this)(0, 0) = static_cast<cadf>(1.0 / (*this)(0, 0));
+            }
+            if ((*this)(1, 1) != 0.0) {
+                (*this)(1, 1) = static_cast<cadf>(1.0 / (*this)(1, 1));
+            }
+            if ((*this)(2, 2) != 0.0) {
+                (*this)(2, 2) = static_cast<cadf>(1.0 / (*this)(2, 2));
+            }
         }
 
         [[nodiscard]] constexpr mat inversedScale() const {
@@ -244,11 +264,17 @@ namespace cadm {
             return copy;
         }
 
-        constexpr void inverseRotation() { transpose(); }
+        constexpr void inverseRotation() {
+            transpose();
+        }
 
-        [[nodiscard]] constexpr mat inversedRotation() const { return transposed(); }
+        [[nodiscard]] constexpr mat inversedRotation() const {
+            return transposed();
+        }
 
-        void inverseView() { *this = inversedView(); }
+        void inverseView() {
+            *this = inversedView();
+        }
 
         [[nodiscard]] constexpr mat inversedView() const {
             const auto col0 = col(0).xyz();
@@ -268,7 +294,9 @@ namespace cadm {
             };
         }
 
-        void inverseProjectionMO() { *this = inversedProjectionMO(); }
+        void inverseProjectionMO() {
+            *this = inversedProjectionMO();
+        }
 
         [[nodiscard]] mat inversedProjectionMO() const {
             const auto a = col(0)[0];
@@ -284,7 +312,9 @@ namespace cadm {
             };
         }
 
-        void inverseOrtho() { *this = inversedOrtho(); }
+        void inverseOrtho() {
+            *this = inversedOrtho();
+        }
 
         [[nodiscard]] constexpr mat inversedOrtho() const {
             const auto a = col(0)[0];

@@ -22,12 +22,17 @@ public:
 
     void setEntity(Entity *entity);
 
-signals:
+    signals :
+    
+
     void propertyChanged();
 
     void pointSelectionChanged(QList<Entity*> selected);
 
-public slots:
+public
+    slots :
+    
+
     void syncBezierSelection() const;
 
     void refreshComponents() const;

@@ -9,11 +9,17 @@ cadm::vec3 BlenderCameraComponent::forward() const {
     return -m_orbitRot.columns[2];
 }
 
-cadm::vec3 BlenderCameraComponent::right() const { return m_orbitRot.columns[0]; }
+cadm::vec3 BlenderCameraComponent::right() const {
+    return m_orbitRot.columns[0];
+}
 
-cadm::vec3 BlenderCameraComponent::up() const { return m_orbitRot.columns[1]; }
+cadm::vec3 BlenderCameraComponent::up() const {
+    return m_orbitRot.columns[1];
+}
 
-cadm::vec3 BlenderCameraComponent::getPosition() const { return m_target + m_orbitRot.columns[2] * m_radius; }
+cadm::vec3 BlenderCameraComponent::getPosition() const {
+    return m_target + m_orbitRot.columns[2] * m_radius;
+}
 
 void BlenderCameraComponent::setTarget(const cadm::vec3 &value) {
     if (m_target != value) {

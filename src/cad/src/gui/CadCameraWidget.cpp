@@ -269,7 +269,9 @@ void CadCameraWidget::setUpProjectionControls(QFormLayout *layout) {
         m_orthoHeight,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         this,
-        [this](const double value) { m_camera->setOrthoHeight(value); }
+        [this](const double value) {
+            m_camera->setOrthoHeight(value);
+        }
     );
     layout->addRow("OrthoHeight", m_orthoHeight);
 

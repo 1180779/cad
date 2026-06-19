@@ -11,14 +11,20 @@ void bsplineToBezier::detail::insertKnot(
 ) {
     int k = -1;
     for (int i = 0; i < static_cast<int>(knots.size()) - 1; ++i) {
-        if (knots[i] <= tHat && tHat < knots[i + 1]) { k = i; }
+        if (knots[i] <= tHat && tHat < knots[i + 1]) {
+            k = i;
+        }
     }
-    if (k < 0) { return; }
+    if (k < 0) {
+        return;
+    }
 
     const int n = static_cast<int>(pts.size()) - 1;
 
     std::vector<cadm::vec3> newPts(pts.size() + 1);
-    for (int i = 0; i <= k - p; ++i) { newPts[i] = pts[i]; }
+    for (int i = 0; i <= k - p; ++i) {
+        newPts[i] = pts[i];
+    }
     for (int i = k - p + 1; i <= k; ++i) {
         const float denom = knots[i + p] - knots[i];
         const float alpha = denom > 0.f
@@ -26,12 +32,18 @@ void bsplineToBezier::detail::insertKnot(
                                 : 1.f;
         newPts[i] = pts[i] * alpha + pts[i - 1] * (1.f - alpha);
     }
-    for (int i = k + 1; i <= n + 1; ++i) { newPts[i] = pts[i - 1]; }
+    for (int i = k + 1; i <= n + 1; ++i) {
+        newPts[i] = pts[i - 1];
+    }
 
     std::vector<float> newKnots(knots.size() + 1);
-    for (int i = 0; i <= k; ++i) { newKnots[i] = knots[i]; }
+    for (int i = 0; i <= k; ++i) {
+        newKnots[i] = knots[i];
+    }
     newKnots[k + 1] = tHat;
-    for (int i = k + 1; i < static_cast<int>(knots.size()); ++i) { newKnots[i + 1] = knots[i]; }
+    for (int i = k + 1; i < static_cast<int>(knots.size()); ++i) {
+        newKnots[i + 1] = knots[i];
+    }
 
     pts = std::move(newPts);
     knots = std::move(newKnots);
@@ -63,7 +75,9 @@ void bsplineToBezier::chordLength(
     const int segments = n - 3;
 
     std::vector<cadm::vec3> pts(n);
-    for (int i = 0; i < n; ++i) { pts[i] = registry.getPosition(handles[i]); }
+    for (int i = 0; i < n; ++i) {
+        pts[i] = registry.getPosition(handles[i]);
+    }
 
     // chord lengths l[i] = ||d[i+1] - d[i]||
     std::vector<float> l(n - 1);
@@ -71,7 +85,9 @@ void bsplineToBezier::chordLength(
         const cadm::vec3 diff = pts[i + 1] - pts[i];
         l[i] = diff.length();
         if (constexpr float kMinChord = cadm::eps;
-            l[i] < kMinChord) { l[i] = kMinChord; }
+            l[i] < kMinChord) {
+            l[i] = kMinChord;
+        }
     }
 
     // build knot vector (n + 4 knots).
@@ -80,7 +96,9 @@ void bsplineToBezier::chordLength(
     // so Boehm's alpha formula has valid denominators at the first and last segments.
     std::vector<float> knots(n + 4);
     knots[3] = 0.f;
-    for (int i = 4; i <= n; ++i) { knots[i] = knots[i - 1] + l[i - 4]; }
+    for (int i = 4; i <= n; ++i) {
+        knots[i] = knots[i - 1] + l[i - 4];
+    }
     knots[2] = knots[3] - l[0];
     knots[1] = knots[2] - l[0];
     knots[0] = knots[1] - l[0];

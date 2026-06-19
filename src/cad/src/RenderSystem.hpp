@@ -47,8 +47,13 @@ public:
     void shutdown();
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
-    void setGridPlanes(const int planes) { m_gridPlanes = planes; }
-    [[nodiscard]] int getGridPlanes() const { return m_gridPlanes; }
+    void setGridPlanes(const int planes) {
+        m_gridPlanes = planes;
+    }
+
+    [[nodiscard]] int getGridPlanes() const {
+        return m_gridPlanes;
+    }
 
     void setViewport(const int w, const int h) {
         m_viewportW = w;

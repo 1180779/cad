@@ -135,7 +135,9 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout) {
         m_fov,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         this,
-        [this](const double value) { m_camera->setFov(value * std::numbers::pi / 180.0); }
+        [this](const double value) {
+            m_camera->setFov(value * std::numbers::pi / 180.0);
+        }
     );
     layout->addRow("FOV", m_fov);
 

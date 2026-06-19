@@ -28,17 +28,23 @@ bool ShaderProgram::attachShader(const GLenum type, const std::string &source) {
         gl->glDeleteShader(previous);
         m_shaders[type] = shader;
     }
-    else { m_shaders[type] = shader; }
+    else {
+        m_shaders[type] = shader;
+    }
     return true;
 }
 
 bool ShaderProgram::attachShaderFromFile(GLenum type, std::string filename) {
     std::ifstream file(filename);
-    if (!file.is_open()) { return false; }
+    if (!file.is_open()) {
+        return false;
+    }
 
     std::string source;
     std::string line;
-    while (std::getline(file, line)) { source += line + "\n"; }
+    while (std::getline(file, line)) {
+        source += line + "\n";
+    }
 
     return attachShader(type, source);
 }
@@ -46,7 +52,9 @@ bool ShaderProgram::attachShaderFromFile(GLenum type, std::string filename) {
 bool ShaderProgram::compile() {
     const auto gl = GL();
     m_program = gl->glCreateProgram();
-    for (auto &shader : m_shaders) { gl->glAttachShader(m_program, shader.second); }
+    for (auto &shader : m_shaders) {
+        gl->glAttachShader(m_program, shader.second);
+    }
 
     gl->glLinkProgram(m_program);
     GLint success;
@@ -62,7 +70,9 @@ bool ShaderProgram::compile() {
 
 void ShaderProgram::deleteShaders() {
     const auto gl = GL();
-    for (auto &shader : m_shaders) { gl->glDeleteShader(shader.second); }
+    for (auto &shader : m_shaders) {
+        gl->glDeleteShader(shader.second);
+    }
     m_shaders.clear();
 }
 
@@ -79,7 +89,9 @@ void ShaderProgram::release() const {
 void ShaderProgram::setUniform1i(const std::string &name, const int value) const {
     const auto gl = GL();
     const GLint location = gl->glGetUniformLocation(m_program, name.c_str());
-    if (location != -1) { gl->glUniform1i(location, value); }
+    if (location != -1) {
+        gl->glUniform1i(location, value);
+    }
 }
 
 ShaderProgram::ShaderProgram() : m_program(0) {}

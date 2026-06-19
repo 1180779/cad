@@ -29,7 +29,9 @@ SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void SceneHierarchyWidget::setScene(Scene *scene) {
-    if (m_scene == scene) { return; }
+    if (m_scene == scene) {
+        return;
+    }
     m_scene = scene;
     populateList();
 }
@@ -42,18 +44,24 @@ void SceneHierarchyWidget::addEntityToList(const std::unique_ptr<Entity> &e) con
 }
 
 void SceneHierarchyWidget::refresh() {
-    if (!m_scene) { return; }
+    if (!m_scene) {
+        return;
+    }
 
     m_refreshing = true;
 
     std::unordered_set<Entity*> inScene;
-    for (const auto &e : m_scene->getEntities()) { inScene.insert(e.get()); }
+    for (const auto &e : m_scene->getEntities()) {
+        inScene.insert(e.get());
+    }
 
     // update current entities (delete; update name)
     for (int i = m_listWidget->count() - 1; i >= 0; --i) {
         auto *item = m_listWidget->item(i);
         if (auto *e = item->data(Qt::UserRole).value<Entity*>();
-            !inScene.contains(e)) { delete m_listWidget->takeItem(i); }
+            !inScene.contains(e)) {
+            delete m_listWidget->takeItem(i);
+        }
         else {
             item->setText(QString::fromStdString(e->getName()));
             inScene.erase(e);
@@ -62,7 +70,9 @@ void SceneHierarchyWidget::refresh() {
 
     // add missing entities
     for (const auto &e : m_scene->getEntities()) {
-        if (!inScene.contains(e.get())) { continue; }
+        if (!inScene.contains(e.get())) {
+            continue;
+        }
         addEntityToList(e);
     }
 
@@ -70,7 +80,9 @@ void SceneHierarchyWidget::refresh() {
 }
 
 void SceneHierarchyWidget::onItemSelectionChanged() {
-    if (m_refreshing) { return; }
+    if (m_refreshing) {
+        return;
+    }
     QList<Entity*> selected;
     for (const auto item : m_listWidget->selectedItems()) {
         selected.append(item->data(Qt::UserRole).value<Entity*>());
@@ -80,7 +92,9 @@ void SceneHierarchyWidget::onItemSelectionChanged() {
 
 void SceneHierarchyWidget::onItemChanged(const QListWidgetItem *item) const {
     // Update entity name
-    if (m_refreshing) { return; }
+    if (m_refreshing) {
+        return;
+    }
     auto *e = item->data(Qt::UserRole).value<Entity*>();
     if (!e) {
         return;
@@ -106,7 +120,9 @@ void SceneHierarchyWidget::populateList() {
         return;
     }
 
-    for (const auto &e : m_scene->getEntities()) { addEntityToList(e); }
+    for (const auto &e : m_scene->getEntities()) {
+        addEntityToList(e);
+    }
     m_refreshing = false;
 }
 
@@ -115,7 +131,9 @@ void SceneHierarchyWidget::setCameraController(CameraController *cameraControlle
 }
 
 void SceneHierarchyWidget::syncSelectionFromScene() {
-    if (!m_scene) { return; }
+    if (!m_scene) {
+        return;
+    }
 
     m_refreshing = true;
     for (int i = 0; i < m_listWidget->count(); ++i) {
@@ -148,7 +166,9 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
     }
 
     auto *e = item->data(Qt::UserRole).value<Entity*>();
-    if (!e) { return; }
+    if (!e) {
+        return;
+    }
 
     const bool isCursor = e->hasComponent<CursorComponent>();
     const bool isCamera = e->hasComponent<CameraComponent>();
@@ -160,37 +180,74 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
     if (isCursor) {
         auto *action = menu.addAction("Set as active cursor");
         action->setEnabled(!isActiveCursor);
-        connect(action, &QAction::triggered, this, [this, e] { emit setAsCursorRequested(e); });
+        connect(
+            action,
+            &QAction::triggered,
+            this,
+            [this, e] {
+                emit setAsCursorRequested(e);
+            }
+        );
     }
 
     if (isCamera) {
         auto *action = menu.addAction("Set as active camera");
         action->setEnabled(!isActiveCamera);
-        connect(action, &QAction::triggered, this, [this, e] { emit setAsCameraRequested(e->getId()); });
+        connect(
+            action,
+            &QAction::triggered,
+            this,
+            [this, e] {
+                emit setAsCameraRequested(e->getId());
+            }
+        );
     }
 
     if (isViableNewPointsTarget) {
         const bool isNewPointsTarget = m_scene && m_scene->getNewPointsTargetEntity() == e;
         auto *activeAction = menu.addAction("Set as new points target (auto-add points)");
         activeAction->setEnabled(!isNewPointsTarget);
-        connect(activeAction, &QAction::triggered, this, [this, e] { emit setAsNewPointsTargetEntityRequested(e); });
+        connect(
+            activeAction,
+            &QAction::triggered,
+            this,
+            [this, e] {
+                emit setAsNewPointsTargetEntityRequested(e);
+            }
+        );
         const auto *addAction = menu.addAction("Add selected points to curve");
         connect(
             addAction,
             &QAction::triggered,
             this,
-            [this, e] { emit addSelectedPointsToNewPointsTargetEntityRequested(e); }
+            [this, e] {
+                emit addSelectedPointsToNewPointsTargetEntityRequested(e);
+            }
         );
     }
 
     if (!isCamera) {
         const auto *focusAction = menu.addAction("Focus camera");
-        connect(focusAction, &QAction::triggered, this, [this, e] { emit focusCameraRequested(e); });
+        connect(
+            focusAction,
+            &QAction::triggered,
+            this,
+            [this, e] {
+                emit focusCameraRequested(e);
+            }
+        );
     }
 
     if (!isCursor && !isCamera) {
         const auto *deleteAction = menu.addAction("Delete");
-        connect(deleteAction, &QAction::triggered, this, [this, e] { emit deleteEntityRequested(e); });
+        connect(
+            deleteAction,
+            &QAction::triggered,
+            this,
+            [this, e] {
+                emit deleteEntityRequested(e);
+            }
+        );
     }
 
     menu.exec(m_listWidget->mapToGlobal(pos));

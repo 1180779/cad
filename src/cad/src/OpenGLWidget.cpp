@@ -61,7 +61,9 @@ void OpenGLWidget::paintGL() {
     const auto invVP = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
     m_renderSystem.render(m_scene, view, projection, invVP);
 
-    if (const auto pivot = computePivot()) { m_renderSystem.renderPivotMarker(pivot.value(), view, projection); }
+    if (const auto pivot = computePivot()) {
+        m_renderSystem.renderPivotMarker(pivot.value(), view, projection);
+    }
 
     if (m_transformMode != TransformMode::none) {
         int axesMask = 0;
@@ -130,7 +132,9 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
     m_pressPosition = event->pos();
 
     const auto action = m_inputMap.matchAction(event->button(), event->modifiers());
-    if (!action) { return; }
+    if (!action) {
+        return;
+    }
 
     switch (*action) {
     case InputAction::cameraOrbit:
@@ -143,7 +147,9 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
         m_activeDrag = DragMode::CameraZoomDrag;
         return;
     case InputAction::select:
-        if (m_transformMode != TransformMode::none) { return; }
+        if (m_transformMode != TransformMode::none) {
+            return;
+        }
         if (m_clickToAddMode) {
             // resolve 3D position, move active cursor there, then emit createPointRequested
             if (m_cursorPlacementStrategy) {
@@ -175,11 +181,15 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
                 m_draggedPointStart = m_scene.getPointRegistry().getPosition(hit);
                 m_activeDrag = DragMode::PointDrag;
             }
-            else { m_activeDrag = DragMode::ClickSelect; }
+            else {
+                m_activeDrag = DragMode::ClickSelect;
+            }
         }
         return;
     case InputAction::cursorPlace:
-        if (m_transformMode != TransformMode::none) { return; }
+        if (m_transformMode != TransformMode::none) {
+            return;
+        }
         m_activeDrag = DragMode::CursorPlace;
         if (Entity *cursor = m_scene.getActiveCursor()) {
             if (const auto tc = cursor->getComponent<TransformComponent>()) {
@@ -239,15 +249,21 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
         }
         return;
     case DragMode::CameraOrbit:
-        if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::Orbit, delta)) { update(); }
+        if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::Orbit, delta)) {
+            update();
+        }
         wrapMouseIfNeeded(currentPos, delta);
         return;
     case DragMode::CameraPan:
-        if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::Pan, delta)) { update(); }
+        if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::Pan, delta)) {
+            update();
+        }
         wrapMouseIfNeeded(currentPos, delta);
         return;
     case DragMode::CameraZoomDrag:
-        if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::ZoomDrag, delta)) { update(); }
+        if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::ZoomDrag, delta)) {
+            update();
+        }
         wrapMouseIfNeeded(currentPos, delta);
     default:
         break;
@@ -310,13 +326,17 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
     case DragMode::ClickSelect: {
         const auto diff = event->pos() - m_pressPosition;
         if (const auto dist2 = diff.x() * diff.x() + diff.y() * diff.y();
-            dist2 > s_clickRadiusPx * s_clickRadiusPx) { return; }
+            dist2 > s_clickRadiusPx * s_clickRadiusPx) {
+            return;
+        }
 
         const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
             InputAction::cursorPlace;
 
         if (const PointHandle hit = pickPoint(event->pos());
-            hit != InvalidPointHandle) { selectPoint(hit, additive); }
+            hit != InvalidPointHandle) {
+            selectPoint(hit, additive);
+        }
         else if (!additive) // deselect all
         {
             m_scene.clearSelection();
@@ -371,7 +391,9 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void OpenGLWidget::wheelEvent(QWheelEvent *event) {
-    if (m_cameraController.getActiveStrategy()->handleWheelEvent(event)) { update(); }
+    if (m_cameraController.getActiveStrategy()->handleWheelEvent(event)) {
+        update();
+    }
 }
 
 void OpenGLWidget::keyPressEvent(QKeyEvent *event) {
@@ -386,16 +408,22 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event) {
     }
 
     auto toggleBeginTransform = [&](const TransformMode mode) {
-        if (m_transformMode == mode) { cancelTransform(); }
+        if (m_transformMode == mode) {
+            cancelTransform();
+        }
         else {
-            if (m_transformMode != TransformMode::none) { confirmTransform(); }
+            if (m_transformMode != TransformMode::none) {
+                confirmTransform();
+            }
             beginTransform(mode);
         }
         update();
     };
 
     auto toggleConstraint = [&](const AxisConstraint axis) {
-        if (m_transformMode == TransformMode::none) { return; }
+        if (m_transformMode == TransformMode::none) {
+            return;
+        }
         m_axisConstraint = m_axisConstraint == axis
                                ? AxisConstraint::none
                                : axis;
@@ -458,9 +486,24 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event) {
         break;
     case InputAction::createMenu: {
         QMenu menu(this);
-        menu.addAction("New Torus", [this] { emit createTorusRequested(); });
-        menu.addAction("New Cursor", [this] { emit createCursorRequested(); });
-        menu.addAction("New Point", [this] { emit createPointRequested(); });
+        menu.addAction(
+            "New Torus",
+            [this] {
+                emit createTorusRequested();
+            }
+        );
+        menu.addAction(
+            "New Cursor",
+            [this] {
+                emit createCursorRequested();
+            }
+        );
+        menu.addAction(
+            "New Point",
+            [this] {
+                emit createPointRequested();
+            }
+        );
         menu.exec(QCursor::pos());
     }
     break;
@@ -472,16 +515,24 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event) {
         update();
         break;
     case InputAction::cameraMoveUp:
-        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveUp)) { update(); }
+        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveUp)) {
+            update();
+        }
         break;
     case InputAction::cameraMoveDown:
-        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveDown)) { update(); }
+        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveDown)) {
+            update();
+        }
         break;
     case InputAction::cameraMoveLeft:
-        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveLeft)) { update(); }
+        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveLeft)) {
+            update();
+        }
         break;
     case InputAction::cameraMoveRight:
-        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveRight)) { update(); }
+        if (m_cameraController.getActiveStrategy()->handleCameraKeyAction(CameraKeyAction::MoveRight)) {
+            update();
+        }
         break;
     default:
         break;
@@ -489,7 +540,9 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event) {
 }
 
 void OpenGLWidget::keyReleaseEvent(QKeyEvent *event) {
-    if (event->isAutoRepeat()) { return; }
+    if (event->isAutoRepeat()) {
+        return;
+    }
 
     const auto action = m_inputMap.matchAction(static_cast<Qt::Key>(event->key()), event->modifiers());
     if (!action) {
@@ -510,8 +563,12 @@ void OpenGLWidget::deleteSelectedEntities() {
     const Entity *activeCursor = m_scene.getActiveCursor();
     std::vector<EntityID> toDelete;
     for (const auto *e : m_scene.getSelectedEntities()) {
-        if (m_cameraController.isEntityManagedAsCamera(e->getId())) { continue; }
-        if (e == activeCursor) { continue; }
+        if (m_cameraController.isEntityManagedAsCamera(e->getId())) {
+            continue;
+        }
+        if (e == activeCursor) {
+            continue;
+        }
         toDelete.push_back(e->getId());
     }
 
@@ -539,7 +596,9 @@ PointHandle OpenGLWidget::pickPoint(const QPoint screenPos) const {
             width(),
             height()
         );
-        if (!screen.has_value()) { continue; }
+        if (!screen.has_value()) {
+            continue;
+        }
 
         const int dx = screen->x - screenPos.x();
         const int dy = screen->y - screenPos.y();
@@ -554,7 +613,9 @@ PointHandle OpenGLWidget::pickPoint(const QPoint screenPos) const {
 }
 
 void OpenGLWidget::selectPoint(const PointHandle hit, const bool additive) {
-    if (!additive) { m_scene.clearSelection(); }
+    if (!additive) {
+        m_scene.clearSelection();
+    }
 
     if (const auto entity = m_scene.getEntityByPointHandle(hit)) {
         Entity *pEntity = entity.value();
@@ -586,10 +647,13 @@ void OpenGLWidget::performBoxSelect() {
             worldPos = transform.value()->getTranslation();
         }
         else {
-            continue; }
+            continue;
+        }
 
         if (const auto screen = cadm::projectToScreenGL(worldPos, view, projection, width(), height());
-            screen.has_value() && rect.contains(screen->x, screen->y)) { m_scene.setSelected(e.get(), true); }
+            screen.has_value() && rect.contains(screen->x, screen->y)) {
+            m_scene.setSelected(e.get(), true);
+        }
     }
 
     m_scene.syncPointSelectionToRegistry();
@@ -599,7 +663,9 @@ void OpenGLWidget::performBoxSelect() {
 std::optional<cadm::vec3> OpenGLWidget::computePivot() const {
     if (m_pivotMode == PivotMode::activeCursor) {
         if (Entity *cursor = m_scene.getActiveCursor()) {
-            if (const auto tc = cursor->getComponent<TransformComponent>()) { return tc.value()->getTranslation(); }
+            if (const auto tc = cursor->getComponent<TransformComponent>()) {
+                return tc.value()->getTranslation();
+            }
         }
         return std::nullopt;
     }
@@ -608,7 +674,9 @@ std::optional<cadm::vec3> OpenGLWidget::computePivot() const {
     int count = 0;
     const auto &registry = m_scene.getPointRegistry();
     for (const auto &e : m_scene.getEntities()) {
-        if (!e->isSelected()) { continue; }
+        if (!e->isSelected()) {
+            continue;
+        }
         if (const auto pc = e->getComponent<PointComponent>()) {
             sum = sum + registry.getPosition(pc.value()->m_handle);
             ++count;
@@ -624,7 +692,9 @@ std::optional<cadm::vec3> OpenGLWidget::computePivot() const {
             }
         }
     }
-    if (count == 0) { return std::nullopt; }
+    if (count == 0) {
+        return std::nullopt;
+    }
     return sum * (static_cast<cadm::cadf>(1.0) / static_cast<cadm::cadf>(count));
 }
 
@@ -643,7 +713,9 @@ QString OpenGLWidget::axisLabel(const AxisConstraint constraint) {
 
 void OpenGLWidget::beginTransform(const TransformMode mode) {
     const auto pivot = computePivot();
-    if (!pivot.has_value()) { return; }
+    if (!pivot.has_value()) {
+        return;
+    }
 
     m_transformPivot = pivot.value();
     m_transformStartMousePos = mapFromGlobal(QCursor::pos());
@@ -651,7 +723,9 @@ void OpenGLWidget::beginTransform(const TransformMode mode) {
 
     const auto &registry = m_scene.getPointRegistry();
     for (const auto &e : m_scene.getEntities()) {
-        if (!e->isSelected()) { continue; }
+        if (!e->isSelected()) {
+            continue;
+        }
 
         // Bézier curve: move all its control points rather than the curve entity itself
         if (const auto bc = e->getComponent<BezierC0Component>()) {
@@ -660,7 +734,9 @@ void OpenGLWidget::beginTransform(const TransformMode mode) {
                     const EntityID ptId = ptEntity.value()->getId();
                     const bool already = std::ranges::any_of(
                         m_transformSnapshots,
-                        [ptId](const EntitySnapshot &s) { return s.id == ptId; }
+                        [ptId](const EntitySnapshot &s) {
+                            return s.id == ptId;
+                        }
                     );
                     if (!already) {
                         EntitySnapshot snap;
@@ -673,12 +749,16 @@ void OpenGLWidget::beginTransform(const TransformMode mode) {
         }
 
         EntitySnapshot snap;
-        if (!snap.fillFromEntity(registry, e.get())) { continue; }
+        if (!snap.fillFromEntity(registry, e.get())) {
+            continue;
+        }
 
         m_transformSnapshots.push_back(snap);
     }
 
-    if (m_transformSnapshots.empty()) { return; }
+    if (m_transformSnapshots.empty()) {
+        return;
+    }
 
     m_transformMode = mode;
     m_transformApplied = false;
@@ -724,7 +804,9 @@ void OpenGLWidget::handleTransformRotate(const int dx, PointRegistry &registry) 
         const cadm::vec3 newPos = pivot + r * (snap.origPos - pivot);
 
         const auto entity = m_scene.getEntity(snap.id);
-        if (!entity) { continue; }
+        if (!entity) {
+            continue;
+        }
         Entity *pEntity = entity.value();
 
         if (!snap.isTransformEntity) {
@@ -787,7 +869,9 @@ void OpenGLWidget::handleTransformTranslate(const QPoint currentMousePos, PointR
 
         const cadm::vec3 newPos = snap.origPos + delta;
         const auto entity = m_scene.getEntity(snap.id);
-        if (!entity) { continue; }
+        if (!entity) {
+            continue;
+        }
         Entity *pEntity = entity.value();
 
         if (!snap.isTransformEntity) {
@@ -796,7 +880,9 @@ void OpenGLWidget::handleTransformTranslate(const QPoint currentMousePos, PointR
             }
         }
         else {
-            if (const auto tc = pEntity->getComponent<TransformComponent>()) { tc.value()->setTranslation(newPos); }
+            if (const auto tc = pEntity->getComponent<TransformComponent>()) {
+                tc.value()->setTranslation(newPos);
+            }
         }
     }
 }
@@ -812,7 +898,9 @@ void OpenGLWidget::handleTransformScale(const int dx, PointRegistry &registry) {
                                      : m_transformPivot;
         const cadm::vec3 newPos = pivot + (snap.origPos - pivot) * scaleFactor;
         const auto entity = m_scene.getEntity(snap.id);
-        if (!entity) { continue; }
+        if (!entity) {
+            continue;
+        }
         Entity *pEntity = entity.value();
 
         if (!snap.isTransformEntity) {
@@ -830,7 +918,9 @@ void OpenGLWidget::handleTransformScale(const int dx, PointRegistry &registry) {
 }
 
 void OpenGLWidget::applyTransform(const QPoint currentMousePos) {
-    if (m_transformMode == TransformMode::none || m_transformSnapshots.empty()) { return; }
+    if (m_transformMode == TransformMode::none || m_transformSnapshots.empty()) {
+        return;
+    }
 
     m_transformApplied = true;
     const int dx = currentMousePos.x() - m_transformStartMousePos.x();
@@ -855,7 +945,9 @@ void OpenGLWidget::cancelTransform() {
     auto &registry = m_scene.getPointRegistry();
     for (const auto &snap : m_transformSnapshots) {
         const auto entity = m_scene.getEntity(snap.id);
-        if (!entity) { continue; }
+        if (!entity) {
+            continue;
+        }
         snap.restoreEntity(registry, entity.value());
     }
     m_transformMode = TransformMode::none;
@@ -875,7 +967,9 @@ void OpenGLWidget::confirmTransform() {
         for (const auto &before : m_transformSnapshots) {
             EntitySnapshot snap;
             snap.id = before.id;
-            if (const auto e = m_scene.getEntity(before.id)) { snap.fillFromEntity(registry, e.value()); }
+            if (const auto e = m_scene.getEntity(before.id)) {
+                snap.fillFromEntity(registry, e.value());
+            }
             after.push_back(snap);
         }
         m_commandStack.push(std::make_unique<TransformCommand>(m_scene, m_transformSnapshots, std::move(after)));
@@ -900,15 +994,25 @@ void OpenGLWidget::wrapMouseIfNeeded(const QPoint currentPos, const QPoint delta
     constexpr auto leftBoundary = margin;
     constexpr auto upBoundary = margin;
     const auto downBoundary = h - margin - 1;
-    if (currentPos.x() <= leftBoundary && delta.x() < 0) { newPos.setX(rightBoundary); }
+    if (currentPos.x() <= leftBoundary && delta.x() < 0) {
+        newPos.setX(rightBoundary);
+    }
     else
-        if (currentPos.x() >= rightBoundary && delta.x() > 0) { newPos.setX(leftBoundary); }
+        if (currentPos.x() >= rightBoundary && delta.x() > 0) {
+            newPos.setX(leftBoundary);
+        }
 
-    if (currentPos.y() <= upBoundary && delta.y() < 0) { newPos.setY(downBoundary); }
+    if (currentPos.y() <= upBoundary && delta.y() < 0) {
+        newPos.setY(downBoundary);
+    }
     else
-        if (currentPos.y() >= downBoundary && delta.y() > 0) { newPos.setY(upBoundary); }
+        if (currentPos.y() >= downBoundary && delta.y() > 0) {
+            newPos.setY(upBoundary);
+        }
 
-    if (newPos == currentPos) { return; }
+    if (newPos == currentPos) {
+        return;
+    }
 
     if (m_transformMode != TransformMode::none) {
         const QPoint wrapDelta = newPos - currentPos;
@@ -938,7 +1042,9 @@ bool OpenGLWidget::removeEntity(const EntityID id) {
         captureEntity(m_scene, entity.value(), probe)) {
         m_commandStack.push(std::make_unique<DeleteEntityCommand>(m_scene, std::vector<EntityID>{id}));
     }
-    else { removeEntityInternal(id); }
+    else {
+        removeEntityInternal(id);
+    }
 
     emit sceneChanged();
     emit viewportSelectionChanged();
@@ -947,7 +1053,9 @@ bool OpenGLWidget::removeEntity(const EntityID id) {
 
 bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event) {
     if (const QWidget *focus = QApplication::focusWidget();
-        focus && focus != this) { return QObject::eventFilter(obj, event); }
+        focus && focus != this) {
+        return QObject::eventFilter(obj, event);
+    }
 
     if (event->type() == QEvent::KeyPress) {
         const auto keyEvent = dynamic_cast<QKeyEvent*>(event);

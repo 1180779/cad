@@ -20,7 +20,9 @@ class GridPlanePlacementStrategy final : public IViewportPositionStrategy {
 public:
     explicit GridPlanePlacementStrategy(const int gridPlanesMask) : m_gridPlanesMask(gridPlanesMask) {}
 
-    void onGridPlanesChanged(int mask) override { m_gridPlanesMask = mask; }
+    void onGridPlanesChanged(int mask) override {
+        m_gridPlanesMask = mask;
+    }
 
     std::optional<cadm::vec3> resolve(
         QMouseEvent *event,

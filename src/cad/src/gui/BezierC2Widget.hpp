@@ -33,7 +33,9 @@ public:
     /// TODO: actually do what the description says (not done yet)
     void refresh();
 
-signals:
+    signals :
+    
+
     void pointSelectionChanged(QList<Entity*> selected);
 
 private:

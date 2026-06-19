@@ -29,7 +29,9 @@ namespace cadm {
         const int height
     ) {
         const auto clip = projection * view * vec4(worldPos.x, worldPos.y, worldPos.z, 1.0f);
-        if (clip.w <= 0.0f) { return std::nullopt; }
+        if (clip.w <= 0.0f) {
+            return std::nullopt;
+        }
         const cadf ndcX = clip.x / clip.w;
         const cadf ndcY = clip.y / clip.w;
         return vec2i(
@@ -117,7 +119,9 @@ namespace cadm {
         const cadf parallelThreshold = feps
     ) {
         const auto denom = normal.dot(dir);
-        if (std::abs(denom) < parallelThreshold) { return std::nullopt; }
+        if (std::abs(denom) < parallelThreshold) {
+            return std::nullopt;
+        }
         return (offset - normal.dot(origin)) / denom;
     }
 }

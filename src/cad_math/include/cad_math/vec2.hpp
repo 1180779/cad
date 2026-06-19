@@ -29,8 +29,13 @@ namespace cadm {
 
         constexpr vec(const cadf x, const cadf y) : x(x), y(y) {}
 
-        constexpr static vec unitX() noexcept { return {1.0, 0.0}; }
-        constexpr static vec unitY() noexcept { return {0.0, 1.0}; }
+        constexpr static vec unitX() noexcept {
+            return {1.0, 0.0};
+        }
+
+        constexpr static vec unitY() noexcept {
+            return {0.0, 1.0};
+        }
 
         /// @brief Component indices for operator[] access
         struct Index {

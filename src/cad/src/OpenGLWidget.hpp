@@ -38,26 +38,39 @@ public:
 
     ~OpenGLWidget() override;
 
-    CameraController& getCameraController() { return m_cameraController; }
+    CameraController& getCameraController() {
+        return m_cameraController;
+    }
 
     bool removeEntity(EntityID id);
 
     bool eventFilter(QObject *obj, QEvent *event) override;
 
-    [[nodiscard]] Scene& getScene() { return m_scene; }
+    [[nodiscard]] Scene& getScene() {
+        return m_scene;
+    }
 
     [[nodiscard]] CommandStack& getCommandStack() {
         return m_commandStack;
     }
 
-    [[nodiscard]] CoordSpace getCoordSpace() const { return m_coordSpace; }
+    [[nodiscard]] CoordSpace getCoordSpace() const {
+        return m_coordSpace;
+    }
 
-    void setPivotMode(const PivotMode mode) { m_pivotMode = mode; }
-    void setCoordSpace(const CoordSpace space) { m_coordSpace = space; }
+    void setPivotMode(const PivotMode mode) {
+        m_pivotMode = mode;
+    }
+
+    void setCoordSpace(const CoordSpace space) {
+        m_coordSpace = space;
+    }
 
     void setGridPlanes(const int planes) {
         m_renderSystem.setGridPlanes(planes);
-        if (m_cursorPlacementStrategy) { m_cursorPlacementStrategy->onGridPlanesChanged(planes); }
+        if (m_cursorPlacementStrategy) {
+            m_cursorPlacementStrategy->onGridPlanesChanged(planes);
+        }
         update();
     }
 
@@ -65,7 +78,9 @@ public:
         m_cursorPlacementStrategy = std::move(strategy);
     }
 
-    [[nodiscard]] bool isClickToAddMode() const { return m_clickToAddMode; }
+    [[nodiscard]] bool isClickToAddMode() const {
+        return m_clickToAddMode;
+    }
 
     void setClickToAddMode(const bool active) {
         m_clickToAddMode = active;

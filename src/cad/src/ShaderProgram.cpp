@@ -37,7 +37,9 @@ bool ShaderProgram::attachShader(const GLenum type, const std::string &source) {
         gl->glDeleteShader(previous);
         m_shaders[type] = shader;
     }
-    else { m_shaders[type] = shader; }
+    else {
+        m_shaders[type] = shader;
+    }
     return true;
 }
 
@@ -50,7 +52,9 @@ bool ShaderProgram::attachShaderFromFile(const GLenum type, const std::string &f
 
     std::string source;
     std::string line;
-    while (std::getline(file, line)) { source += line + "\n"; }
+    while (std::getline(file, line)) {
+        source += line + "\n";
+    }
 
     return attachShader(type, source);
 }
@@ -58,7 +62,9 @@ bool ShaderProgram::attachShaderFromFile(const GLenum type, const std::string &f
 bool ShaderProgram::compile() {
     const auto gl = GL();
     m_program = gl->glCreateProgram();
-    for (const auto &val : m_shaders | std::views::values) { gl->glAttachShader(m_program, val); }
+    for (const auto &val : m_shaders | std::views::values) {
+        gl->glAttachShader(m_program, val);
+    }
 
     gl->glLinkProgram(m_program);
     GLint success;
@@ -74,7 +80,9 @@ bool ShaderProgram::compile() {
 
 void ShaderProgram::deleteShaders() {
     const auto gl = GL();
-    for (const auto &val : m_shaders | std::views::values) { gl->glDeleteShader(val); }
+    for (const auto &val : m_shaders | std::views::values) {
+        gl->glDeleteShader(val);
+    }
     m_shaders.clear();
 }
 
@@ -98,7 +106,9 @@ bool ShaderProgram::setUniform1(const std::string &name, const int value) const 
     return false;
 }
 
-bool ShaderProgram::setUniform1(const std::string &name, const float value) const { return setUniform1t(name, value); }
+bool ShaderProgram::setUniform1(const std::string &name, const float value) const {
+    return setUniform1t(name, value);
+}
 
 bool ShaderProgram::setUniform2(const std::string &name, const float x, const float y) const {
     return setUniform2t(name, x, y);
@@ -122,7 +132,9 @@ bool ShaderProgram::setUniform4(
     const float y,
     const float z,
     const float w
-) const { return setUniform4t(name, x, y, z, w); }
+) const {
+    return setUniform4t(name, x, y, z, w);
+}
 
 bool ShaderProgram::setUniform4(const std::string &name, const cadm::vec4 &vec4) const {
     return setUniform4t(name, vec4.x, vec4.y, vec4.z, vec4.w);

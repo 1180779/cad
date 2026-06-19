@@ -27,22 +27,37 @@ public:
 
     void removeControlPoint(PointHandle h);
 
-    [[nodiscard]] const std::vector<PointHandle>& getControlPoints() const { return m_controlPoints; }
-    [[nodiscard]] bool getShowPolygon() const { return m_showPolygon; }
+    [[nodiscard]] const std::vector<PointHandle>& getControlPoints() const {
+        return m_controlPoints;
+    }
+
+    [[nodiscard]] bool getShowPolygon() const {
+        return m_showPolygon;
+    }
 
     void setShowPolygon(bool v);
 
     [[nodiscard]] int segmentCount() const;
 
-    [[nodiscard]] GLuint getPatchVao() const { return m_patchVao; }
-    [[nodiscard]] GLuint getPolygonVao() const { return m_polygonVao; }
+    [[nodiscard]] GLuint getPatchVao() const {
+        return m_patchVao;
+    }
+
+    [[nodiscard]] GLuint getPolygonVao() const {
+        return m_polygonVao;
+    }
 
     /// Get the number of edges of the trailing segment
     /// @return 0 = no trailing, 1 = linear, 2 = quadratic
     [[nodiscard]] int trailingEdges() const;
 
-    [[nodiscard]] int getPatchIndexCount() const { return m_patchIndexBuf.size(); }
-    [[nodiscard]] int getPolygonIndexCount() const { return m_polygonIndexBuf.size(); }
+    [[nodiscard]] int getPatchIndexCount() const {
+        return m_patchIndexBuf.size();
+    }
+
+    [[nodiscard]] int getPolygonIndexCount() const {
+        return m_polygonIndexBuf.size();
+    }
 
     /// Rebuild EBO index lists from the current control point list (CPU only)
     void regenerateMesh() override;

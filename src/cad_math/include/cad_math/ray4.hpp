@@ -19,7 +19,9 @@ namespace cadm {
             return a.direction == b.direction && a.origin == b.origin;
         }
 
-        friend constexpr bool operator!=(const ray4 &a, const ray4 &b) { return !(a == b); }
+        friend constexpr bool operator!=(const ray4 &a, const ray4 &b) {
+            return !(a == b);
+        }
 
         constexpr ray4& operator*=(const mat4 &m) {
             origin = m * origin;
@@ -32,7 +34,9 @@ namespace cadm {
             return r;
         }
 
-        friend constexpr ray4 operator*(const ray4 &r, const mat4 &m) { return m * r; }
+        friend constexpr ray4 operator*(const ray4 &r, const mat4 &m) {
+            return m * r;
+        }
     };
 }
 

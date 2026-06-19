@@ -35,7 +35,8 @@ public:
     /// @brief sync the selection of list items in the m_pointList from the m_scene entities
     void syncSelectionFromScene();
 
-signals  :
+    signals  :
+
     
 
     void pointSelectionChanged(QList<Entity*> selected);

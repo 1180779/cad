@@ -27,7 +27,8 @@ public:
     /// @param cameraController the CameraController for the scene
     void setCameraController(CameraController *cameraController);
 
-signals  :
+    signals  :
+
     
 
     void selectionChanged(QList<Entity*> entities);
@@ -55,8 +56,10 @@ signals  :
     void addSelectedPointsToNewPointsTargetEntityRequested(Entity *e);
 
 public
-slots  :
-/// @brief update the m_listWidget to be in sync with the m_scene entities
+    slots  :
+    /// @brief update the m_listWidget to be in sync with the m_scene entities
+
+    
 
     void refresh();
 
@@ -65,7 +68,8 @@ slots  :
     void syncSelectionFromScene();
 
 private
-slots  :
+    slots  :
+
     
 
     void onItemSelectionChanged();

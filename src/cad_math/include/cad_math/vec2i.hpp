@@ -28,8 +28,13 @@ namespace cadm {
 
         constexpr vec(const int x, const int y) : x(x), y(y) {}
 
-        constexpr static vec unitX() noexcept { return {1, 0}; }
-        constexpr static vec unitY() noexcept { return {0, 1}; }
+        constexpr static vec unitX() noexcept {
+            return {1, 0};
+        }
+
+        constexpr static vec unitY() noexcept {
+            return {0, 1};
+        }
     };
 
     using vec2i = vec<2, int>;

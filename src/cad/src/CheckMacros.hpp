@@ -29,7 +29,9 @@ inline const char* GLErrorToString(const GLenum error) {
 inline bool LogGLErrorsIfAny(const char *file, const int line) {
     bool hasError = false;
     const auto gl = GL();
-    if (!gl) { return false; }
+    if (!gl) {
+        return false;
+    }
 
     for (GLenum error = gl->glGetError(); error != GL_NO_ERROR; error = gl->glGetError()) {
         hasError = true;

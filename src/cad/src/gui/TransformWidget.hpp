@@ -14,7 +14,8 @@ public:
     explicit TransformWidget(TransformComponent *transform, QWidget *parent = nullptr);
 
 private
-slots  :
+    slots  :
+
     
 
     void onTranslationXChanged(double value) const;

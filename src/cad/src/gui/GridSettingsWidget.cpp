@@ -36,9 +36,15 @@ GridSettingsWidget::GridSettingsWidget(QWidget *parent) : QWidget(parent) {
 
 int GridSettingsWidget::getGridPlanes() const {
     int planes = 0;
-    if (m_xyPlane->isChecked()) { planes |= 1 << 0; }
-    if (m_xzPlane->isChecked()) { planes |= 1 << 1; }
-    if (m_yzPlane->isChecked()) { planes |= 1 << 2; }
+    if (m_xyPlane->isChecked()) {
+        planes |= 1 << 0;
+    }
+    if (m_xzPlane->isChecked()) {
+        planes |= 1 << 1;
+    }
+    if (m_yzPlane->isChecked()) {
+        planes |= 1 << 2;
+    }
     return planes;
 }
 

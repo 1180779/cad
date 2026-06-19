@@ -29,7 +29,7 @@ float gridAlpha(vec2 coord2D, float scale)
 {
     vec2 coord = coord2D / scale;
     vec2 deriv = fwidth(coord);
-    vec2 grid  = abs(fract(coord - 0.5) - 0.5) / max(deriv, vec2(0.001));
+    vec2 grid = abs(fract(coord - 0.5) - 0.5) / max(deriv, vec2(0.001));
     return 1.0 - min(min(grid.x, grid.y), 1.0);
 }
 
@@ -41,7 +41,7 @@ float samplePlane(vec3 nearW, vec3 farW, int axis, out float outDepth, out vec3 
     outColorPremult = vec3(0.0);
 
     float nearVal = (axis == 0) ? nearW.z : (axis == 1) ? nearW.y : nearW.x;
-    float farVal  = (axis == 0) ? farW.z  : (axis == 1) ? farW.y  : farW.x;
+    float farVal = (axis == 0) ? farW.z  : (axis == 1) ? farW.y  : farW.x;
     float dv = nearVal - farVal;
     if (abs(dv) < 1e-6) return 0.0;
 
@@ -83,7 +83,7 @@ void main()
     vec4 nearH = invVP * vec4(fragNDC, -1.0, 1.0);
     vec4 farH = invVP * vec4(fragNDC, 1.0, 1.0);
     vec3 nearW = nearH.xyz / nearH.w;
-    vec3 farW = farH.xyz  / farH.w;
+    vec3 farW = farH.xyz / farH.w;
 
     // accumulate contributions from each enabled plane
     float totalAlpha = 0.0;

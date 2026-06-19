@@ -23,9 +23,17 @@ public:
 
     [[nodiscard]] const cadm::mat4& getModelMatrix() const;
 
-    [[nodiscard]] cadm::vec3 getTranslation() const { return m_translation; }
-    [[nodiscard]] cadm::vec3 getScale() const { return m_scale; }
-    [[nodiscard]] cadm::vec3 getRotation() const { return m_rotation; }
+    [[nodiscard]] cadm::vec3 getTranslation() const {
+        return m_translation;
+    }
+
+    [[nodiscard]] cadm::vec3 getScale() const {
+        return m_scale;
+    }
+
+    [[nodiscard]] cadm::vec3 getRotation() const {
+        return m_rotation;
+    }
 
     void setTranslation(const cadm::vec3 &translation);
 

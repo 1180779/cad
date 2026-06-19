@@ -33,16 +33,37 @@ public:
 
     void setFarPlane(cadm::cadf farPlane);
 
-    [[nodiscard]] cadm::vec3 getPosition() const { return m_position; }
-    [[nodiscard]] cadm::vec3 getTarget() const { return m_target; }
-    [[nodiscard]] cadm::vec3 getUp() const { return m_up; }
+    [[nodiscard]] cadm::vec3 getPosition() const {
+        return m_position;
+    }
 
-    [[nodiscard]] cadm::cadf getFov() const { return m_fov; }
-    [[nodiscard]] cadm::cadf getAspectRatio() const { return m_aspectRatio; }
-    [[nodiscard]] cadm::cadf getNearPlane() const { return m_nearPlane; }
-    [[nodiscard]] cadm::cadf getFarPlane() const { return m_farPlane; }
+    [[nodiscard]] cadm::vec3 getTarget() const {
+        return m_target;
+    }
 
-    [[nodiscard]] cadm::vec3 getForwardVector() const { return (m_target - m_position).normalized(); }
+    [[nodiscard]] cadm::vec3 getUp() const {
+        return m_up;
+    }
+
+    [[nodiscard]] cadm::cadf getFov() const {
+        return m_fov;
+    }
+
+    [[nodiscard]] cadm::cadf getAspectRatio() const {
+        return m_aspectRatio;
+    }
+
+    [[nodiscard]] cadm::cadf getNearPlane() const {
+        return m_nearPlane;
+    }
+
+    [[nodiscard]] cadm::cadf getFarPlane() const {
+        return m_farPlane;
+    }
+
+    [[nodiscard]] cadm::vec3 getForwardVector() const {
+        return (m_target - m_position).normalized();
+    }
 
 private:
     cadm::vec3 m_position;

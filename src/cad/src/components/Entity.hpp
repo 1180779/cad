@@ -39,15 +39,33 @@ public:
 
     ~Entity() = default;
 
-    EntityID getId() const { return m_id; }
-    const std::string& getName() const { return m_name; }
-    void setName(const std::string &name) { m_name = name; }
+    EntityID getId() const {
+        return m_id;
+    }
 
-    bool isVisible() const { return m_visible; }
-    void setVisible(const bool visible) { m_visible = visible; }
+    const std::string& getName() const {
+        return m_name;
+    }
 
-    bool isSelected() const { return m_selected; }
-    void setSelected(const bool selected, SelectionKey) { m_selected = selected; }
+    void setName(const std::string &name) {
+        m_name = name;
+    }
+
+    bool isVisible() const {
+        return m_visible;
+    }
+
+    void setVisible(const bool visible) {
+        m_visible = visible;
+    }
+
+    bool isSelected() const {
+        return m_selected;
+    }
+
+    void setSelected(const bool selected, SelectionKey) {
+        m_selected = selected;
+    }
 
     template <typename T, typename... Args>
     T* addComponent(Args &&... args);
@@ -85,11 +103,15 @@ template <typename T>
 std::optional<T*> Entity::getComponent() {
     if constexpr (std::is_base_of_v<Component, T>) {
         if (const auto it = m_components.find(std::type_index(typeid(T)));
-            it != m_components.end()) { return static_cast<T*>(it->second.get()); }
+            it != m_components.end()) {
+            return static_cast<T*>(it->second.get());
+        }
     }
 
     for (const auto &val : m_components | std::views::values) {
-        if (T *ptr = dynamic_cast<T*>(val.get())) { return ptr; }
+        if (T *ptr = dynamic_cast<T*>(val.get())) {
+            return ptr;
+        }
     }
 
     return std::nullopt;
@@ -98,12 +120,16 @@ std::optional<T*> Entity::getComponent() {
 template <typename T>
 bool Entity::hasComponent() const {
     if constexpr (std::is_base_of_v<Component, T>) {
-        if (m_components.contains(std::type_index(typeid(T)))) { return true; }
+        if (m_components.contains(std::type_index(typeid(T)))) {
+            return true;
+        }
     }
 
     return std::ranges::any_of(
         m_components | std::views::values,
-        [](const auto &val) { return dynamic_cast<T*>(val.get()) != nullptr; }
+        [](const auto &val) {
+            return dynamic_cast<T*>(val.get()) != nullptr;
+        }
     );
 }
 

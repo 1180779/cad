@@ -21,7 +21,9 @@ public:
 
     cadm::mat4 getProjection() override;
 
-    cadm::mat4 getInvProjection() override { return getProjection().inversedOrtho(); }
+    cadm::mat4 getInvProjection() override {
+        return getProjection().inversedOrtho();
+    }
 
     void setLookTarget(cadm::vec3 target) override;
 

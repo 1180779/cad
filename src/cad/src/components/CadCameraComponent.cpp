@@ -4,11 +4,17 @@
 
 #include "CadCameraComponent.hpp"
 
-cadm::vec3 CadCameraComponent::forward() const { return (m_target - m_position).normalized(); }
+cadm::vec3 CadCameraComponent::forward() const {
+    return (m_target - m_position).normalized();
+}
 
-cadm::vec3 CadCameraComponent::right() const { return forward().cross(m_up).safeNormalized(cadm::vec3::unitX()); }
+cadm::vec3 CadCameraComponent::right() const {
+    return forward().cross(m_up).safeNormalized(cadm::vec3::unitX());
+}
 
-cadm::vec3 CadCameraComponent::up() const { return m_up; }
+cadm::vec3 CadCameraComponent::up() const {
+    return m_up;
+}
 
 void CadCameraComponent::setPosition(const cadm::vec3 &position) {
     if (m_position != position) {

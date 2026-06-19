@@ -17,16 +17,22 @@ void CameraController::removeCamera(const EntityID id) {
     }
     const auto it = std::ranges::find_if(
         m_cameras,
-        [id](const CameraStrategyEntry &e) { return e.strategy->getEntity()->getId() == id; }
+        [id](const CameraStrategyEntry &e) {
+            return e.strategy->getEntity()->getId() == id;
+        }
     );
-    if (it == m_cameras.end()) { return; }
+    if (it == m_cameras.end()) {
+        return;
+    }
     const auto removedIdx = it - m_cameras.begin();
     m_cameras.erase(it);
     if (m_cameras.empty()) {
         m_activeIndex = 0;
         return;
     }
-    if (m_activeIndex >= removedIdx && m_activeIndex > 0) { --m_activeIndex; }
+    if (m_activeIndex >= removedIdx && m_activeIndex > 0) {
+        --m_activeIndex;
+    }
     m_activeIndex = m_activeIndex % m_cameras.size();
     emit cameraChanged(m_cameras[m_activeIndex].name);
 }
@@ -42,7 +48,9 @@ const std::string& CameraController::getActiveName() const {
 }
 
 void CameraController::switchToNext() {
-    if (m_cameras.size() <= 1) { return; }
+    if (m_cameras.size() <= 1) {
+        return;
+    }
     m_activeIndex = (m_activeIndex + 1) % m_cameras.size();
     m_cameras[m_activeIndex].strategy->syncAspectRatio();
     emit cameraChanged(m_cameras[m_activeIndex].name);
@@ -71,25 +79,33 @@ void CameraController::switchTo(const EntityID id) {
 }
 
 bool CameraController::isActiveCamera(const EntityID id) const {
-    if (m_cameras.empty()) { return false; }
+    if (m_cameras.empty()) {
+        return false;
+    }
     return m_cameras[m_activeIndex].strategy->getEntity()->getId() == id;
 }
 
 bool CameraController::isEntityManagedAsCamera(const EntityID id) const {
     return std::ranges::any_of(
         m_cameras,
-        [id](const CameraStrategyEntry &e) { return e.strategy->getEntity()->getId() == id; }
+        [id](const CameraStrategyEntry &e) {
+            return e.strategy->getEntity()->getId() == id;
+        }
     );
 }
 
 void CameraController::lookAtEntity(Entity *entity, const PointRegistry &registry) const {
     auto *strategy = getActiveStrategy();
-    if (!strategy || strategy->getEntity() == entity) { return; }
+    if (!strategy || strategy->getEntity() == entity) {
+        return;
+    }
     if (const auto pc = entity->getComponent<PointComponent>()) {
         strategy->setLookTarget(registry.getPosition(pc.value()->m_handle));
         return;
     }
     const auto transform = entity->getComponent<TransformComponent>();
-    if (!transform) { return; }
+    if (!transform) {
+        return;
+    }
     strategy->setLookTarget(transform.value()->getTranslation());
 }

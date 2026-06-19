@@ -46,7 +46,9 @@ public:
     // no-op by default; override in strategies that support it
     virtual void toggleProjection() {}
 
-    [[nodiscard]] Entity* getEntity() const { return m_cameraEntity; }
+    [[nodiscard]] Entity* getEntity() const {
+        return m_cameraEntity;
+    }
 
 protected:
     Entity *m_cameraEntity;
@@ -57,7 +59,9 @@ protected:
 
 inline void ICameraStrategy::syncAspectRatio() const {
     const auto cameraComp = m_cameraEntity->getComponent<CameraComponent>();
-    if (!cameraComp) { return; }
+    if (!cameraComp) {
+        return;
+    }
     cameraComp.value()->setAspectRatio(
         static_cast<cadm::cadf>(m_widthGetter()) / static_cast<cadm::cadf>(m_heightGetter())
     );

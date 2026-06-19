@@ -24,7 +24,9 @@ const cadm::mat4& TransformComponent::getModelMatrix() const {
 }
 
 void TransformComponent::setTranslation(const cadm::vec3 &translation) {
-    if (m_translation == translation) { return; }
+    if (m_translation == translation) {
+        return;
+    }
     m_translation = translation;
     m_isDirty = true;
     emit translationXChanged(m_translation.x);
@@ -33,7 +35,9 @@ void TransformComponent::setTranslation(const cadm::vec3 &translation) {
 }
 
 void TransformComponent::setScale(const cadm::vec3 &scale) {
-    if (m_scale == scale) { return; }
+    if (m_scale == scale) {
+        return;
+    }
     m_scale = scale;
     m_isDirty = true;
     emit scaleXChanged(m_scale.x);
@@ -42,7 +46,9 @@ void TransformComponent::setScale(const cadm::vec3 &scale) {
 }
 
 void TransformComponent::setRotation(const cadm::vec3 &rotation) {
-    if (m_rotation == rotation) { return; }
+    if (m_rotation == rotation) {
+        return;
+    }
     m_rotation = rotation;
     m_isDirty = true;
     emit rotationXChanged(m_rotation.x);

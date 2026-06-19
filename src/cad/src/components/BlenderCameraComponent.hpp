@@ -60,19 +60,49 @@ public:
 
     [[nodiscard]] cadm::vec3 getPosition() const;
 
-    [[nodiscard]] cadm::cadf getRadius() const { return m_radius; }
-    [[nodiscard]] cadm::cadf getFov() const { return m_fov; }
-    [[nodiscard]] cadm::cadf getNearPlane() const { return m_nearPlane; }
-    [[nodiscard]] cadm::cadf getFarPlane() const { return m_farPlane; }
+    [[nodiscard]] cadm::cadf getRadius() const {
+        return m_radius;
+    }
 
-    [[nodiscard]] cadm::cadf getTargetX() const { return m_target.x; }
-    [[nodiscard]] cadm::cadf getTargetY() const { return m_target.y; }
-    [[nodiscard]] cadm::cadf getTargetZ() const { return m_target.z; }
-    [[nodiscard]] cadm::vec3 getTarget() const { return m_target; }
+    [[nodiscard]] cadm::cadf getFov() const {
+        return m_fov;
+    }
 
-    [[nodiscard]] cadm::cadf getZoomFactor() const { return m_zoomFactor; }
-    [[nodiscard]] bool isOrtho() const { return m_isOrtho; }
-    [[nodiscard]] cadm::cadf getOrthoHeight() const { return m_orthoHeight; }
+    [[nodiscard]] cadm::cadf getNearPlane() const {
+        return m_nearPlane;
+    }
+
+    [[nodiscard]] cadm::cadf getFarPlane() const {
+        return m_farPlane;
+    }
+
+    [[nodiscard]] cadm::cadf getTargetX() const {
+        return m_target.x;
+    }
+
+    [[nodiscard]] cadm::cadf getTargetY() const {
+        return m_target.y;
+    }
+
+    [[nodiscard]] cadm::cadf getTargetZ() const {
+        return m_target.z;
+    }
+
+    [[nodiscard]] cadm::vec3 getTarget() const {
+        return m_target;
+    }
+
+    [[nodiscard]] cadm::cadf getZoomFactor() const {
+        return m_zoomFactor;
+    }
+
+    [[nodiscard]] bool isOrtho() const {
+        return m_isOrtho;
+    }
+
+    [[nodiscard]] cadm::cadf getOrthoHeight() const {
+        return m_orthoHeight;
+    }
 
     void setTarget(const cadm::vec3 &value);
 

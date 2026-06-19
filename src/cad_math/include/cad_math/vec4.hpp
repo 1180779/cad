@@ -37,12 +37,25 @@ namespace cadm {
             return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
         }
 
-        [[nodiscard]] constexpr vec3 xyz() const { return {x, y, z}; }
+        [[nodiscard]] constexpr vec3 xyz() const {
+            return {x, y, z};
+        }
 
-        constexpr static vec unitX() noexcept { return {1.0, 0.0, 0.0, 0.0}; }
-        constexpr static vec unitY() noexcept { return {0.0, 1.0, 0.0, 0.0}; }
-        constexpr static vec unitZ() noexcept { return {0.0, 0.0, 1.0, 0.0}; }
-        constexpr static vec unitW() noexcept { return {0.0, 0.0, 0.0, 1.0}; }
+        constexpr static vec unitX() noexcept {
+            return {1.0, 0.0, 0.0, 0.0};
+        }
+
+        constexpr static vec unitY() noexcept {
+            return {0.0, 1.0, 0.0, 0.0};
+        }
+
+        constexpr static vec unitZ() noexcept {
+            return {0.0, 0.0, 1.0, 0.0};
+        }
+
+        constexpr static vec unitW() noexcept {
+            return {0.0, 0.0, 0.0, 1.0};
+        }
 
         /// @brief Component indices for operator[] access
         struct Index {

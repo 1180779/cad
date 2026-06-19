@@ -87,7 +87,9 @@ void addIntColor8BitParameter(
         [setter](const QString &text) {
             bool ok;
             const int val = text.toInt(&ok);
-            if (ok) { setter(val); }
+            if (ok) {
+                setter(val);
+            }
         }
     );
 
@@ -173,9 +175,30 @@ int main(int argc, char *argv[]) {
     const auto ellipseParametersLayout = new QVBoxLayout;
     ellipseParametersGroup->setLayout(ellipseParametersLayout);
 
-    addFloatParameter(ellipseParametersLayout, "a", glWidget->getA(), [glWidget](const float v) { glWidget->setA(v); });
-    addFloatParameter(ellipseParametersLayout, "b", glWidget->getB(), [glWidget](const float v) { glWidget->setB(v); });
-    addFloatParameter(ellipseParametersLayout, "c", glWidget->getC(), [glWidget](const float v) { glWidget->setC(v); });
+    addFloatParameter(
+        ellipseParametersLayout,
+        "a",
+        glWidget->getA(),
+        [glWidget](const float v) {
+            glWidget->setA(v);
+        }
+    );
+    addFloatParameter(
+        ellipseParametersLayout,
+        "b",
+        glWidget->getB(),
+        [glWidget](const float v) {
+            glWidget->setB(v);
+        }
+    );
+    addFloatParameter(
+        ellipseParametersLayout,
+        "c",
+        glWidget->getC(),
+        [glWidget](const float v) {
+            glWidget->setC(v);
+        }
+    );
 
     rightControlsLayout->addWidget(ellipseParametersGroup, 0, Qt::AlignTop);
 
@@ -188,7 +211,9 @@ int main(int argc, char *argv[]) {
         adaptiveRenderingLayout,
         "square size",
         glWidget->getAdaptationSize(),
-        [glWidget](const int v) { glWidget->setAdaptationSize(v); },
+        [glWidget](const int v) {
+            glWidget->setAdaptationSize(v);
+        },
         1,
         16
     );
@@ -204,7 +229,9 @@ int main(int argc, char *argv[]) {
         phongParametersLayout,
         "m",
         glWidget->getM(),
-        [glWidget](const float v) { glWidget->setM(v); },
+        [glWidget](const float v) {
+            glWidget->setM(v);
+        },
         0.001,
         10
     );
@@ -219,19 +246,25 @@ int main(int argc, char *argv[]) {
         ambientColorLayout,
         "r",
         glWidget->getAmbientR(),
-        [glWidget](const int v) { glWidget->setAmbientR(v); }
+        [glWidget](const int v) {
+            glWidget->setAmbientR(v);
+        }
     );
     addIntColor8BitParameter(
         ambientColorLayout,
         "g",
         glWidget->getAmbientG(),
-        [glWidget](const int v) { glWidget->setAmbientG(v); }
+        [glWidget](const int v) {
+            glWidget->setAmbientG(v);
+        }
     );
     addIntColor8BitParameter(
         ambientColorLayout,
         "b",
         glWidget->getAmbientB(),
-        [glWidget](const int v) { glWidget->setAmbientB(v); }
+        [glWidget](const int v) {
+            glWidget->setAmbientB(v);
+        }
     );
     ambientColorGroup->setLayout(ambientColorLayout);
 
@@ -239,15 +272,33 @@ int main(int argc, char *argv[]) {
 
     // reset buttons
     const auto resetScaleButton = new QPushButton("Reset Scale");
-    QObject::connect(resetScaleButton, &QPushButton::clicked, [&] { glWidget->resetScale(); });
+    QObject::connect(
+        resetScaleButton,
+        &QPushButton::clicked,
+        [&] {
+            glWidget->resetScale();
+        }
+    );
     rightControlsLayout->addWidget(resetScaleButton);
 
     const auto resetRotationButton = new QPushButton("Reset Rotation");
-    QObject::connect(resetRotationButton, &QPushButton::clicked, [&] { glWidget->resetRotation(); });
+    QObject::connect(
+        resetRotationButton,
+        &QPushButton::clicked,
+        [&] {
+            glWidget->resetRotation();
+        }
+    );
     rightControlsLayout->addWidget(resetRotationButton);
 
     const auto resetTranslationButton = new QPushButton("Reset Translation");
-    QObject::connect(resetTranslationButton, &QPushButton::clicked, [&] { glWidget->resetTranslation(); });
+    QObject::connect(
+        resetTranslationButton,
+        &QPushButton::clicked,
+        [&] {
+            glWidget->resetTranslation();
+        }
+    );
     rightControlsLayout->addWidget(resetTranslationButton);
 
     // help text

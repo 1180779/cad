@@ -28,9 +28,17 @@ namespace cadm {
 
         constexpr vec(const int x, const int y, const int z) : x(x), y(y), z(z) {}
 
-        constexpr static vec unitX() noexcept { return {1, 0, 0}; }
-        constexpr static vec unitY() noexcept { return {0, 1, 0}; }
-        constexpr static vec unitZ() noexcept { return {0, 0, 1}; }
+        constexpr static vec unitX() noexcept {
+            return {1, 0, 0};
+        }
+
+        constexpr static vec unitY() noexcept {
+            return {0, 1, 0};
+        }
+
+        constexpr static vec unitZ() noexcept {
+            return {0, 0, 1};
+        }
     };
 
     using vec3i = vec<3, int>;

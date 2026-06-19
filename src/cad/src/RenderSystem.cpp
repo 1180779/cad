@@ -114,7 +114,9 @@ void RenderSystem::renderInfiniteGrid(
 void RenderSystem::regenerateGeometry(const Scene &scene) {
     for (const auto &e : scene.getEntities()) {
         const auto geometry = e->getComponent<GeometryComponent>();
-        if (!geometry) { continue; }
+        if (!geometry) {
+            continue;
+        }
         if (auto *geo = geometry.value();
             geo->m_needsUpdate) {
             geo->regenerateMesh();
@@ -128,9 +130,13 @@ void RenderSystem::renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_C
     for (const auto &e : scene.getEntities()) {
         const auto geometry = e->getComponent<GeometryComponent>();
         const auto transform = e->getComponent<TransformComponent>();
-        if (!geometry || !transform) { continue; }
+        if (!geometry || !transform) {
+            continue;
+        }
         const auto *pGeo = geometry.value();
-        if (pGeo->m_lineIndices.empty()) { continue; }
+        if (pGeo->m_lineIndices.empty()) {
+            continue;
+        }
 
         SHADER_SET_UNIFORM_CHECK(
             m_wireframeShader->setUniform1(
@@ -152,9 +158,13 @@ void RenderSystem::renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4
     for (const auto &e : scene.getEntities()) {
         const auto geometry = e->getComponent<GeometryComponent>();
         const auto transform = e->getComponent<TransformComponent>();
-        if (!geometry || !transform) { continue; }
+        if (!geometry || !transform) {
+            continue;
+        }
         const auto *pGeo = geometry.value();
-        if (pGeo->m_triangleIndices.empty()) { continue; }
+        if (pGeo->m_triangleIndices.empty()) {
+            continue;
+        }
 
         SHADER_SET_UNIFORM_CHECK(
             m_wireframeShader->setUniform1(
@@ -214,7 +224,9 @@ void RenderSystem::renderC0BezierCurves(
     const auto gl = GL();
     for (const auto &e : scene.getEntities()) {
         const auto bezier = e->getComponent<BezierC0Component>();
-        if (!bezier) { continue; }
+        if (!bezier) {
+            continue;
+        }
         const auto *pBezier = bezier.value();
 
         if (const int segments = pBezier->segmentCount();
@@ -252,7 +264,9 @@ void RenderSystem::renderC0BezierCurves(
                     registry.getPosition(cps[std::min(base + 3, static_cast<int>(cps.size()) - 1)]),
                 };
                 const auto pixelsOpt = bezierUtils::screenExtent(pts, view, projection, m_viewportW, m_viewportH);
-                if (!pixelsOpt.has_value()) { continue; }
+                if (!pixelsOpt.has_value()) {
+                    continue;
+                }
 
                 const auto pixels = pixelsOpt.value();
                 const int numInstances = std::max(
@@ -320,7 +334,9 @@ void RenderSystem::renderC2BezierCurves(
     const auto gl = GL();
     for (const auto &e : scene.getEntities()) {
         const auto bezier = e->getComponent<BezierC2Component>();
-        if (!bezier) { continue; }
+        if (!bezier) {
+            continue;
+        }
         const auto *pBezier = bezier.value();
 
         if (const int segments = pBezier->segmentCount();
@@ -350,7 +366,9 @@ void RenderSystem::renderC2BezierCurves(
                     bps[4 * p + 3],
                 };
                 const auto pixelsOpt = bezierUtils::screenExtent(pts, view, projection, m_viewportW, m_viewportH);
-                if (!pixelsOpt.has_value()) { continue; }
+                if (!pixelsOpt.has_value()) {
+                    continue;
+                }
 
                 const auto pixels = pixelsOpt.value();
                 const int numInstances = std::max(

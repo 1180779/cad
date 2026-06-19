@@ -43,20 +43,32 @@ public:
 };
 
 class TorusGeometry final : public QObject, public GeometryComponent {
-    Q_OBJECT
+    Q_OBJECT Q_PROPERTY(double majorRadius READ getMajorRadius WRITE setMajorRadius NOTIFY majorRadiusChanged)
 
-    Q_PROPERTY(double majorRadius READ getMajorRadius WRITE setMajorRadius NOTIFY majorRadiusChanged)
     Q_PROPERTY(double minorRadius READ getMinorRadius WRITE setMinorRadius NOTIFY minorRadiusChanged)
+
     Q_PROPERTY(int majorSegments READ getMajorSegments WRITE setMajorSegments NOTIFY majorSegmentsChanged)
+
     Q_PROPERTY(int minorSegments READ getMinorSegments WRITE setMinorSegments NOTIFY minorSegmentsChanged)
 
 public:
     TorusGeometry();
 
-    [[nodiscard]] cadm::cadf getMajorRadius() const { return m_majorRadius; }
-    [[nodiscard]] cadm::cadf getMinorRadius() const { return m_minorRadius; }
-    [[nodiscard]] uint32_t getMajorSegments() const { return m_majorSegments; }
-    [[nodiscard]] uint32_t getMinorSegments() const { return m_minorSegments; }
+    [[nodiscard]] cadm::cadf getMajorRadius() const {
+        return m_majorRadius;
+    }
+
+    [[nodiscard]] cadm::cadf getMinorRadius() const {
+        return m_minorRadius;
+    }
+
+    [[nodiscard]] uint32_t getMajorSegments() const {
+        return m_majorSegments;
+    }
+
+    [[nodiscard]] uint32_t getMinorSegments() const {
+        return m_minorSegments;
+    }
 
     void setMajorRadius(cadm::cadf m_majorRadius);
 
@@ -78,7 +90,9 @@ private:
     uint32_t m_majorSegments = 48;
     uint32_t m_minorSegments = 24;
 
-signals:
+    signals :
+    
+
     void majorRadiusChanged(double radius);
 
     void minorRadiusChanged(double radius);

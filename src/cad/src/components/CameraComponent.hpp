@@ -12,7 +12,9 @@ class CameraComponent : public Component {
 public:
     ~CameraComponent() override = default;
 
-    [[nodiscard]] cadm::cadf getAspectRatio() const { return m_aspectRatio; }
+    [[nodiscard]] cadm::cadf getAspectRatio() const {
+        return m_aspectRatio;
+    }
 
     void setAspectRatio(cadm::cadf value);
 
@@ -27,6 +29,8 @@ protected:
 };
 
 inline void CameraComponent::setAspectRatio(const cadm::cadf value) {
-    if (std::abs(m_aspectRatio - value) >= cadm::eps) { m_aspectRatio = value; }
+    if (std::abs(m_aspectRatio - value) >= cadm::eps) {
+        m_aspectRatio = value;
+    }
 }
 #endif //CAD_ICAMERA_HPP

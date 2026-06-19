@@ -84,13 +84,19 @@ private:
     struct KeyCombo {
         Qt::Key key;
         Qt::KeyboardModifiers mods;
-        bool operator==(const KeyCombo &o) const { return key == o.key && mods == o.mods; }
+
+        bool operator==(const KeyCombo &o) const {
+            return key == o.key && mods == o.mods;
+        }
     };
 
     struct ButtonCombo {
         Qt::MouseButton button;
         Qt::KeyboardModifiers mods;
-        bool operator==(const ButtonCombo &o) const { return button == o.button && mods == o.mods; }
+
+        bool operator==(const ButtonCombo &o) const {
+            return button == o.button && mods == o.mods;
+        }
     };
 
     struct BoundAction {
@@ -164,7 +170,9 @@ inline std::optional<InputAction> InputMap::matchAction(
     const bool isAutoRepeat
 ) const {
     if (const auto it = m_keyBindings.find({key, mods});
-        it != m_keyBindings.cend() && (it->allowAutoRepeat || !isAutoRepeat)) { return it->action; }
+        it != m_keyBindings.cend() && (it->allowAutoRepeat || !isAutoRepeat)) {
+        return it->action;
+    }
     return std::nullopt;
 }
 
@@ -173,6 +181,8 @@ inline std::optional<InputAction> InputMap::matchAction(
     const Qt::KeyboardModifiers mods
 ) const {
     if (const auto it = m_mouseBindings.find({button, mods});
-        it != m_mouseBindings.cend()) { return it->action; }
+        it != m_mouseBindings.cend()) {
+        return it->action;
+    }
     return std::nullopt;
 }

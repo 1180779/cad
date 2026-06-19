@@ -43,10 +43,10 @@ void main() {
     float segmentSize = 1.0f / float(numInstances);
     float t = (float(tcInstanceID[0]) + gl_TessCoord.x) * segmentSize;
     vec3 p[4] = vec3[](
-    cpwPointPos[0],
-    cpwPointPos[1],
-    cpwPointPos[2],
-    cpwPointPos[3]
+            cpwPointPos[0],
+            cpwPointPos[1],
+            cpwPointPos[2],
+            cpwPointPos[3]
     );
 
     vec3 pos;

@@ -92,7 +92,9 @@ void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent 
     pCamera->setUp(finalUp);
 
     if (const auto transform = m_cameraEntity->getComponent<TransformComponent>();
-        transform.has_value()) { transform.value()->setTranslation(newPosition); }
+        transform.has_value()) {
+        transform.value()->setTranslation(newPosition);
+    }
 }
 
 void CadCameraStrategy::handlePan(const QPoint mouseDelta, CadCameraComponent *const pCamera) const {
@@ -134,7 +136,9 @@ bool CadCameraStrategy::handleCameraMove(const CameraAction action, const QPoint
 
 bool CadCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
-    if (!camera) { return false; }
+    if (!camera) {
+        return false;
+    }
     const auto pCamera = camera.value();
     const auto step = m_translationStep * pCamera->getOrthoHeight();
 
@@ -166,7 +170,9 @@ bool CadCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) {
 
 bool CadCameraStrategy::handleWheelEvent(QWheelEvent *event) {
     const int delta = event->angleDelta().y();
-    if (delta == 0) { return false; }
+    if (delta == 0) {
+        return false;
+    }
 
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
     if (!camera) {

@@ -56,7 +56,9 @@ Entity* GeometryFactory::createBezierC0(
 ) const {
     const auto entity = m_scene.createEntity(name);
     auto *bezier = entity->addComponent<BezierC0Component>(&m_scene.getPointRegistry());
-    for (const auto h : controlPoints) { bezier->addControlPoint(h); }
+    for (const auto h : controlPoints) {
+        bezier->addControlPoint(h);
+    }
     return entity;
 }
 
@@ -66,6 +68,8 @@ Entity* GeometryFactory::createBezierC2(
 ) const {
     const auto entity = m_scene.createEntity(name);
     auto *bezier = entity->addComponent<BezierC2Component>(&m_scene.getPointRegistry());
-    for (const auto h : controlPoints) { bezier->addControlPoint(h); }
+    for (const auto h : controlPoints) {
+        bezier->addControlPoint(h);
+    }
     return entity;
 }

@@ -51,19 +51,39 @@ public:
 
     void syncPointSelectionToRegistry();
 
-    const std::vector<std::unique_ptr<Entity>>& getEntities() const { return m_entities; }
-    [[nodiscard]] const std::unordered_set<Entity*>& getSelectedEntities() const { return m_selectedEntities; }
+    const std::vector<std::unique_ptr<Entity>>& getEntities() const {
+        return m_entities;
+    }
+
+    [[nodiscard]] const std::unordered_set<Entity*>& getSelectedEntities() const {
+        return m_selectedEntities;
+    }
 
     auto getVisibleEntities();
 
-    Entity* getActiveCursor() const { return m_activeCursor; }
-    void setActiveCursor(Entity *cursor) { m_activeCursor = cursor; }
+    Entity* getActiveCursor() const {
+        return m_activeCursor;
+    }
 
-    Entity* getNewPointsTargetEntity() const { return m_newPointsTargetEntity; }
-    void setNewPointsTargetEntity(Entity *e) { m_newPointsTargetEntity = e; }
+    void setActiveCursor(Entity *cursor) {
+        m_activeCursor = cursor;
+    }
 
-    PointRegistry& getPointRegistry() { return m_pointRegistry; }
-    const PointRegistry& getPointRegistry() const { return m_pointRegistry; }
+    Entity* getNewPointsTargetEntity() const {
+        return m_newPointsTargetEntity;
+    }
+
+    void setNewPointsTargetEntity(Entity *e) {
+        m_newPointsTargetEntity = e;
+    }
+
+    PointRegistry& getPointRegistry() {
+        return m_pointRegistry;
+    }
+
+    const PointRegistry& getPointRegistry() const {
+        return m_pointRegistry;
+    }
 
 private:
     std::vector<std::unique_ptr<Entity>> m_entities;

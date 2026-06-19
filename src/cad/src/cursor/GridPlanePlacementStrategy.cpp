@@ -39,7 +39,9 @@ std::optional<cadm::vec3> GridPlanePlacementStrategy::resolve(
     const PlaneCandidate *bestPlane = nullptr;
 
     for (const auto &p : planes) {
-        if (!(m_gridPlanesMask & p.bit)) { continue; }
+        if (!(m_gridPlanesMask & p.bit)) {
+            continue;
+        }
         if (const cadm::cadf alignment = std::abs(p.normal.dot(dir));
             alignment > bestAlignment) {
             bestAlignment = alignment;
@@ -47,10 +49,14 @@ std::optional<cadm::vec3> GridPlanePlacementStrategy::resolve(
         }
     }
 
-    if (!bestPlane) { return std::nullopt; }
+    if (!bestPlane) {
+        return std::nullopt;
+    }
 
     const auto t = cadm::intersectRayPlane(origin, dir, bestPlane->normal, bestPlane->offset, s_parallelThreshold);
-    if (!t.has_value()) { return std::nullopt; }
+    if (!t.has_value()) {
+        return std::nullopt;
+    }
 
     const cadm::vec3 hit = origin + dir * t.value();
     return hit;

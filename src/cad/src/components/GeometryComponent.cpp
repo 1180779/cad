@@ -79,31 +79,41 @@ void GeometryComponent::syncToGpu() {
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-TorusGeometry::TorusGeometry() { regenerateMesh(); }
+TorusGeometry::TorusGeometry() {
+    regenerateMesh();
+}
 
 void TorusGeometry::setMajorRadius(const cadm::cadf majorRadius) {
-    if (m_majorRadius == majorRadius) { return; }
+    if (m_majorRadius == majorRadius) {
+        return;
+    }
     m_majorRadius = majorRadius;
     m_needsUpdate = true;
     emit majorRadiusChanged(m_majorRadius);
 }
 
 void TorusGeometry::setMinorRadius(const cadm::cadf minorRadius) {
-    if (m_minorRadius == minorRadius) { return; }
+    if (m_minorRadius == minorRadius) {
+        return;
+    }
     m_minorRadius = minorRadius;
     m_needsUpdate = true;
     emit minorRadiusChanged(m_minorRadius);
 }
 
 void TorusGeometry::setMajorSegments(const uint32_t majorSegments) {
-    if (m_majorSegments == majorSegments) { return; }
+    if (m_majorSegments == majorSegments) {
+        return;
+    }
     m_majorSegments = majorSegments;
     m_needsUpdate = true;
     emit majorSegmentsChanged(static_cast<int>(m_majorSegments));
 }
 
 void TorusGeometry::setMinorSegments(const uint32_t minorSegments) {
-    if (m_minorSegments == minorSegments) { return; }
+    if (m_minorSegments == minorSegments) {
+        return;
+    }
     m_minorSegments = minorSegments;
     m_needsUpdate = true;
     emit minorSegmentsChanged(static_cast<int>(m_minorSegments));

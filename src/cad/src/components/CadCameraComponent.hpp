@@ -72,32 +72,89 @@ public:
 
     [[nodiscard]] cadm::vec3 up() const;
 
-    [[nodiscard]] cadm::vec3 getPosition() const { return m_position; }
-    [[nodiscard]] cadm::cadf getPositionX() const { return m_position.x; }
-    [[nodiscard]] cadm::cadf getPositionY() const { return m_position.y; }
-    [[nodiscard]] cadm::cadf getPositionZ() const { return m_position.z; }
+    [[nodiscard]] cadm::vec3 getPosition() const {
+        return m_position;
+    }
 
-    [[nodiscard]] cadm::vec3 getTarget() const { return m_target; }
-    [[nodiscard]] cadm::cadf getTargetX() const { return m_target.x; }
-    [[nodiscard]] cadm::cadf getTargetY() const { return m_target.y; }
-    [[nodiscard]] cadm::cadf getTargetZ() const { return m_target.z; }
+    [[nodiscard]] cadm::cadf getPositionX() const {
+        return m_position.x;
+    }
 
-    [[nodiscard]] cadm::vec3 getWorldUp() const { return m_worldUp; }
-    [[nodiscard]] cadm::cadf getWorldUpX() const { return m_worldUp.x; }
-    [[nodiscard]] cadm::cadf getWorldUpY() const { return m_worldUp.y; }
-    [[nodiscard]] cadm::cadf getWorldUpZ() const { return m_worldUp.z; }
+    [[nodiscard]] cadm::cadf getPositionY() const {
+        return m_position.y;
+    }
 
-    [[nodiscard]] cadm::vec3 getUp() const { return m_up; }
-    [[nodiscard]] cadm::cadf getUpX() const { return m_up.x; }
-    [[nodiscard]] cadm::cadf getUpY() const { return m_up.y; }
-    [[nodiscard]] cadm::cadf getUpZ() const { return m_up.z; }
+    [[nodiscard]] cadm::cadf getPositionZ() const {
+        return m_position.z;
+    }
 
-    [[nodiscard]] cadm::cadf getNearPlane() const { return m_nearPlane; }
-    [[nodiscard]] cadm::cadf getFarPlane() const { return m_farPlane; }
-    [[nodiscard]] cadm::cadf getOrthoHeight() const { return m_orthoHeight; }
+    [[nodiscard]] cadm::vec3 getTarget() const {
+        return m_target;
+    }
 
-    [[nodiscard]] cadm::cadf getRotationSpeed() const { return m_rotationSpeed; }
-    [[nodiscard]] cadm::cadf getZoomFactor() const { return m_zoomFactor; }
+    [[nodiscard]] cadm::cadf getTargetX() const {
+        return m_target.x;
+    }
+
+    [[nodiscard]] cadm::cadf getTargetY() const {
+        return m_target.y;
+    }
+
+    [[nodiscard]] cadm::cadf getTargetZ() const {
+        return m_target.z;
+    }
+
+    [[nodiscard]] cadm::vec3 getWorldUp() const {
+        return m_worldUp;
+    }
+
+    [[nodiscard]] cadm::cadf getWorldUpX() const {
+        return m_worldUp.x;
+    }
+
+    [[nodiscard]] cadm::cadf getWorldUpY() const {
+        return m_worldUp.y;
+    }
+
+    [[nodiscard]] cadm::cadf getWorldUpZ() const {
+        return m_worldUp.z;
+    }
+
+    [[nodiscard]] cadm::vec3 getUp() const {
+        return m_up;
+    }
+
+    [[nodiscard]] cadm::cadf getUpX() const {
+        return m_up.x;
+    }
+
+    [[nodiscard]] cadm::cadf getUpY() const {
+        return m_up.y;
+    }
+
+    [[nodiscard]] cadm::cadf getUpZ() const {
+        return m_up.z;
+    }
+
+    [[nodiscard]] cadm::cadf getNearPlane() const {
+        return m_nearPlane;
+    }
+
+    [[nodiscard]] cadm::cadf getFarPlane() const {
+        return m_farPlane;
+    }
+
+    [[nodiscard]] cadm::cadf getOrthoHeight() const {
+        return m_orthoHeight;
+    }
+
+    [[nodiscard]] cadm::cadf getRotationSpeed() const {
+        return m_rotationSpeed;
+    }
+
+    [[nodiscard]] cadm::cadf getZoomFactor() const {
+        return m_zoomFactor;
+    }
 
     void setPosition(const cadm::vec3 &position);
 

@@ -9,7 +9,9 @@ DoubleSlider::DoubleSlider(QWidget *parent) : QSlider(parent) {
 }
 
 void DoubleSlider::setMappingRange(const double start, const double end) {
-    if (start > end) { return; }
+    if (start > end) {
+        return;
+    }
 
     m_mappingRangeStart = start;
     m_mappingRangeEnd = end;

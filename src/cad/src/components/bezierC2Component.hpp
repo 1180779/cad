@@ -44,16 +44,25 @@ public:
     /// @param handle handle of the point to be removed
     void removeControlPoint(PointHandle handle);
 
-    [[nodiscard]] const std::vector<PointHandle>& getDeBoorPoints() const { return m_deBoorPoints; }
-    [[nodiscard]] bool getShowDeBoorPolygon() const { return m_showDeBoorPolygon; }
+    [[nodiscard]] const std::vector<PointHandle>& getDeBoorPoints() const {
+        return m_deBoorPoints;
+    }
+
+    [[nodiscard]] bool getShowDeBoorPolygon() const {
+        return m_showDeBoorPolygon;
+    }
 
     void setShowDeBoorPolygon(bool v);
 
-    [[nodiscard]] bool getShowBernsteinPolygon() const { return m_showBernsteinPolygon; }
+    [[nodiscard]] bool getShowBernsteinPolygon() const {
+        return m_showBernsteinPolygon;
+    }
 
     void setShowBernsteinPolygon(bool v);
 
-    [[nodiscard]] ParametrizationMode getParametrizationMode() const { return m_parametrizationMode; }
+    [[nodiscard]] ParametrizationMode getParametrizationMode() const {
+        return m_parametrizationMode;
+    }
 
     void setParametrizationMode(ParametrizationMode mode);
 
@@ -69,13 +78,29 @@ public:
 
     void syncToGpu() override;
 
-    [[nodiscard]] GLuint getPatchVao() const { return m_patchVao; }
-    [[nodiscard]] GLuint getDeBoorVao() const { return m_deBoorVao; }
-    [[nodiscard]] GLuint getBernsteinPolyVao() const { return m_bernsteinPolyVao; }
+    [[nodiscard]] GLuint getPatchVao() const {
+        return m_patchVao;
+    }
 
-    [[nodiscard]] int getPatchIndexCount() const { return m_patchEbo.size(); }
-    [[nodiscard]] int getDeBoorIndexCount() const { return m_deBoorEbo.size(); }
-    [[nodiscard]] const std::vector<cadm::vec3>& getBernsteinPositions() const { return m_bernsteinPositions; }
+    [[nodiscard]] GLuint getDeBoorVao() const {
+        return m_deBoorVao;
+    }
+
+    [[nodiscard]] GLuint getBernsteinPolyVao() const {
+        return m_bernsteinPolyVao;
+    }
+
+    [[nodiscard]] int getPatchIndexCount() const {
+        return m_patchEbo.size();
+    }
+
+    [[nodiscard]] int getDeBoorIndexCount() const {
+        return m_deBoorEbo.size();
+    }
+
+    [[nodiscard]] const std::vector<cadm::vec3>& getBernsteinPositions() const {
+        return m_bernsteinPositions;
+    }
 
 private:
     /// Patch VAO; binds m_bernsteinVBO (computed positions), EBO holds sequential indices

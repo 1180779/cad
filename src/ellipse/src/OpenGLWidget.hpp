@@ -46,9 +46,17 @@ public:
 
     void initializeGL() override;
 
-    [[nodiscard]] cadm::cadf getA() const { return m_a; }
-    [[nodiscard]] cadm::cadf getB() const { return m_b; }
-    [[nodiscard]] cadm::cadf getC() const { return m_c; }
+    [[nodiscard]] cadm::cadf getA() const {
+        return m_a;
+    }
+
+    [[nodiscard]] cadm::cadf getB() const {
+        return m_b;
+    }
+
+    [[nodiscard]] cadm::cadf getC() const {
+        return m_c;
+    }
 
     void setA(cadm::cadf a);
 
@@ -56,29 +64,47 @@ public:
 
     void setC(cadm::cadf c);
 
-    [[nodiscard]] cadm::vec3 getTranslation() const { return m_translation; }
+    [[nodiscard]] cadm::vec3 getTranslation() const {
+        return m_translation;
+    }
 
     void setTranslation(const cadm::vec3 &translation);
 
-    [[nodiscard]] cadm::vec3 getRotation() const { return m_rotation; }
+    [[nodiscard]] cadm::vec3 getRotation() const {
+        return m_rotation;
+    }
 
     void setRotation(const cadm::vec3 &rotation);
 
-    [[nodiscard]] cadm::vec3 getScale() const { return m_scale; }
+    [[nodiscard]] cadm::vec3 getScale() const {
+        return m_scale;
+    }
 
     void setScale(const cadm::vec3 &scale);
 
-    [[nodiscard]] unsigned char getAdaptationSize() const { return m_adaptationSize; }
+    [[nodiscard]] unsigned char getAdaptationSize() const {
+        return m_adaptationSize;
+    }
 
     void setAdaptationSize(unsigned char adaptationSize);
 
-    [[nodiscard]] cadm::cadf getM() const { return m_m; }
+    [[nodiscard]] cadm::cadf getM() const {
+        return m_m;
+    }
 
     void setM(cadm::cadf m);
 
-    [[nodiscard]] int getAmbientR() const { return m_ambient.r; }
-    [[nodiscard]] int getAmbientG() const { return m_ambient.g; }
-    [[nodiscard]] int getAmbientB() const { return m_ambient.b; }
+    [[nodiscard]] int getAmbientR() const {
+        return m_ambient.r;
+    }
+
+    [[nodiscard]] int getAmbientG() const {
+        return m_ambient.g;
+    }
+
+    [[nodiscard]] int getAmbientB() const {
+        return m_ambient.b;
+    }
 
     void setAmbientR(int r);
 

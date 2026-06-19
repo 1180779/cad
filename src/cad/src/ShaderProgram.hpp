@@ -52,10 +52,14 @@ public:
 
 private:
     template <typename T>
-    static constexpr bool isFloatType() { return std::is_same_v<T, float>; }
+    static constexpr bool isFloatType() {
+        return std::is_same_v<T, float>;
+    }
 
     template <typename T>
-    static constexpr bool isDoubleType() { return std::is_same_v<T, double>; }
+    static constexpr bool isDoubleType() {
+        return std::is_same_v<T, double>;
+    }
 
     template <typename T>
     bool setUniform1t(const std::string &name, T value) const;
@@ -83,9 +87,13 @@ bool ShaderProgram::setUniform1t(const std::string &name, T value) const {
     const auto gl = GL();
     if (const auto location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
-        if constexpr (isFloatType<T>()) { gl->glUniform1f(location, value); }
+        if constexpr (isFloatType<T>()) {
+            gl->glUniform1f(location, value);
+        }
         else
-            if constexpr (isDoubleType<T>()) { gl->glUniform1d(location, value); }
+            if constexpr (isDoubleType<T>()) {
+                gl->glUniform1d(location, value);
+            }
         return true;
     }
     return false;
@@ -98,9 +106,13 @@ bool ShaderProgram::setUniform2t(const std::string &name, T x, T y) const {
     const auto gl = GL();
     if (const auto location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
-        if constexpr (isFloatType<T>()) { gl->glUniform2f(location, x, y); }
+        if constexpr (isFloatType<T>()) {
+            gl->glUniform2f(location, x, y);
+        }
         else
-            if constexpr (isDoubleType<T>()) { gl->glUniform2d(location, x, y); }
+            if constexpr (isDoubleType<T>()) {
+                gl->glUniform2d(location, x, y);
+            }
         return true;
     }
     return false;
@@ -113,9 +125,13 @@ bool ShaderProgram::setUniform3t(const std::string &name, T x, T y, T z) const {
     const auto gl = GL();
     if (const auto location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
-        if constexpr (isFloatType<T>()) { gl->glUniform3f(location, x, y, z); }
+        if constexpr (isFloatType<T>()) {
+            gl->glUniform3f(location, x, y, z);
+        }
         else
-            if constexpr (isDoubleType<T>()) { gl->glUniform3d(location, x, y, z); }
+            if constexpr (isDoubleType<T>()) {
+                gl->glUniform3d(location, x, y, z);
+            }
         return true;
     }
     return false;
@@ -128,9 +144,13 @@ bool ShaderProgram::setUniform4t(const std::string &name, T x, T y, T z, T w) co
     const auto gl = GL();
     if (const auto location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
-        if constexpr (isFloatType<T>()) { gl->glUniform4f(location, x, y, z, w); }
+        if constexpr (isFloatType<T>()) {
+            gl->glUniform4f(location, x, y, z, w);
+        }
         else
-            if constexpr (isDoubleType<T>()) { gl->glUniform4d(location, x, y, z, w); }
+            if constexpr (isDoubleType<T>()) {
+                gl->glUniform4d(location, x, y, z, w);
+            }
         return true;
     }
     return false;

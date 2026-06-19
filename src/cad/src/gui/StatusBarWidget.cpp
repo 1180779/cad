@@ -50,7 +50,9 @@ void StatusBarWidget::setTransformMode(const TransformMode mode, const QString &
     refreshModeLabel(mode, axisInfo, false);
 }
 
-void StatusBarWidget::setClickToAddMode(const bool active) const { refreshModeLabel(TransformMode::none, {}, active); }
+void StatusBarWidget::setClickToAddMode(const bool active) const {
+    refreshModeLabel(TransformMode::none, {}, active);
+}
 
 void StatusBarWidget::refreshModeLabel(const TransformMode mode, const QString &axisInfo, const bool clickToAdd) const {
     QString text;
@@ -84,7 +86,9 @@ void StatusBarWidget::refreshModeLabel(const TransformMode mode, const QString &
     m_modeLabel->setText(text);
 }
 
-void StatusBarWidget::setCameraName(const QString &name) const { m_cameraLabel->setText("Camera: " + name); }
+void StatusBarWidget::setCameraName(const QString &name) const {
+    m_cameraLabel->setText("Camera: " + name);
+}
 
 void StatusBarWidget::setSelectionCount(const int count) const {
     m_selectionLabel->setText(
