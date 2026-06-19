@@ -32,13 +32,13 @@ struct RenderState {
     unsigned char adaptationSize;
 };
 
-class OpenGLWidget : public QOpenGLWidget {
+class OpenGlWidget : public QOpenGLWidget {
     Q_OBJECT
 
 public:
-    explicit OpenGLWidget(QWidget *parent = nullptr);
+    explicit OpenGlWidget(QWidget *parent = nullptr);
 
-    ~OpenGLWidget() override;
+    ~OpenGlWidget() override;
 
     void paintGL() override;
 

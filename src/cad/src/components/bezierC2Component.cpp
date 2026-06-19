@@ -30,7 +30,7 @@ BezierC2Component::~BezierC2Component() {
         m_registry->unsubscribeFromPositionChanges(m_positionCallbackId);
     }
 
-    const auto gl = GL();
+    const auto gl = getGl();
     if (m_patchVao) {
         gl->glDeleteVertexArrays(1, &m_patchVao);
         m_patchVao = 0;
@@ -172,7 +172,7 @@ void BezierC2Component::recomputeBernstein() {
     m_bernsteinVbo.assign(m_bernsteinPositions);
 
     // sequential patch EBO: 0,1,2,3, 4,5,6,7, ...
-   
+
     const int totalBernstein = static_cast<int>(m_bernsteinPositions.size());
     std::vector<uint32_t> patchIdx(static_cast<size_t>(totalBernstein));
     for (int i = 0; i < totalBernstein; ++i) {
@@ -195,7 +195,7 @@ void BezierC2Component::syncToGpu() {
         m_bernsteinDirty = false;
     }
 
-    const auto gl = GL();
+    const auto gl = getGl();
     m_bernsteinVbo.syncToGpu(gl);
     m_patchEbo.syncToGpu(gl);
     m_deBoorEbo.syncToGpu(gl);
@@ -218,7 +218,7 @@ void BezierC2Component::setupPatchVao(QOpenGLFunctions_4_5_Core *gl) {
     gl->glBindVertexArray(m_patchVao);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_bernsteinVbo.vboId());
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
+    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_patchEbo.vboId());
     gl->glBindVertexArray(0);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -230,7 +230,7 @@ void BezierC2Component::setupBernsteinPolyVao(QOpenGLFunctions_4_5_Core *gl) {
     gl->glBindVertexArray(m_bernsteinPolyVao);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_bernsteinVbo.vboId());
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
+    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_patchEbo.vboId());
     gl->glBindVertexArray(0);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -242,7 +242,7 @@ void BezierC2Component::setupDeBoorVao(QOpenGLFunctions_4_5_Core *gl) {
     gl->glBindVertexArray(m_deBoorVao);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_registry->getPositionVBO());
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
+    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_deBoorEbo.vboId());
     gl->glBindVertexArray(0);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);

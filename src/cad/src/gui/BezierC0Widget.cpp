@@ -16,8 +16,11 @@ BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget 
     ),
     m_bezier(bezier),
     m_scene(scene) {
+    // ReSharper disable once CppDFAMemoryLeak
+
     const auto layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
+    // ReSharper disable once CppDFAMemoryLeak
 
     const auto titleLabel = new QLabel("Bezier C0 Curve");
     QFont f = titleLabel->font();

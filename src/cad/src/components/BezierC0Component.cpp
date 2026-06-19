@@ -8,7 +8,7 @@
 BezierC0Component::BezierC0Component(PointRegistry *registry) : m_registry(registry) {}
 
 BezierC0Component::~BezierC0Component() {
-    const auto gl = GL();
+    const auto gl = getGl();
     m_patchIndexBuf.deleteGpu(gl);
     if (m_patchVao != 0) {
         gl->glDeleteVertexArrays(1, &m_patchVao);
@@ -54,7 +54,7 @@ void BezierC0Component::addControlPoint(const PointHandle h) {
     switch ((n - 1) % 3) {
     case 0: {
         // append new trailing patch
-       
+
         const auto prev = m_controlPoints[n - 1];
         const auto cur = static_cast<uint32_t>(h);
         m_patchIndexBuf.append(prev);
@@ -249,7 +249,7 @@ void BezierC0Component::setupPatchVao(QOpenGLFunctions_4_5_Core *const gl) {
     gl->glBindVertexArray(m_patchVao);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_registry->getPositionVBO());
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
+    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_patchIndexBuf.vboId());
     gl->glBindVertexArray(0);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -264,7 +264,7 @@ void BezierC0Component::setupPolygonVao(QOpenGLFunctions_4_5_Core *const gl) {
     gl->glBindVertexArray(m_polygonVao);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_registry->getPositionVBO());
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
+    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_polygonIndexBuf.vboId());
     gl->glBindVertexArray(0);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -274,7 +274,7 @@ void BezierC0Component::setupPolygonVao(QOpenGLFunctions_4_5_Core *const gl) {
 void BezierC0Component::regenerateMesh() {}
 
 void BezierC0Component::syncToGpu() {
-    const auto gl = GL();
+    const auto gl = getGl();
 
     m_patchIndexBuf.syncToGpu(gl);
     m_polygonIndexBuf.syncToGpu(gl);

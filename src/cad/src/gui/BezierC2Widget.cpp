@@ -165,14 +165,14 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
                 return;
             }
             if (const PointHandle removing = m_bezier->getDeBoorPoints()[row];
-                m_selectedKind == SelectedPointKind::DeBoor && m_selectedDeBoor == removing) {
-                m_selectedKind = SelectedPointKind::None;
+                m_selectedKind == SelectedPointKind::deBoor && m_selectedDeBoor == removing) {
+                m_selectedKind = SelectedPointKind::none;
                 m_selectedDeBoor = InvalidPointHandle;
                 setSpinboxesEnabled(false);
                 m_selectedLabel->setEnabled(false);
             }
             const auto &cps = m_bezier->getDeBoorPoints();
-            if (m_scene && m_commandStack && row < static_cast<int>(cps.size())) {
+            if (m_scene && m_commandStack &&row<static_cast<int>(cps.size())) {
                 m_commandStack->push(std::make_unique<RemoveControlPointCommand>(*m_scene, m_entityId, cps[row]));
             }
             else {
@@ -204,8 +204,8 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             // update spinboxes for the single current item
             const auto *cur = m_deBoorList->currentItem();
             if (!cur || !cur->isSelected()) {
-                if (m_selectedKind == SelectedPointKind::DeBoor) {
-                    m_selectedKind = SelectedPointKind::None;
+                if (m_selectedKind == SelectedPointKind::deBoor) {
+                    m_selectedKind = SelectedPointKind::none;
                     setSpinboxesEnabled(false);
                     m_selectedLabel->setEnabled(false);
                 }
@@ -216,7 +216,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             const QSignalBlocker b(m_bernsteinList);
             m_bernsteinList->clearSelection();
 
-            m_selectedKind = SelectedPointKind::DeBoor;
+            m_selectedKind = SelectedPointKind::deBoor;
             m_selectedDeBoor = cur->data(Qt::UserRole).value<PointHandle>();
             m_selectedBernstein = -1;
             m_selectedLabel->setEnabled(true);
@@ -232,8 +232,8 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
         [this] {
             const auto *cur = m_bernsteinList->currentItem();
             if (!cur || !cur->isSelected()) {
-                if (m_selectedKind == SelectedPointKind::Bernstein) {
-                    m_selectedKind = SelectedPointKind::None;
+                if (m_selectedKind == SelectedPointKind::bernstein) {
+                    m_selectedKind = SelectedPointKind::none;
                     setSpinboxesEnabled(false);
                     m_selectedLabel->setEnabled(false);
                 }
@@ -244,7 +244,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             const QSignalBlocker b(m_deBoorList);
             m_deBoorList->clearSelection();
 
-            m_selectedKind = SelectedPointKind::Bernstein;
+            m_selectedKind = SelectedPointKind::bernstein;
             m_selectedDeBoor = InvalidPointHandle;
             m_selectedBernstein = cur->data(Qt::UserRole).toInt();
             m_selectedLabel->setEnabled(true);
@@ -264,7 +264,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             static_cast<float>(m_zSpin->value())
         };
         auto &reg = m_scene->getPointRegistry();
-        if (m_selectedKind == SelectedPointKind::DeBoor &&
+        if (m_selectedKind == SelectedPointKind::deBoor &&
             m_selectedDeBoor != InvalidPointHandle) {
             // moving a de Boor point is a plain point move (coalesces by handle)
             if (m_commandStack) {
@@ -279,7 +279,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             }
             emit propertyChanged();
         }
-        else if (m_selectedKind == SelectedPointKind::Bernstein &&
+        else if (m_selectedKind == SelectedPointKind::bernstein &&
             m_selectedBernstein >= 0) {
             // a Bernstein edit back-computes several de Boor points; snapshot them
             // so undo can restore the lot. apply re-runs the back-computation
@@ -346,7 +346,7 @@ void BezierC2Widget::refreshBernsteinList() const {
     }
 
     // re-select previously selected index if still valid
-    if (m_selectedKind == SelectedPointKind::Bernstein &&
+    if (m_selectedKind == SelectedPointKind::bernstein &&
         m_selectedBernstein >= 0 && m_selectedBernstein < count) {
         const QSignalBlocker b(m_bernsteinList);
         m_bernsteinList->setCurrentRow(m_selectedBernstein);
@@ -367,11 +367,11 @@ void BezierC2Widget::syncSelection() {
 void BezierC2Widget::refresh() {
     refreshBernsteinList();
 
-    if (m_selectedKind == SelectedPointKind::DeBoor &&
+    if (m_selectedKind == SelectedPointKind::deBoor &&
         m_selectedDeBoor != InvalidPointHandle) {
         updateSpinboxesForDeBoor(m_selectedDeBoor);
     }
-    else if (m_selectedKind == SelectedPointKind::Bernstein &&
+    else if (m_selectedKind == SelectedPointKind::bernstein &&
         m_selectedBernstein >= 0 &&
         m_selectedBernstein < static_cast<int>(m_bezier->getBernsteinPositions().size())) {
         updateSpinboxesForBernstein(m_selectedBernstein);

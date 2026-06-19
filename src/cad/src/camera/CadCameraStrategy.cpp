@@ -118,13 +118,13 @@ bool CadCameraStrategy::handleCameraMove(const CameraAction action, const QPoint
     const auto pCamera = camera.value();
 
     switch (action) {
-    case CameraAction::Orbit:
+    case CameraAction::orbit:
         handleOrbit(mouseDelta, pCamera);
         return true;
-    case CameraAction::Pan:
+    case CameraAction::pan:
         handlePan(mouseDelta, pCamera);
         return true;
-    case CameraAction::ZoomDrag:
+    case CameraAction::zoomDrag:
         const cadm::cadf factor = std::exp(
             static_cast<cadm::cadf>(-mouseDelta.y()) * static_cast<cadm::cadf>(0.01)
         );
@@ -145,16 +145,16 @@ bool CadCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) {
 
     cadm::vec3 offset;
     switch (action) {
-    case CameraKeyAction::MoveUp:
+    case CameraKeyAction::moveUp:
         offset = pCamera->up() * step;
         break;
-    case CameraKeyAction::MoveDown:
+    case CameraKeyAction::moveDown:
         offset = -pCamera->up() * step;
         break;
-    case CameraKeyAction::MoveLeft:
+    case CameraKeyAction::moveLeft:
         offset = -pCamera->right() * step;
         break;
-    case CameraKeyAction::MoveRight:
+    case CameraKeyAction::moveRight:
         offset = pCamera->right() * step;
         break;
     default:

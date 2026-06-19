@@ -84,14 +84,14 @@ void RenderSystem::initialize() {
 
     // selection rect
 
-    const auto gl = GL();
+    const auto gl = getGl();
     gl->glGenVertexArrays(1, &m_selectionRectVAO);
     gl->glGenBuffers(1, &m_selectionRectVBO);
     gl->glBindVertexArray(m_selectionRectVAO);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectionRectVBO);
-    gl->glBufferData(GL_ARRAY_BUFFER, 4 * 2 * GL_CADM_VT_SIZE, nullptr, GL_DYNAMIC_DRAW);
+    gl->glBufferData(GL_ARRAY_BUFFER, 4 * 2 * gc_glCadmVtSize, nullptr, GL_DYNAMIC_DRAW);
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 2, GL_CADM_VT_TYPE, GL_FALSE, 2 * GL_CADM_VT_SIZE, nullptr);
+    gl->glVertexAttribPointer(0, 2, gc_glCadmVtType, GL_FALSE, 2 * gc_glCadmVtSize, nullptr);
     gl->glBindVertexArray(0);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -222,7 +222,7 @@ void RenderSystem::renderC0BezierCurves(
     const cadm::mat4 &vp
 ) const {
     // TODO: refactor to not bind shaders multiple times
-    const auto gl = GL();
+    const auto gl = getGl();
     for (const auto &e : scene.getEntities()) {
         const auto bezier = e->getComponent<BezierC0Component>();
         if (!bezier) {
@@ -332,7 +332,7 @@ void RenderSystem::renderC2BezierCurves(
     const cadm::mat4 &projection,
     const cadm::mat4 &vp
 ) const {
-    const auto gl = GL();
+    const auto gl = getGl();
     for (const auto &e : scene.getEntities()) {
         const auto bezier = e->getComponent<BezierC2Component>();
         if (!bezier) {
@@ -525,7 +525,7 @@ void RenderSystem::render(
     const cadm::mat4 &projection,
     const cadm::mat4 &invVp
 ) const {
-    const auto gl = GL();
+    const auto gl = getGl();
 
     renderInfiniteGrid(view, projection, invVp);
 
@@ -568,7 +568,7 @@ void RenderSystem::renderSelectionRect(
         y1Ndc,
     };
 
-    const auto gl = GL();
+    const auto gl = getGl();
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectionRectVBO);
     gl->glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -593,7 +593,7 @@ void RenderSystem::renderPivotMarker(
     const cadm::mat4 &view,
     const cadm::mat4 &projection
 ) const {
-    const auto gl = GL();
+    const auto gl = getGl();
     const cadm::mat4 model = cadm::mat4::translation(pos);
 
     m_wireframeShader->bind();
@@ -621,7 +621,7 @@ void RenderSystem::shutdown() {
     UNIQUE_PTR_RELEASE_CHECK(m_gridShader.release());
 
     if (m_selectionRectVAO != 0) {
-        const auto gl = GL();
+        const auto gl = getGl();
         gl->glDeleteBuffers(1, &m_selectionRectVBO);
         gl->glDeleteVertexArrays(1, &m_selectionRectVAO);
     }

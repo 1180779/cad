@@ -66,7 +66,7 @@ std::variant<TransformData, PointData, TorusData, AxesData, CursorData, BezierC0
 /// identity plus the list of components it holds. 
 /// Sufficient to rebuild the entity exactly (same EntityID / PointHandle)
 struct EntitySpec {
-    EntityID id{};
+    EntityId id{};
     std::string name;
     bool visible{true};
     std::vector<ComponentSpec> components;

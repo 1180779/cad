@@ -5,16 +5,12 @@
 #ifndef CAD_CAMERACONTROLLER_HPP
 #define CAD_CAMERACONTROLLER_HPP
 
-#include <algorithm>
 #include <cassert>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include <QObject>
-
 #include "ICameraStrategy.hpp"
-#include "../components/PointComponent.hpp"
 #include "../components/TransformComponent.hpp"
 #include "../PointRegistry.hpp"
 
@@ -38,7 +34,7 @@ public:
     /// @brief Remove a strategy borrowing an entity
     /// @param id id of the entity
     /// @note does not remove the strategy if it is the last one available
-    void removeCamera(EntityID id);
+    void removeCamera(EntityId id);
 
     /// @brief Get the active strategy
     /// @return the active strategy
@@ -57,17 +53,17 @@ public:
 
     /// @brief Switch to the strategy that borrows the provided entity
     /// @param id id of the entity
-    void switchTo(EntityID id);
+    void switchTo(EntityId id);
 
     /// @brief Whether an entity is borrowed by the current strategy
     /// @param id id of the entity
     /// @return true when the entity is referenced by current strategy, false otherwise
-    [[nodiscard]] bool isActiveCamera(const EntityID id) const;
+    [[nodiscard]] bool isActiveCamera(EntityId id) const;
 
     /// @brief Whether an entity is borrowed by any of the available strategies
     /// @param id id of the entity
     /// @return true when the entity is referenced by any strategy, false otherwise
-    [[nodiscard]] bool isEntityManagedAsCamera(EntityID id) const;
+    [[nodiscard]] bool isEntityManagedAsCamera(EntityId id) const;
 
     /// @brief Sets the current camera to look in the direction of the specified entity
     /// @param entity the target entity
@@ -81,7 +77,10 @@ public:
         return m_cameras;
     }
 
-signals :
+    signals  :
+
+    
+
     void cameraChanged(const std::string &name);
 
 private:

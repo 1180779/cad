@@ -70,13 +70,13 @@ public:
         return m_minorSegments;
     }
 
-    void setMajorRadius(cadm::cadf m_majorRadius);
+    void setMajorRadius(cadm::cadf majorRadius);
 
-    void setMinorRadius(cadm::cadf m_minorRadius);
+    void setMinorRadius(cadm::cadf minorRadius);
 
-    void setMajorSegments(uint32_t m_majorSegments);
+    void setMajorSegments(uint32_t majorSegments);
 
-    void setMinorSegments(uint32_t m_minorSegments);
+    void setMinorSegments(uint32_t minorSegments);
 
     void regenerateMesh() override;
 
@@ -90,7 +90,8 @@ private:
     uint32_t m_majorSegments = 48;
     uint32_t m_minorSegments = 24;
 
-    signals :
+    signals  :
+
     
 
     void majorRadiusChanged(double radius);

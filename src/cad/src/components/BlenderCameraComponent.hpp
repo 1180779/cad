@@ -141,7 +141,6 @@ private:
     cadm::cadf m_orthoHeight = 5.0;
 
     signals  :
-
     
 
     void radiusChanged(double radius);

@@ -9,14 +9,14 @@
 
 #include "cad_math/vec3.hpp"
 
-void GLSetDefaults();
+void glSetDefaults();
 
-QOpenGLFunctions_4_5_Core* GL();
+QOpenGLFunctions_4_5_Core* getGl();
 
 static_assert(std::is_same_v<cadm::vec3::Vt, float> || std::is_same_v<cadm::vec3::Vt, double>);
-constexpr GLenum GL_CADM_VT_TYPE = std::is_same_v<cadm::vec3::Vt, float>
+constexpr GLenum gc_glCadmVtType = std::is_same_v<cadm::vec3::Vt, float>
                                        ? GL_FLOAT
                                        : GL_DOUBLE;
-constexpr GLsizei GL_CADM_VT_SIZE = sizeof(cadm::vec3::Vt);
+constexpr GLsizei gc_glCadmVtSize = sizeof(cadm::vec3::Vt);
 
 #endif //CAD_GL_H

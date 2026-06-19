@@ -21,7 +21,7 @@ public:
     /// @brief Create an entity with a specific id 
     /// (used to resurrect a deleted entity during undo so existing references stay valid). 
     /// Keeps m_nextEntityId ahead
-    Entity* createEntityWithId(EntityID id, const std::string &name = "Entity");
+    Entity* createEntityWithId(EntityId id, const std::string &name = "Entity");
 
     Entity* createPoint(cadm::vec3 position, const std::string &name = "Point");
 
@@ -33,15 +33,15 @@ public:
     /// @note: not an exclusive surface
     void setPointPosition(PointHandle handle, cadm::vec3 position);
 
-    void setEntityName(EntityID id, const std::string &name);
+    void setEntityName(EntityId id, const std::string &name);
 
-    std::optional<Entity*> getEntity(EntityID id);
+    std::optional<Entity*> getEntity(EntityId id);
 
     std::optional<Entity*> getEntityByName(const std::string &name);
 
     std::optional<Entity*> getEntityByPointHandle(PointHandle handle);
 
-    bool removeEntity(EntityID id);
+    bool removeEntity(EntityId id);
 
     /// @brief Set the selection state on an entity and keep the selection set in sync
     void setSelected(Entity *e, bool selected);
@@ -87,9 +87,9 @@ public:
 
 private:
     std::vector<std::unique_ptr<Entity>> m_entities;
-    std::unordered_map<EntityID, std::size_t> m_entityMap;
-    std::unordered_map<PointHandle, EntityID> m_pointEntityMap;
-    EntityID m_nextEntityId = 1;
+    std::unordered_map<EntityId, std::size_t> m_entityMap;
+    std::unordered_map<PointHandle, EntityId> m_pointEntityMap;
+    EntityId m_nextEntityId = 1;
     Entity *m_activeCursor = nullptr;
 
     Entity *m_newPointsTargetEntity = nullptr;

@@ -6,7 +6,7 @@
 #define CAD_PROJECTIONCAMERASTRATEGY_HPP
 #include "ICameraStrategy.hpp"
 
-class BlenderCameraStrategy : public ICameraStrategy {
+class BlenderCameraStrategy final : public ICameraStrategy {
 public:
     explicit BlenderCameraStrategy(
         Entity *cameraEntity,

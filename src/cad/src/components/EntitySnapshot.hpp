@@ -12,7 +12,7 @@
 #include "cad_math/vec3.hpp"
 
 struct EntitySnapshot {
-    EntityID id{};
+    EntityId id{};
     cadm::vec3 origPos;
     cadm::mat3 origRotMat;
     cadm::vec3 origScale;
@@ -23,7 +23,7 @@ struct EntitySnapshot {
     bool fillFromEntity(const PointRegistry &pointRegistry, Entity *entity);
 
 private:
-    void fillFromPointComponent(const PointRegistry &pointRegistry, PointComponent *pointComponent);
+    void fillFromPointComponent(const PointRegistry &pointRegistry, const PointComponent *pointComponent);
 
     void fillFromTransformComponent(const TransformComponent *transformComponent);
 };
@@ -56,7 +56,10 @@ inline bool EntitySnapshot::fillFromEntity(const PointRegistry &pointRegistry, E
     return false;
 }
 
-inline void EntitySnapshot::fillFromPointComponent(const PointRegistry &pointRegistry, PointComponent *pointComponent) {
+inline void EntitySnapshot::fillFromPointComponent(
+    const PointRegistry &pointRegistry,
+    const PointComponent *pointComponent
+) {
     origPos = pointRegistry.getPosition(pointComponent->m_handle);
     origRotMat = cadm::mat3::identity();
     origScale = {1, 1, 1};

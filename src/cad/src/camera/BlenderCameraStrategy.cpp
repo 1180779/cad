@@ -85,7 +85,7 @@ bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QP
     const auto pCamera = camera.value();
 
     switch (action) {
-    case CameraAction::Orbit: {
+    case CameraAction::orbit: {
         // horizontal: rotate around world Y
         // vertical: rotate around camera's current local X
         const cadm::cadf yawAngle = -static_cast<cadm::cadf>(delta.x()) * s_sensitivity;
@@ -96,7 +96,7 @@ bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QP
         pCamera->propertyUpdated();
         return true;
     }
-    case CameraAction::Pan: {
+    case CameraAction::pan: {
         cadm::cadf scale;
         if (pCamera->isOrtho()) {
             scale = pCamera->getOrthoHeight() / static_cast<cadm::cadf>(m_heightGetter());
@@ -113,7 +113,7 @@ bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QP
         pCamera->setTarget(pCamera->getTarget() + translationChange);
         return true;
     }
-    case CameraAction::ZoomDrag: {
+    case CameraAction::zoomDrag: {
         const cadm::cadf factor = std::exp(
             static_cast<cadm::cadf>(-delta.y()) * static_cast<cadm::cadf>(0.01)
         );
@@ -137,16 +137,16 @@ bool BlenderCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) 
 
     cadm::vec3 newTarget;
     switch (action) {
-    case CameraKeyAction::MoveUp:
+    case CameraKeyAction::moveUp:
         newTarget = pCamera->getTarget() + pCamera->up() * step;
         break;
-    case CameraKeyAction::MoveDown:
+    case CameraKeyAction::moveDown:
         newTarget = pCamera->getTarget() - pCamera->up() * step;
         break;
-    case CameraKeyAction::MoveLeft:
+    case CameraKeyAction::moveLeft:
         newTarget = pCamera->getTarget() - pCamera->right() * step;
         break;
-    case CameraKeyAction::MoveRight:
+    case CameraKeyAction::moveRight:
         newTarget = pCamera->getTarget() + pCamera->right() * step;
         break;
     default:

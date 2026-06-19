@@ -41,7 +41,10 @@ public:
 
     void setRotation(const cadm::vec3 &rotation);
 
-signals :
+    signals  :
+
+    
+
     void translationXChanged(double value);
 
     void translationYChanged(double value);

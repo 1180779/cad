@@ -24,14 +24,17 @@ public:
     virtual void setCommandContext(
         Scene *scene,
         CommandStack *stack,
-        const EntityID entityId
+        const EntityId entityId
     ) {
         m_scene = scene;
         m_commandStack = stack;
         m_entityId = entityId;
     }
 
-signals :
+    signals  :
+
+    
+
     void propertyChanged();
 
 protected:
@@ -52,7 +55,7 @@ protected:
     Component *m_component;
     Scene *m_scene = nullptr;
     CommandStack *m_commandStack = nullptr;
-    EntityID m_entityId = 0;
+    EntityId m_entityId = 0;
 };
 
 #endif // COMPONENTWIDGET_H

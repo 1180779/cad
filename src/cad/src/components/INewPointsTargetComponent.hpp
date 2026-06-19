@@ -8,7 +8,7 @@
 #include "Entity.hpp"
 #include "PointRegistry.hpp"
 
-/// Base class for @ref INewPointsTargetComponent for getting component purposes
+/// @brief Base class for INewPointsTargetComponent for getting component purposes
 class INewPointsTargetBase {
 public:
     virtual ~INewPointsTargetBase() = default;
@@ -18,7 +18,7 @@ public:
     virtual void removeControlPoint(PointHandle h) = 0;
 };
 
-/// Component that can be a new points target
+/// @brief Component that can be a new points target
 /// (i.e., set to auto add newly added points to it)
 /// @note uses CRTP pattern to enforce only usage by components
 /// @note use the @ref INewPointsTargetBase to retrieve the component

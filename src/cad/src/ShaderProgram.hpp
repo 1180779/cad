@@ -84,16 +84,15 @@ template <typename T>
 bool ShaderProgram::setUniform1t(const std::string &name, T value) const {
     static_assert(isFloatType<T>() || isDoubleType<T>(), "only float and double types are supported");
 
-    const auto gl = GL();
+    const auto gl = getGl();
     if (const auto location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
         if constexpr (isFloatType<T>()) {
             gl->glUniform1f(location, value);
         }
-        else
-            if constexpr (isDoubleType<T>()) {
-                gl->glUniform1d(location, value);
-            }
+        else if constexpr (isDoubleType<T>()) {
+            gl->glUniform1d(location, value);
+        }
         return true;
     }
     return false;
@@ -103,16 +102,15 @@ template <typename T>
 bool ShaderProgram::setUniform2t(const std::string &name, T x, T y) const {
     static_assert(isFloatType<T>() || isDoubleType<T>(), "only float and double types are supported");
 
-    const auto gl = GL();
+    const auto gl = getGl();
     if (const auto location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
         if constexpr (isFloatType<T>()) {
             gl->glUniform2f(location, x, y);
         }
-        else
-            if constexpr (isDoubleType<T>()) {
-                gl->glUniform2d(location, x, y);
-            }
+        else if constexpr (isDoubleType<T>()) {
+            gl->glUniform2d(location, x, y);
+        }
         return true;
     }
     return false;
@@ -122,16 +120,15 @@ template <typename T>
 bool ShaderProgram::setUniform3t(const std::string &name, T x, T y, T z) const {
     static_assert(isFloatType<T>() || isDoubleType<T>(), "only float and double types are supported");
 
-    const auto gl = GL();
+    const auto gl = getGl();
     if (const auto location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
         if constexpr (isFloatType<T>()) {
             gl->glUniform3f(location, x, y, z);
         }
-        else
-            if constexpr (isDoubleType<T>()) {
-                gl->glUniform3d(location, x, y, z);
-            }
+        else if constexpr (isDoubleType<T>()) {
+            gl->glUniform3d(location, x, y, z);
+        }
         return true;
     }
     return false;
@@ -141,16 +138,15 @@ template <typename T>
 bool ShaderProgram::setUniform4t(const std::string &name, T x, T y, T z, T w) const {
     static_assert(isFloatType<T>() || isDoubleType<T>(), "only float and double types are supported");
 
-    const auto gl = GL();
+    const auto gl = getGl();
     if (const auto location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
         if constexpr (isFloatType<T>()) {
             gl->glUniform4f(location, x, y, z, w);
         }
-        else
-            if constexpr (isDoubleType<T>()) {
-                gl->glUniform4d(location, x, y, z, w);
-            }
+        else if constexpr (isDoubleType<T>()) {
+            gl->glUniform4d(location, x, y, z, w);
+        }
         return true;
     }
     return false;
@@ -161,7 +157,7 @@ bool ShaderProgram::setUniformMat4t(const std::string &name, const T &mat) const
     using VT = T::VT;
     static_assert(isFloatType<VT>() || isDoubleType<VT>(), "only float and double types are supported");
 
-    const auto gl = GL();
+    const auto gl = getGl();
     if (const GLint location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
         if constexpr (isFloatType<VT>()) {

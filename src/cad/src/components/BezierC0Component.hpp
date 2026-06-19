@@ -25,7 +25,7 @@ public:
 
     void removeControlPointAt(int index);
 
-    void removeControlPoint(PointHandle h);
+    void removeControlPoint(PointHandle h) override;
 
     [[nodiscard]] const std::vector<PointHandle>& getControlPoints() const {
         return m_controlPoints;

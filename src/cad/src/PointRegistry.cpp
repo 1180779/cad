@@ -13,7 +13,7 @@ PointRegistry::~PointRegistry() {
     if (m_VAO == 0) {
         return;
     }
-    const auto gl = GL();
+    const auto gl = getGl();
     const GLuint buffers[2] = {m_positionVBO, m_selectedVBO};
     gl->glDeleteBuffers(2, buffers);
     gl->glDeleteVertexArrays(1, &m_VAO);
@@ -175,33 +175,29 @@ void PointRegistry::clearSelection() {
 }
 
 void PointRegistry::reallocatePositionVBO(
-    QOpenGLFunctions_4_5_Core * const gl,
+    QOpenGLFunctions_4_5_Core *const gl,
 
-
-const GLsizeiptr posBytes
+    const GLsizeiptr posBytes
 )
-const
- {
+const {
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_positionVBO);
     gl->glBufferData(GL_ARRAY_BUFFER, posBytes, nullptr, GL_DYNAMIC_DRAW);
     if (!m_positions.empty()) {
         gl->glBufferSubData(
             GL_ARRAY_BUFFER,
             0,
-            static_cast<GLsizeiptr>(m_positions.size() * 3 * GL_CADM_VT_SIZE),
+            static_cast<GLsizeiptr>(m_positions.size() * 3 * gc_glCadmVtSize),
             m_positions.data()
         );
     }
 }
 
 void PointRegistry::reallocateSelectionVBO(
-    QOpenGLFunctions_4_5_Core * const gl,
+    QOpenGLFunctions_4_5_Core *const gl,
 
-
-const GLsizeiptr selBytes
+    const GLsizeiptr selBytes
 )
-const
- {
+const {
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectedVBO);
     gl->glBufferData(GL_ARRAY_BUFFER, selBytes, nullptr, GL_DYNAMIC_DRAW);
     if (!m_selected.empty()) {
@@ -214,7 +210,7 @@ const
     }
 }
 
-void PointRegistry::generateBuffers(QOpenGLFunctions_4_5_Core * const gl) {
+void PointRegistry::generateBuffers(QOpenGLFunctions_4_5_Core *const gl) {
     gl->glGenVertexArrays(1, &m_VAO);
     GLuint buffers[2];
     gl->glGenBuffers(2, buffers);
@@ -235,12 +231,12 @@ void PointRegistry::ensureGpuCapacity(const size_t requiredSlots) {
         newCapacity *= s_growFactor;
     }
 
-    const auto gl = GL();
+    const auto gl = getGl();
     if (m_VAO == 0) {
         generateBuffers(gl);
     }
 
-    const auto posBytes = static_cast<GLsizeiptr>(newCapacity * 3 * GL_CADM_VT_SIZE);
+    const auto posBytes = static_cast<GLsizeiptr>(newCapacity * 3 * gc_glCadmVtSize);
     const auto selBytes = static_cast<GLsizeiptr>(newCapacity * sizeof(float));
 
     reallocatePositionVBO(gl, posBytes);
@@ -251,7 +247,7 @@ void PointRegistry::ensureGpuCapacity(const size_t requiredSlots) {
 
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_positionVBO);
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
+    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
 
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectedVBO);
     gl->glEnableVertexAttribArray(1);
@@ -269,13 +265,13 @@ void PointRegistry::ensureGpuCapacity(const size_t requiredSlots) {
     GET_GL_ERRORS();
 }
 
-void PointRegistry::flushDirtyPositions(QOpenGLFunctions_4_5_Core * const gl) {
+void PointRegistry::flushDirtyPositions(QOpenGLFunctions_4_5_Core *const gl) {
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_positionVBO);
     for (const PointHandle h : m_dirtyPositions) {
         gl->glBufferSubData(
             GL_ARRAY_BUFFER,
-            static_cast<GLintptr>(h) * 3 * GL_CADM_VT_SIZE,
-            3 * GL_CADM_VT_SIZE,
+            static_cast<GLintptr>(h) * 3 * gc_glCadmVtSize,
+            3 * gc_glCadmVtSize,
             &m_positions[h]
         );
     }
@@ -283,7 +279,7 @@ void PointRegistry::flushDirtyPositions(QOpenGLFunctions_4_5_Core * const gl) {
     m_dirtyPositions.clear();
 }
 
-void PointRegistry::flushDirtySelection(QOpenGLFunctions_4_5_Core * const gl) {
+void PointRegistry::flushDirtySelection(QOpenGLFunctions_4_5_Core *const gl) {
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectedVBO);
     for (const PointHandle h : m_dirtySelected) {
         gl->glBufferSubData(
@@ -298,12 +294,12 @@ void PointRegistry::flushDirtySelection(QOpenGLFunctions_4_5_Core * const gl) {
 }
 
 void PointRegistry::initialize() {
-    const auto gl = GL();
+    const auto gl = getGl();
     if (m_VAO == 0) {
         generateBuffers(gl);
     }
 
-    constexpr auto posBytes = static_cast<GLsizeiptr>(s_initialCapacity * 3 * GL_CADM_VT_SIZE);
+    constexpr auto posBytes = static_cast<GLsizeiptr>(s_initialCapacity * 3 * gc_glCadmVtSize);
     constexpr auto selBytes = static_cast<GLsizeiptr>(s_initialCapacity * sizeof(float));
     reallocatePositionVBO(gl, posBytes);
     reallocateSelectionVBO(gl, selBytes);
@@ -311,7 +307,7 @@ void PointRegistry::initialize() {
     gl->glBindVertexArray(m_VAO);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_positionVBO);
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 3 * GL_CADM_VT_SIZE, nullptr);
+    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
     gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectedVBO);
     gl->glEnableVertexAttribArray(1);
     gl->glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(float), nullptr);
@@ -328,7 +324,7 @@ void PointRegistry::syncToGpu() {
 
     ensureGpuCapacity(m_positions.size());
 
-    const auto gl = GL();
+    const auto gl = getGl();
     if (!m_dirtyPositions.empty()) {
         flushDirtyPositions(gl);
     }

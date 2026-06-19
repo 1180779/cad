@@ -10,9 +10,9 @@
 
 #include "../components/CameraComponent.hpp"
 
-enum class CameraAction { Orbit, Pan, ZoomDrag };
+enum class CameraAction { orbit, pan, zoomDrag };
 
-enum class CameraKeyAction { MoveUp, MoveDown, MoveLeft, MoveRight };
+enum class CameraKeyAction { moveUp, moveDown, moveLeft, moveRight };
 
 #include "../components/Entity.hpp"
 #include "cad_math/mat4.hpp"

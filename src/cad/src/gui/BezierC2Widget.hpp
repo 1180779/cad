@@ -33,13 +33,11 @@ public:
     /// TODO: actually do what the description says (not done yet)
     void refresh();
 
-    signals :
-    
-
+signals :
     void pointSelectionChanged(QList<Entity*> selected);
 
 private:
-    enum class SelectedPointKind { None, DeBoor, Bernstein };
+    enum class SelectedPointKind { none, deBoor, bernstein };
 
     void refreshBernsteinList() const;
 
@@ -68,7 +66,7 @@ private:
 
     std::unordered_map<PointHandle, QListWidgetItem*> m_deBoorItemMap;
 
-    SelectedPointKind m_selectedKind = SelectedPointKind::None;
+    SelectedPointKind m_selectedKind = SelectedPointKind::none;
     PointHandle m_selectedDeBoor = InvalidPointHandle;
     int m_selectedBernstein = -1;
 

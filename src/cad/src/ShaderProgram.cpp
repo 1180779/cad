@@ -11,13 +11,13 @@
 ShaderProgram::ShaderProgram() : m_program(0) {}
 
 ShaderProgram::~ShaderProgram() {
-    const auto gl = GL();
+    const auto gl = getGl();
     gl->glDeleteProgram(m_program);
     deleteShaders();
 }
 
 bool ShaderProgram::attachShader(const GLenum type, const std::string &source) {
-    const auto gl = GL();
+    const auto gl = getGl();
     const GLuint shader = gl->glCreateShader(type);
     const char *src = source.c_str();
     gl->glShaderSource(shader, 1, &src, nullptr);
@@ -60,7 +60,7 @@ bool ShaderProgram::attachShaderFromFile(const GLenum type, const std::string &f
 }
 
 bool ShaderProgram::compile() {
-    const auto gl = GL();
+    const auto gl = getGl();
     m_program = gl->glCreateProgram();
     for (const auto &val : m_shaders | std::views::values) {
         gl->glAttachShader(m_program, val);
@@ -79,7 +79,7 @@ bool ShaderProgram::compile() {
 }
 
 void ShaderProgram::deleteShaders() {
-    const auto gl = GL();
+    const auto gl = getGl();
     for (const auto &val : m_shaders | std::views::values) {
         gl->glDeleteShader(val);
     }
@@ -87,17 +87,19 @@ void ShaderProgram::deleteShaders() {
 }
 
 void ShaderProgram::bind() const {
-    const auto gl = GL();
+    const auto gl = getGl();
     gl->glUseProgram(m_program);
 }
 
+// ReSharper disable once CppMemberFunctionMayBeStatic
+
 void ShaderProgram::release() const {
-    const auto gl = GL();
+    const auto gl = getGl();
     gl->glUseProgram(0);
 }
 
 bool ShaderProgram::setUniform1(const std::string &name, const int value) const {
-    const auto gl = GL();
+    const auto gl = getGl();
     if (const GLint location = gl->glGetUniformLocation(m_program, name.c_str());
         location != -1) {
         gl->glUniform1i(location, value);

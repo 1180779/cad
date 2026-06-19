@@ -1,12 +1,9 @@
 #include <QApplication>
 #include <QComboBox>
-#include <QMenu>
 #include <QMenuBar>
-#include <QVBoxLayout>
 
 #include "CameraFactory.hpp"
 #include "components/BezierC0Component.hpp"
-#include "components/bezierC2Component.hpp"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "GeometryFactory.hpp"
@@ -22,7 +19,7 @@
 #include "gui/StatusBarWidget.hpp"
 
 int main(int argc, char *argv[]) {
-    GLSetDefaults();
+    glSetDefaults();
     QApplication a(argc, argv);
 
     QWidget window;
@@ -40,7 +37,7 @@ int main(int argc, char *argv[]) {
     const auto leftControlsLayout = new QVBoxLayout;
     layout->addLayout(leftControlsLayout, 1);
 
-    const auto glWidget = new OpenGLWidget;
+    const auto glWidget = new OpenGlWidget;
     glWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     leftControlsLayout->addWidget(glWidget);
 
@@ -153,21 +150,21 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::sceneChanged,
+        &OpenGlWidget::sceneChanged,
         hierarchyWidget,
         &SceneHierarchyWidget::refresh
     );
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::viewportSelectionChanged,
+        &OpenGlWidget::viewportSelectionChanged,
         hierarchyWidget,
         &SceneHierarchyWidget::syncSelectionFromScene
     );
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::viewportSelectionChanged,
+        &OpenGlWidget::viewportSelectionChanged,
         entityPropertiesWidget,
         [glWidget, entityPropertiesWidget] {
             const auto &sel = glWidget->getScene().getSelectedEntities();
@@ -234,21 +231,21 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::viewportSelectionChanged,
+        &OpenGlWidget::viewportSelectionChanged,
         entityPropertiesWidget,
         &EntityPropertiesWidget::syncBezierSelection
     );
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::sceneChanged,
+        &OpenGlWidget::sceneChanged,
         entityPropertiesWidget,
         &EntityPropertiesWidget::refreshComponents
     );
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::geometryChanged,
+        &OpenGlWidget::geometryChanged,
         entityPropertiesWidget,
         &EntityPropertiesWidget::refreshComponents
     );
@@ -257,19 +254,19 @@ int main(int argc, char *argv[]) {
         gridSettingsWidget,
         &GridSettingsWidget::gridPlanesChanged,
         glWidget,
-        &OpenGLWidget::setGridPlanes
+        &OpenGlWidget::setGridPlanes
     );
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::transformModeChanged,
+        &OpenGlWidget::transformModeChanged,
         statusBar,
         &StatusBarWidget::setTransformMode
     );
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::clickToAddModeChanged,
+        &OpenGlWidget::clickToAddModeChanged,
         statusBar,
         &StatusBarWidget::setClickToAddMode
     );
@@ -285,7 +282,7 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::viewportSelectionChanged,
+        &OpenGlWidget::viewportSelectionChanged,
         statusBar,
         [glWidget, statusBar] {
             statusBar->setSelectionCount(
@@ -296,7 +293,7 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(
         glWidget,
-        &OpenGLWidget::sceneChanged,
+        &OpenGlWidget::sceneChanged,
         statusBar,
         [glWidget, statusBar] {
             if (const Entity *e = glWidget->getScene().getNewPointsTargetEntity()) {
@@ -350,7 +347,7 @@ int main(int argc, char *argv[]) {
         hierarchyWidget,
         &SceneHierarchyWidget::setAsCameraRequested,
         glWidget,
-        [glWidget](const EntityID id) {
+        [glWidget](const EntityId id) {
             glWidget->getCameraController().switchTo(id);
         }
     );
@@ -427,9 +424,9 @@ int main(int argc, char *argv[]) {
     QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createTorusRequested, glWidget, spawnTorus);
     QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createCursorRequested, glWidget, spawnCursor);
     QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPointRequested, glWidget, spawnPoint);
-    QObject::connect(glWidget, &OpenGLWidget::createTorusRequested, glWidget, spawnTorus);
-    QObject::connect(glWidget, &OpenGLWidget::createCursorRequested, glWidget, spawnCursor);
-    QObject::connect(glWidget, &OpenGLWidget::createPointRequested, glWidget, spawnPoint);
+    QObject::connect(glWidget, &OpenGlWidget::createTorusRequested, glWidget, spawnTorus);
+    QObject::connect(glWidget, &OpenGlWidget::createCursorRequested, glWidget, spawnCursor);
+    QObject::connect(glWidget, &OpenGlWidget::createPointRequested, glWidget, spawnPoint);
 
     // Bezier C0 signals
     QObject::connect(
@@ -464,7 +461,8 @@ int main(int argc, char *argv[]) {
         glWidget,
         [glWidget](Entity *e) {
             glWidget->getScene().setNewPointsTargetEntity(e);
-            emit glWidget->sceneChanged();
+            emit
+            glWidget->sceneChanged();
         }
     );
 
@@ -477,7 +475,7 @@ int main(int argc, char *argv[]) {
                 return;
             }
             Scene &sc = glWidget->getScene();
-            const EntityID curveId = entity->getId();
+            const EntityId curveId = entity->getId();
             for (const auto &e : sc.getEntities()) {
                 if (!e->isSelected()) {
                     continue;

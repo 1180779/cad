@@ -4,13 +4,15 @@
 
 #include "CameraController.hpp"
 
+#include "components/PointComponent.hpp"
+
 CameraController::CameraController(QObject *parent) : QObject(parent) {}
 
 void CameraController::addCamera(std::string name, std::unique_ptr<ICameraStrategy> strategy) {
     m_cameras.push_back({std::move(name), std::move(strategy)});
 }
 
-void CameraController::removeCamera(const EntityID id) {
+void CameraController::removeCamera(const EntityId id) {
     if (m_cameras.size() <= 1) // keep at least one camera
     {
         return;
@@ -67,7 +69,7 @@ void CameraController::switchTo(const std::string &name) {
     }
 }
 
-void CameraController::switchTo(const EntityID id) {
+void CameraController::switchTo(const EntityId id) {
     for (std::size_t i = 0; i < m_cameras.size(); ++i) {
         if (m_cameras[i].strategy->getEntity()->getId() == id) {
             m_activeIndex = i;
@@ -78,14 +80,14 @@ void CameraController::switchTo(const EntityID id) {
     }
 }
 
-bool CameraController::isActiveCamera(const EntityID id) const {
+bool CameraController::isActiveCamera(const EntityId id) const {
     if (m_cameras.empty()) {
         return false;
     }
     return m_cameras[m_activeIndex].strategy->getEntity()->getId() == id;
 }
 
-bool CameraController::isEntityManagedAsCamera(const EntityID id) const {
+bool CameraController::isEntityManagedAsCamera(const EntityId id) const {
     return std::ranges::any_of(
         m_cameras,
         [id](const CameraStrategyEntry &e) {

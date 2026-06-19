@@ -8,7 +8,7 @@
 
 GeometryComponent::~GeometryComponent() {
     if (m_VAO != 0) {
-        const auto gl = GL();
+        const auto gl = getGl();
         const GLuint buffers[3] = {m_VBO, m_EBO_Lines, m_EBO_Triangles};
         gl->glDeleteBuffers(3, buffers);
         gl->glDeleteVertexArrays(1, &m_VAO);
@@ -16,7 +16,7 @@ GeometryComponent::~GeometryComponent() {
 }
 
 void GeometryComponent::syncToGpu() {
-    const auto gl = GL();
+    const auto gl = getGl();
 
     if (m_VAO == 0) {
         GLuint buffers[3];
@@ -53,24 +53,24 @@ void GeometryComponent::syncToGpu() {
     );
 
     gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, GL_CADM_VT_TYPE, GL_FALSE, 10 * GL_CADM_VT_SIZE, nullptr);
+    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 10 * gc_glCadmVtSize, nullptr);
     gl->glEnableVertexAttribArray(1);
     gl->glVertexAttribPointer(
         1,
         3,
-        GL_CADM_VT_TYPE,
+        gc_glCadmVtType,
         GL_FALSE,
-        10 * GL_CADM_VT_SIZE,
-        reinterpret_cast<void*>(3 * GL_CADM_VT_SIZE)
+        10 * gc_glCadmVtSize,
+        reinterpret_cast<void*>(3 * gc_glCadmVtSize)
     );
     gl->glEnableVertexAttribArray(2);
     gl->glVertexAttribPointer(
         2,
         4,
-        GL_CADM_VT_TYPE,
+        gc_glCadmVtType,
         GL_FALSE,
-        10 * GL_CADM_VT_SIZE,
-        reinterpret_cast<void*>(6 * GL_CADM_VT_SIZE)
+        10 * gc_glCadmVtSize,
+        reinterpret_cast<void*>(6 * gc_glCadmVtSize)
     );
 
     GET_GL_ERRORS();

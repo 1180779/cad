@@ -19,40 +19,35 @@ namespace {
         "eulerZYXFromRotMat",
         "[math][euler]"
     ) {
-        SECTION("Identity")
-        {
+        SECTION("Identity") {
             const auto m = mat3::identity();
             const auto angles = eulerZYXFromRotMat(m);
             const auto rot = mat3::rotZYX(angles);
             REQUIRE(rot == m);
         }
 
-        SECTION("Pure Rx rotation")
-        {
+        SECTION("Pure Rx rotation") {
             const auto m = mat3::rotX(kPi / 4.0f); // 45 deg
             const auto angles = eulerZYXFromRotMat(m);
             const auto rot = mat3::rotZYX(angles);
             REQUIRE(rot == m);
         }
 
-        SECTION("Pure Ry rotation")
-        {
+        SECTION("Pure Ry rotation") {
             const auto m = mat3::rotY(kPi / 6.0f); // 30 deg
             const auto angles = eulerZYXFromRotMat(m);
             const auto rot = mat3::rotZYX(angles);
             REQUIRE(rot == m);
         }
 
-        SECTION("Combined ZYX rotation")
-        {
+        SECTION("Combined ZYX rotation") {
             const auto m = mat3::rotZYX(kPi / 6.0f, kPi / 4.0f, kPi / 3.0f); // 30, 45, 60 deg
             const auto angles = eulerZYXFromRotMat(m);
             const auto rot = mat3::rotZYX(angles);
             REQUIRE(rot == m);
         }
 
-        SECTION("Gimbal lock ry = pi/2")
-        {
+        SECTION("Gimbal lock ry = pi/2") {
             const auto m = mat3::rotZYX(kPi / 5.0f, kPi / 2.0f, 0.0f);
             const auto angles = eulerZYXFromRotMat(m);
             const auto rot = mat3::rotZYX(angles.x, angles.y, angles.z);
@@ -67,38 +62,33 @@ namespace {
         vec3 v1(1.0f, 2.0f, 3.0f);
         vec3 v2(4.0f, 5.0f, 6.0f);
 
-        SECTION("Addition")
-        {
+        SECTION("Addition") {
             vec3 res = v1 + v2;
             REQUIRE_THAT(res.x, Catch::Matchers::WithinRel(5.0f));
             REQUIRE_THAT(res.y, Catch::Matchers::WithinRel(7.0f));
             REQUIRE_THAT(res.z, Catch::Matchers::WithinRel(9.0f));
         }
 
-        SECTION("Subtraction")
-        {
+        SECTION("Subtraction") {
             vec3 res = v2 - v1;
             REQUIRE_THAT(res.x, Catch::Matchers::WithinRel(3.0f));
             REQUIRE_THAT(res.y, Catch::Matchers::WithinRel(3.0f));
             REQUIRE_THAT(res.z, Catch::Matchers::WithinRel(3.0f));
         }
 
-        SECTION("Scalar Multiplication")
-        {
+        SECTION("Scalar Multiplication") {
             vec3 res = v1 * 2.0f;
             REQUIRE_THAT(res.x, Catch::Matchers::WithinRel(2.0f));
             REQUIRE_THAT(res.y, Catch::Matchers::WithinRel(4.0f));
             REQUIRE_THAT(res.z, Catch::Matchers::WithinRel(6.0f));
         }
 
-        SECTION("Dot Product")
-        {
+        SECTION("Dot Product") {
             float dot = v1.dot(v2);
             REQUIRE_THAT(dot, Catch::Matchers::WithinRel(32.0f));
         }
 
-        SECTION("Cross Product")
-        {
+        SECTION("Cross Product") {
             vec3 res = v1.cross(v2);
             REQUIRE_THAT(res.x, Catch::Matchers::WithinRel(-3.0f));
             REQUIRE_THAT(res.y, Catch::Matchers::WithinRel(6.0f));
@@ -113,8 +103,7 @@ namespace {
         vec4 v1(1.0f, 2.0f, 3.0f, 4.0f);
         vec4 v2(5.0f, 6.0f, 7.0f, 8.0f);
 
-        SECTION("Addition")
-        {
+        SECTION("Addition") {
             vec4 res = v1 + v2;
             REQUIRE_THAT(res.x, Catch::Matchers::WithinRel(6.0f));
             REQUIRE_THAT(res.y, Catch::Matchers::WithinRel(8.0f));
@@ -135,14 +124,12 @@ namespace {
             vec4(4, 8, 12, 16)
         );
 
-        SECTION("Identity Multiplication")
-        {
+        SECTION("Identity Multiplication") {
             mat4 res = m1 * m2;
             REQUIRE(res == m2);
         }
 
-        SECTION("Matrix-Vector Multiplication")
-        {
+        SECTION("Matrix-Vector Multiplication") {
             vec4 v(1.0f, 1.0f, 1.0f, 1.0f);
             vec4 res = m2 * v;
 
@@ -157,15 +144,13 @@ namespace {
         "mat4 inverse",
         "[math][mat4]"
     ) {
-        SECTION("Identity Inverse")
-        {
+        SECTION("Identity Inverse") {
             mat4 m = mat4::identity();
             mat4 inv = m.inversed();
             REQUIRE(inv == m);
         }
 
-        SECTION("Simple Inverse")
-        {
+        SECTION("Simple Inverse") {
             mat4 m = mat4::diag(2.0, 0.5, 1.0, 1.0);
 
             mat4 inv = m.inversed();
@@ -175,8 +160,7 @@ namespace {
             REQUIRE_THAT(inv(3, 3), Catch::Matchers::WithinRel(1.0f));
         }
 
-        SECTION("General Inverse")
-        {
+        SECTION("General Inverse") {
             mat4 m = mat4::identity();
             m(0, 0) = 1;
             m(0, 1) = 2;
@@ -195,8 +179,7 @@ namespace {
         "mat4 inverseSafe",
         "[math][mat4]"
     ) {
-        SECTION("Invertible Matrix")
-        {
+        SECTION("Invertible Matrix") {
             mat4 m = mat4::identity();
             m(0, 0) = 1;
             m(0, 1) = 2;
@@ -211,8 +194,7 @@ namespace {
             REQUIRE(res == mat4::identity());
         }
 
-        SECTION("Singular Matrix")
-        {
+        SECTION("Singular Matrix") {
             mat4 m = mat4::identity();
             m(0, 0) = 1;
             m(0, 1) = 2;
@@ -223,8 +205,7 @@ namespace {
             REQUIRE_FALSE(inv_opt.has_value());
         }
 
-        SECTION("Zero Matrix")
-        {
+        SECTION("Zero Matrix") {
             mat4 m{};
 
             auto inv_opt = m.inversedSafe();
@@ -236,8 +217,7 @@ namespace {
         "mat_row_ref operator overloading",
         "[math][mat4][row_ref]"
     ) {
-        SECTION("Compound assignment operators")
-        {
+        SECTION("Compound assignment operators") {
             mat4 m = mat4::identity();
 
             // test operator+=
@@ -271,13 +251,11 @@ namespace {
             REQUIRE_THAT(m(0, 3), Catch::Matchers::WithinRel(0.0f));
         }
 
-        SECTION("Binary operators return vectors")
-        {
+        SECTION("Binary operators return vectors") {
             mat4 m = mat4::identity();
             auto row0 = m.makeRowRef(0);
 
-            auto requireThatMatrixUnchanged = [&m]()
-            {
+            auto requireThatMatrixUnchanged = [&m]() {
                 REQUIRE_THAT(m(0, 0), Catch::Matchers::WithinRel(1.0f));
                 REQUIRE_THAT(m(0, 1), Catch::Matchers::WithinRel(0.0f));
                 REQUIRE_THAT(m(0, 2), Catch::Matchers::WithinRel(0.0f));
@@ -319,12 +297,15 @@ namespace {
             requireThatMatrixUnchanged();
         }
 
-        SECTION("Assignment from vector")
-        {
+        SECTION("Assignment from vector") {
             mat4 m{};
+            // ReSharper disable once CppDFAUnusedValue
+            // ReSharper disable once CppDFAUnreadVariable
+
             auto row1 = m.makeRowRef(1);
 
             vec4 v(5.0f, 6.0f, 7.0f, 8.0f);
+            // ReSharper disable once CppDFAUnusedValue
             row1 = v;
 
             REQUIRE_THAT(m(1, 0), Catch::Matchers::WithinRel(5.0f));
@@ -333,8 +314,7 @@ namespace {
             REQUIRE_THAT(m(1, 3), Catch::Matchers::WithinRel(8.0f));
         }
 
-        SECTION("Implicit conversion to vector")
-        {
+        SECTION("Implicit conversion to vector") {
             mat4 m = mat4::identity();
             m(2, 0) = 10.0f;
             m(2, 1) = 20.0f;

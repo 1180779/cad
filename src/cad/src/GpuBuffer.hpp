@@ -12,7 +12,7 @@
 #include <QOpenGLFunctions_4_5_Core>
 #include <GL/gl.h>
 
-/// Generic GPU-backed buffer with capacity-growing and dirty-slot tracking.
+/// @brief Generic GPU-backed buffer with capacity-growing and dirty-slot tracking.
 /// Structural changes (assign/clear) trigger glBufferData; set() and in-capacity
 /// append() only trigger glBufferSubData for the changed slots.
 ///

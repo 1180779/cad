@@ -22,7 +22,7 @@ class BezierC0Widget final : public ComponentWidget {
 public:
     explicit BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget *parent = nullptr);
 
-    void setCommandContext(Scene *scene, CommandStack *stack, const EntityID id) override {
+    void setCommandContext(Scene *scene, CommandStack *stack, const EntityId id) override {
         ComponentWidget::setCommandContext(scene, stack, id);
         if (m_pointPropertiesWidget) {
             m_pointPropertiesWidget->setCommandContext(scene, stack);
@@ -35,7 +35,10 @@ public:
     /// @brief Sync the selection of list items in the m_pointList from the m_scene entities
     void syncSelectionFromScene();
 
-signals :
+    signals  :
+
+    
+
     void pointSelectionChanged(QList<Entity*> selected);
 
 private:

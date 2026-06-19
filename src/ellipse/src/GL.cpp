@@ -8,7 +8,7 @@
 
 #include "GL.hpp"
 
-void GLSetDefaults() {
+void glSetDefaults() {
     QSurfaceFormat format;
     format.setVersion(4, 5);
     format.setProfile(QSurfaceFormat::CoreProfile);
@@ -18,7 +18,7 @@ void GLSetDefaults() {
     QSurfaceFormat::setDefaultFormat(format);
 }
 
-QOpenGLFunctions_4_5_Core* GL() {
+QOpenGLFunctions_4_5_Core* getGl() {
     QOpenGLVersionProfile profile;
     profile.setVersion(4, 5);
     profile.setProfile(QSurfaceFormat::CoreProfile);

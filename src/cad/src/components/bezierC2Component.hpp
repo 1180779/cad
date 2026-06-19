@@ -42,7 +42,7 @@ public:
 
     /// Remove De Boor point from the curve
     /// @param handle handle of the point to be removed
-    void removeControlPoint(PointHandle handle);
+    void removeControlPoint(PointHandle handle) override;
 
     [[nodiscard]] const std::vector<PointHandle>& getDeBoorPoints() const {
         return m_deBoorPoints;

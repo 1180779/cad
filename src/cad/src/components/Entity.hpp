@@ -16,7 +16,7 @@
 #include <utility>
 #include <QMetaType>
 
-using EntityID = uint32_t;
+using EntityId = uint32_t;
 
 /// @brief Opaque token that only Scene can construct, used to restrict Entity::setSelected
 /// to Scene::setSelected / Scene::clearSelection callers
@@ -35,11 +35,11 @@ public:
 
 class Entity {
 public:
-    explicit Entity(const EntityID id, std::string name = "Entity") : m_id(id), m_name(std::move(name)) {}
+    explicit Entity(const EntityId id, std::string name = "Entity") : m_id(id), m_name(std::move(name)) {}
 
     ~Entity() = default;
 
-    EntityID getId() const {
+    EntityId getId() const {
         return m_id;
     }
 
@@ -82,7 +82,7 @@ public:
     void removeComponent();
 
 private:
-    EntityID m_id;
+    EntityId m_id;
     std::string m_name;
     bool m_visible{true};
     bool m_selected{false};

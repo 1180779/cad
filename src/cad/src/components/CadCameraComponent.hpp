@@ -46,7 +46,7 @@ class CadCameraComponent final : public QObject, public CameraComponent {
     Q_PROPERTY(double zoomFactor READ getZoomFactor WRITE setZoomFactor NOTIFY zoomFactorChanged)
 
 public:
-    static constexpr cadm::cadf s_nearPlaneMin = -CameraComponent::s_farPlaneMax;
+    static constexpr cadm::cadf s_nearPlaneMin = -s_farPlaneMax;
     static constexpr cadm::cadf s_nearPlaneMax = 0;
     static constexpr cadm::cadf s_farPlaneMin = 0;
     static constexpr cadm::cadf s_farPlaneMax = CameraComponent::s_farPlaneMax;
@@ -213,7 +213,6 @@ private:
     cadm::cadf m_zoomFactor{1.1};
 
     signals  :
-
     
 
     void positionChanged(double position);

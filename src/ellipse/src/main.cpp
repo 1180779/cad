@@ -151,7 +151,7 @@ void addIntParameter(
 }
 
 int main(int argc, char *argv[]) {
-    GLSetDefaults();
+    glSetDefaults();
     QApplication a(argc, argv);
 
     QWidget window;
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     layout->addLayout(leftControlsLayout);
     layout->addLayout(rightControlsLayout);
 
-    auto glWidget = new OpenGLWidget;
+    auto glWidget = new OpenGlWidget;
     leftControlsLayout->addWidget(glWidget);
 
     // ellipse Parameters group of widgets

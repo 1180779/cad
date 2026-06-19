@@ -20,29 +20,29 @@
 #include "input/InputMap.hpp"
 
 enum class DragMode {
-    None,
-    CameraOrbit,
-    CameraPan,
-    CameraZoomDrag,
-    BoxSelect,
-    ClickSelect,
-    CursorPlace,
-    PointDrag,
+    none,
+    cameraOrbit,
+    cameraPan,
+    cameraZoomDrag,
+    boxSelect,
+    clickSelect,
+    cursorPlace,
+    pointDrag,
 };
 
-class OpenGLWidget : public QOpenGLWidget {
+class OpenGlWidget final : public QOpenGLWidget {
     Q_OBJECT
 
 public:
-    explicit OpenGLWidget(QWidget *parent = nullptr);
+    explicit OpenGlWidget(QWidget *parent = nullptr);
 
-    ~OpenGLWidget() override;
+    ~OpenGlWidget() override;
 
     CameraController& getCameraController() {
         return m_cameraController;
     }
 
-    bool removeEntity(EntityID id);
+    bool removeEntity(EntityId id);
 
     bool eventFilter(QObject *obj, QEvent *event) override;
 
@@ -87,7 +87,7 @@ public:
         emit clickToAddModeChanged(active);
     }
 
-signals:
+signals :
     void viewportSelectionChanged();
 
     /// Emitted when entities are added, removed, or renamed
@@ -164,7 +164,7 @@ private:
 
     void wrapMouseIfNeeded(QPoint currentPos, QPoint delta);
 
-    bool removeEntityInternal(EntityID id);
+    bool removeEntityInternal(EntityId id);
 
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};
@@ -175,7 +175,7 @@ private:
     InputMap m_inputMap;
 
     /// @brief Holds currently active drag i.e., the drag that is taking place right now
-    DragMode m_activeDrag{DragMode::None};
+    DragMode m_activeDrag{DragMode::none};
     cadm::cadf m_zoomFactor{1.1};
 
     Scene m_scene;

@@ -28,7 +28,7 @@ namespace {
     }
 
     /// @brief Reset a curve's membership to exactly target, preserving order
-    void resetMembership(Scene &scene, const EntityID curveId, const std::vector<PointHandle> &target) {
+    void resetMembership(Scene &scene, const EntityId curveId, const std::vector<PointHandle> &target) {
         const auto entity = scene.getEntity(curveId);
         if (!entity) {
             return;
@@ -73,7 +73,7 @@ void CreateEntityCommand::undo() {
 // DeleteEntityCommand
 // ---------------------------------------------------------------------------
 
-DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityID> &ids) : m_scene(scene) {
+DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityId> &ids) : m_scene(scene) {
     const std::unordered_set deleting(ids.begin(), ids.end());
     std::unordered_set<PointHandle> deletedPoints;
 
@@ -231,7 +231,7 @@ void AddControlPointCommand::undo() {
 
 RemoveControlPointCommand::RemoveControlPointCommand(
     Scene &scene,
-    const EntityID curveId,
+    const EntityId curveId,
     const PointHandle handle
 ) : m_scene(scene), m_curveId(curveId), m_handle(handle) {
     if (const auto e = scene.getEntity(curveId)) {

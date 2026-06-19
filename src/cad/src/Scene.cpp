@@ -9,12 +9,12 @@
 #include "components/PointComponent.hpp"
 
 Entity* Scene::createEntity(const std::string &name) {
-    EntityID entityId = m_nextEntityId++;
+    EntityId entityId = m_nextEntityId++;
     m_entities.emplace_back(std::make_unique<Entity>(entityId, name));
     return &*m_entities.back();
 }
 
-Entity* Scene::createEntityWithId(const EntityID id, const std::string &name) {
+Entity* Scene::createEntityWithId(const EntityId id, const std::string &name) {
     m_entities.emplace_back(std::make_unique<Entity>(id, name));
     if (id >= m_nextEntityId) {
         m_nextEntityId = id + 1;
@@ -32,13 +32,13 @@ void Scene::setPointPosition(const PointHandle handle, const cadm::vec3 position
     m_pointRegistry.setPosition(handle, position);
 }
 
-void Scene::setEntityName(const EntityID id, const std::string &name) {
+void Scene::setEntityName(const EntityId id, const std::string &name) {
     if (const auto e = getEntity(id)) {
         e.value()->setName(name);
     }
 }
 
-std::optional<Entity*> Scene::getEntity(EntityID id) {
+std::optional<Entity*> Scene::getEntity(EntityId id) {
     const auto result = std::ranges::find_if(
         m_entities,
         [id](const std::unique_ptr<Entity> &e) {
@@ -88,7 +88,7 @@ void Scene::syncPointSelectionToRegistry() {
     }
 }
 
-bool Scene::removeEntity(EntityID id) {
+bool Scene::removeEntity(EntityId id) {
     // pop and replace
     const auto toBeRemoved = std::ranges::find_if(
         m_entities,

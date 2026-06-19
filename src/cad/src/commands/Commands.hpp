@@ -46,7 +46,7 @@ private:
 /// on undo
 class DeleteEntityCommand final : public Command {
 public:
-    DeleteEntityCommand(Scene &scene, const std::vector<EntityID> &ids);
+    DeleteEntityCommand(Scene &scene, const std::vector<EntityId> &ids);
 
     void execute() override;
 
@@ -54,7 +54,7 @@ public:
 
 private:
     struct CurveMembership {
-        EntityID curveId{};
+        EntityId curveId{};
         std::vector<PointHandle> controlPoints;
     };
 
@@ -111,7 +111,7 @@ private:
 /// @brief Rename an entity
 class RenameCommand final : public Command {
 public:
-    RenameCommand(Scene &scene, const EntityID id, std::string before, std::string after) : m_scene(scene),
+    RenameCommand(Scene &scene, const EntityId id, std::string before, std::string after) : m_scene(scene),
         m_id(id),
         m_before(std::move(before)),
         m_after(std::move(after)) {}
@@ -122,7 +122,7 @@ public:
 
 private:
     Scene &m_scene;
-    EntityID m_id;
+    EntityId m_id;
     std::string m_before;
     std::string m_after;
 };
@@ -157,7 +157,7 @@ private:
 /// @brief Add a control point to a curve entity
 class AddControlPointCommand final : public Command {
 public:
-    AddControlPointCommand(Scene &scene, const EntityID curveId, const PointHandle handle) : m_scene(scene),
+    AddControlPointCommand(Scene &scene, const EntityId curveId, const PointHandle handle) : m_scene(scene),
         m_curveId(curveId),
         m_handle(handle) {}
 
@@ -167,14 +167,14 @@ public:
 
 private:
     Scene &m_scene;
-    EntityID m_curveId;
+    EntityId m_curveId;
     PointHandle m_handle;
 };
 
 /// @brief Remove a control point from a curve entity
 class RemoveControlPointCommand final : public Command {
 public:
-    RemoveControlPointCommand(Scene &scene, EntityID curveId, PointHandle handle);
+    RemoveControlPointCommand(Scene &scene, EntityId curveId, PointHandle handle);
 
     void execute() override;
 
@@ -182,7 +182,7 @@ public:
 
 private:
     Scene &m_scene;
-    EntityID m_curveId;
+    EntityId m_curveId;
     PointHandle m_handle;
 
     /// @brief Membership snapshot to restore exact order
