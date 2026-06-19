@@ -4,29 +4,29 @@
 
 #ifndef CAD_MAT3_H
 #define CAD_MAT3_H
-#include "common.hpp"
-#include "mat_base.hpp"
-#include "vec2.hpp"
-#include "vec3.hpp"
+#include "Common.hpp"
+#include "MatBase.hpp"
+#include "Vec2.hpp"
+#include "Vec3.hpp"
 
 namespace cadm {
     template <std::size_t R, std::size_t C, typename T>
-    struct mat;
+    struct Mat;
 
     template <>
-    struct mat<3, 3, cadf> : public mat_base<mat, mat<3, 3, cadf>, vec3, vec3, 3, 3, cadf> {
+    struct Mat<3, 3, cadf> : MatBase<Mat, Mat<3, 3, cadf>, Vec3, Vec3, 3, 3, cadf> {
         union {
             cadf data[9]{};
-            vec3 columns[3];
+            Vec3 columns[3];
         };
 
-        constexpr mat() {
+        constexpr Mat() {
             for (auto &cell : data) {
                 cell = 0;
             }
         }
 
-        constexpr mat(
+        constexpr Mat(
             const cadf x0,
             const cadf x1,
             const cadf x2,
@@ -37,18 +37,18 @@ namespace cadm {
             const cadf z1,
             const cadf z2
         ) {
-            columns[0] = vec3(x0, x1, x2);
-            columns[1] = vec3(y0, y1, y2);
-            columns[2] = vec3(z0, z1, z2);
+            columns[0] = Vec3(x0, x1, x2);
+            columns[1] = Vec3(y0, y1, y2);
+            columns[2] = Vec3(z0, z1, z2);
         }
 
-        constexpr mat(const vec3 &c0, const vec3 &c1, const vec3 &c2) {
+        constexpr Mat(const Vec3 &c0, const Vec3 &c1, const Vec3 &c2) {
             columns[0] = c0;
             columns[1] = c1;
             columns[2] = c2;
         }
 
-        constexpr static mat identity() {
+        constexpr static Mat identity() {
             return {
                 1,
                 0,
@@ -62,15 +62,15 @@ namespace cadm {
             };
         }
 
-        constexpr static mat scale(const vec2 &s) {
+        constexpr static Mat scale(const vec2 &s) {
             return scale(s.x, s.y);
         }
 
-        constexpr static mat scale(const cadf sx, const cadf sy) {
+        constexpr static Mat scale(const cadf sx, const cadf sy) {
             return diag(sx, sy, 1.0);
         }
 
-        constexpr static mat diag(const cadf m0, const cadf m1, const cadf m2) {
+        constexpr static Mat diag(const cadf m0, const cadf m1, const cadf m2) {
             return {
                 m0,
                 0,
@@ -84,11 +84,11 @@ namespace cadm {
             };
         }
 
-        constexpr static mat translation(const vec2 &t) {
+        constexpr static Mat translation(const vec2 &t) {
             return translation(t.x, t.y);
         }
 
-        constexpr static mat translation(const cadf tx, const cadf ty) {
+        constexpr static Mat translation(const cadf tx, const cadf ty) {
             return {
                 1,
                 0,
@@ -102,7 +102,7 @@ namespace cadm {
             };
         }
 
-        static mat rotX(const cadf alpha) {
+        static Mat rotX(const cadf alpha) {
             const cadf c = std::cos(alpha);
             const cadf s = std::sin(alpha);
 
@@ -119,7 +119,7 @@ namespace cadm {
             };
         }
 
-        static mat rotY(const cadf alpha) {
+        static Mat rotY(const cadf alpha) {
             const cadf c = std::cos(alpha);
             const cadf s = std::sin(alpha);
 
@@ -136,15 +136,15 @@ namespace cadm {
             };
         }
 
-        static mat rotZYX(const vec3 &xyz) {
+        static Mat rotZyx(const Vec3 &xyz) {
             return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x);
         }
 
-        static mat rotZYX(const cadf rx, const cadf ry, const cadf rz) {
+        static Mat rotZyx(const cadf rx, const cadf ry, const cadf rz) {
             return rotZ(rz) * rotY(ry) * rotX(rx);
         }
 
-        static mat rotZ(const cadf alpha) {
+        static Mat rotZ(const cadf alpha) {
             const cadf c = std::cos(alpha);
             const cadf s = std::sin(alpha);
 
@@ -162,6 +162,6 @@ namespace cadm {
         }
     };
 
-    using mat3 = mat<3, 3, cadf>;
+    using Mat3 = Mat<3, 3, cadf>;
 }
 #endif //CAD_MAT3_H

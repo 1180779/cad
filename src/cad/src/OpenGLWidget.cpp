@@ -29,7 +29,7 @@
 #include "PointRegistry.hpp"
 #include "commands/Commands.hpp"
 #include "ViewportTypes.hpp"
-#include "cad_math/helpers.hpp"
+#include "cad_math/Helpers.hpp"
 #include "components/BezierC0Component.hpp"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
@@ -82,10 +82,10 @@ void OpenGlWidget::paintGL() {
         }
 
         if (axesMask != 0) {
-            cadm::mat4 axisModel = cadm::mat4::identity();
+            cadm::Mat4 axisModel = cadm::Mat4::identity();
             if (m_coordSpace == CoordSpace::local && !m_transformSnapshots.empty()) {
                 const auto &r = m_transformSnapshots[0].origRotMat;
-                axisModel = cadm::mat4{
+                axisModel = cadm::Mat4{
                     cadm::vec4(r.columns[0], 0),
                     cadm::vec4(r.columns[1], 0),
                     cadm::vec4(r.columns[2], 0),
@@ -306,7 +306,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
         }
         else {
             // record the completed drag as a single undoable move
-            const cadm::vec3 after = m_scene.getPointRegistry().getPosition(m_draggedPoint);
+            const cadm::Vec3 after = m_scene.getPointRegistry().getPosition(m_draggedPoint);
             m_commandStack.push(
                 std::make_unique<MovePointCommand>(m_scene, m_draggedPoint, m_draggedPointStart, after)
             );
@@ -356,15 +356,15 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
         if (!tc) {
             return;
         }
-        const cadm::vec3 before = m_cursorPlaceStart;
-        const cadm::vec3 after = tc.value()->getTranslation();
+        const cadm::Vec3 before = m_cursorPlaceStart;
+        const cadm::Vec3 after = tc.value()->getTranslation();
         if (before == after) {
             return;
         }
 
         const EntityId id = cursor->getId();
         Scene *scene = &m_scene;
-        auto setCursor = [scene, id](const cadm::vec3 p) {
+        auto setCursor = [scene, id](const cadm::Vec3 p) {
             if (const auto e = scene->getEntity(id)) {
                 if (const auto t = e.value()->getComponent<TransformComponent>()) {
                     t.value()->setTranslation(p);
@@ -588,7 +588,7 @@ PointHandle OpenGlWidget::pickPoint(const QPoint screenPos) const {
     int bestDist = s_clickRadiusPx * s_clickRadiusPx + 1;
 
     for (const PointHandle h : registry.aliveHandles()) {
-        const auto screen = cadm::projectToScreenGL(
+        const auto screen = cadm::projectToScreenGl(
             registry.getPosition(h),
             view,
             projection,
@@ -638,7 +638,7 @@ void OpenGlWidget::performBoxSelect() {
     m_scene.clearSelection();
     const auto &registry = m_scene.getPointRegistry();
     for (const auto &e : m_scene.getEntities()) {
-        cadm::vec3 worldPos;
+        cadm::Vec3 worldPos;
         if (const auto pc = e->getComponent<PointComponent>()) {
             worldPos = registry.getPosition(pc.value()->m_handle);
         }
@@ -649,7 +649,7 @@ void OpenGlWidget::performBoxSelect() {
             continue;
         }
 
-        if (const auto screen = cadm::projectToScreenGL(worldPos, view, projection, width(), height());
+        if (const auto screen = cadm::projectToScreenGl(worldPos, view, projection, width(), height());
             screen.has_value() && rect.contains(screen->x, screen->y)) {
             m_scene.setSelected(e.get(), true);
         }
@@ -659,7 +659,7 @@ void OpenGlWidget::performBoxSelect() {
     emit viewportSelectionChanged();
 }
 
-std::optional<cadm::vec3> OpenGlWidget::computePivot() const {
+std::optional<cadm::Vec3> OpenGlWidget::computePivot() const {
     if (m_pivotMode == PivotMode::activeCursor) {
         if (Entity *cursor = m_scene.getActiveCursor()) {
             if (const auto tc = cursor->getComponent<TransformComponent>()) {
@@ -669,7 +669,7 @@ std::optional<cadm::vec3> OpenGlWidget::computePivot() const {
         return std::nullopt;
     }
 
-    cadm::vec3 sum{};
+    cadm::Vec3 sum{};
     int count = 0;
     const auto &registry = m_scene.getPointRegistry();
     for (const auto &e : m_scene.getEntities()) {
@@ -772,22 +772,22 @@ void OpenGlWidget::handleTransformRotate(const int dx, PointRegistry &registry) 
     for (const auto &snap : m_transformSnapshots) {
         const bool useLocal = m_coordSpace == CoordSpace::local && snap.isTransformEntity;
 
-        cadm::vec3 axis;
+        cadm::Vec3 axis;
         switch (m_axisConstraint) {
         case AxisConstraint::x:
             axis = useLocal
                        ? snap.origRotMat.columns[0]
-                       : cadm::vec3::unitX();
+                       : cadm::Vec3::unitX();
             break;
         case AxisConstraint::y:
             axis = useLocal
                        ? snap.origRotMat.columns[1]
-                       : cadm::vec3::unitY();
+                       : cadm::Vec3::unitY();
             break;
         case AxisConstraint::z:
             axis = useLocal
                        ? snap.origRotMat.columns[2]
-                       : cadm::vec3::unitZ();
+                       : cadm::Vec3::unitZ();
             break;
         default:
             // rotate around camera's view-forward direction
@@ -796,11 +796,11 @@ void OpenGlWidget::handleTransformRotate(const int dx, PointRegistry &registry) 
             break;
         }
 
-        const cadm::vec3 pivot = useLocal
+        const cadm::Vec3 pivot = useLocal
                                      ? snap.origPos
                                      : m_transformPivot;
-        const cadm::mat3 r = cadm::mat4::rotAxis(angle, axis).upperLeft3x3();
-        const cadm::vec3 newPos = pivot + r * (snap.origPos - pivot);
+        const cadm::Mat3 r = cadm::Mat4::rotAxis(angle, axis).upperLeft3X3();
+        const cadm::Vec3 newPos = pivot + r * (snap.origPos - pivot);
 
         const auto entity = m_scene.getEntity(snap.id);
         if (!entity) {
@@ -825,40 +825,40 @@ void OpenGlWidget::handleTransformRotate(const int dx, PointRegistry &registry) 
 void OpenGlWidget::handleTransformTranslate(const QPoint currentMousePos, PointRegistry &registry) {
     const auto view = m_cameraController.getActiveStrategy()->getView();
     const auto proj = m_cameraController.getActiveStrategy()->getProjection();
-    const cadm::mat4 vp = proj * view;
-    const cadm::mat4 invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
+    const cadm::Mat4 vp = proj * view;
+    const cadm::Mat4 invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
 
     const cadm::vec4 pivotClip = vp * cadm::vec4(m_transformPivot, 1);
     const cadm::cadf pivotNdcZ = pivotClip.z / pivotClip.w;
-    auto unprojectAt = [&](const QPoint &p) -> cadm::vec3 {
+    auto unprojectAt = [&](const QPoint &p) -> cadm::Vec3 {
         return cadm::unprojectPoint({p.x(), p.y()}, pivotNdcZ, invVp, width(), height());
     };
 
-    const cadm::vec3 rawDelta = unprojectAt(currentMousePos) - unprojectAt(m_transformStartMousePos);
+    const cadm::Vec3 rawDelta = unprojectAt(currentMousePos) - unprojectAt(m_transformStartMousePos);
 
     for (const auto &snap : m_transformSnapshots) {
         const bool useLocal = m_coordSpace == CoordSpace::local && snap.isTransformEntity;
 
-        cadm::vec3 delta = rawDelta;
+        cadm::Vec3 delta = rawDelta;
         switch (m_axisConstraint) {
         case AxisConstraint::x: {
-            const cadm::vec3 ax = useLocal
+            const cadm::Vec3 ax = useLocal
                                       ? snap.origRotMat.columns[0]
-                                      : cadm::vec3::unitX();
+                                      : cadm::Vec3::unitX();
             delta = ax * ax.dot(rawDelta);
             break;
         }
         case AxisConstraint::y: {
-            const cadm::vec3 ax = useLocal
+            const cadm::Vec3 ax = useLocal
                                       ? snap.origRotMat.columns[1]
-                                      : cadm::vec3::unitY();
+                                      : cadm::Vec3::unitY();
             delta = ax * ax.dot(rawDelta);
             break;
         }
         case AxisConstraint::z: {
-            const cadm::vec3 ax = useLocal
+            const cadm::Vec3 ax = useLocal
                                       ? snap.origRotMat.columns[2]
-                                      : cadm::vec3::unitZ();
+                                      : cadm::Vec3::unitZ();
             delta = ax * ax.dot(rawDelta);
             break;
         }
@@ -866,7 +866,7 @@ void OpenGlWidget::handleTransformTranslate(const QPoint currentMousePos, PointR
             break;
         }
 
-        const cadm::vec3 newPos = snap.origPos + delta;
+        const cadm::Vec3 newPos = snap.origPos + delta;
         const auto entity = m_scene.getEntity(snap.id);
         if (!entity) {
             continue;
@@ -892,10 +892,10 @@ void OpenGlWidget::handleTransformScale(const int dx, PointRegistry &registry) {
     );
 
     for (const auto &snap : m_transformSnapshots) {
-        const cadm::vec3 pivot = (m_coordSpace == CoordSpace::local && snap.isTransformEntity)
+        const cadm::Vec3 pivot = (m_coordSpace == CoordSpace::local && snap.isTransformEntity)
                                      ? snap.origPos
                                      : m_transformPivot;
-        const cadm::vec3 newPos = pivot + (snap.origPos - pivot) * scaleFactor;
+        const cadm::Vec3 newPos = pivot + (snap.origPos - pivot) * scaleFactor;
         const auto entity = m_scene.getEntity(snap.id);
         if (!entity) {
             continue;

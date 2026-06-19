@@ -22,13 +22,13 @@ Entity* Scene::createEntityWithId(const EntityId id, const std::string &name) {
     return &*m_entities.back();
 }
 
-void Scene::attachPointComponent(Entity *entity, const PointHandle handle, const cadm::vec3 position) {
+void Scene::attachPointComponent(Entity *entity, const PointHandle handle, const cadm::Vec3 position) {
     m_pointRegistry.addPointAt(handle, position);
     entity->addComponent<PointComponent>(handle);
     m_pointEntityMap[handle] = entity->getId();
 }
 
-void Scene::setPointPosition(const PointHandle handle, const cadm::vec3 position) {
+void Scene::setPointPosition(const PointHandle handle, const cadm::Vec3 position) {
     m_pointRegistry.setPosition(handle, position);
 }
 
@@ -64,7 +64,7 @@ std::optional<Entity*> Scene::getEntityByName(const std::string &name) {
     return std::nullopt;
 }
 
-Entity* Scene::createPoint(const cadm::vec3 position, const std::string &name) {
+Entity* Scene::createPoint(const cadm::Vec3 position, const std::string &name) {
     Entity *entity = createEntity(name);
     const PointHandle handle = m_pointRegistry.addPoint(position);
     entity->addComponent<PointComponent>(handle);

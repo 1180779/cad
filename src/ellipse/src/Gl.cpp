@@ -6,7 +6,7 @@
 #include <QOpenGLVersionFunctionsFactory>
 #include <QDebug>
 
-#include "GL.hpp"
+#include "Gl.hpp"
 
 void glSetDefaults() {
     QSurfaceFormat format;
@@ -29,7 +29,7 @@ QOpenGLFunctions_4_5_Core* getGl() {
         return nullptr;
     }
 
-    QOpenGLFunctions_4_5_Core *gl45 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_4_5_Core>(ctx);
+    auto *gl45 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_4_5_Core>(ctx);
     if (!gl45) {
         qWarning() << "OpenGL 4.5 Core not supported";
         return nullptr;

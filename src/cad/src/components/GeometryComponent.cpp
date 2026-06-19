@@ -137,12 +137,12 @@ std::vector<Vertex> TorusGeometry::generateVertices() const {
         for (std::size_t j = 0; j < m_minorSegments; ++j) {
             const cadm::cadf minorAngle = static_cast<cadm::cadf>(j) * minorAngleStep;
 
-            const cadm::vec3 majorRadiusPosition{
+            const cadm::Vec3 majorRadiusPosition{
                 m_majorRadius * std::cos(majorAngle),
                 m_majorRadius * std::sin(majorAngle),
                 0,
             };
-            const cadm::vec3 pos{
+            const cadm::Vec3 pos{
                 majorRadiusPosition.x + std::cos(majorAngle) * std::cos(minorAngle) * m_minorRadius,
                 majorRadiusPosition.y + std::sin(majorAngle) * std::cos(minorAngle) * m_minorRadius,
                 std::sin(minorAngle) * m_minorRadius,

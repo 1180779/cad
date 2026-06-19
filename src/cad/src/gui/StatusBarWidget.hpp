@@ -26,10 +26,7 @@ public:
         "color: #ff00ff; font-weight: bold;";
 
 public
-    slots  :
-
-    
-
+slots :
     void setTransformMode(TransformMode mode, const QString &axisInfo) const;
 
     void setClickToAddMode(bool active) const;

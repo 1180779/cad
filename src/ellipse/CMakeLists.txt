@@ -1,10 +1,10 @@
 add_executable(ellipse src/main.cpp
-        src/OpenGLWidget.cpp
-        src/OpenGLWidget.hpp
+        src/OpenGlWidget.cpp
+        src/OpenGlWidget.hpp
         src/Quad.cpp
         src/Quad.hpp
-        src/GL.cpp
-        src/GL.hpp
+        src/Gl.cpp
+        src/Gl.hpp
         src/ShaderProgram.cpp
         src/ShaderProgram.hpp
         src/Camera.hpp

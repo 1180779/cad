@@ -11,7 +11,7 @@
 
 class QDoubleSpinBox;
 
-class CadCameraWidget : public ComponentWidget {
+class CadCameraWidget final : public ComponentWidget {
     Q_OBJECT
 
 public:
@@ -20,8 +20,7 @@ public:
     ~CadCameraWidget() override = default;
 
 private
-    slots  :
-
+slots  :
     
 
     void onPositionXChanged(double value) const;

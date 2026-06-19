@@ -15,7 +15,7 @@ Entity* GeometryFactory::createTorus(
     const float minorRadius,
     const int majorSegments,
     const int minorSegments,
-    const cadm::vec3 &position,
+    const cadm::Vec3 &position,
     const std::string &name
 ) const {
     const auto entity = m_scene.createEntity(name);
@@ -29,7 +29,7 @@ Entity* GeometryFactory::createTorus(
     return entity;
 }
 
-Entity* GeometryFactory::createAxis(const float length, const cadm::vec3 &position, const std::string &name) const {
+Entity* GeometryFactory::createAxis(const float length, const cadm::Vec3 &position, const std::string &name) const {
     const auto e = m_scene.createEntity(name);
     e->addComponent<TransformComponent>()->setTranslation(position);
     auto *axes = e->addComponent<AxesGeometry>();
@@ -37,7 +37,7 @@ Entity* GeometryFactory::createAxis(const float length, const cadm::vec3 &positi
     return e;
 }
 
-Entity* GeometryFactory::createCursor(const cadm::vec3 &position, const std::string &name) const {
+Entity* GeometryFactory::createCursor(const cadm::Vec3 &position, const std::string &name) const {
     const auto e = m_scene.createEntity(name);
     e->addComponent<TransformComponent>()->setTranslation(position);
     auto *axes = e->addComponent<AxesGeometry>();
@@ -46,7 +46,7 @@ Entity* GeometryFactory::createCursor(const cadm::vec3 &position, const std::str
     return e;
 }
 
-Entity* GeometryFactory::createPoint(const cadm::vec3 &position, const std::string &name) const {
+Entity* GeometryFactory::createPoint(const cadm::Vec3 &position, const std::string &name) const {
     return m_scene.createPoint(position, name);
 }
 

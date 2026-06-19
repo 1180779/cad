@@ -7,17 +7,14 @@
 #include <common/ModifierSpinBox.hpp>
 #include "../components/TransformComponent.hpp"
 
-class TransformWidget : public ComponentWidget {
+class TransformWidget final : public ComponentWidget {
     Q_OBJECT
 
 public:
     explicit TransformWidget(TransformComponent *transform, QWidget *parent = nullptr);
 
 private
-    slots  :
-
-    
-
+slots :
     void onTranslationXChanged(double value) const;
 
     void onTranslationYChanged(double value) const;

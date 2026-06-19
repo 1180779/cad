@@ -23,15 +23,15 @@ public:
     /// Keeps m_nextEntityId ahead
     Entity* createEntityWithId(EntityId id, const std::string &name = "Entity");
 
-    Entity* createPoint(cadm::vec3 position, const std::string &name = "Point");
+    Entity* createPoint(cadm::Vec3 position, const std::string &name = "Point");
 
     /// @brief Attach a PointComponent to an existing entity, registering the handle in the
     /// point registry at that exact slot. Used when rebuilding a serialized entity
-    void attachPointComponent(Entity *entity, PointHandle handle, cadm::vec3 position);
+    void attachPointComponent(Entity *entity, PointHandle handle, cadm::Vec3 position);
 
     /// @brief Convenience mutator used by commands to write a point position
     /// @note: not an exclusive surface
-    void setPointPosition(PointHandle handle, cadm::vec3 position);
+    void setPointPosition(PointHandle handle, cadm::Vec3 position);
 
     void setEntityName(EntityId id, const std::string &name);
 

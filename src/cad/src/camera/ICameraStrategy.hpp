@@ -15,7 +15,7 @@ enum class CameraAction { orbit, pan, zoomDrag };
 enum class CameraKeyAction { moveUp, moveDown, moveLeft, moveRight };
 
 #include "../components/Entity.hpp"
-#include "cad_math/mat4.hpp"
+#include "cad_math/Mat4.hpp"
 
 class ICameraStrategy {
 public:
@@ -27,13 +27,13 @@ public:
         std::function<int()> heightGetter
     ) : m_cameraEntity{cameraEntity}, m_widthGetter{std::move(widthGetter)}, m_heightGetter{std::move(heightGetter)} {}
 
-    virtual cadm::mat4 getView() = 0;
+    virtual cadm::Mat4 getView() = 0;
 
-    virtual cadm::mat4 getProjection() = 0;
+    virtual cadm::Mat4 getProjection() = 0;
 
-    virtual cadm::mat4 getInvProjection() = 0;
+    virtual cadm::Mat4 getInvProjection() = 0;
 
-    virtual void setLookTarget(cadm::vec3 target) = 0;
+    virtual void setLookTarget(cadm::Vec3 target) = 0;
 
     void syncAspectRatio() const;
 

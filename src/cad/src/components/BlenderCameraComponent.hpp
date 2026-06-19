@@ -5,9 +5,9 @@
 #ifndef CAD_CAMERA_HPP
 #define CAD_CAMERA_HPP
 
-#include "cad_math/mat3.hpp"
-#include "cad_math/mat4.hpp"
-#include "cad_math/vec3.hpp"
+#include "cad_math/Mat3.hpp"
+#include "cad_math/Mat4.hpp"
+#include "cad_math/Vec3.hpp"
 #include <QObject>
 #include <numbers>
 
@@ -52,13 +52,13 @@ public:
 
     explicit BlenderCameraComponent(QObject *parent = nullptr) : QObject(parent) {}
 
-    [[nodiscard]] cadm::vec3 forward() const;
+    [[nodiscard]] cadm::Vec3 forward() const;
 
-    [[nodiscard]] cadm::vec3 right() const;
+    [[nodiscard]] cadm::Vec3 right() const;
 
-    [[nodiscard]] cadm::vec3 up() const;
+    [[nodiscard]] cadm::Vec3 up() const;
 
-    [[nodiscard]] cadm::vec3 getPosition() const;
+    [[nodiscard]] cadm::Vec3 getPosition() const;
 
     [[nodiscard]] cadm::cadf getRadius() const {
         return m_radius;
@@ -88,7 +88,7 @@ public:
         return m_target.z;
     }
 
-    [[nodiscard]] cadm::vec3 getTarget() const {
+    [[nodiscard]] cadm::Vec3 getTarget() const {
         return m_target;
     }
 
@@ -104,7 +104,7 @@ public:
         return m_orthoHeight;
     }
 
-    void setTarget(const cadm::vec3 &value);
+    void setTarget(const cadm::Vec3 &value);
 
     void setTargetX(cadm::cadf value);
 
@@ -129,9 +129,9 @@ public:
 private:
     cadm::cadf m_radius{5.0};
     /// @brief Position = target + orbitRot*(0,0,radius)
-    cadm::mat3 m_orbitRot = cadm::mat3::identity();
+    cadm::Mat3 m_orbitRot = cadm::Mat3::identity();
 
-    cadm::vec3 m_target{};
+    cadm::Vec3 m_target{};
     cadm::cadf m_nearPlane{0.1f};
     cadm::cadf m_farPlane{200.0f};
     cadm::cadf m_fov{std::numbers::pi / 4.0};

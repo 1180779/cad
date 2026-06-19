@@ -2,7 +2,7 @@
 // Created by rdkgsk on 3/1/26.
 //
 
-#include "OpenGLWidget.hpp"
+#include "OpenGlWidget.hpp"
 
 #include <QWheelEvent>
 
@@ -22,8 +22,8 @@
 #undef QT_EMIT_DEFINED
 #endif
 
-#include "cad_math/helpers.hpp"
-#include "cad_math/mat4.hpp"
+#include "cad_math/Helpers.hpp"
+#include "cad_math/Mat4.hpp"
 
 OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent) {
     setFocusPolicy(Qt::StrongFocus);
@@ -121,7 +121,7 @@ void OpenGlWidget::setC(const cadm::cadf c) {
     updateRenderParams();
 }
 
-void OpenGlWidget::setTranslation(const cadm::vec3 &translation) {
+void OpenGlWidget::setTranslation(const cadm::Vec3 &translation) {
     if (m_translation == translation) {
         return;
     }
@@ -129,7 +129,7 @@ void OpenGlWidget::setTranslation(const cadm::vec3 &translation) {
     updateRenderParams();
 }
 
-void OpenGlWidget::setRotation(const cadm::vec3 &rotation) {
+void OpenGlWidget::setRotation(const cadm::Vec3 &rotation) {
     if (m_rotation == rotation) {
         return;
     }
@@ -137,7 +137,7 @@ void OpenGlWidget::setRotation(const cadm::vec3 &rotation) {
     updateRenderParams();
 }
 
-void OpenGlWidget::setScale(const cadm::vec3 &scale) {
+void OpenGlWidget::setScale(const cadm::Vec3 &scale) {
     if (m_scale == scale) {
         return;
     }
@@ -183,26 +183,26 @@ void OpenGlWidget::setAmbientB(const int b) {
 }
 
 void OpenGlWidget::resetScale() {
-    if (m_scale == cadm::vec3(1.0, 1.0, 1.0)) {
+    if (m_scale == cadm::Vec3(1.0, 1.0, 1.0)) {
         return;
     }
-    m_scale = cadm::vec3(1.0, 1.0, 1.0);
+    m_scale = cadm::Vec3(1.0, 1.0, 1.0);
     updateRenderParams();
 }
 
 void OpenGlWidget::resetRotation() {
-    if (m_rotation == cadm::vec3(0.0, 0.0, 0.0)) {
+    if (m_rotation == cadm::Vec3(0.0, 0.0, 0.0)) {
         return;
     }
-    m_rotation = cadm::vec3(0.0, 0.0, 0.0);
+    m_rotation = cadm::Vec3(0.0, 0.0, 0.0);
     updateRenderParams();
 }
 
 void OpenGlWidget::resetTranslation() {
-    if (m_translation == cadm::vec3(0.0, 0.0, 0.0)) {
+    if (m_translation == cadm::Vec3(0.0, 0.0, 0.0)) {
         return;
     }
-    m_translation = cadm::vec3(0.0, 0.0, 0.0);
+    m_translation = cadm::Vec3(0.0, 0.0, 0.0);
     updateRenderParams();
 }
 
@@ -218,13 +218,13 @@ void OpenGlWidget::updateRenderParams() {
     m_renderState.adaptationSize = m_adaptationSize;
     m_renderState.cameraPos = m_camera.getPosition();
 
-    const auto translationM = cadm::mat4::translation(m_translation);
-    const auto rotationM = cadm::mat4::rotX(m_rotation.x) * cadm::mat4::rotY(m_rotation.y) *
-        cadm::mat4::rotZ(m_rotation.z);
-    const auto scaleM = cadm::mat4::scale(m_scale);
+    const auto translationM = cadm::Mat4::translation(m_translation);
+    const auto rotationM = cadm::Mat4::rotX(m_rotation.x) * cadm::Mat4::rotY(m_rotation.y) *
+        cadm::Mat4::rotZ(m_rotation.z);
+    const auto scaleM = cadm::Mat4::scale(m_scale);
     const auto M = translationM * rotationM * scaleM;
 
-    const auto D = cadm::mat4::diag(1.0 / (m_a * m_a), 1.0 / (m_b * m_b), 1.0 / (m_c * m_c), -1.0);
+    const auto D = cadm::Mat4::diag(1.0 / (m_a * m_a), 1.0 / (m_b * m_b), 1.0 / (m_c * m_c), -1.0);
     m_renderState.Minv = scaleM.inversedScale() * rotationM.inversedRotation() * translationM.
         inversedTranslation();
     m_renderState.MinvT = m_renderState.Minv.transposed();
@@ -280,7 +280,7 @@ void OpenGlWidget::performRaycasting(
                 // b = O^T * D' * Dir + Dir^T * D' * O = 2 * O^T * D' * Dir
                 // c = O^T * D * O
 
-                cadm::ray4 rayWorld = cadm::unprojectRay(cadm::vec2i(px, py), -1.0, state.invPV, w, h);
+                cadm::Ray4 rayWorld = cadm::unprojectRay(cadm::Vec2I(px, py), -1.0, state.invPV, w, h);
 
                 const auto DprimDir = state.Dprim * rayWorld.direction;
                 const auto DprimO = state.Dprim * rayWorld.origin;
@@ -306,16 +306,16 @@ void OpenGlWidget::performRaycasting(
                         0.0
                     );
                     cadm::vec4 nWorld4 = state.MinvT * nObject;
-                    cadm::vec3 n(nWorld4.x, nWorld4.y, nWorld4.z);
+                    cadm::Vec3 n(nWorld4.x, nWorld4.y, nWorld4.z);
                     n.normalize();
 
                     cadm::vec4 viewDir4 = -rayWorld.direction;
-                    cadm::vec3 viewDir(viewDir4.x, viewDir4.y, viewDir4.z);
+                    cadm::Vec3 viewDir(viewDir4.x, viewDir4.y, viewDir4.z);
                     viewDir.normalize();
 
                     const cadm::cadf cos = std::max(static_cast<cadm::cadf>(0.0), viewDir.dot(n));
                     const cadm::cadf intensity = std::pow(cos, state.m);
-                    const cadm::vec3 specular = 255.0 * intensity * state.specularColor;
+                    const cadm::Vec3 specular = 255.0 * intensity * state.specularColor;
 
                     rgb.r = static_cast<unsigned char>(std::clamp<cadm::cadf>(
                         static_cast<cadm::cadf>(state.ambient.r) + specular.x,
@@ -352,8 +352,8 @@ std::optional<cadm::cadf> OpenGlWidget::solveQuadraticMinPositive(
     const cadm::cadf b,
     const cadm::cadf c
 ) {
-    if (std::abs(a) < cadm::eps) {
-        if (std::abs(b) < cadm::eps) {
+    if (std::abs(a) < cadm::gc_eps) {
+        if (std::abs(b) < cadm::gc_eps) {
             return std::nullopt;
         }
         const auto result = -c / b;
@@ -373,7 +373,7 @@ std::optional<cadm::cadf> OpenGlWidget::solveQuadraticMinPositive(
                                                    ? sqrtDisc
                                                    : -sqrtDisc));
     const cadm::cadf result1 = stableRoot / a;
-    const cadm::cadf result2 = (std::abs(stableRoot) > cadm::eps)
+    const cadm::cadf result2 = (std::abs(stableRoot) > cadm::gc_eps)
                                    ? (c / stableRoot)
                                    : 0.0;
 

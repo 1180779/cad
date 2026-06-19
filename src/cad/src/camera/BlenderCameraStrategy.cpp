@@ -14,29 +14,29 @@ BlenderCameraStrategy::BlenderCameraStrategy(
     const std::function<int()> &heightGetter
 ) : ICameraStrategy(cameraEntity, widthGetter, heightGetter) {}
 
-cadm::mat4 BlenderCameraStrategy::getView() {
+cadm::Mat4 BlenderCameraStrategy::getView() {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
     if (!camera) {
         EXPECTED_COMPONENT_MISSING();
-        return cadm::mat4::identity();
+        return cadm::Mat4::identity();
     }
     const auto pCamera = camera.value();
-    const auto view = cadm::mat4::lookAtRH(pCamera->getPosition(), pCamera->getTarget(), pCamera->up());
+    const auto view = cadm::Mat4::lookAtRh(pCamera->getPosition(), pCamera->getTarget(), pCamera->up());
     return view;
 }
 
-cadm::mat4 BlenderCameraStrategy::getProjection() {
+cadm::Mat4 BlenderCameraStrategy::getProjection() {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
     if (!camera) {
         EXPECTED_COMPONENT_MISSING();
-        return cadm::mat4::identity();
+        return cadm::Mat4::identity();
     }
     const auto pCamera = camera.value();
 
     if (pCamera->isOrtho()) {
         const auto h = pCamera->getOrthoHeight();
         const auto w = h * pCamera->getAspectRatio();
-        return cadm::mat4::ortho(
+        return cadm::Mat4::ortho(
             static_cast<cadm::cadf>(-w / 2.0),
             static_cast<cadm::cadf>(w / 2.0),
             static_cast<cadm::cadf>(-h / 2.0),
@@ -46,7 +46,7 @@ cadm::mat4 BlenderCameraStrategy::getProjection() {
         );
     }
 
-    return cadm::mat4::projectionMO(
+    return cadm::Mat4::projectionMo(
         pCamera->getAspectRatio(),
         pCamera->getFov(),
         pCamera->getNearPlane(),
@@ -54,19 +54,19 @@ cadm::mat4 BlenderCameraStrategy::getProjection() {
     );
 }
 
-cadm::mat4 BlenderCameraStrategy::getInvProjection() {
+cadm::Mat4 BlenderCameraStrategy::getInvProjection() {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
     if (!camera) {
         EXPECTED_COMPONENT_MISSING();
-        return cadm::mat4::identity();
+        return cadm::Mat4::identity();
     }
     if (camera.value()->isOrtho()) {
         return getProjection().inversedOrtho();
     }
-    return getProjection().inversedProjectionMO();
+    return getProjection().inversedProjectionMo();
 }
 
-void BlenderCameraStrategy::setLookTarget(const cadm::vec3 target) {
+void BlenderCameraStrategy::setLookTarget(const cadm::Vec3 target) {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
     if (!camera) {
         EXPECTED_COMPONENT_MISSING();
@@ -90,8 +90,8 @@ bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QP
         // vertical: rotate around camera's current local X
         const cadm::cadf yawAngle = -static_cast<cadm::cadf>(delta.x()) * s_sensitivity;
         const cadm::cadf pitchAngle = -static_cast<cadm::cadf>(delta.y()) * s_sensitivity;
-        pCamera->m_orbitRot = (cadm::mat3::rotY(yawAngle) * pCamera->m_orbitRot
-            * cadm::mat3::rotX(pitchAngle)).orthonormalized();
+        pCamera->m_orbitRot = (cadm::Mat3::rotY(yawAngle) * pCamera->m_orbitRot
+            * cadm::Mat3::rotX(pitchAngle)).orthonormalized();
         emit
         pCamera->propertyUpdated();
         return true;
@@ -135,7 +135,7 @@ bool BlenderCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) 
                                                ? pCamera->getOrthoHeight()
                                                : pCamera->getRadius());
 
-    cadm::vec3 newTarget;
+    cadm::Vec3 newTarget;
     switch (action) {
     case CameraKeyAction::moveUp:
         newTarget = pCamera->getTarget() + pCamera->up() * step;

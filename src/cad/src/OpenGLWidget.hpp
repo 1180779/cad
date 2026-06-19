@@ -7,8 +7,8 @@
 
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
-#include <cad_math/common.hpp>
-#include <cad_math/vec3.hpp>
+#include <cad_math/Common.hpp>
+#include <cad_math/Vec3.hpp>
 #include "PointRegistry.hpp"
 #include "RenderSystem.hpp"
 #include "Scene.hpp"
@@ -137,7 +137,7 @@ private:
 
     void selectPoint(PointHandle hit, bool additive);
 
-    [[nodiscard]] std::optional<cadm::vec3> computePivot() const;
+    [[nodiscard]] std::optional<cadm::Vec3> computePivot() const;
 
     void handleTransformRotate(int dx, PointRegistry &registry);
 
@@ -191,9 +191,9 @@ private:
     /// @brief Valid only in PointDrag mode
     PointHandle m_draggedPoint = 0;
     /// @brief Position of the dragged point when the drag began (for undo)
-    cadm::vec3 m_draggedPointStart;
+    cadm::Vec3 m_draggedPointStart;
     /// @brief Active cursor translation when a cursor-placement drag began (for undo)
-    cadm::vec3 m_cursorPlaceStart;
+    cadm::Vec3 m_cursorPlaceStart;
 
     /// @brief When true, LMB click places a new point at the cursor
     bool m_clickToAddMode = false;
@@ -206,7 +206,7 @@ private:
     /// @brief Whether the active transform actually moved anything (gate undo entry)
     bool m_transformApplied = false;
     QPoint m_transformStartMousePos;
-    cadm::vec3 m_transformPivot;
+    cadm::Vec3 m_transformPivot;
 };
 
 #endif //CAD_RENDERINGWINDOW_H

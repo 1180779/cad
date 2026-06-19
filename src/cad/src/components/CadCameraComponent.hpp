@@ -6,8 +6,8 @@
 #define CAD_CADCAMERACOMPOONENT_HPP
 
 #include "CameraComponent.hpp"
-#include "cad_math/common.hpp"
-#include "cad_math/vec3.hpp"
+#include "cad_math/Common.hpp"
+#include "cad_math/Vec3.hpp"
 #include <QObject>
 
 class CadCameraComponent final : public QObject, public CameraComponent {
@@ -66,13 +66,13 @@ public:
     static constexpr cadm::cadf s_zoomFactorMin = 0.01;
     static constexpr cadm::cadf s_zoomFactorMax = 100.0;
 
-    [[nodiscard]] cadm::vec3 forward() const;
+    [[nodiscard]] cadm::Vec3 forward() const;
 
-    [[nodiscard]] cadm::vec3 right() const;
+    [[nodiscard]] cadm::Vec3 right() const;
 
-    [[nodiscard]] cadm::vec3 up() const;
+    [[nodiscard]] cadm::Vec3 up() const;
 
-    [[nodiscard]] cadm::vec3 getPosition() const {
+    [[nodiscard]] cadm::Vec3 getPosition() const {
         return m_position;
     }
 
@@ -88,7 +88,7 @@ public:
         return m_position.z;
     }
 
-    [[nodiscard]] cadm::vec3 getTarget() const {
+    [[nodiscard]] cadm::Vec3 getTarget() const {
         return m_target;
     }
 
@@ -104,7 +104,7 @@ public:
         return m_target.z;
     }
 
-    [[nodiscard]] cadm::vec3 getWorldUp() const {
+    [[nodiscard]] cadm::Vec3 getWorldUp() const {
         return m_worldUp;
     }
 
@@ -120,7 +120,7 @@ public:
         return m_worldUp.z;
     }
 
-    [[nodiscard]] cadm::vec3 getUp() const {
+    [[nodiscard]] cadm::Vec3 getUp() const {
         return m_up;
     }
 
@@ -156,7 +156,7 @@ public:
         return m_zoomFactor;
     }
 
-    void setPosition(const cadm::vec3 &position);
+    void setPosition(const cadm::Vec3 &position);
 
     void setPositionX(cadm::cadf x);
 
@@ -164,7 +164,7 @@ public:
 
     void setPositionZ(cadm::cadf z);
 
-    void setTarget(const cadm::vec3 &target);
+    void setTarget(const cadm::Vec3 &target);
 
     void setTargetX(cadm::cadf x);
 
@@ -172,7 +172,7 @@ public:
 
     void setTargetZ(cadm::cadf z);
 
-    void setWorldUp(const cadm::vec3 &worldUp);
+    void setWorldUp(const cadm::Vec3 &worldUp);
 
     void setWorldUpX(cadm::cadf x);
 
@@ -180,7 +180,7 @@ public:
 
     void setWorldUpZ(cadm::cadf z);
 
-    void setUp(const cadm::vec3 &up);
+    void setUp(const cadm::Vec3 &up);
 
     void setUpX(cadm::cadf x);
 
@@ -199,10 +199,10 @@ public:
     void setRotationSpeed(cadm::cadf rotationSpeed);
 
 private:
-    cadm::vec3 m_position{};
-    cadm::vec3 m_target{};
-    cadm::vec3 m_worldUp = cadm::vec3::unitY();
-    cadm::vec3 m_up = cadm::vec3::unitY();
+    cadm::Vec3 m_position{};
+    cadm::Vec3 m_target{};
+    cadm::Vec3 m_worldUp = cadm::Vec3::unitY();
+    cadm::Vec3 m_up = cadm::Vec3::unitY();
 
     cadm::cadf m_nearPlane{-100.0};
     cadm::cadf m_farPlane{100.0};

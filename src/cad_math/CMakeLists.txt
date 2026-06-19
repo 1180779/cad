@@ -1,16 +1,11 @@
+
+file(GLOB_RECURSE CAD_MATH_SOURCES
+        include/cad_math/*.cpp
+        include/cad_math/*.hpp
+)
+
 add_library(cad_math STATIC
-        include/cad_math/vec_base.hpp
-        include/cad_math/vec3.hpp
-        include/cad_math/vec4.hpp
-        include/cad_math/mat_base.hpp
-        include/cad_math/mat4.hpp
-        include/cad_math/common.hpp
-        include/cad_math/vec3i.hpp
-        include/cad_math/mat3.hpp
-        include/cad_math/vec2.hpp
-        include/cad_math/helpers.hpp
-        include/cad_math/vec2i.hpp
-        include/cad_math/ray4.hpp
+        ${CAD_MATH_SOURCES}
 )
 
 target_include_directories(cad_math

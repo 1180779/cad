@@ -8,14 +8,14 @@
 #include <cassert>
 #include <cmath>
 
-#include "common.hpp"
+#include "Common.hpp"
 
 namespace cadm {
     template <std::size_t N, typename T>
-    struct vec;
+    struct Vec;
 
     template <typename Derived, std::size_t N, typename T>
-    struct vec_base {
+    struct VecBase {
         using Vt = T;
 
         constexpr T& operator[](std::size_t i) noexcept {
@@ -44,7 +44,7 @@ namespace cadm {
         friend constexpr bool operator==(const Derived &lhs, const Derived &rhs) noexcept {
             for (int i = 0; i < N; ++i) {
                 auto diff = std::abs(lhs[i] - rhs[i]);
-                if (diff > eps) {
+                if (diff > gc_eps) {
                     return false;
                 }
             }
@@ -168,8 +168,8 @@ namespace cadm {
         /// @pre Length must not be zero or near-zero
         void normalize() noexcept {
             const auto lengthSq = lengthSquared();
-            assert(lengthSq > eps * eps && "normalize() called on a zero or near-zero vector");
-            if (std::abs(lengthSq - static_cast<T>(1)) < eps) {
+            assert(lengthSq > gc_eps * gc_eps && "normalize() called on a zero or near-zero vector");
+            if (std::abs(lengthSq - static_cast<T>(1)) < gc_eps) {
                 return;
             }
 
@@ -188,7 +188,7 @@ namespace cadm {
         /// @brief Returns a normalized copy, or `fallback` if the vector length is <= eps
         [[nodiscard]] Derived safeNormalized(const Derived &fallback) const noexcept {
             const auto lengthSq = lengthSquared();
-            if (lengthSq < eps * eps) {
+            if (lengthSq < gc_eps * gc_eps) {
                 return fallback;
             }
             return static_cast<const Derived&>(*this) / std::sqrt(lengthSq);

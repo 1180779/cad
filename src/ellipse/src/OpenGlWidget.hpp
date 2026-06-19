@@ -9,23 +9,23 @@
 #include <QKeyEvent>
 #include <memory>
 
-#include <cad_math/common.hpp>
-#include "GL.hpp"
+#include <cad_math/Common.hpp>
+#include "Gl.hpp"
 #include "ShaderProgram.hpp"
 #include "Quad.hpp"
-#include "cad_math/vec3.hpp"
-#include "cad_math/vec3i.hpp"
+#include "cad_math/Vec3.hpp"
+#include "cad_math/Vec3i.hpp"
 #include "Camera.hpp"
 
 struct RenderState {
     int width = 0;
     int height = 0;
-    cadm::mat4 invPV;
-    cadm::mat4 Minv;
-    cadm::mat4 MinvT;
-    cadm::mat4 Dprim;
-    cadm::vec3 cameraPos;
-    cadm::vec3 specularColor;
+    cadm::Mat4 invPV;
+    cadm::Mat4 Minv;
+    cadm::Mat4 MinvT;
+    cadm::Mat4 Dprim;
+    cadm::Vec3 cameraPos;
+    cadm::Vec3 specularColor;
     cadm::vec3i ambient;
     cadm::cadf m;
     cadm::cadf a, b, c;
@@ -64,23 +64,23 @@ public:
 
     void setC(cadm::cadf c);
 
-    [[nodiscard]] cadm::vec3 getTranslation() const {
+    [[nodiscard]] cadm::Vec3 getTranslation() const {
         return m_translation;
     }
 
-    void setTranslation(const cadm::vec3 &translation);
+    void setTranslation(const cadm::Vec3 &translation);
 
-    [[nodiscard]] cadm::vec3 getRotation() const {
+    [[nodiscard]] cadm::Vec3 getRotation() const {
         return m_rotation;
     }
 
-    void setRotation(const cadm::vec3 &rotation);
+    void setRotation(const cadm::Vec3 &rotation);
 
-    [[nodiscard]] cadm::vec3 getScale() const {
+    [[nodiscard]] cadm::Vec3 getScale() const {
         return m_scale;
     }
 
-    void setScale(const cadm::vec3 &scale);
+    void setScale(const cadm::Vec3 &scale);
 
     [[nodiscard]] unsigned char getAdaptationSize() const {
         return m_adaptationSize;
@@ -152,12 +152,12 @@ private:
     unsigned int m_adaptationSize{8};
     unsigned int m_currentAdaptationStep{1};
     std::optional<unsigned int> m_prevAdaptationStep{0};
-    cadm::vec3 m_translation{};
-    cadm::vec3 m_scale{1, 1, 1};
-    cadm::vec3 m_rotation{}; /* rotation around each of the main axes */
+    cadm::Vec3 m_translation{};
+    cadm::Vec3 m_scale{1, 1, 1};
+    cadm::Vec3 m_rotation{}; /* rotation around each of the main axes */
 
-    cadm::vec3 m_v{0, 0, -1};
-    cadm::vec3 m_specularColor{1.0, 1.0, 0.0};
+    cadm::Vec3 m_v{0, 0, -1};
+    cadm::Vec3 m_specularColor{1.0, 1.0, 0.0};
     cadm::vec3i m_ambient{25, 25, 25};
     cadm::cadf m_m{1};
     cadm::cadf m_sensitivity{0.001};
@@ -165,7 +165,7 @@ private:
 
     QPoint m_lastMousePosition;
 
-    Camera m_camera{cadm::vec3(0, 0, 15), cadm::vec3(0, 0, 0), cadm::vec3(0, 1, 0)};
+    Camera m_camera{cadm::Vec3(0, 0, 15), cadm::Vec3(0, 0, 0), cadm::Vec3(0, 1, 0)};
 
     RenderState m_renderState;
     bool m_xPressed{false}, m_yPressed{false}, m_zPressed{false};

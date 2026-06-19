@@ -4,7 +4,7 @@
 #include "BSplineToBezierConverter.hpp"
 
 void bsplineToBezier::detail::insertKnot(
-    std::vector<cadm::vec3> &pts,
+    std::vector<cadm::Vec3> &pts,
     std::vector<float> &knots,
     const float tHat,
     const int p
@@ -21,7 +21,7 @@ void bsplineToBezier::detail::insertKnot(
 
     const int n = static_cast<int>(pts.size()) - 1;
 
-    std::vector<cadm::vec3> newPts(pts.size() + 1);
+    std::vector<cadm::Vec3> newPts(pts.size() + 1);
     for (int i = 0; i <= k - p; ++i) {
         newPts[i] = pts[i];
     }
@@ -50,11 +50,11 @@ void bsplineToBezier::detail::insertKnot(
 }
 
 void bsplineToBezier::uniformSegment(
-    const cadm::vec3 d0,
-    const cadm::vec3 d1,
-    const cadm::vec3 d2,
-    const cadm::vec3 d3,
-    std::span<cadm::vec3, 4> &view
+    const cadm::Vec3 d0,
+    const cadm::Vec3 d1,
+    const cadm::Vec3 d2,
+    const cadm::Vec3 d3,
+    std::span<cadm::Vec3, 4> &view
 ) {
     view[0] = (d0 + d1 * 4.0f + d2) * (1.0f / 6.0f);
     view[1] = (d1 * 4.0f + d2 * 2.0f) * (1.0f / 6.0f);
@@ -65,7 +65,7 @@ void bsplineToBezier::uniformSegment(
 void bsplineToBezier::chordLength(
     const std::span<const PointHandle> handles,
     const PointRegistry &registry,
-    std::vector<cadm::vec3> &out
+    std::vector<cadm::Vec3> &out
 ) {
     const int n = static_cast<int>(handles.size());
     if (n < 4) {
@@ -74,7 +74,7 @@ void bsplineToBezier::chordLength(
     }
     const int segments = n - 3;
 
-    std::vector<cadm::vec3> pts(n);
+    std::vector<cadm::Vec3> pts(n);
     for (int i = 0; i < n; ++i) {
         pts[i] = registry.getPosition(handles[i]);
     }
@@ -82,9 +82,9 @@ void bsplineToBezier::chordLength(
     // chord lengths l[i] = ||d[i+1] - d[i]||
     std::vector<float> l(n - 1);
     for (int i = 0; i < n - 1; ++i) {
-        const cadm::vec3 diff = pts[i + 1] - pts[i];
+        const cadm::Vec3 diff = pts[i + 1] - pts[i];
         l[i] = diff.length();
-        if (constexpr float kMinChord = cadm::eps;
+        if (constexpr float kMinChord = cadm::gc_eps;
             l[i] < kMinChord) {
             l[i] = kMinChord;
         }
@@ -128,7 +128,7 @@ void bsplineToBezier::chordLength(
 void bsplineToBezier::uniform(
     const std::span<const PointHandle> handles,
     const PointRegistry &registry,
-    std::vector<cadm::vec3> &out
+    std::vector<cadm::Vec3> &out
 ) {
     const int n = static_cast<int>(handles.size());
     if (n < 4) {
@@ -138,7 +138,7 @@ void bsplineToBezier::uniform(
     const int segments = n - 3;
     out.resize(static_cast<size_t>(segments) * 4);
     for (int i = 0; i < segments; ++i) {
-        std::span<cadm::vec3, 4> view(std::span{out}.subspan(4 * i, 4));
+        std::span<cadm::Vec3, 4> view(std::span{out}.subspan(4 * i, 4));
         bsplineToBezier::uniformSegment(
             registry.getPosition(handles[i]),
             registry.getPosition(handles[i + 1]),
@@ -153,7 +153,7 @@ void bsplineToBezier::convert(
     const ParametrizationMode mode,
     const std::span<const PointHandle> handles,
     const PointRegistry &registry,
-    std::vector<cadm::vec3> &out
+    std::vector<cadm::Vec3> &out
 ) {
     if (mode == ParametrizationMode::chordLength) {
         chordLength(handles, registry, out);

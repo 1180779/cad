@@ -6,16 +6,16 @@
 #define CAD_GEOMETRY_H
 
 #include "Entity.hpp"
-#include <cad_math/vec3.hpp>
+#include <cad_math/Vec3.hpp>
 #include <vector>
 #include <QObject>
 #include <string>
 
-#include "cad_math/vec4.hpp"
+#include "cad_math/Vec4.hpp"
 
 struct Vertex {
-    cadm::vec3 position;
-    cadm::vec3 normal;
+    cadm::Vec3 position;
+    cadm::Vec3 normal;
     cadm::vec4 color;
 };
 

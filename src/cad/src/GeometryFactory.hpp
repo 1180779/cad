@@ -7,7 +7,7 @@
 
 #include "Scene.hpp"
 #include "PointRegistry.hpp"
-#include <cad_math/vec3.hpp>
+#include <cad_math/Vec3.hpp>
 #include <vector>
 
 class GeometryFactory final {
@@ -19,23 +19,23 @@ public:
         float minorRadius,
         int majorSegments,
         int minorSegments,
-        const cadm::vec3 &position = {0, 0, 0},
+        const cadm::Vec3 &position = {0, 0, 0},
         const std::string &name = "Torus"
     ) const;
 
     Entity* createAxis(
         float length = 5.0f,
-        const cadm::vec3 &position = {0, 0, 0},
+        const cadm::Vec3 &position = {0, 0, 0},
         const std::string &name = "Axes"
     ) const;
 
     Entity* createCursor(
-        const cadm::vec3 &position = {0, 0, 0},
+        const cadm::Vec3 &position = {0, 0, 0},
         const std::string &name = "Cursor"
     ) const;
 
     Entity* createPoint(
-        const cadm::vec3 &position = {0, 0, 0},
+        const cadm::Vec3 &position = {0, 0, 0},
         const std::string &name = "Point"
     ) const;
 

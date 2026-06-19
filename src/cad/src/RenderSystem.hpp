@@ -9,8 +9,8 @@
 #include "Quad.hpp"
 #include "components/GeometryComponent.hpp"
 #include <memory>
-#include <cad_math/vec3.hpp>
-#include <cad_math/mat4.hpp>
+#include <cad_math/Vec3.hpp>
+#include <cad_math/Mat4.hpp>
 
 class Scene;
 
@@ -20,7 +20,7 @@ public:
 
     static void regenerateGeometry(const Scene &scene);
 
-    void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVp) const;
+    void render(Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
 
     void renderSelectionRect(
         cadm::cadf x0Ndc,
@@ -30,18 +30,18 @@ public:
     ) const;
 
     void renderPivotMarker(
-        const cadm::vec3 &pos,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection
+        const cadm::Vec3 &pos,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
     ) const;
 
     void renderTransformAxis(
-        const cadm::vec3 &pivot,
-        const cadm::mat4 &axisModel,
+        const cadm::Vec3 &pivot,
+        const cadm::Mat4 &axisModel,
         int axesMask,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection,
-        const cadm::mat4 &invVp
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &invVp
     ) const;
 
     void shutdown();
@@ -61,12 +61,12 @@ public:
     }
 
 private:
-    void renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVp) const;
+    void renderInfiniteGrid(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
 
     void renderInfiniteAxes(
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection,
-        const cadm::mat4 &invVp
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &invVp
     ) const;
 
     void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
@@ -75,29 +75,29 @@ private:
 
     void renderControlPoints(
         Scene &scene,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
         QOpenGLFunctions_4_5_Core *gl
     ) const;
 
     void renderC0BezierCurves(
         Scene &scene,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection,
-        const cadm::mat4 &vp
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &vp
     ) const;
 
     void renderC2BezierCurves(
         const Scene &scene,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection,
-        const cadm::mat4 &vp
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &vp
     ) const;
 
     void renderBezierCurves(
         Scene &scene,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
     ) const;
 
     AxesGeometry m_pivotAxes;

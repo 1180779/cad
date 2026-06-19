@@ -11,7 +11,7 @@
 #include "GeometryComponent.hpp"
 #include "GpuBuffer.hpp"
 #include "PointRegistry.hpp"
-#include <cad_math/vec3.hpp>
+#include <cad_math/Vec3.hpp>
 
 #include "INewPointsTargetComponent.hpp"
 #include "../BSplineToBezierConverter.hpp"
@@ -70,7 +70,7 @@ public:
     /// @details 
     /// Back-computes the affected de Boor point(s) in the registry 
     /// and marks the Bernstein cache dirty
-    void setBernsteinPosition(int bernsteinIndex, cadm::vec3 newPos);
+    void setBernsteinPosition(int bernsteinIndex, cadm::Vec3 newPos);
 
     [[nodiscard]] int segmentCount() const;
 
@@ -98,7 +98,7 @@ public:
         return m_deBoorEbo.size();
     }
 
-    [[nodiscard]] const std::vector<cadm::vec3>& getBernsteinPositions() const {
+    [[nodiscard]] const std::vector<cadm::Vec3>& getBernsteinPositions() const {
         return m_bernsteinPositions;
     }
 
@@ -122,8 +122,8 @@ private:
     bool m_bernsteinDirty = false;
     ParametrizationMode m_parametrizationMode = ParametrizationMode::chordLength;
 
-    std::vector<cadm::vec3> m_bernsteinPositions; // CPU cache of computed Bernstein points
-    GpuBuffer<cadm::vec3, GL_ARRAY_BUFFER> m_bernsteinVbo; // GPU: computed Bernstein positions
+    std::vector<cadm::Vec3> m_bernsteinPositions; // CPU cache of computed Bernstein points
+    GpuBuffer<cadm::Vec3, GL_ARRAY_BUFFER> m_bernsteinVbo; // GPU: computed Bernstein positions
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_patchEbo; // sequential 0, 1, 2, 3, ...
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_deBoorEbo; // PointHandle indices for de Boor polygon
 

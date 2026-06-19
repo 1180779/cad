@@ -7,15 +7,15 @@
 #include "Entity.hpp"
 #include "PointComponent.hpp"
 #include "TransformComponent.hpp"
-#include "cad_math/helpers.hpp"
-#include "cad_math/mat3.hpp"
-#include "cad_math/vec3.hpp"
+#include "cad_math/Helpers.hpp"
+#include "cad_math/Mat3.hpp"
+#include "cad_math/Vec3.hpp"
 
 struct EntitySnapshot {
     EntityId id{};
-    cadm::vec3 origPos;
-    cadm::mat3 origRotMat;
-    cadm::vec3 origScale;
+    cadm::Vec3 origPos;
+    cadm::Mat3 origRotMat;
+    cadm::Vec3 origScale;
     bool isTransformEntity{false}; // false for points
 
     void restoreEntity(PointRegistry &pointRegistry, Entity *entity) const;
@@ -61,7 +61,7 @@ inline void EntitySnapshot::fillFromPointComponent(
     const PointComponent *pointComponent
 ) {
     origPos = pointRegistry.getPosition(pointComponent->m_handle);
-    origRotMat = cadm::mat3::identity();
+    origRotMat = cadm::Mat3::identity();
     origScale = {1, 1, 1};
     isTransformEntity = false;
 }
@@ -69,7 +69,7 @@ inline void EntitySnapshot::fillFromPointComponent(
 inline void EntitySnapshot::fillFromTransformComponent(const TransformComponent *transformComponent) {
     origPos = transformComponent->getTranslation();
     origScale = transformComponent->getScale();
-    origRotMat = transformComponent->getModelMatrix().upperLeft3x3().normalizedColumns();
+    origRotMat = transformComponent->getModelMatrix().upperLeft3X3().normalizedColumns();
     isTransformEntity = true;
 }
 

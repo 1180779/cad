@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include <cad_math/vec3.hpp>
+#include <cad_math/Vec3.hpp>
 
 #include "Command.hpp"
 #include "../EntitySpec.hpp"
@@ -91,8 +91,8 @@ public:
     MovePointCommand(
         Scene &scene,
         const PointHandle handle,
-        const cadm::vec3 before,
-        const cadm::vec3 after
+        const cadm::Vec3 before,
+        const cadm::Vec3 after
     ) : m_scene(scene), m_handle(handle), m_before(before), m_after(after) {}
 
     void execute() override;
@@ -104,8 +104,8 @@ public:
 private:
     Scene &m_scene;
     PointHandle m_handle;
-    cadm::vec3 m_before;
-    cadm::vec3 m_after;
+    cadm::Vec3 m_before;
+    cadm::Vec3 m_after;
 };
 
 /// @brief Rename an entity

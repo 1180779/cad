@@ -12,8 +12,8 @@
 #include "components/bezierC2Component.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
-#include <cad_math/vec2.hpp>
-#include <cad_math/vec3.hpp>
+#include <cad_math/Vec2.hpp>
+#include <cad_math/Vec3.hpp>
 #include <cmath>
 
 void RenderSystem::initialize() {
@@ -97,12 +97,12 @@ void RenderSystem::initialize() {
 }
 
 void RenderSystem::renderInfiniteGrid(
-    const cadm::mat4 &view,
-    const cadm::mat4 &projection,
-    const cadm::mat4 &invVp
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    const cadm::Mat4 &invVp
 ) const {
     const auto vp = projection * view;
-    const cadm::vec3 cameraForward{-view.row(2).xyz()};
+    const cadm::Vec3 cameraForward{-view.row(2).xyz()};
     m_gridShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniformMat4("VP", vp));
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniformMat4("invVP", invVp));
@@ -193,8 +193,8 @@ void RenderSystem::renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4
 
 void RenderSystem::renderControlPoints(
     Scene &scene,
-    const cadm::mat4 &view,
-    const cadm::mat4 &projection,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
     QOpenGLFunctions_4_5_Core *const gl
 ) const {
     auto &pointRegistry = scene.getPointRegistry();
@@ -217,9 +217,9 @@ void RenderSystem::renderControlPoints(
 
 void RenderSystem::renderC0BezierCurves(
     Scene &scene,
-    const cadm::mat4 &view,
-    const cadm::mat4 &projection,
-    const cadm::mat4 &vp
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    const cadm::Mat4 &vp
 ) const {
     // TODO: refactor to not bind shaders multiple times
     const auto gl = getGl();
@@ -258,7 +258,7 @@ void RenderSystem::renderC0BezierCurves(
             SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastPrimitive", 0));
             for (int p = 0; p < totalPatches; ++p) {
                 const int base = p * 3;
-                const cadm::vec3 pts[4] = {
+                const cadm::Vec3 pts[4] = {
                     registry.getPosition(cps[base]),
                     registry.getPosition(cps[base + 1]),
                     registry.getPosition(cps[std::min(base + 2, static_cast<int>(cps.size()) - 1)]),
@@ -301,7 +301,7 @@ void RenderSystem::renderC0BezierCurves(
             m_wireframeShader->bind();
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::mat4::identity()));
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
             SHADER_SET_UNIFORM_CHECK(
                 m_wireframeShader->setUniform1(
                     "u_highlightStrength",
@@ -328,9 +328,9 @@ void RenderSystem::renderC0BezierCurves(
 
 void RenderSystem::renderC2BezierCurves(
     const Scene &scene,
-    const cadm::mat4 &view,
-    const cadm::mat4 &projection,
-    const cadm::mat4 &vp
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    const cadm::Mat4 &vp
 ) const {
     const auto gl = getGl();
     for (const auto &e : scene.getEntities()) {
@@ -360,7 +360,7 @@ void RenderSystem::renderC2BezierCurves(
             gl->glPatchParameteri(GL_PATCH_VERTICES, 4);
             gl->glBindVertexArray(pBezier->getPatchVao());
             for (int p = 0; p < segments; ++p) {
-                const cadm::vec3 pts[4] = {
+                const cadm::Vec3 pts[4] = {
                     bps[4 * p + 0],
                     bps[4 * p + 1],
                     bps[4 * p + 2],
@@ -392,7 +392,7 @@ void RenderSystem::renderC2BezierCurves(
             m_wireframeShader->bind();
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::mat4::identity()));
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
             SHADER_SET_UNIFORM_CHECK(
                 m_wireframeShader->setUniform1(
                     "u_highlightStrength",
@@ -416,7 +416,7 @@ void RenderSystem::renderC2BezierCurves(
                 m_wireframeShader->bind();
                 SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
                 SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::mat4::identity()));
+                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
                 SHADER_SET_UNIFORM_CHECK(
                     m_wireframeShader->setUniform1(
                         "u_highlightStrength",
@@ -440,7 +440,7 @@ void RenderSystem::renderC2BezierCurves(
             m_wireframeShader->bind();
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::mat4::identity()));
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
             SHADER_SET_UNIFORM_CHECK(
                 m_wireframeShader->setUniform1(
                     "u_highlightStrength",
@@ -462,25 +462,25 @@ void RenderSystem::renderC2BezierCurves(
 
 void RenderSystem::renderBezierCurves(
     Scene &scene,
-    const cadm::mat4 &view,
-    const cadm::mat4 &projection
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
 ) const {
-    const cadm::mat4 vp = projection * view;
+    const cadm::Mat4 vp = projection * view;
     renderC0BezierCurves(scene, view, projection, vp);
     renderC2BezierCurves(scene, view, projection, vp);
 }
 
 void RenderSystem::renderInfiniteAxes(
-    const cadm::mat4 &view,
-    const cadm::mat4 &projection,
-    const cadm::mat4 &invVp
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    const cadm::Mat4 &invVp
 ) const {
-    const cadm::mat4 vp = projection * view;
+    const cadm::Mat4 vp = projection * view;
     m_axesShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("VP", vp));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("invVP", invVp));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", cadm::mat4::identity()));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", cadm::vec3{}));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", cadm::Mat4::identity()));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", cadm::Vec3{}));
     SHADER_SET_UNIFORM_CHECK(
         m_axesShader->setUniform2(
             "u_viewport",
@@ -494,14 +494,14 @@ void RenderSystem::renderInfiniteAxes(
 }
 
 void RenderSystem::renderTransformAxis(
-    const cadm::vec3 &pivot,
-    const cadm::mat4 &axisModel,
+    const cadm::Vec3 &pivot,
+    const cadm::Mat4 &axisModel,
     const int axesMask,
-    const cadm::mat4 &view,
-    const cadm::mat4 &projection,
-    const cadm::mat4 &invVp
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    const cadm::Mat4 &invVp
 ) const {
-    const cadm::mat4 vp = projection * view;
+    const cadm::Mat4 vp = projection * view;
     m_axesShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("VP", vp));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("invVP", invVp));
@@ -521,9 +521,9 @@ void RenderSystem::renderTransformAxis(
 
 void RenderSystem::render(
     Scene &scene,
-    const cadm::mat4 &view,
-    const cadm::mat4 &projection,
-    const cadm::mat4 &invVp
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    const cadm::Mat4 &invVp
 ) const {
     const auto gl = getGl();
 
@@ -589,12 +589,12 @@ void RenderSystem::renderSelectionRect(
 }
 
 void RenderSystem::renderPivotMarker(
-    const cadm::vec3 &pos,
-    const cadm::mat4 &view,
-    const cadm::mat4 &projection
+    const cadm::Vec3 &pos,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
 ) const {
     const auto gl = getGl();
-    const cadm::mat4 model = cadm::mat4::translation(pos);
+    const cadm::Mat4 model = cadm::Mat4::translation(pos);
 
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));

@@ -17,7 +17,7 @@
 #include "../components/bezierC2Component.hpp"
 #include "../Scene.hpp"
 
-class BezierC2Widget : public ComponentWidget {
+class BezierC2Widget final : public ComponentWidget {
     Q_OBJECT
 
 public:

@@ -15,28 +15,28 @@ CadCameraStrategy::CadCameraStrategy(
     const std::function<int()> &heightGetter
 ) : ICameraStrategy(cameraEntity, widthGetter, heightGetter) {}
 
-cadm::mat4 CadCameraStrategy::getView() {
+cadm::Mat4 CadCameraStrategy::getView() {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
     if (!camera) {
         EXPECTED_COMPONENT_MISSING();
-        return cadm::mat4::identity();
+        return cadm::Mat4::identity();
     }
     const auto pCamera = camera.value();
-    const auto view = cadm::mat4::lookAtRH(pCamera->getPosition(), pCamera->getTarget(), pCamera->up());
+    const auto view = cadm::Mat4::lookAtRh(pCamera->getPosition(), pCamera->getTarget(), pCamera->up());
     return view;
 }
 
-cadm::mat4 CadCameraStrategy::getProjection() {
+cadm::Mat4 CadCameraStrategy::getProjection() {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
     if (!camera) {
         EXPECTED_COMPONENT_MISSING();
-        return cadm::mat4::identity();
+        return cadm::Mat4::identity();
     }
     const auto pCamera = camera.value();
     const auto height = pCamera->getOrthoHeight();
     const auto width = height * pCamera->getAspectRatio();
 
-    const auto projection = cadm::mat4::ortho(
+    const auto projection = cadm::Mat4::ortho(
         static_cast<cadm::cadf>(-width / 2.0),
         static_cast<cadm::cadf>(width / 2.0),
         -static_cast<cadm::cadf>(height / 2.0),
@@ -47,7 +47,7 @@ cadm::mat4 CadCameraStrategy::getProjection() {
     return projection;
 }
 
-void CadCameraStrategy::setLookTarget(const cadm::vec3 target) {
+void CadCameraStrategy::setLookTarget(const cadm::Vec3 target) {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
     if (!camera) {
         EXPECTED_COMPONENT_MISSING();
@@ -73,20 +73,20 @@ void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent 
     const auto pivot = pCamera->getTarget();
     const auto relPosition = pCamera->getPosition() - pivot;
 
-    const auto polarRot = cadm::mat4::rotAxis(polarAngleChange, pCamera->right()).upperLeft3x3();
+    const auto polarRot = cadm::Mat4::rotAxis(polarAngleChange, pCamera->right()).upperLeft3X3();
     auto newRelPos = polarRot * relPosition;
     auto newUp = polarRot * pCamera->up();
 
-    const auto azimuthRot = cadm::mat4::rotAxis(azimuthAngleChange, pCamera->getWorldUp()).upperLeft3x3();
+    const auto azimuthRot = cadm::Mat4::rotAxis(azimuthAngleChange, pCamera->getWorldUp()).upperLeft3X3();
     newRelPos = azimuthRot * newRelPos;
     newUp = azimuthRot * newUp;
 
-    newRelPos = newRelPos.safeNormalized(cadm::vec3::unitZ()) * relPosition.length();
+    newRelPos = newRelPos.safeNormalized(cadm::Vec3::unitZ()) * relPosition.length();
     const auto newPosition = pivot + newRelPos;
 
     // re-orthogonalize up
 
-    const auto newForward = (-newRelPos).safeNormalized(cadm::vec3::unitZ());
+    const auto newForward = (-newRelPos).safeNormalized(cadm::Vec3::unitZ());
     const auto finalUp = (newUp - newForward * newUp.dot(newForward)).safeNormalized(pCamera->getWorldUp());
 
     pCamera->setPosition(newPosition);
@@ -143,7 +143,7 @@ bool CadCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) {
     const auto pCamera = camera.value();
     const auto step = m_translationStep * pCamera->getOrthoHeight();
 
-    cadm::vec3 offset;
+    cadm::Vec3 offset;
     switch (action) {
     case CameraKeyAction::moveUp:
         offset = pCamera->up() * step;

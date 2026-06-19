@@ -14,13 +14,13 @@ public:
         const std::function<int()> &heightGetter
     );
 
-    cadm::mat4 getView() override;
+    cadm::Mat4 getView() override;
 
-    cadm::mat4 getProjection() override;
+    cadm::Mat4 getProjection() override;
 
-    cadm::mat4 getInvProjection() override;
+    cadm::Mat4 getInvProjection() override;
 
-    void setLookTarget(cadm::vec3 target) override;
+    void setLookTarget(cadm::Vec3 target) override;
 
     bool handleCameraMove(CameraAction action, QPoint delta) override;
 

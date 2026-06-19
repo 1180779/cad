@@ -6,7 +6,7 @@
 #define CAD_ICAMERA_HPP
 
 #include "Entity.hpp"
-#include <cad_math/common.hpp>
+#include <cad_math/Common.hpp>
 
 class CameraComponent : public Component {
 public:
@@ -29,7 +29,7 @@ protected:
 };
 
 inline void CameraComponent::setAspectRatio(const cadm::cadf value) {
-    if (std::abs(m_aspectRatio - value) >= cadm::eps) {
+    if (std::abs(m_aspectRatio - value) >= cadm::gc_eps) {
         m_aspectRatio = value;
     }
 }

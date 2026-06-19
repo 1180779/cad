@@ -7,12 +7,12 @@
 
 #include <array>
 
-#include <cad_math/vec_base.hpp>
-#include <cad_math/common.hpp>
+#include <cad_math/VecBase.hpp>
+#include <cad_math/Common.hpp>
 
 namespace cadm {
     template <>
-    struct vec<2, cadf> : vec_base<vec<2, cadf>, 2, cadf> {
+    struct Vec<2, cadf> : VecBase<Vec<2, cadf>, 2, cadf> {
         union {
             struct {
                 cadf x, y;
@@ -25,15 +25,15 @@ namespace cadm {
             std::array<cadf, 2> data;
         };
 
-        constexpr vec() : x(0), y(0) {}
+        constexpr Vec() : x(0), y(0) {}
 
-        constexpr vec(const cadf x, const cadf y) : x(x), y(y) {}
+        constexpr Vec(const cadf x, const cadf y) : x(x), y(y) {}
 
-        constexpr static vec unitX() noexcept {
+        constexpr static Vec unitX() noexcept {
             return {1.0, 0.0};
         }
 
-        constexpr static vec unitY() noexcept {
+        constexpr static Vec unitY() noexcept {
             return {0.0, 1.0};
         }
 
@@ -47,6 +47,6 @@ namespace cadm {
         };
     };
 
-    using vec2 = vec<2, cadf>;
+    using vec2 = Vec<2, cadf>;
 }
 #endif //CAD_VEC2_H

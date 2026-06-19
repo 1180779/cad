@@ -9,7 +9,7 @@
 
 class QCheckBox;
 
-class GridSettingsWidget : public QWidget {
+class GridSettingsWidget final : public QWidget {
     Q_OBJECT
 
 public:
@@ -17,8 +17,7 @@ public:
 
     int getGridPlanes() const;
 
-    signals  :
-
+signals  :
     
 
     void gridPlanesChanged(int planes);

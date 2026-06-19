@@ -20,7 +20,7 @@
 
 int main(int argc, char *argv[]) {
     glSetDefaults();
-    QApplication a(argc, argv);
+    [[maybe_unused]] QApplication a(argc, argv);
 
     QWidget window;
     window.setMinimumSize(QSize(500, 500));
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
     // default scene entities
     const GeometryFactory geometryFactory(glWidget->getScene());
-    geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::vec3(0, 0, 0), "Torus");
+    geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::Vec3(0, 0, 0), "Torus");
 
     const auto cursor = geometryFactory.createCursor({0, 0, 0}, "Cursor");
     glWidget->getScene().setActiveCursor(cursor);
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
             return glWidget->height();
         }
     );
-    const auto cadCamera = cameraFactory.createCadCamera({0, 0, -10}, {}, cadm::vec3::unitY());
+    const auto cadCamera = cameraFactory.createCadCamera({0, 0, -10}, {}, cadm::Vec3::unitY());
     auto cadCameraStrat = std::make_unique<CadCameraStrategy>(
         cadCamera,
         [&] {
@@ -362,7 +362,8 @@ int main(int argc, char *argv[]) {
         }
     );
 
-    auto spawnPos = [glWidget]() -> cadm::vec3 {
+    // ReSharper disable once CppDFAUnreachableFunctionCall
+    auto spawnPos = [glWidget]() -> cadm::Vec3 {
         if (auto *activeCursor = glWidget->getScene().getActiveCursor()) {
             if (const auto t = activeCursor->getComponent<TransformComponent>()) {
                 return t.value()->getTranslation();

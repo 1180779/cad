@@ -258,7 +258,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
         if (m_spinboxRefreshing) {
             return;
         }
-        const cadm::vec3 newPos{
+        const cadm::Vec3 newPos{
             static_cast<float>(m_xSpin->value()),
             static_cast<float>(m_ySpin->value()),
             static_cast<float>(m_zSpin->value())
@@ -286,7 +286,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             auto *lBezier = m_bezier;
             auto *lScene = m_scene;
             const int idx = m_selectedBernstein;
-            std::vector<std::pair<PointHandle, cadm::vec3>> before;
+            std::vector<std::pair<PointHandle, cadm::Vec3>> before;
             for (const auto h : lBezier->getDeBoorPoints()) {
                 before.emplace_back(h, reg.getPosition(h));
             }
@@ -380,7 +380,7 @@ void BezierC2Widget::refresh() {
 
 // TODO: refactor this to use dedicated fake point widget (analogous to the PointDetailsWidget)
 void BezierC2Widget::updateSpinboxesForDeBoor(const PointHandle h) {
-    const cadm::vec3 pos = m_scene->getPointRegistry().getPosition(h);
+    const cadm::Vec3 pos = m_scene->getPointRegistry().getPosition(h);
     m_spinboxRefreshing = true;
     m_xSpin->setValue(pos.x);
     m_ySpin->setValue(pos.y);
@@ -393,7 +393,7 @@ void BezierC2Widget::updateSpinboxesForBernstein(const int index) {
     if (index < 0 || index >= static_cast<int>(positions.size())) {
         return;
     }
-    const cadm::vec3 &pos = positions[index];
+    const cadm::Vec3 &pos = positions[index];
     m_spinboxRefreshing = true;
     m_xSpin->setValue(pos.x);
     m_ySpin->setValue(pos.y);

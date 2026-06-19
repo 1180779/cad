@@ -5,26 +5,25 @@
 #ifndef CAD_HELPERS_H
 #define CAD_HELPERS_H
 
-#include <algorithm>
 #include <optional>
 
-#include "mat3.hpp"
-#include "mat4.hpp"
-#include "ray4.hpp"
-#include "vec2.hpp"
-#include "vec2i.hpp"
-#include "vec3.hpp"
-#include "vec4.hpp"
+#include "Mat3.hpp"
+#include "Mat4.hpp"
+#include "Ray4.hpp"
+#include "Vec2.hpp"
+#include "Vec2i.hpp"
+#include "Vec3.hpp"
+#include "Vec4.hpp"
 
 namespace cadm {
     /// @brief Projects a 3D world position to 2D screen coordinates.
     /// Assumes OpenGL NDC convention: x and y in [-1, 1], z in [-1, 1].
     /// Returns std::nullopt if the point is behind the camera (w <= 0).
     /// Top left is the (0, 0) point
-    inline std::optional<vec2i> projectToScreenGL(
-        const vec3 &worldPos,
-        const mat4 &view,
-        const mat4 &projection,
+    inline std::optional<Vec2I> projectToScreenGl(
+        const Vec3 &worldPos,
+        const Mat4 &view,
+        const Mat4 &projection,
         const int width,
         const int height
     ) {
@@ -34,7 +33,7 @@ namespace cadm {
         }
         const cadf ndcX = clip.x / clip.w;
         const cadf ndcY = clip.y / clip.w;
-        return vec2i(
+        return Vec2I(
             static_cast<int>((ndcX + 1.0f) / 2.0f * static_cast<cadf>(width)),
             static_cast<int>((1.0f - ndcY) / 2.0f * static_cast<cadf>(height))
         );
@@ -43,10 +42,10 @@ namespace cadm {
     /// @brief Unprojects a 2D screen point at a specific NDC depth to a World Space position.
     /// ndcZ: the clip-space Z to unproject at (e.g. pivot depth from VP * pivotPos).
     /// Top left is the (0, 0) point
-    inline vec3 unprojectPoint(
-        const vec2i point,
+    inline Vec3 unprojectPoint(
+        const Vec2I point,
         const cadf ndcZ,
-        const mat4 &invVp,
+        const Mat4 &invVp,
         const int width,
         const int height
     ) {
@@ -64,10 +63,10 @@ namespace cadm {
     // @brief Unprojects a 2D screen point with a given NDC depth z to World Space ray.
     // z should be the lower value (-1 for OpenGL or 1 for DirectX/Vulkan) depending on the projection matrix.
     // Top left is the (0, 0) point
-    inline ray4 unprojectRay(
-        const vec2i point,
+    inline Ray4 unprojectRay(
+        const Vec2I point,
         const cadf zNear,
-        const mat4 &invWorldPV,
+        const Mat4 &invWorldPV,
         const int width,
         const int height
     ) {
@@ -93,7 +92,7 @@ namespace cadm {
 
     // extracts ZYX Euler angles (rx, ry, rz) from rotation matrix M = Rz * Ry * Rx
 
-    inline vec3 eulerZYXFromRotMat(const mat3 &m) {
+    inline Vec3 eulerZYXFromRotMat(const Mat3 &m) {
         // https://en.wikipedia.org/wiki/Euler_angles
         const auto m20 = m.row(2)[0];
         const auto m00 = m.row(0)[0];
@@ -113,11 +112,11 @@ namespace cadm {
     /// parallel to the plane.
     /// The hit position is: origin + dir * t
     inline std::optional<cadf> intersectRayPlane(
-        const vec3 &origin,
-        const vec3 &dir,
-        const vec3 &normal,
+        const Vec3 &origin,
+        const Vec3 &dir,
+        const Vec3 &normal,
         const cadf offset,
-        const cadf parallelThreshold = feps
+        const cadf parallelThreshold = gc_feps
     ) {
         const auto denom = normal.dot(dir);
         if (std::abs(denom) < parallelThreshold) {

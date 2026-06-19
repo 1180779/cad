@@ -90,13 +90,13 @@ void PointPropertiesWidget::applyCoordEdit(const int axis, const double value) {
 }
 
 void PointPropertiesWidget::onXChanged(const double value) {
-    applyCoordEdit(cadm::vec3::Index::X, value);
+    applyCoordEdit(cadm::Vec3::Index::X, value);
 }
 
 void PointPropertiesWidget::onYChanged(const double value) {
-    applyCoordEdit(cadm::vec3::Index::Y, value);
+    applyCoordEdit(cadm::Vec3::Index::Y, value);
 }
 
 void PointPropertiesWidget::onZChanged(const double value) {
-    applyCoordEdit(cadm::vec3::Index::Z, value);
+    applyCoordEdit(cadm::Vec3::Index::Z, value);
 }

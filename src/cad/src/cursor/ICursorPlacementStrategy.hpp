@@ -5,9 +5,11 @@
 #ifndef CAD_ICURSORPLACEMENTSTRATEGY_HPP
 #define CAD_ICURSORPLACEMENTSTRATEGY_HPP
 
+#include <QMouseEvent>
+
 #include <optional>
-#include <cad_math/mat4.hpp>
-#include <cad_math/vec3.hpp>
+#include <cad_math/Mat4.hpp>
+#include <cad_math/Vec3.hpp>
 
 /// @brief Generic strategy for resolving a mouse event to a 3D world-space position.
 ///
@@ -16,12 +18,12 @@ class IViewportPositionStrategy {
 public:
     virtual ~IViewportPositionStrategy() = default;
 
-    virtual std::optional<cadm::vec3> resolve(
+    virtual std::optional<cadm::Vec3> resolve(
         QMouseEvent *event,
         int viewportW,
         int viewportH,
-        const cadm::mat4 &invView,
-        const cadm::mat4 &invProj
+        const cadm::Mat4 &invView,
+        const cadm::Mat4 &invProj
     ) = 0;
 
     virtual void onGridPlanesChanged(int mask) {}

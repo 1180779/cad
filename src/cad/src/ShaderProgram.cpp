@@ -109,23 +109,23 @@ bool ShaderProgram::setUniform1(const std::string &name, const int value) const 
 }
 
 bool ShaderProgram::setUniform1(const std::string &name, const float value) const {
-    return setUniform1t(name, value);
+    return setUniform1T(name, value);
 }
 
 bool ShaderProgram::setUniform2(const std::string &name, const float x, const float y) const {
-    return setUniform2t(name, x, y);
+    return setUniform2T(name, x, y);
 }
 
 bool ShaderProgram::setUniform2(const std::string &name, const cadm::vec2 vec2) const {
-    return setUniform2t(name, vec2.x, vec2.y);
+    return setUniform2T(name, vec2.x, vec2.y);
 }
 
 bool ShaderProgram::setUniform3(const std::string &name, const float x, const float y, const float z) const {
-    return setUniform3t(name, x, y, z);
+    return setUniform3T(name, x, y, z);
 }
 
-bool ShaderProgram::setUniform3(const std::string &name, const cadm::vec3 &vec3) const {
-    return setUniform3t(name, vec3.x, vec3.y, vec3.z);
+bool ShaderProgram::setUniform3(const std::string &name, const cadm::Vec3 &vec3) const {
+    return setUniform3T(name, vec3.x, vec3.y, vec3.z);
 }
 
 bool ShaderProgram::setUniform4(
@@ -135,13 +135,13 @@ bool ShaderProgram::setUniform4(
     const float z,
     const float w
 ) const {
-    return setUniform4t(name, x, y, z, w);
+    return setUniform4T(name, x, y, z, w);
 }
 
 bool ShaderProgram::setUniform4(const std::string &name, const cadm::vec4 &vec4) const {
-    return setUniform4t(name, vec4.x, vec4.y, vec4.z, vec4.w);
+    return setUniform4T(name, vec4.x, vec4.y, vec4.z, vec4.w);
 }
 
-bool ShaderProgram::setUniformMat4(const std::string &name, const cadm::mat4 &mat4) const {
-    return setUniformMat4t(name, mat4);
+bool ShaderProgram::setUniformMat4(const std::string &name, const cadm::Mat4 &mat4) const {
+    return setUniformMat4T(name, mat4);
 }

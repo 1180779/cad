@@ -31,8 +31,7 @@ public:
         m_entityId = entityId;
     }
 
-    signals  :
-
+signals  :
     
 
     void propertyChanged();

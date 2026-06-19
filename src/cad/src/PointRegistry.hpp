@@ -12,7 +12,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <cad_math/vec3.hpp>
+#include <cad_math/Vec3.hpp>
 #include <GL/gl.h>
 
 #include "Callbacks.hpp"
@@ -38,18 +38,18 @@ class PointRegistry {
 public:
     ~PointRegistry();
 
-    PointHandle addPoint(cadm::vec3 position);
+    PointHandle addPoint(cadm::Vec3 position);
 
     /// @brief Resurrect a previously removed point at a specific handle so existing references 
     /// (e.g., Bézier control point lists) stay valid after undo.
     /// The slot must currently be dead (freed) or beyond the current range
-    void addPointAt(PointHandle handle, cadm::vec3 position);
+    void addPointAt(PointHandle handle, cadm::Vec3 position);
 
     void removePoint(PointHandle handle);
 
-    void setPosition(PointHandle handle, cadm::vec3 position);
+    void setPosition(PointHandle handle, cadm::Vec3 position);
 
-    [[nodiscard]] cadm::vec3 getPosition(PointHandle handle) const;
+    [[nodiscard]] cadm::Vec3 getPosition(PointHandle handle) const;
 
     [[nodiscard]] bool isAlive(PointHandle handle) const;
 
@@ -115,7 +115,7 @@ private:
     void flushDirtySelection(QOpenGLFunctions_4_5_Core *gl);
 
     /// @brief Position for each point (handle/slot)
-    std::vector<cadm::vec3> m_positions;
+    std::vector<cadm::Vec3> m_positions;
 
     /// @brief Selection state for each point (handle/slot); 0.0f or 1.0f
     std::vector<float> m_selected;

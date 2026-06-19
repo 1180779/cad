@@ -8,7 +8,7 @@
 
 class CommandStack;
 
-class EntityPropertiesWidget : public QWidget {
+class EntityPropertiesWidget final : public QWidget {
     Q_OBJECT
 
 public:
@@ -22,8 +22,7 @@ public:
 
     void setEntity(Entity *entity);
 
-    signals  :
-
+signals  :
     
 
     void propertyChanged();
@@ -31,8 +30,7 @@ public:
     void pointSelectionChanged(QList<Entity*> selected);
 
 public
-    slots  :
-
+slots  :
     
 
     void syncBezierSelection() const;

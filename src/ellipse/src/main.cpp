@@ -9,7 +9,7 @@
 #include <QLabel>
 #include <QPushButton>
 
-#include "OpenGLWidget.hpp"
+#include "OpenGlWidget.hpp"
 #include <common/DoubleSlider.hpp>
 
 void addFloatParameter(
@@ -103,8 +103,8 @@ void addIntParameter(
     const QString &labelText,
     const int initialValue,
     const std::function<void(int)> &setter,
-    int minValue,
-    int maxValue
+    const int minValue,
+    const int maxValue
 ) {
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
@@ -138,7 +138,7 @@ void addIntParameter(
     QObject::connect(
         slider,
         &QSlider::valueChanged,
-        [setter, edit](int val) {
+        [setter, edit](const int val) {
             setter(val);
             edit->setText(QString::number(val));
         }

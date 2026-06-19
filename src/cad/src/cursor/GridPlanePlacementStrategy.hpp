@@ -24,17 +24,17 @@ public:
         m_gridPlanesMask = mask;
     }
 
-    std::optional<cadm::vec3> resolve(
+    std::optional<cadm::Vec3> resolve(
         QMouseEvent *event,
         int viewportW,
         int viewportH,
-        const cadm::mat4 &invView,
-        const cadm::mat4 &invProj
+        const cadm::Mat4 &invView,
+        const cadm::Mat4 &invProj
     ) override;
 
 private:
     int m_gridPlanesMask;
-    static constexpr cadm::cadf s_parallelThreshold = cadm::feps;
+    static constexpr cadm::cadf s_parallelThreshold = cadm::gc_feps;
 };
 
 #endif //CAD_GRIDPLANEPLACEMENTSTRATEGY_HPP

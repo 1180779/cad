@@ -9,7 +9,7 @@
 class Scene;
 class CommandStack;
 
-class PointPropertiesWidget : public QWidget {
+class PointPropertiesWidget final : public QWidget {
     Q_OBJECT
 
 public:
@@ -31,17 +31,11 @@ public:
     static constexpr double s_coordMax = std::numeric_limits<double>::max();
     static constexpr double s_coordStep = 0.1;
     static constexpr int s_widgetWidth = 100;
-    signals  :
-
-    
-
+signals :
     void propertyChanged();
 
 private
-    slots  :
-
-    
-
+slots :
     void onXChanged(double value);
 
     void onYChanged(double value);

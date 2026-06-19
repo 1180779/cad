@@ -11,7 +11,7 @@
 #include "ComponentWidget.hpp"
 #include "../components/BlenderCameraComponent.hpp"
 
-class CameraWidget : public ComponentWidget {
+class CameraWidget final : public ComponentWidget {
     Q_OBJECT
 
 public:
@@ -20,10 +20,7 @@ public:
     ~CameraWidget() override = default;
 
 private
-    slots  :
-
-    
-
+slots :
     void onRadiusChanged(double value);
 
     void onFovChanged(double value) const;

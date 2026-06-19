@@ -100,7 +100,7 @@ void BezierC2Component::setParametrizationMode(const ParametrizationMode mode) {
     m_needsUpdate = true;
 }
 
-void BezierC2Component::setBernsteinPosition(const int bernsteinIndex, const cadm::vec3 newPos) {
+void BezierC2Component::setBernsteinPosition(const int bernsteinIndex, const cadm::Vec3 newPos) {
     const int local = bernsteinIndex % 4;
     const int segment = bernsteinIndex / 4;
 
@@ -109,25 +109,25 @@ void BezierC2Component::setBernsteinPosition(const int bernsteinIndex, const cad
     // but it gives meaningful interactive control
     if (local == 0) {
         // b0 = (d0 + 4*d1 + d2)/6  →  d0 = 6*b0 - 4*d1 - d2
-        const cadm::vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
-        const cadm::vec3 d2 = m_registry->getPosition(m_deBoorPoints[segment + 2]);
+        const cadm::Vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
+        const cadm::Vec3 d2 = m_registry->getPosition(m_deBoorPoints[segment + 2]);
         m_registry->setPosition(m_deBoorPoints[segment], newPos * 6.0f - d1 * 4.0f - d2);
     }
     else if (local == 1) {
         // b1 = (2*d1 + d2)/3  →  d1 = (3*b1 - d2) / 2
-        const cadm::vec3 d2 = m_registry->getPosition(m_deBoorPoints[segment + 2]);
+        const cadm::Vec3 d2 = m_registry->getPosition(m_deBoorPoints[segment + 2]);
         m_registry->setPosition(m_deBoorPoints[segment + 1], (newPos * 3.0f - d2) * 0.5f);
     }
     else if (local == 2) {
         // b2 = (d1 + 2*d2)/3  →  d2 = (3*b2 - d1) / 2
-        const cadm::vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
+        const cadm::Vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
         m_registry->setPosition(m_deBoorPoints[segment + 2], (newPos * 3.0f - d1) * 0.5f);
     }
     else // local == 3
     {
         // b3 = (d1 + 4*d2 + d3)/6  →  d3 = 6*b3 - d1 - 4*d2
-        const cadm::vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
-        const cadm::vec3 d2 = m_registry->getPosition(m_deBoorPoints[segment + 2]);
+        const cadm::Vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
+        const cadm::Vec3 d2 = m_registry->getPosition(m_deBoorPoints[segment + 2]);
         m_registry->setPosition(m_deBoorPoints[segment + 3], newPos * 6.0f - d1 - d2 * 4.0f);
     }
 

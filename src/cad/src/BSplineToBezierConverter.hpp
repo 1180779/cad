@@ -8,7 +8,7 @@
 #include <span>
 #include <vector>
 
-#include <cad_math/vec3.hpp>
+#include <cad_math/Vec3.hpp>
 #include "PointRegistry.hpp"
 
 /// @brief How parameter values are assigned to knot intervals between de Boor points
@@ -41,18 +41,18 @@ namespace bsplineToBezier {
     /// @param d0, d1, d2, d3  four consecutive de Boor points for this segment
     /// @param view span into which the four Bezier control points (b0,b1,b2,b3) will be saved
     void uniformSegment(
-        cadm::vec3 d0,
-        cadm::vec3 d1,
-        cadm::vec3 d2,
-        cadm::vec3 d3,
-        std::span<cadm::vec3, 4> &view
+        cadm::Vec3 d0,
+        cadm::Vec3 d1,
+        cadm::Vec3 d2,
+        cadm::Vec3 d3,
+        std::span<cadm::Vec3, 4> &view
     );
 
     namespace detail {
         /// @brief Insert knot tHat once into a degree-p B-spline (Boehm's algorithm).
         /// Span k is the largest i such that knots[i] <= tHat < knots[i+1]
         void insertKnot(
-            std::vector<cadm::vec3> &pts,
+            std::vector<cadm::Vec3> &pts,
             std::vector<float> &knots,
             float tHat,
             int p
@@ -68,7 +68,7 @@ namespace bsplineToBezier {
     void chordLength(
         std::span<const PointHandle> handles,
         const PointRegistry &registry,
-        std::vector<cadm::vec3> &out
+        std::vector<cadm::Vec3> &out
     );
 
     /// @brief Convert all segments of an open cubic B-spline to piecewise Bezier with uniform parametrization
@@ -79,7 +79,7 @@ namespace bsplineToBezier {
     void uniform(
         std::span<const PointHandle> handles,
         const PointRegistry &registry,
-        std::vector<cadm::vec3> &out
+        std::vector<cadm::Vec3> &out
     );
 
     /// @brief Dispatch to the appropriate converter
@@ -87,7 +87,7 @@ namespace bsplineToBezier {
         ParametrizationMode mode,
         std::span<const PointHandle> handles,
         const PointRegistry &registry,
-        std::vector<cadm::vec3> &out
+        std::vector<cadm::Vec3> &out
     );
 }
 

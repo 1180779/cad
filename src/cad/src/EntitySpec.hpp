@@ -10,7 +10,7 @@
 #include <variant>
 #include <vector>
 
-#include <cad_math/vec3.hpp>
+#include <cad_math/Vec3.hpp>
 
 #include "PointRegistry.hpp"
 #include "components/Entity.hpp"
@@ -23,14 +23,14 @@ class Scene;
 // (an entity may hold any combination)
 
 struct TransformData {
-    cadm::vec3 translation{};
-    cadm::vec3 rotation{};
-    cadm::vec3 scale{1, 1, 1};
+    cadm::Vec3 translation{};
+    cadm::Vec3 rotation{};
+    cadm::Vec3 scale{1, 1, 1};
 };
 
 struct PointData {
     PointHandle handle{InvalidPointHandle};
-    cadm::vec3 position{};
+    cadm::Vec3 position{};
 };
 
 struct TorusData {
@@ -86,7 +86,7 @@ struct EntitySpec {
 /// @param entity The entity to capture
 /// @param out The output spec to populate with entity data
 /// @return true if the entity was successfully captured, false if no serializable component was found
-bool captureEntity(Scene & scene, Entity * entity, EntitySpec & out);
+bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out);
 
 /// @brief Rebuild an entity from a spec, preserving its id / handle
 /// @param scene The scene in which to rebuild the entity

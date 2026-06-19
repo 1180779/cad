@@ -9,6 +9,7 @@
 
 CadCameraWidget::CadCameraWidget(CadCameraComponent *camera, QWidget *parent) : ComponentWidget{camera, parent},
     m_camera{camera} {
+    // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QFormLayout(this);
     setUpPositionControls(layout);
     setUpTargetControls(layout);

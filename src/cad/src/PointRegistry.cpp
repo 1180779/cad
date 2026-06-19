@@ -20,7 +20,7 @@ PointRegistry::~PointRegistry() {
     m_indexBuffer.deleteGpu(gl);
 }
 
-PointHandle PointRegistry::addPoint(const cadm::vec3 position) {
+PointHandle PointRegistry::addPoint(const cadm::Vec3 position) {
     PointHandle handle;
 
     if (!m_freeList.empty()) {
@@ -43,7 +43,7 @@ PointHandle PointRegistry::addPoint(const cadm::vec3 position) {
     return handle;
 }
 
-void PointRegistry::addPointAt(const PointHandle handle, const cadm::vec3 position) {
+void PointRegistry::addPointAt(const PointHandle handle, const cadm::Vec3 position) {
     // if the slot is already live, this is a reload/overwrite, not a fresh insert:
     // update in place and don't duplicate the handle in the index buffer
     if (handle < m_alive.size() && m_alive[handle]) {
@@ -108,7 +108,7 @@ void PointRegistry::removePoint(const PointHandle handle) {
     }
 }
 
-void PointRegistry::setPosition(const PointHandle handle, const cadm::vec3 position) {
+void PointRegistry::setPosition(const PointHandle handle, const cadm::Vec3 position) {
     if (handle >= m_alive.size() || !m_alive[handle]) {
         return;
     }
@@ -139,7 +139,7 @@ void PointRegistry::unsubscribeFromRemove(const CallbackId id) {
     m_removeCallbacks.erase(id);
 }
 
-cadm::vec3 PointRegistry::getPosition(const PointHandle handle) const {
+cadm::Vec3 PointRegistry::getPosition(const PointHandle handle) const {
     return m_positions[handle];
 }
 
@@ -158,7 +158,7 @@ void PointRegistry::setSelected(const PointHandle handle, const bool selected) {
     const float value = selected
                             ? 1.0f
                             : 0.0f;
-    if (std::abs(m_selected[handle] - value) <= cadm::feps) {
+    if (std::abs(m_selected[handle] - value) <= cadm::gc_feps) {
         return;
     }
     m_selected[handle] = value;

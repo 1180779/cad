@@ -8,22 +8,22 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include <cad_math/vec3.hpp>
-#include <cad_math/mat4.hpp>
+#include <cad_math/Vec3.hpp>
+#include <cad_math/Mat4.hpp>
 
 class Camera {
 public:
-    Camera(const cadm::vec3 &position, const cadm::vec3 &target, const cadm::vec3 &up);
+    Camera(const cadm::Vec3 &position, const cadm::Vec3 &target, const cadm::Vec3 &up);
 
-    [[nodiscard]] cadm::mat4 getViewMatrix() const;
+    [[nodiscard]] cadm::Mat4 getViewMatrix() const;
 
-    [[nodiscard]] cadm::mat4 getProjectionMatrix() const;
+    [[nodiscard]] cadm::Mat4 getProjectionMatrix() const;
 
-    void setPosition(const cadm::vec3 &position);
+    void setPosition(const cadm::Vec3 &position);
 
-    void setTarget(const cadm::vec3 &target);
+    void setTarget(const cadm::Vec3 &target);
 
-    void setUp(const cadm::vec3 &up);
+    void setUp(const cadm::Vec3 &up);
 
     void setFov(cadm::cadf fov);
 
@@ -33,15 +33,15 @@ public:
 
     void setFarPlane(cadm::cadf farPlane);
 
-    [[nodiscard]] cadm::vec3 getPosition() const {
+    [[nodiscard]] cadm::Vec3 getPosition() const {
         return m_position;
     }
 
-    [[nodiscard]] cadm::vec3 getTarget() const {
+    [[nodiscard]] cadm::Vec3 getTarget() const {
         return m_target;
     }
 
-    [[nodiscard]] cadm::vec3 getUp() const {
+    [[nodiscard]] cadm::Vec3 getUp() const {
         return m_up;
     }
 
@@ -61,14 +61,14 @@ public:
         return m_farPlane;
     }
 
-    [[nodiscard]] cadm::vec3 getForwardVector() const {
+    [[nodiscard]] cadm::Vec3 getForwardVector() const {
         return (m_target - m_position).normalized();
     }
 
 private:
-    cadm::vec3 m_position;
-    cadm::vec3 m_target;
-    cadm::vec3 m_up;
+    cadm::Vec3 m_position;
+    cadm::Vec3 m_target;
+    cadm::Vec3 m_up;
 
     cadm::cadf m_fov{M_PI / 3}; // 60 degrees
     cadm::cadf m_aspectRatio{1.0};

@@ -8,8 +8,8 @@
 #include <QObject>
 
 #include "Entity.hpp"
-#include <cad_math/vec3.hpp>
-#include <cad_math/mat4.hpp>
+#include <cad_math/Vec3.hpp>
+#include <cad_math/Mat4.hpp>
 
 class TransformComponent final : public QObject, public Component {
     Q_OBJECT
@@ -17,29 +17,29 @@ class TransformComponent final : public QObject, public Component {
 public:
     TransformComponent();
 
-    explicit TransformComponent(const cadm::vec3 &translation);
+    explicit TransformComponent(const cadm::Vec3 &translation);
 
-    TransformComponent(const cadm::vec3 &translation, const cadm::vec3 &rotation);
+    TransformComponent(const cadm::Vec3 &translation, const cadm::Vec3 &rotation);
 
-    [[nodiscard]] const cadm::mat4& getModelMatrix() const;
+    [[nodiscard]] const cadm::Mat4& getModelMatrix() const;
 
-    [[nodiscard]] cadm::vec3 getTranslation() const {
+    [[nodiscard]] cadm::Vec3 getTranslation() const {
         return m_translation;
     }
 
-    [[nodiscard]] cadm::vec3 getScale() const {
+    [[nodiscard]] cadm::Vec3 getScale() const {
         return m_scale;
     }
 
-    [[nodiscard]] cadm::vec3 getRotation() const {
+    [[nodiscard]] cadm::Vec3 getRotation() const {
         return m_rotation;
     }
 
-    void setTranslation(const cadm::vec3 &translation);
+    void setTranslation(const cadm::Vec3 &translation);
 
-    void setScale(const cadm::vec3 &scale);
+    void setScale(const cadm::Vec3 &scale);
 
-    void setRotation(const cadm::vec3 &rotation);
+    void setRotation(const cadm::Vec3 &rotation);
 
     signals  :
 
@@ -64,15 +64,15 @@ public:
     void rotationZChanged(double value);
 
 private:
-    cadm::vec3 m_translation{};
+    cadm::Vec3 m_translation{};
 
     // euler angles for now
     // TODO: replace with quaternions
 
-    cadm::vec3 m_rotation{}; // Z, Y, X
-    cadm::vec3 m_scale{1.0f, 1.0f, 1.0f};
+    cadm::Vec3 m_rotation{}; // Z, Y, X
+    cadm::Vec3 m_scale{1.0f, 1.0f, 1.0f};
 
-    mutable cadm::mat4 m_modelMatrix = cadm::mat4::identity();
+    mutable cadm::Mat4 m_modelMatrix = cadm::Mat4::identity();
     mutable bool m_isDirty = true;
 };
 
