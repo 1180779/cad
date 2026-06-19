@@ -1,5 +1,7 @@
 #include <QApplication>
 #include <QComboBox>
+#include <QMenu>
+#include <QMenuBar>
 #include <QVBoxLayout>
 
 #include "CameraFactory.hpp"
@@ -10,6 +12,8 @@
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
 #include "OpenGLWidget.hpp"
+#include "commands/Commands.hpp"
+#include "components/INewPointsTargetComponent.hpp"
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/BlenderCameraStrategy.hpp"
 #include "gui/EntityPropertiesWidget.hpp"
@@ -25,6 +29,14 @@ int main(int argc, char *argv[]) {
     window.setMinimumSize(QSize(500, 500));
 
     const auto layout = new QHBoxLayout(&window);
+
+    // menu bar
+    const auto menuBar = new QMenuBar;
+    const auto editMenu = menuBar->addMenu("Edit");
+    const auto undoAction = editMenu->addAction("Undo");
+    const auto redoAction = editMenu->addAction("Redo");
+    layout->setMenuBar(menuBar);
+
     const auto leftControlsLayout = new QVBoxLayout;
     layout->addLayout(leftControlsLayout, 1);
 
@@ -85,23 +97,59 @@ int main(int argc, char *argv[]) {
     const auto blenderCamera = cameraFactory.createBlenderCamera(20, {});
     auto blenderCameraStrategy = std::make_unique<BlenderCameraStrategy>(
         blenderCamera,
-        [&] { return glWidget->width(); },
-        [&] { return glWidget->height(); }
+        [&] {
+            return glWidget->width();
+        },
+        [&] {
+            return glWidget->height();
+        }
     );
     const auto cadCamera = cameraFactory.createCadCamera({0, 0, -10}, {}, cadm::vec3::unitY());
     auto cadCameraStrat = std::make_unique<CadCameraStrategy>(
         cadCamera,
-        [&] { return glWidget->width(); },
-        [&] { return glWidget->height(); }
+        [&] {
+            return glWidget->width();
+        },
+        [&] {
+            return glWidget->height();
+        }
     );
 
     glWidget->getCameraController().addCamera("Blender", std::move(blenderCameraStrategy));
     glWidget->getCameraController().addCamera("Cad", std::move(cadCameraStrat));
     statusBar->setCameraName(QString::fromStdString(glWidget->getCameraController().getActiveName()));
 
+    QObject::connect(
+        undoAction,
+        &QAction::triggered,
+        glWidget,
+        [glWidget] {
+            glWidget->getCommandStack().undo();
+        }
+    );
+    QObject::connect(
+        redoAction,
+        &QAction::triggered,
+        glWidget,
+        [glWidget] {
+            glWidget->getCommandStack().redo();
+        }
+    );
+    QObject::connect(
+        editMenu,
+        &QMenu::aboutToShow,
+        glWidget,
+        [glWidget, undoAction, redoAction] {
+            undoAction->setEnabled(glWidget->getCommandStack().canUndo());
+            redoAction->setEnabled(glWidget->getCommandStack().canRedo());
+        }
+    );
+
     hierarchyWidget->setScene(&glWidget->getScene());
+    hierarchyWidget->setCommandStack(&glWidget->getCommandStack());
     hierarchyWidget->setCameraController(&glWidget->getCameraController());
     entityPropertiesWidget->setScene(&glWidget->getScene());
+    entityPropertiesWidget->setCommandStack(&glWidget->getCommandStack());
 
     QObject::connect(
         glWidget,
@@ -150,7 +198,9 @@ int main(int argc, char *argv[]) {
         glWidget,
         [glWidget](const QList<Entity*> &selected) {
             glWidget->getScene().clearSelection();
-            for (auto *e : selected) { glWidget->getScene().setSelected(e, true); }
+            for (auto *e : selected) {
+                glWidget->getScene().setSelected(e, true);
+            }
             glWidget->getScene().syncPointSelectionToRegistry();
             glWidget->update();
         }
@@ -172,7 +222,9 @@ int main(int argc, char *argv[]) {
         glWidget,
         [glWidget, hierarchyWidget, entityPropertiesWidget](const QList<Entity*> &selected) {
             glWidget->getScene().clearSelection();
-            for (auto *e : selected) { glWidget->getScene().setSelected(e, true); }
+            for (auto *e : selected) {
+                glWidget->getScene().setSelected(e, true);
+            }
             glWidget->getScene().syncPointSelectionToRegistry();
             hierarchyWidget->syncSelectionFromScene();
             entityPropertiesWidget->syncBezierSelection();
@@ -226,7 +278,9 @@ int main(int argc, char *argv[]) {
         &glWidget->getCameraController(),
         &CameraController::cameraChanged,
         statusBar,
-        [statusBar](const std::string &name) { statusBar->setCameraName(QString::fromStdString(name)); }
+        [statusBar](const std::string &name) {
+            statusBar->setCameraName(QString::fromStdString(name));
+        }
     );
 
     QObject::connect(
@@ -248,7 +302,9 @@ int main(int argc, char *argv[]) {
             if (const Entity *e = glWidget->getScene().getNewPointsTargetEntity()) {
                 statusBar->setActiveNewPointsTargetName(QString::fromStdString(e->getName()));
             }
-            else { statusBar->setActiveNewPointsTargetName({}); }
+            else {
+                statusBar->setActiveNewPointsTargetName({});
+            }
         }
     );
 
@@ -285,14 +341,18 @@ int main(int argc, char *argv[]) {
         hierarchyWidget,
         &SceneHierarchyWidget::setAsCursorRequested,
         glWidget,
-        [glWidget](Entity *e) { glWidget->getScene().setActiveCursor(e); }
+        [glWidget](Entity *e) {
+            glWidget->getScene().setActiveCursor(e);
+        }
     );
 
     QObject::connect(
         hierarchyWidget,
         &SceneHierarchyWidget::setAsCameraRequested,
         glWidget,
-        [glWidget](const EntityID id) { glWidget->getCameraController().switchTo(id); }
+        [glWidget](const EntityID id) {
+            glWidget->getCameraController().switchTo(id);
+        }
     );
 
     QObject::connect(
@@ -307,43 +367,60 @@ int main(int argc, char *argv[]) {
 
     auto spawnPos = [glWidget]() -> cadm::vec3 {
         if (auto *activeCursor = glWidget->getScene().getActiveCursor()) {
-            if (const auto t = activeCursor->getComponent<TransformComponent>()) { return t.value()->getTranslation(); }
+            if (const auto t = activeCursor->getComponent<TransformComponent>()) {
+                return t.value()->getTranslation();
+            }
         }
         return {};
     };
 
     auto spawnTorus = [glWidget, spawnPos] {
-        const GeometryFactory factory(glWidget->getScene());
-        void(factory.createTorus(2.0f, 0.5f, 48, 24, spawnPos()));
-        emit
-        glWidget->sceneChanged();
-        glWidget->update();
+        glWidget->getCommandStack().push(
+            std::make_unique<CreateEntityCommand>(
+                glWidget->getScene(),
+                [pos = spawnPos()](Scene &s) {
+                    return GeometryFactory(s).createTorus(2.0f, 0.5f, 48, 24, pos);
+                }
+            )
+        );
     };
 
     auto spawnCursor = [glWidget, spawnPos] {
-        const GeometryFactory factory(glWidget->getScene());
-        void(factory.createCursor(spawnPos()));
-        emit
-        glWidget->sceneChanged();
-        glWidget->update();
+        glWidget->getCommandStack().push(
+            std::make_unique<CreateEntityCommand>(
+                glWidget->getScene(),
+                [pos = spawnPos()](Scene &s) {
+                    return GeometryFactory(s).createCursor(pos);
+                }
+            )
+        );
     };
 
     auto spawnPoint = [glWidget, spawnPos] {
-        const GeometryFactory factory(glWidget->getScene());
-        auto *point = factory.createPoint(spawnPos());
-
-        // Auto-add to active new points target
-        if (const auto *pc = point->getComponent<PointComponent>().value_or(nullptr)) {
-            const Scene &sc = glWidget->getScene();
-            if (Entity *newPointsTargetEntity = sc.getNewPointsTargetEntity()) {
-                if (const auto bezierOpt = newPointsTargetEntity->getComponent<INewPointsTargetBase>()) {
-                    bezierOpt.value()->addControlPoint(pc->m_handle);
+        Scene &sc = glWidget->getScene();
+        // builder runs synchronously inside push(); 
+        // capture the new handle for the optional follow-up "add to active target" command.
+        PointHandle createdHandle = InvalidPointHandle;
+        glWidget->getCommandStack().push(
+            std::make_unique<CreateEntityCommand>(
+                sc,
+                [pos = spawnPos(), &createdHandle](Scene &s) {
+                    Entity *point = GeometryFactory(s).createPoint(pos);
+                    if (const auto pc = point->getComponent<PointComponent>()) {
+                        createdHandle = pc.value()->m_handle;
+                    }
+                    return point;
                 }
-            }
-        }
+            )
+        );
 
-        emit glWidget->sceneChanged();
-        glWidget->update();
+        // auto-add to active new points target as a separate undoable step
+        if (const Entity *target = sc.getNewPointsTargetEntity();
+            target && createdHandle != InvalidPointHandle && target->hasComponent<INewPointsTargetBase>()) {
+            glWidget->getCommandStack().push(
+                std::make_unique<AddControlPointCommand>(sc, target->getId(), createdHandle)
+            );
+        }
     };
 
     QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createTorusRequested, glWidget, spawnTorus);
@@ -359,16 +436,24 @@ int main(int argc, char *argv[]) {
         &SceneHierarchyWidget::createBezierC0Requested,
         glWidget,
         [glWidget] {
-            // Collect currently selected point handles
+            // collect currently selected point handles
             std::vector<PointHandle> handles;
             for (const auto &e : glWidget->getScene().getEntities()) {
-                if (!e->isSelected()) { continue; }
-                if (const auto pc = e->getComponent<PointComponent>()) { handles.push_back(pc.value()->m_handle); }
+                if (!e->isSelected()) {
+                    continue;
+                }
+                if (const auto pc = e->getComponent<PointComponent>()) {
+                    handles.push_back(pc.value()->m_handle);
+                }
             }
-            const GeometryFactory factory(glWidget->getScene());
-            void(factory.createBezierC0(handles, "BezierC0"));
-            emit glWidget->sceneChanged();
-            glWidget->update();
+            glWidget->getCommandStack().push(
+                std::make_unique<CreateEntityCommand>(
+                    glWidget->getScene(),
+                    [handles](Scene &s) {
+                        return GeometryFactory(s).createBezierC0(handles, "BezierC0");
+                    }
+                )
+            );
         }
     );
 
@@ -386,18 +471,22 @@ int main(int argc, char *argv[]) {
         hierarchyWidget,
         &SceneHierarchyWidget::addSelectedPointsToNewPointsTargetEntityRequested,
         glWidget,
-        [glWidget](Entity *entity) {
-            const auto newPointsTargetOpt = entity->getComponent<INewPointsTargetBase>();
-            if (!newPointsTargetOpt) { return; }
-            auto *pNewPointsTarget = newPointsTargetOpt.value();
-            for (const auto &e : glWidget->getScene().getEntities()) {
-                if (!e->isSelected()) { continue; }
+        [glWidget](const Entity *entity) {
+            if (!entity->hasComponent<INewPointsTargetBase>()) {
+                return;
+            }
+            Scene &sc = glWidget->getScene();
+            const EntityID curveId = entity->getId();
+            for (const auto &e : sc.getEntities()) {
+                if (!e->isSelected()) {
+                    continue;
+                }
                 if (const auto pc = e->getComponent<PointComponent>()) {
-                    pNewPointsTarget->addControlPoint(pc.value()->m_handle);
+                    glWidget->getCommandStack().push(
+                        std::make_unique<AddControlPointCommand>(sc, curveId, pc.value()->m_handle)
+                    );
                 }
             }
-            emit glWidget->sceneChanged();
-            glWidget->update();
         }
     );
 
@@ -409,50 +498,31 @@ int main(int argc, char *argv[]) {
         [glWidget] {
             std::vector<PointHandle> handles;
             for (const auto &e : glWidget->getScene().getEntities()) {
-                if (!e->isSelected()) { continue; }
-                if (const auto pc = e->getComponent<PointComponent>()) { handles.push_back(pc.value()->m_handle); }
+                if (!e->isSelected()) {
+                    continue;
+                }
+                if (const auto pc = e->getComponent<PointComponent>()) {
+                    handles.push_back(pc.value()->m_handle);
+                }
             }
-            const GeometryFactory factory(glWidget->getScene());
-            void(factory.createBezierC2(handles, "BezierC2"));
-            emit glWidget->sceneChanged();
-            glWidget->update();
+            glWidget->getCommandStack().push(
+                std::make_unique<CreateEntityCommand>(
+                    glWidget->getScene(),
+                    [handles](Scene &s) {
+                        return GeometryFactory(s).createBezierC2(handles, "BezierC2");
+                    }
+                )
+            );
         }
     );
-
-    // QObject::connect(
-    //     hierarchyWidget,
-    //     &SceneHierarchyWidget::setAsActiveBezierC2Requested,
-    //     glWidget,
-    //     [glWidget](Entity *e)
-    //     {
-    //         glWidget->getScene().setActiveBezierC2(e);
-    //         emit glWidget->sceneChanged();
-    //     });
-    //
-    // QObject::connect(
-    //     hierarchyWidget,
-    //     &SceneHierarchyWidget::addSelectedPointsToBezierC2Requested,
-    //     glWidget,
-    //     [glWidget](Entity *curveEntity)
-    //     {
-    //         const auto bezierOpt = curveEntity->getComponent<BezierC2Component>();
-    //         if (!bezierOpt) return;
-    //         auto *bezier = bezierOpt.value();
-    //         for (const auto &e : glWidget->getScene().getEntities())
-    //         {
-    //             if (!e->isSelected()) continue;
-    //             if (const auto pc = e->getComponent<PointComponent>())
-    //                 bezier->addControlPoint(pc.value()->m_handle);
-    //         }
-    //         emit glWidget->sceneChanged();
-    //         glWidget->update();
-    //     });
 
     QObject::connect(
         &glWidget->getCameraController(),
         &CameraController::cameraChanged,
         glWidget,
-        [glWidget](const std::string &) { glWidget->update(); }
+        [glWidget](const std::string &) {
+            glWidget->update();
+        }
     );
 
     QApplication::instance()->installEventFilter(glWidget);

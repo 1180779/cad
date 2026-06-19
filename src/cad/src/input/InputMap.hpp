@@ -26,6 +26,9 @@ enum class InputAction {
     switchCamera,
     createMenu,
 
+    undo,
+    redo,
+
     setObjectSelectMode,
     setBoxSelectMode,
 
@@ -120,6 +123,10 @@ inline InputMap::InputMap() {
     bind(InputAction::toggleCoordSpace, {Qt::Key_QuoteLeft, Qt::NoModifier});
     bind(InputAction::switchCamera, {Qt::Key_N, Qt::NoModifier});
     bind(InputAction::createMenu, {Qt::Key_C, Qt::NoModifier});
+
+    bind(InputAction::undo, {Qt::Key_Z, Qt::ControlModifier, true});
+    bind(InputAction::redo, {Qt::Key_Y, Qt::ControlModifier, true});
+    bind(InputAction::redo, {Qt::Key_Z, Qt::ControlModifier | Qt::ShiftModifier, true});
 
     bind(InputAction::setObjectSelectMode, {Qt::Key_O, Qt::NoModifier});
     bind(InputAction::setBoxSelectMode, {Qt::Key_B, Qt::NoModifier});

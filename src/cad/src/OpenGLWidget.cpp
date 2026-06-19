@@ -6,6 +6,7 @@
 
 #include <QAbstractSpinBox>
 #include <QApplication>
+#include <QKeyEvent>
 #include <QLineEdit>
 #include <QMenu>
 
@@ -26,11 +27,10 @@
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
 #include "PointRegistry.hpp"
+#include "commands/Commands.hpp"
 #include "ViewportTypes.hpp"
 #include "cad_math/helpers.hpp"
 #include "components/BezierC0Component.hpp"
-#include "components/bezierC2Component.hpp"
-#include "components/CursorComponent.hpp"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "cursor/GridPlanePlacementStrategy.hpp"
@@ -38,7 +38,17 @@
 OpenGLWidget::OpenGLWidget(QWidget *parent) : QOpenGLWidget(parent),
                                               m_cursorPlacementStrategy(
                                                   std::make_unique<GridPlanePlacementStrategy>(1 /*XY plane*/)
-                                              ) { setFocusPolicy(Qt::StrongFocus); }
+                                              ) {
+    setFocusPolicy(Qt::StrongFocus);
+    // Refresh the viewport and dependent panels after any undo/redo/push.
+    m_commandStack.onChange = [this] {
+        m_scene.syncPointSelectionToRegistry();
+        emit sceneChanged();
+        emit viewportSelectionChanged();
+        emit geometryChanged();
+        update();
+    };
+}
 
 OpenGLWidget::~OpenGLWidget() = default;
 
@@ -162,6 +172,7 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
             if (const PointHandle hit = pickPoint(event->pos());
                 hit != InvalidPointHandle) {
                 m_draggedPoint = hit;
+                m_draggedPointStart = m_scene.getPointRegistry().getPosition(hit);
                 m_activeDrag = DragMode::PointDrag;
             }
             else { m_activeDrag = DragMode::ClickSelect; }
@@ -170,6 +181,12 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
     case InputAction::cursorPlace:
         if (m_transformMode != TransformMode::none) { return; }
         m_activeDrag = DragMode::CursorPlace;
+        if (Entity *cursor = m_scene.getActiveCursor()) {
+            if (const auto tc = cursor->getComponent<TransformComponent>()) {
+                m_cursorPlaceStart = tc.value()->getTranslation();
+            }
+        }
+        break;
     default:
         break;
     }
@@ -238,6 +255,8 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
+    // a gizmo transform is in progress: release confirms it or cancels it;
+    // no drag-mode handling applies
     if (m_transformMode != TransformMode::none) {
         const auto action = m_inputMap.matchAction(event->button(), event->modifiers());
         if (action == InputAction::select) {
@@ -253,6 +272,9 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
         }
     }
 
+    // otherwise finish whichever drag was active
+    // (point drag/select, box select, click select, or cursor placement)
+
     const DragMode finishedDrag = m_activeDrag;
     m_activeDrag = DragMode::None;
 
@@ -267,13 +289,17 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
             selectPoint(m_draggedPoint, additive);
         }
         else {
-            // sync registry
+            // record the completed drag as a single undoable move
+            const cadm::vec3 after = m_scene.getPointRegistry().getPosition(m_draggedPoint);
+            m_commandStack.push(
+                std::make_unique<MovePointCommand>(m_scene, m_draggedPoint, m_draggedPointStart, after)
+            );
             m_scene.getPointRegistry().syncToGpu();
             emit sceneChanged();
             update();
         }
-    }
         return;
+    }
 
     case DragMode::BoxSelect:
         m_boxSelectMode = false;
@@ -298,6 +324,45 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
             emit viewportSelectionChanged();
             update();
         }
+        return;
+    }
+
+    case DragMode::CursorPlace: {
+        Entity *cursor = m_scene.getActiveCursor();
+        if (!cursor) {
+            return;
+        }
+        const auto tc = cursor->getComponent<TransformComponent>();
+        if (!tc) {
+            return;
+        }
+        const cadm::vec3 before = m_cursorPlaceStart;
+        const cadm::vec3 after = tc.value()->getTranslation();
+        if (before == after) {
+            return;
+        }
+
+        const EntityID id = cursor->getId();
+        Scene *scene = &m_scene;
+        auto setCursor = [scene, id](const cadm::vec3 p) {
+            if (const auto e = scene->getEntity(id)) {
+                if (const auto t = e.value()->getComponent<TransformComponent>()) {
+                    t.value()->setTranslation(p);
+                }
+            }
+        };
+        m_commandStack.push(
+            std::make_unique<SetPropertyCommand>(
+                [setCursor, after] {
+                    setCursor(after);
+                },
+                [setCursor, before] {
+                    setCursor(before);
+                },
+                nullptr
+            )
+        );
+        return;
     }
 
     default:
@@ -382,6 +447,12 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event) {
     case InputAction::deleteSelected:
         deleteSelectedEntities();
         break;
+    case InputAction::undo:
+        m_commandStack.undo();
+        break;
+    case InputAction::redo:
+        m_commandStack.redo();
+        break;
     case InputAction::setBoxSelectMode:
         m_boxSelectMode = true;
         break;
@@ -438,16 +509,14 @@ void OpenGLWidget::keyReleaseEvent(QKeyEvent *event) {
 void OpenGLWidget::deleteSelectedEntities() {
     const Entity *activeCursor = m_scene.getActiveCursor();
     std::vector<EntityID> toDelete;
-    for (auto *e : m_scene.getSelectedEntities()) {
+    for (const auto *e : m_scene.getSelectedEntities()) {
         if (m_cameraController.isEntityManagedAsCamera(e->getId())) { continue; }
         if (e == activeCursor) { continue; }
         toDelete.push_back(e->getId());
     }
 
-    bool anyRemoved = false;
-    for (const EntityID id : toDelete) { anyRemoved |= removeEntityInternal(id); }
-
-    if (anyRemoved) {
+    if (!toDelete.empty()) {
+        m_commandStack.push(std::make_unique<DeleteEntityCommand>(m_scene, toDelete));
         emit sceneChanged();
         emit viewportSelectionChanged();
         update();
@@ -516,10 +585,11 @@ void OpenGLWidget::performBoxSelect() {
         else if (const auto transform = e->getComponent<TransformComponent>()) {
             worldPos = transform.value()->getTranslation();
         }
-        else { continue; }
+        else {
+            continue; }
 
-        const auto screen = cadm::projectToScreenGL(worldPos, view, projection, width(), height());
-        if (screen.has_value() && rect.contains(screen->x, screen->y)) { m_scene.setSelected(e.get(), true); }
+        if (const auto screen = cadm::projectToScreenGL(worldPos, view, projection, width(), height());
+            screen.has_value() && rect.contains(screen->x, screen->y)) { m_scene.setSelected(e.get(), true); }
     }
 
     m_scene.syncPointSelectionToRegistry();
@@ -611,6 +681,7 @@ void OpenGLWidget::beginTransform(const TransformMode mode) {
     if (m_transformSnapshots.empty()) { return; }
 
     m_transformMode = mode;
+    m_transformApplied = false;
     emit transformModeChanged(m_transformMode, {});
 }
 
@@ -649,8 +720,8 @@ void OpenGLWidget::handleTransformRotate(const int dx, PointRegistry &registry) 
         const cadm::vec3 pivot = useLocal
                                      ? snap.origPos
                                      : m_transformPivot;
-        const cadm::mat3 R = cadm::mat4::rotAxis(angle, axis).upperLeft3x3();
-        const cadm::vec3 newPos = pivot + R * (snap.origPos - pivot);
+        const cadm::mat3 r = cadm::mat4::rotAxis(angle, axis).upperLeft3x3();
+        const cadm::vec3 newPos = pivot + r * (snap.origPos - pivot);
 
         const auto entity = m_scene.getEntity(snap.id);
         if (!entity) { continue; }
@@ -664,7 +735,7 @@ void OpenGLWidget::handleTransformRotate(const int dx, PointRegistry &registry) 
         else {
             if (const auto tc = pEntity->getComponent<TransformComponent>()) {
                 tc.value()->setTranslation(newPos);
-                tc.value()->setRotation(cadm::eulerZYXFromRotMat(R * snap.origRotMat));
+                tc.value()->setRotation(cadm::eulerZYXFromRotMat(r * snap.origRotMat));
             }
         }
     }
@@ -673,13 +744,13 @@ void OpenGLWidget::handleTransformRotate(const int dx, PointRegistry &registry) 
 void OpenGLWidget::handleTransformTranslate(const QPoint currentMousePos, PointRegistry &registry) {
     const auto view = m_cameraController.getActiveStrategy()->getView();
     const auto proj = m_cameraController.getActiveStrategy()->getProjection();
-    const cadm::mat4 VP = proj * view;
-    const cadm::mat4 invVP = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
+    const cadm::mat4 vp = proj * view;
+    const cadm::mat4 invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
 
-    const cadm::vec4 pivotClip = VP * cadm::vec4(m_transformPivot, 1);
+    const cadm::vec4 pivotClip = vp * cadm::vec4(m_transformPivot, 1);
     const cadm::cadf pivotNdcZ = pivotClip.z / pivotClip.w;
     auto unprojectAt = [&](const QPoint &p) -> cadm::vec3 {
-        return cadm::unprojectPoint({p.x(), p.y()}, pivotNdcZ, invVP, width(), height());
+        return cadm::unprojectPoint({p.x(), p.y()}, pivotNdcZ, invVp, width(), height());
     };
 
     const cadm::vec3 rawDelta = unprojectAt(currentMousePos) - unprojectAt(m_transformStartMousePos);
@@ -761,6 +832,7 @@ void OpenGLWidget::handleTransformScale(const int dx, PointRegistry &registry) {
 void OpenGLWidget::applyTransform(const QPoint currentMousePos) {
     if (m_transformMode == TransformMode::none || m_transformSnapshots.empty()) { return; }
 
+    m_transformApplied = true;
     const int dx = currentMousePos.x() - m_transformStartMousePos.x();
     auto &registry = m_scene.getPointRegistry();
 
@@ -794,8 +866,24 @@ void OpenGLWidget::cancelTransform() {
 }
 
 void OpenGLWidget::confirmTransform() {
+    if (m_transformApplied && !m_transformSnapshots.empty()) {
+        // capture the resulting state and record the gesture as one undo step
+        // the change is already applied live, so the command's execute() is a no-op redo
+        const auto &registry = m_scene.getPointRegistry();
+        std::vector<EntitySnapshot> after;
+        after.reserve(m_transformSnapshots.size());
+        for (const auto &before : m_transformSnapshots) {
+            EntitySnapshot snap;
+            snap.id = before.id;
+            if (const auto e = m_scene.getEntity(before.id)) { snap.fillFromEntity(registry, e.value()); }
+            after.push_back(snap);
+        }
+        m_commandStack.push(std::make_unique<TransformCommand>(m_scene, m_transformSnapshots, std::move(after)));
+    }
+
     m_transformMode = TransformMode::none;
     m_axisConstraint = AxisConstraint::none;
+    m_transformApplied = false;
     m_transformSnapshots.clear();
     emit transformModeChanged(TransformMode::none, {});
     emit sceneChanged();
@@ -837,12 +925,24 @@ bool OpenGLWidget::removeEntityInternal(const EntityID id) {
 }
 
 bool OpenGLWidget::removeEntity(const EntityID id) {
-    const bool removed = removeEntityInternal(id);
-    if (removed) {
-        emit sceneChanged();
-        emit viewportSelectionChanged();
+    const auto entity = m_scene.getEntity(id);
+    if (!entity) {
+        return false;
     }
-    return removed;
+
+    // undoable for serializable geometry;
+    // cameras/other entities fall back to the direct path
+    // (which also detaches the camera controller)
+    // and are not recorded
+    if (EntitySpec probe;
+        captureEntity(m_scene, entity.value(), probe)) {
+        m_commandStack.push(std::make_unique<DeleteEntityCommand>(m_scene, std::vector<EntityID>{id}));
+    }
+    else { removeEntityInternal(id); }
+
+    emit sceneChanged();
+    emit viewportSelectionChanged();
+    return true;
 }
 
 bool OpenGLWidget::eventFilter(QObject *obj, QEvent *event) {

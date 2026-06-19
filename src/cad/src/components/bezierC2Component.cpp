@@ -22,9 +22,13 @@ BezierC2Component::BezierC2Component(PointRegistry *registry) : m_registry{regis
 }
 
 BezierC2Component::~BezierC2Component() {
-    for (const auto &id : m_removeControlPointCallbacks | std::views::values) { m_registry->unsubscribeFromRemove(id); }
+    for (const auto &id : m_removeControlPointCallbacks | std::views::values) {
+        m_registry->unsubscribeFromRemove(id);
+    }
 
-    if (m_positionCallbackId >= 0) { m_registry->unsubscribeFromPositionChanges(m_positionCallbackId); }
+    if (m_positionCallbackId >= 0) {
+        m_registry->unsubscribeFromPositionChanges(m_positionCallbackId);
+    }
 
     const auto gl = GL();
     if (m_patchVao) {
@@ -48,7 +52,11 @@ void BezierC2Component::addControlPoint(const PointHandle handle) {
     m_deBoorPoints.push_back(handle);
 
     const CallbackId id = m_registry->subscribeToRemove(
-        [this, handle](const PointHandle removed) { if (removed == handle) { removeControlPoint(handle); } }
+        [this, handle](const PointHandle removed) {
+            if (removed == handle) {
+                removeControlPoint(handle);
+            }
+        }
     );
     m_removeControlPointCallbacks[handle] = id;
 
@@ -57,7 +65,9 @@ void BezierC2Component::addControlPoint(const PointHandle handle) {
 }
 
 void BezierC2Component::removeControlPointAt(const int index) {
-    if (index < 0 || index >= static_cast<int>(m_deBoorPoints.size())) { return; }
+    if (index < 0 || index >= static_cast<int>(m_deBoorPoints.size())) {
+        return;
+    }
     const PointHandle h = m_deBoorPoints[index];
     removeAssociatedCallback(h);
     m_deBoorPoints.erase(m_deBoorPoints.begin() + index);
@@ -67,7 +77,9 @@ void BezierC2Component::removeControlPointAt(const int index) {
 
 void BezierC2Component::removeControlPoint(const PointHandle handle) {
     const auto it = std::ranges::find(m_deBoorPoints, handle);
-    if (it == m_deBoorPoints.end()) { return; }
+    if (it == m_deBoorPoints.end()) {
+        return;
+    }
     removeAssociatedCallback(handle);
     m_deBoorPoints.erase(it);
     m_needsUpdate = true;
@@ -80,7 +92,9 @@ void BezierC2Component::setShowDeBoorPolygon(const bool v) {
 }
 
 void BezierC2Component::setParametrizationMode(const ParametrizationMode mode) {
-    if (m_parametrizationMode == mode) { return; }
+    if (m_parametrizationMode == mode) {
+        return;
+    }
     m_parametrizationMode = mode;
     m_bernsteinDirty = true;
     m_needsUpdate = true;
@@ -140,7 +154,9 @@ void BezierC2Component::regenerateMesh() {
 
 void BezierC2Component::removeAssociatedCallback(const PointHandle h) {
     const auto it = m_removeControlPointCallbacks.find(h);
-    if (it == m_removeControlPointCallbacks.end()) { return; }
+    if (it == m_removeControlPointCallbacks.end()) {
+        return;
+    }
     m_registry->unsubscribeFromRemove(it->second);
     m_removeControlPointCallbacks.erase(it);
 }
@@ -158,13 +174,17 @@ void BezierC2Component::recomputeBernstein() {
     // Sequential patch EBO: 0,1,2,3, 4,5,6,7, ...
     const int totalBernstein = static_cast<int>(m_bernsteinPositions.size());
     std::vector<uint32_t> patchIdx(static_cast<size_t>(totalBernstein));
-    for (int i = 0; i < totalBernstein; ++i) { patchIdx[i] = static_cast<uint32_t>(i); }
+    for (int i = 0; i < totalBernstein; ++i) {
+        patchIdx[i] = static_cast<uint32_t>(i);
+    }
     m_patchEbo.assign(std::move(patchIdx));
 
     // De Boor EBO: PointHandle values (slot indices) for line strip through de Boor points
     const int n = static_cast<int>(m_deBoorPoints.size());
     std::vector<uint32_t> deBoorIdx(static_cast<size_t>(n));
-    for (int i = 0; i < n; ++i) { deBoorIdx[i] = m_deBoorPoints[i]; }
+    for (int i = 0; i < n; ++i) {
+        deBoorIdx[i] = m_deBoorPoints[i];
+    }
     m_deBoorEbo.assign(std::move(deBoorIdx));
 }
 
@@ -179,9 +199,15 @@ void BezierC2Component::syncToGpu() {
     m_patchEbo.syncToGpu(gl);
     m_deBoorEbo.syncToGpu(gl);
 
-    if (m_patchVao == 0 && segmentCount() > 0) { setupPatchVao(gl); }
-    if (m_bernsteinPolyVao == 0 && segmentCount() > 0) { setupBernsteinPolyVao(gl); }
-    if (m_deBoorVao == 0 && m_deBoorPoints.size() >= 2) { setupDeBoorVao(gl); }
+    if (m_patchVao == 0 && segmentCount() > 0) {
+        setupPatchVao(gl);
+    }
+    if (m_bernsteinPolyVao == 0 && segmentCount() > 0) {
+        setupBernsteinPolyVao(gl);
+    }
+    if (m_deBoorVao == 0 && m_deBoorPoints.size() >= 2) {
+        setupDeBoorVao(gl);
+    }
 
     m_needsUpdate = false;
 }

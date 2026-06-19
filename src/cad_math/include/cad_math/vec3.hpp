@@ -35,6 +35,18 @@ namespace cadm {
         [[nodiscard]] constexpr vec cross(const vec &other) const {
             return {y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x};
         }
+
+        /// @brief Component indices for operator[] access
+        struct Index {
+            /// @brief X component
+            static constexpr std::size_t X = 0;
+
+            /// @brief Y component
+            static constexpr std::size_t Y = 1;
+
+            /// @brief Z component
+            static constexpr std::size_t Z = 2;
+        };
     };
 
     using vec3 = vec<3, cadf>;

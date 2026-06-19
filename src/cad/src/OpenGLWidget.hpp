@@ -14,6 +14,7 @@
 #include "Scene.hpp"
 #include "ViewportTypes.hpp"
 #include "camera/CameraController.hpp"
+#include "commands/CommandStack.hpp"
 #include "components/EntitySnapshot.hpp"
 #include "cursor/ICursorPlacementStrategy.hpp"
 #include "input/InputMap.hpp"
@@ -44,6 +45,11 @@ public:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
     [[nodiscard]] Scene& getScene() { return m_scene; }
+
+    [[nodiscard]] CommandStack& getCommandStack() {
+        return m_commandStack;
+    }
+
     [[nodiscard]] CoordSpace getCoordSpace() const { return m_coordSpace; }
 
     void setPivotMode(const PivotMode mode) { m_pivotMode = mode; }
@@ -158,6 +164,7 @@ private:
     cadm::cadf m_zoomFactor{1.1};
 
     Scene m_scene;
+    CommandStack m_commandStack;
     RenderSystem m_renderSystem;
 
     bool m_boxSelectMode{false};
@@ -168,6 +175,10 @@ private:
 
     /// valid only in PointDrag mode
     PointHandle m_draggedPoint = 0;
+    /// position of the dragged point when the drag began (for undo)
+    cadm::vec3 m_draggedPointStart;
+    /// active cursor translation when a cursor-placement drag began (for undo)
+    cadm::vec3 m_cursorPlaceStart;
 
     /// when true, LMB click places a new point at the cursor
     bool m_clickToAddMode = false;
@@ -177,6 +188,8 @@ private:
     TransformMode m_transformMode = TransformMode::none;
     AxisConstraint m_axisConstraint = AxisConstraint::none;
     std::vector<EntitySnapshot> m_transformSnapshots;
+    /// whether the active transform actually moved anything (gate undo entry)
+    bool m_transformApplied = false;
     QPoint m_transformStartMousePos;
     cadm::vec3 m_transformPivot;
 };

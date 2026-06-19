@@ -31,6 +31,15 @@ namespace cadm {
 
         constexpr static vec unitX() noexcept { return {1.0, 0.0}; }
         constexpr static vec unitY() noexcept { return {0.0, 1.0}; }
+
+        /// @brief Component indices for operator[] access
+        struct Index {
+            /// @brief X component
+            static constexpr std::size_t X = 0;
+
+            /// @brief Y component
+            static constexpr std::size_t Y = 1;
+        };
     };
 
     using vec2 = vec<2, cadf>;

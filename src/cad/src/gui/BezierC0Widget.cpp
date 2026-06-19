@@ -7,6 +7,9 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
+#include "../commands/CommandStack.hpp"
+#include "../commands/Commands.hpp"
+
 BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget *parent) : ComponentWidget(
         bezier,
         parent
@@ -45,8 +48,17 @@ BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget 
         &QCheckBox::toggled,
         this,
         [this](const bool checked) {
-            m_bezier->setShowPolygon(checked);
-            emit propertyChanged();
+            auto *b = m_bezier;
+            pushEdit(
+                [b, checked] {
+                    b->setShowPolygon(checked);
+                },
+                [b, checked] {
+                    b->setShowPolygon(!checked);
+                },
+                m_showPolygonCheckbox,
+                false
+            );
         }
     );
 
@@ -56,8 +68,19 @@ BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget 
         this,
         [this] {
             const int row = m_pointList->currentRow();
-            if (row < 0) { return; }
-            m_bezier->removeControlPointAt(row);
+            if (row < 0) {
+                return;
+            }
+            const auto &cps = m_bezier->getControlPoints();
+            if (row >= static_cast<int>(cps.size())) {
+                return;
+            }
+            if (m_scene && m_commandStack) {
+                m_commandStack->push(std::make_unique<RemoveControlPointCommand>(*m_scene, m_entityId, cps[row]));
+            }
+            else {
+                m_bezier->removeControlPointAt(row);
+            }
             populatePointList();
             emit propertyChanged();
         }
@@ -72,11 +95,15 @@ BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget 
             const PointHandle firstSelectedPoint = selectedItems.isEmpty()
                                                        ? InvalidPointHandle
                                                        : selectedItems.first()->data(Qt::UserRole).value<PointHandle>();
-            if (!m_scene) { return; }
+            if (!m_scene) {
+                return;
+            }
             QList<Entity*> selected;
             for (const auto *item : m_pointList->selectedItems()) {
                 const auto h = item->data(Qt::UserRole).value<PointHandle>();
-                if (const auto opt = m_scene->getEntityByPointHandle(h)) { selected.append(opt.value()); }
+                if (const auto opt = m_scene->getEntityByPointHandle(h)) {
+                    selected.append(opt.value());
+                }
             }
             m_pointPropertiesWidget->setPoint(
                 selected.count() == 1
@@ -110,7 +137,9 @@ void BezierC0Widget::populatePointList() {
 }
 
 void BezierC0Widget::syncSelectionFromScene() {
-    if (!m_scene) { return; }
+    if (!m_scene) {
+        return;
+    }
     PointHandle firstSelectedPoint = InvalidPointHandle;
     int selectedCount = 0;
     for (const auto &[h, item] : m_itemMap) {
@@ -118,7 +147,9 @@ void BezierC0Widget::syncSelectionFromScene() {
             const auto isItemSelected = opt.value()->isSelected();
             if (isItemSelected) {
                 selectedCount++;
-                if (firstSelectedPoint == InvalidPointHandle) { firstSelectedPoint = h; }
+                if (firstSelectedPoint == InvalidPointHandle) {
+                    firstSelectedPoint = h;
+                }
             }
             item->setSelected(isItemSelected);
         }

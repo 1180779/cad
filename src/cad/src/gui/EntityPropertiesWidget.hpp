@@ -6,6 +6,8 @@
 #include "../components/Entity.hpp"
 #include "../Scene.hpp"
 
+class CommandStack;
+
 class EntityPropertiesWidget : public QWidget {
     Q_OBJECT
 
@@ -13,6 +15,10 @@ public:
     explicit EntityPropertiesWidget(QWidget *parent = nullptr);
 
     void setScene(Scene *scene);
+
+    void setCommandStack(CommandStack *stack) {
+        m_commandStack = stack;
+    }
 
     void setEntity(Entity *entity);
 
@@ -30,6 +36,7 @@ private:
     void clearLayout() const;
 
     Scene *m_scene = nullptr;
+    CommandStack *m_commandStack = nullptr;
     Entity *m_entity = nullptr;
     QVBoxLayout *m_layout;
     class PointPropertiesWidget *m_pointWidget = nullptr;

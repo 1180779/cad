@@ -8,6 +8,8 @@
 #include "../components/CursorComponent.hpp"
 #include "../components/CameraComponent.hpp"
 #include "../components/PointComponent.hpp"
+#include "../commands/CommandStack.hpp"
+#include "../commands/Commands.hpp"
 
 SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent) : QWidget(parent) {
     const auto layout = new QVBoxLayout(this);
@@ -79,7 +81,21 @@ void SceneHierarchyWidget::onItemSelectionChanged() {
 void SceneHierarchyWidget::onItemChanged(const QListWidgetItem *item) const {
     // Update entity name
     if (m_refreshing) { return; }
-    if (auto *e = item->data(Qt::UserRole).value<Entity*>()) { e->setName(item->text().toStdString()); }
+    auto *e = item->data(Qt::UserRole).value<Entity*>();
+    if (!e) {
+        return;
+    }
+    const std::string before = e->getName();
+    const std::string after = item->text().toStdString();
+    if (before == after) {
+        return;
+    }
+    if (m_scene && m_commandStack) {
+        m_commandStack->push(std::make_unique<RenameCommand>(*m_scene, e->getId(), before, after));
+    }
+    else {
+        e->setName(after);
+    }
 }
 
 void SceneHierarchyWidget::populateList() {

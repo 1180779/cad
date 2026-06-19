@@ -9,6 +9,10 @@
 #include <QLabel>
 #include <QLineEdit>
 
+#include "../Scene.hpp"
+#include "../commands/CommandStack.hpp"
+#include "../commands/Commands.hpp"
+
 PointPropertiesWidget::PointPropertiesWidget(PointRegistry *registry, QWidget *parent) : QWidget(parent),
     m_registry{registry} {
     const auto layout = new QHBoxLayout(this);
@@ -38,7 +42,9 @@ PointPropertiesWidget::PointPropertiesWidget(PointRegistry *registry, QWidget *p
     setEnabled(false);
 }
 
-void PointPropertiesWidget::refresh() { setPoint(m_handle); }
+void PointPropertiesWidget::refresh() {
+    setPoint(m_handle);
+}
 
 void PointPropertiesWidget::setPoint(const PointHandle handle) {
     m_handle = handle;
@@ -47,7 +53,9 @@ void PointPropertiesWidget::setPoint(const PointHandle handle) {
     setEnabled(valid);
     // setVisible(valid);
 
-    if (!valid) { return; }
+    if (!valid) {
+        return;
+    }
 
     const auto pos = m_registry->getPosition(handle);
 
@@ -64,26 +72,31 @@ void PointPropertiesWidget::setPoint(const PointHandle handle) {
     m_z->blockSignals(false);
 }
 
-void PointPropertiesWidget::onXChanged(const double value) {
-    if (!m_registry || m_handle == InvalidPointHandle) { return; }
-    auto pos = m_registry->getPosition(m_handle);
-    pos.x = static_cast<cadm::cadf>(value);
-    m_registry->setPosition(m_handle, pos);
+void PointPropertiesWidget::applyCoordEdit(const int axis, const double value) {
+    if (!m_registry || m_handle == InvalidPointHandle) {
+        return;
+    }
+    const auto before = m_registry->getPosition(m_handle);
+    auto after = before;
+    after[axis] = static_cast<cadm::cadf>(value);
+
+    if (m_scene && m_commandStack) {
+        m_commandStack->push(std::make_unique<MovePointCommand>(*m_scene, m_handle, before, after), true);
+    }
+    else {
+        m_registry->setPosition(m_handle, after);
+    }
     emit propertyChanged();
+}
+
+void PointPropertiesWidget::onXChanged(const double value) {
+    applyCoordEdit(cadm::vec3::Index::X, value);
 }
 
 void PointPropertiesWidget::onYChanged(const double value) {
-    if (!m_registry || m_handle == InvalidPointHandle) { return; }
-    auto pos = m_registry->getPosition(m_handle);
-    pos.y = static_cast<cadm::cadf>(value);
-    m_registry->setPosition(m_handle, pos);
-    emit propertyChanged();
+    applyCoordEdit(cadm::vec3::Index::Y, value);
 }
 
 void PointPropertiesWidget::onZChanged(const double value) {
-    if (!m_registry || m_handle == InvalidPointHandle) { return; }
-    auto pos = m_registry->getPosition(m_handle);
-    pos.z = static_cast<cadm::cadf>(value);
-    m_registry->setPosition(m_handle, pos);
-    emit propertyChanged();
+    applyCoordEdit(cadm::vec3::Index::Z, value);
 }

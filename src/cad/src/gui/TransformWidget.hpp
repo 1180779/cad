@@ -14,8 +14,7 @@ public:
     explicit TransformWidget(TransformComponent *transform, QWidget *parent = nullptr);
 
 private
-    slots  :
-
+slots  :
     
 
     void onTranslationXChanged(double value) const;
@@ -37,11 +36,15 @@ private
     void onRotationZChanged(double value) const;
 
 private:
-    void setUpTranslationControls(QFormLayout *layout);
-
-    void setUpScaleControls(QFormLayout *layout);
-
-    void setUpRotationControls(QFormLayout *layout);
+    /// @brief Build one axis spin box with the shared styling and the given
+    /// per-group range/step/wrapping and initial value
+    static ModifierDoubleSpinBox* makeAxisSpin(
+        double step,
+        double min,
+        double max,
+        bool wrapping,
+        double value
+    );
 
     static constexpr double s_angleMin = -180.0;
     static constexpr double s_angleMax = 180.0;

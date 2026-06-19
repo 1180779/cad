@@ -6,6 +6,8 @@
 #include "../Scene.hpp"
 #include "../camera/CameraController.hpp"
 
+class CommandStack;
+
 /// @brief widget displaying the list of the entities from the scene
 class SceneHierarchyWidget : public QWidget {
     Q_OBJECT
@@ -16,12 +18,16 @@ public:
     /// @brief sets the scene that is the source of the entities' data
     void setScene(Scene *scene);
 
+    /// @brief sets the command stack so renames become undoable
+    void setCommandStack(CommandStack *stack) {
+        m_commandStack = stack;
+    }
+
     /// @brief sets the CameraController for the scene
     /// @param cameraController the CameraController for the scene
     void setCameraController(CameraController *cameraController);
 
-    signals  :
-
+signals  :
     
 
     void selectionChanged(QList<Entity*> entities);
@@ -49,10 +55,8 @@ public:
     void addSelectedPointsToNewPointsTargetEntityRequested(Entity *e);
 
 public
-    slots  :
-    /// @brief update the m_listWidget to be in sync with the m_scene entities
-
-    
+slots  :
+/// @brief update the m_listWidget to be in sync with the m_scene entities
 
     void refresh();
 
@@ -61,8 +65,7 @@ public
     void syncSelectionFromScene();
 
 private
-    slots  :
-
+slots  :
     
 
     void onItemSelectionChanged();
@@ -87,6 +90,10 @@ private:
 
     /// @brief the Scene being the source of truth about entities
     Scene *m_scene = nullptr;
+
+    /// @brief command stack for undoable renames
+    /// @note optional
+    CommandStack *m_commandStack = nullptr;
 
     /// @brief the CameraController for the scene
     CameraController *m_cameraController = nullptr;

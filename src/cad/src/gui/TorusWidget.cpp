@@ -9,10 +9,89 @@ TorusWidget::TorusWidget(TorusGeometry *torus, QWidget *parent) : ComponentWidge
     setUpMajorSegmentsControls(layout);
     setUpMinorSegmentsControls(layout);
 
-    connect(m_majorRadius, &QDoubleSpinBox::valueChanged, m_torus, &TorusGeometry::setMajorRadius);
-    connect(m_minorRadius, &QDoubleSpinBox::valueChanged, m_torus, &TorusGeometry::setMinorRadius);
-    connect(m_majorSegments, &QSpinBox::valueChanged, m_torus, &TorusGeometry::setMajorSegments);
-    connect(m_minorSegments, &QSpinBox::valueChanged, m_torus, &TorusGeometry::setMinorSegments);
+    // route edits through the command stack (coalescing keyed by source spinbox);
+    // the model->spinbox connects below keep the UI in sync on undo/redo
+
+    connect(
+        m_majorRadius,
+        &QDoubleSpinBox::valueChanged,
+        this,
+        [this](const double v) {
+            auto *t = m_torus;
+            const auto before = t->getMajorRadius();
+            const auto after = static_cast<cadm::cadf>(v);
+            pushEdit(
+                [t, after] {
+                    t->setMajorRadius(after);
+                },
+                [t, before] {
+                    t->setMajorRadius(before);
+                },
+                m_majorRadius,
+                true
+            );
+        }
+    );
+    connect(
+        m_minorRadius,
+        &QDoubleSpinBox::valueChanged,
+        this,
+        [this](const double v) {
+            auto *t = m_torus;
+            const auto before = t->getMinorRadius();
+            const auto after = static_cast<cadm::cadf>(v);
+            pushEdit(
+                [t, after] {
+                    t->setMinorRadius(after);
+                },
+                [t, before] {
+                    t->setMinorRadius(before);
+                },
+                m_minorRadius,
+                true
+            );
+        }
+    );
+    connect(
+        m_majorSegments,
+        &QSpinBox::valueChanged,
+        this,
+        [this](const int v) {
+            auto *t = m_torus;
+            const auto before = t->getMajorSegments();
+            const auto after = static_cast<uint32_t>(v);
+            pushEdit(
+                [t, after] {
+                    t->setMajorSegments(after);
+                },
+                [t, before] {
+                    t->setMajorSegments(before);
+                },
+                m_majorSegments,
+                true
+            );
+        }
+    );
+    connect(
+        m_minorSegments,
+        &QSpinBox::valueChanged,
+        this,
+        [this](const int v) {
+            auto *t = m_torus;
+            const auto before = t->getMinorSegments();
+            const auto after = static_cast<uint32_t>(v);
+            pushEdit(
+                [t, after] {
+                    t->setMinorSegments(after);
+                },
+                [t, before] {
+                    t->setMinorSegments(before);
+                },
+                m_minorSegments,
+                true
+            );
+        }
+    );
 
     connect(m_torus, &TorusGeometry::majorRadiusChanged, this, &TorusWidget::onMajorRadiusChanged);
     connect(m_torus, &TorusGeometry::minorRadiusChanged, this, &TorusWidget::onMinorRadiusChanged);
@@ -45,7 +124,7 @@ void TorusWidget::onMinorSegmentsChanged(const int value) const {
     const_cast<TorusWidget*>(this)->propertyChanged();
 }
 
-void TorusWidget::setUpMajorRadiusControls(QFormLayout * const layout) {
+void TorusWidget::setUpMajorRadiusControls(QFormLayout *const layout) {
     m_majorRadius = new ModifierDoubleSpinBox();
     m_majorRadius->setMinimum(s_majorRadiusMin);
     m_majorRadius->setMaximum(s_majorRadiusMax);
@@ -56,7 +135,7 @@ void TorusWidget::setUpMajorRadiusControls(QFormLayout * const layout) {
     layout->addRow(new QLabel("Major Radius"), m_majorRadius);
 }
 
-void TorusWidget::setUpMinorRadiusControls(QFormLayout * const layout) {
+void TorusWidget::setUpMinorRadiusControls(QFormLayout *const layout) {
     m_minorRadius = new ModifierDoubleSpinBox();
     m_minorRadius->setMinimum(s_minorRadiusMin);
     m_minorRadius->setMaximum(m_torus->getMajorRadius() - s_minorRadiusMin);
@@ -67,7 +146,7 @@ void TorusWidget::setUpMinorRadiusControls(QFormLayout * const layout) {
     layout->addRow(new QLabel("Minor Radius"), m_minorRadius);
 }
 
-void TorusWidget::setUpMajorSegmentsControls(QFormLayout * const layout) {
+void TorusWidget::setUpMajorSegmentsControls(QFormLayout *const layout) {
     m_majorSegments = new ModifierSpinBox();
     m_majorSegments->setMinimum(s_majorSegmentsMin);
     m_majorSegments->setMaximum(s_majorSegmentsMax);
@@ -77,7 +156,7 @@ void TorusWidget::setUpMajorSegmentsControls(QFormLayout * const layout) {
     layout->addRow(new QLabel("Major Segments"), m_majorSegments);
 }
 
-void TorusWidget::setUpMinorSegmentsControls(QFormLayout * const layout) {
+void TorusWidget::setUpMinorSegmentsControls(QFormLayout *const layout) {
     m_minorSegments = new ModifierSpinBox();
     m_minorSegments->setMinimum(s_minorSegmentsMin);
     m_minorSegments->setMaximum(s_minorSegmentsMax);

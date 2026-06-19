@@ -18,7 +18,22 @@ class Scene {
 public:
     Entity* createEntity(const std::string &name = "Entity");
 
+    /// @brief Create an entity with a specific id 
+    /// (used to resurrect a deleted entity during undo so existing references stay valid). 
+    /// Keeps m_nextEntityId ahead
+    Entity* createEntityWithId(EntityID id, const std::string &name = "Entity");
+
     Entity* createPoint(cadm::vec3 position, const std::string &name = "Point");
+
+    /// @brief Attach a PointComponent to an existing entity, registering the handle in the
+    /// point registry at that exact slot. Used when rebuilding a serialized entity
+    void attachPointComponent(Entity *entity, PointHandle handle, cadm::vec3 position);
+
+    /// @brief Convenience mutator used by commands to write a point position
+    /// @note: not an exclusive surface
+    void setPointPosition(PointHandle handle, cadm::vec3 position);
+
+    void setEntityName(EntityID id, const std::string &name);
 
     std::optional<Entity*> getEntity(EntityID id);
 
@@ -28,10 +43,10 @@ public:
 
     bool removeEntity(EntityID id);
 
-    /// Set selection state on an entity and keep the selection set in sync
+    /// @brief Set the selection state on an entity and keep the selection set in sync
     void setSelected(Entity *e, bool selected);
 
-    /// Deselect all entities and clear the selection set
+    /// @brief Deselect all entities and clear the selection set
     void clearSelection();
 
     void syncPointSelectionToRegistry();

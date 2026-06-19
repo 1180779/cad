@@ -14,6 +14,8 @@ public:
     virtual ~INewPointsTargetBase() = default;
 
     virtual void addControlPoint(PointHandle h) = 0;
+
+    virtual void removeControlPoint(PointHandle h) = 0;
 };
 
 /// Component that can be a new points target
