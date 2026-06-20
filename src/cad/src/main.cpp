@@ -15,6 +15,7 @@
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/BlenderCameraStrategy.hpp"
 #include "gui/CadMenuBar.hpp"
+#include "gui/CadTitleBar.hpp"
 #include "gui/ScenePanelWidget.hpp"
 #include "gui/StatusBarWidget.hpp"
 #include "gui/ToolPanelBar.hpp"
@@ -26,11 +27,15 @@ constexpr int kSeparatorStripWidth = 5;
 /// @brief Soft off-white app background (IntelliJ-like), distinct from the white tool-window cards
 const QColor kAppBackground(0xF2, 0xF3, 0xF5);
 
+/// @brief Border width around the frameless window reserved for native resize handling
+constexpr int kResizeMargin = 6;
+
 int main(int argc, char *argv[]) {
     glSetDefaults();
     [[maybe_unused]] QApplication a(argc, argv);
 
     QWidget window;
+    window.setWindowFlag(Qt::FramelessWindowHint);
     window.setMinimumSize(QSize(500, 500));
 
     // soft off-white app background; tool-window cards and separator strips read from this
@@ -39,13 +44,26 @@ int main(int argc, char *argv[]) {
     window.setPalette(windowPalette);
     window.setAutoFillBackground(true);
 
-    const auto rootLayout = new QHBoxLayout(&window);
+    // outer column: custom title bar on top, app content below. The margin reserves
+    // a border that the frameless-resize filter uses for native edge resizing.
+    const auto outerLayout = new QVBoxLayout(&window);
+    // spacing matches the border so the title bar is framed symmetrically
+    outerLayout->setSpacing(kResizeMargin);
+    outerLayout->setContentsMargins(kResizeMargin, kResizeMargin, kResizeMargin, kResizeMargin);
+
+    // custom title bar embedding the menu bar + window controls (frameless window)
+    const auto menuBar = new CadMenuBar;
+    const auto titleBar = new CadTitleBar(menuBar);
+    outerLayout->addWidget(titleBar);
+
+    const auto content = new QWidget;
+    // explicit cursor so the window's border resize cursor never bleeds into the
+    // content area through inheritance (child widgets still override as needed)
+    content->setCursor(Qt::ArrowCursor);
+    const auto rootLayout = new QHBoxLayout(content);
     rootLayout->setSpacing(0);
     rootLayout->setContentsMargins(0, 0, 0, 0);
-
-    // menu bar
-    const auto menuBar = new CadMenuBar;
-    rootLayout->setMenuBar(menuBar);
+    outerLayout->addWidget(content, 1);
 
     // left side: GL widget + status bar in a container
     const auto leftContainer = new QWidget;
@@ -590,6 +608,7 @@ int main(int argc, char *argv[]) {
     );
 
     QApplication::instance()->installEventFilter(glWidget);
+    enableFramelessResize(&window, kResizeMargin);
     window.show();
     return QApplication::exec();
 }
