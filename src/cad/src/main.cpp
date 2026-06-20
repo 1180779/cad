@@ -20,12 +20,24 @@
 #include "gui/ToolPanelBar.hpp"
 #include "gui/ViewportPanelWidget.hpp"
 
+/// @brief Width of the app-colored separator strips between viewport, tool window and status line
+constexpr int kSeparatorStripWidth = 5;
+
+/// @brief Soft off-white app background (IntelliJ-like), distinct from the white tool-window cards
+const QColor kAppBackground(0xF2, 0xF3, 0xF5);
+
 int main(int argc, char *argv[]) {
     glSetDefaults();
     [[maybe_unused]] QApplication a(argc, argv);
 
     QWidget window;
     window.setMinimumSize(QSize(500, 500));
+
+    // soft off-white app background; tool-window cards and separator strips read from this
+    QPalette windowPalette = window.palette();
+    windowPalette.setColor(QPalette::Window, kAppBackground);
+    window.setPalette(windowPalette);
+    window.setAutoFillBackground(true);
 
     const auto rootLayout = new QHBoxLayout(&window);
     rootLayout->setSpacing(0);
@@ -38,7 +50,8 @@ int main(int argc, char *argv[]) {
     // left side: GL widget + status bar in a container
     const auto leftContainer = new QWidget;
     const auto leftLayout = new QVBoxLayout(leftContainer);
-    leftLayout->setSpacing(0);
+    // small app-colored strip between the viewport and the vim-style status line
+    leftLayout->setSpacing(kSeparatorStripWidth);
     leftLayout->setContentsMargins(0, 0, 0, 0);
 
     const auto glWidget = new OpenGlWidget;
@@ -56,23 +69,30 @@ int main(int argc, char *argv[]) {
     panelStack->addWidget(viewportPanel); // index 1
     panelStack->setMinimumWidth(200);
 
-    // white tool-window background, distinct from the app background
-    QPalette panelPalette = panelStack->palette();
-    panelPalette.setColor(QPalette::Window, panelPalette.color(QPalette::Base));
-    for (QWidget *w : {
-             static_cast<QWidget*>(panelStack),
+    // Rounded, white tool-window cards floating on the app background. The
+    // QStackedWidget stays transparent so the panels' rounded corners reveal the
+    // app color behind them; each panel paints its own rounded base-colored card.
+    const QColor panelBg = window.palette().color(QPalette::Base);
+    const QString panelQss =
+        QStringLiteral("#toolPanel { background-color: %1; border-radius: 6px; }").arg(panelBg.name());
+    for (QWidget *panel : {
              static_cast<QWidget*>(scenePanel),
              static_cast<QWidget*>(viewportPanel)
          }) {
-        w->setPalette(panelPalette);
-        w->setAutoFillBackground(true);
+        panel->setObjectName("toolPanel");
+        // custom QWidget subclasses ignore stylesheet background unless styled-background is on
+        panel->setAttribute(Qt::WA_StyledBackground, true);
+        panel->setStyleSheet(panelQss);
     }
 
     // splitter owns left + panelStack; panelBar sits outside so hiding panelStack
     // collapses cleanly without leaving an empty rightContainer
     const auto splitter = new QSplitter(Qt::Horizontal);
     splitter->setChildrenCollapsible(false);
-    splitter->setHandleWidth(1);
+    // app-colored strip separating the viewport from the open tool window
+    splitter->setHandleWidth(kSeparatorStripWidth);
+    splitter->setStyleSheet(
+        QStringLiteral("QSplitter::handle { background-color: %1; }").arg(kAppBackground.name()));
     splitter->addWidget(leftContainer); // index 0 — stretches
     splitter->addWidget(panelStack); // index 1 — resizable, collapsible
     splitter->setStretchFactor(0, 1);

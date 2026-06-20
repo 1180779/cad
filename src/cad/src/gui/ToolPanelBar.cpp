@@ -11,6 +11,7 @@ PanelTabButton::PanelTabButton(const QString &text, QWidget *parent) : QToolButt
     setCheckable(true);
     setToolButtonStyle(Qt::ToolButtonTextOnly);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setAttribute(Qt::WA_Hover, true); // repaint on enter/leave so hover tint shows
 }
 
 QSize PanelTabButton::sizeHint() const {
@@ -35,15 +36,18 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
     // appearance is a controlled function of just isChecked()/underMouse().
     const QPalette &pal = palette();
 
+    // IntelliJ-style states: white when idle, grey on hover, blue + white text when selected
     QColor bg;
+    QColor fg = pal.color(QPalette::ButtonText);
     if (isChecked()) {
-        bg = pal.color(QPalette::Base);
+        bg = pal.color(QPalette::Highlight);
+        fg = pal.color(QPalette::HighlightedText);
     }
     else if (underMouse()) {
-        bg = pal.color(QPalette::Button).lighter(105);
+        bg = pal.color(QPalette::Button);
     }
     else {
-        bg = pal.color(QPalette::Button);
+        bg = pal.color(QPalette::Base);
     }
 
     QPainter p(this);
@@ -61,7 +65,7 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
     p.save();
     p.translate(rect().center());
     p.rotate(-90);
-    p.setPen(pal.color(QPalette::ButtonText));
+    p.setPen(fg);
     const QRect textRect(-height() / 2, -width() / 2, height(), width());
     p.drawText(textRect, Qt::AlignCenter, text());
     p.restore();
