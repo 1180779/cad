@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     window.setAutoFillBackground(true);
 
     // outer column: custom title bar on top, app content below. The margin reserves
-    // a border that the frameless-resize filter uses for native edge resizing.
+    // a border that the frameless-resize filter uses for native edge resizing
     const auto outerLayout = new QVBoxLayout(&window);
     // spacing matches the border so the title bar is framed symmetrically
     outerLayout->setSpacing(kResizeMargin);
@@ -53,29 +53,28 @@ int main(int argc, char *argv[]) {
 
     // custom title bar embedding the menu bar + window controls (frameless window)
     const auto menuBar = new CadMenuBar;
-    // IntelliJ-style menus: top-level items grey on hover, dropdowns painted in the
+    // intelliJ-style menus: top-level items grey on hover, dropdowns painted in the
     // app background with a blue + white-text highlight, and muted (not bland-grey)
-    // disabled entries derived from the app background.
-    {
-        const QColor hover = kAppBackground.darker(112); // subtle grey wash on hover
-        const QColor highlight = window.palette().color(QPalette::Highlight);
-        const QColor disabled = kAppBackground.darker(140); // muted, tinted from app bg
-        const QColor border = kAppBackground.darker(125);
-        menuBar->setStyleSheet(
-            QStringLiteral(
-                "QMenuBar { background: transparent; }"
-                "QMenuBar::item { padding: 4px 8px; background: transparent; border-radius: 3px; }"
-                "QMenuBar::item:selected { background: %1; }"
-                "QMenuBar::item:pressed { background: %1; }"
-                "QMenu { background-color: %2; border: 1px solid %5; padding: 4px; }"
-                "QMenu::item { padding: 4px 24px; border-radius: 3px; }"
-                "QMenu::item:selected { background-color: %3; color: white; }"
-                "QMenu::item:disabled { color: %4; }"
-                "QMenu::separator { height: 1px; background: %5; margin: 4px 8px; }"
-            )
-            .arg(hover.name(), kAppBackground.name(), highlight.name(), disabled.name(), border.name())
-        );
-    }
+    // disabled entries derived from the app background
+
+    const QColor hover = kAppBackground.darker(112); // subtle grey wash on hover
+    const QColor highlight = window.palette().color(QPalette::Highlight);
+    const QColor disabled = kAppBackground.darker(140); // muted, tinted from app bg
+    const QColor border = kAppBackground.darker(125);
+    menuBar->setStyleSheet(
+        QStringLiteral(
+            "QMenuBar { background: transparent; }"
+            "QMenuBar::item { padding: 4px 8px; background: transparent; border-radius: 3px; }"
+            "QMenuBar::item:selected { background: %1; }"
+            "QMenuBar::item:pressed { background: %1; }"
+            "QMenu { background-color: %2; border: 1px solid %5; padding: 4px; }"
+            "QMenu::item { padding: 4px 24px; border-radius: 3px; }"
+            "QMenu::item:selected { background-color: %3; color: white; }"
+            "QMenu::item:disabled { color: %4; }"
+            "QMenu::separator { height: 1px; background: %5; margin: 4px 8px; }"
+        )
+        .arg(hover.name(), kAppBackground.name(), highlight.name(), disabled.name(), border.name())
+    );
     const auto titleBar = new CadTitleBar(menuBar);
     outerLayout->addWidget(titleBar);
 
@@ -110,9 +109,9 @@ int main(int argc, char *argv[]) {
     panelStack->addWidget(viewportPanel); // index 1
     panelStack->setMinimumWidth(200);
 
-    // Rounded, white tool-window cards floating on the app background. The
+    // rounded, white tool-window cards floating on the app background. The
     // QStackedWidget stays transparent so the panels' rounded corners reveal the
-    // app color behind them; each panel paints its own rounded base-colored card.
+    // app color behind them; each panel paints its own rounded base-colored card
     const QColor panelBg = window.palette().color(QPalette::Base);
     const QString panelQss =
         QStringLiteral("#toolPanel { background-color: %1; border-radius: 6px; }").arg(panelBg.name());
@@ -133,7 +132,8 @@ int main(int argc, char *argv[]) {
     // app-colored strip separating the viewport from the open tool window
     splitter->setHandleWidth(kSeparatorStripWidth);
     splitter->setStyleSheet(
-        QStringLiteral("QSplitter::handle { background-color: %1; }").arg(kAppBackground.name()));
+        QStringLiteral("QSplitter::handle { background-color: %1; }").arg(kAppBackground.name())
+    );
     splitter->addWidget(leftContainer); // index 0 — stretches
     splitter->addWidget(panelStack); // index 1 — resizable, collapsible
     splitter->setStretchFactor(0, 1);

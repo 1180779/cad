@@ -30,13 +30,13 @@ void PanelTabButton::nextCheckState() {
 }
 
 void PanelTabButton::paintEvent(QPaintEvent *) {
-    // Paint the tab explicitly rather than delegating to the style's complex-control
+    // paint the tab explicitly rather than delegating to the style's complex-control
     // renderer: the latter swaps in highlight backgrounds / white text on transient
     // focus/sunken/"on" states, which produced intermittent style flips. Here the
-    // appearance is a controlled function of just isChecked()/underMouse().
+    // appearance is a controlled function of just isChecked()/underMouse()
     const QPalette &pal = palette();
 
-    // IntelliJ-style states: white when idle, grey on hover, blue + white text when selected
+    // intelliJ-style states: white when idle, grey on hover, blue + white text when selected
     QColor bg;
     QColor fg = pal.color(QPalette::ButtonText);
     if (isChecked()) {

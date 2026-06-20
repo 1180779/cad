@@ -1,8 +1,6 @@
 #include "CadTitleBar.hpp"
 
-#include <QEvent>
 #include <QHBoxLayout>
-#include <QHoverEvent>
 #include <QMenuBar>
 #include <QMouseEvent>
 #include <QStyle>
@@ -10,16 +8,16 @@
 #include <QWindow>
 
 namespace {
-    constexpr int kTitleBarHeight = 30;
+    constexpr int gc_kTitleBarHeight = 30;
 
     QToolButton* makeWindowButton(QWidget *parent, const QStyle::StandardPixmap icon, const bool isClose = false) {
         auto *btn = new QToolButton(parent);
         btn->setIcon(parent->style()->standardIcon(icon));
         btn->setAutoRaise(true);
         btn->setFocusPolicy(Qt::NoFocus);
-        btn->setFixedSize(kTitleBarHeight + 12, kTitleBarHeight);
-        // Coherent with the menu theming: flat by default, a subtle grey wash on hover.
-        // The close button mirrors the platform convention with a red hover instead.
+        btn->setFixedSize(gc_kTitleBarHeight + 12, gc_kTitleBarHeight);
+        // coherent with the menu theming: flat by default, a subtle grey wash on hover
+        // the close button mirrors the platform convention with a red hover instead
         const char *hover = isClose
                                 ? "#E81123"
                                 : "rgba(0, 0, 0, 0.08)";
@@ -37,13 +35,12 @@ namespace {
     }
 
     /// @brief Drives native system-resize from the border of a frameless window.
-    /// No Q_OBJECT/signals, so it needs no moc pass.
+    /// No Q_OBJECT/signals, so it needs no moc pass
     class FramelessResizeFilter final : public QObject {
     public:
         FramelessResizeFilter(QWidget *window, const int margin) : QObject(window), m_window(window), m_margin(margin) {
         }
 
-    protected:
         bool eventFilter(QObject *watched, QEvent *event) override {
             if (watched != m_window) {
                 return QObject::eventFilter(watched, event);
@@ -93,14 +90,18 @@ namespace {
 
         [[nodiscard]] Qt::Edges edgesAt(const QPoint &pos) const {
             Qt::Edges edges;
-            if (pos.x() <= m_margin)
+            if (pos.x() <= m_margin) {
                 edges |= Qt::LeftEdge;
-            if (pos.x() >= m_window->width() - m_margin)
+            }
+            if (pos.x() >= m_window->width() - m_margin) {
                 edges |= Qt::RightEdge;
-            if (pos.y() <= m_margin)
+            }
+            if (pos.y() <= m_margin) {
                 edges |= Qt::TopEdge;
-            if (pos.y() >= m_window->height() - m_margin)
+            }
+            if (pos.y() >= m_window->height() - m_margin) {
                 edges |= Qt::BottomEdge;
+            }
             return edges;
         }
 
@@ -113,18 +114,21 @@ namespace {
                 (edges & Qt::LeftEdge && edges & Qt::BottomEdge)) {
                 return Qt::SizeBDiagCursor;
             }
-            if (edges & (Qt::LeftEdge | Qt::RightEdge))
+            if (edges & (Qt::LeftEdge | Qt::RightEdge)) {
                 return Qt::SizeHorCursor;
-            if (edges & (Qt::TopEdge | Qt::BottomEdge))
+            }
+            if (edges & (Qt::TopEdge | Qt::BottomEdge)) {
                 return Qt::SizeVerCursor;
+            }
             return Qt::ArrowCursor;
         }
     };
 }
 
 CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent) : QWidget(parent) {
-    setFixedHeight(kTitleBarHeight);
+    setFixedHeight(gc_kTitleBarHeight);
 
+    // ReSharper disable once CppDFAMemoryLeak
     auto *layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -192,9 +196,9 @@ bool CadTitleBar::event(QEvent *event) {
     return QWidget::event(event);
 }
 
-void CadTitleBar::toggleMaximized() {
-    QWidget *w = window();
-    if (w->isMaximized()) {
+void CadTitleBar::toggleMaximized() const {
+    if (QWidget *w = window();
+        w->isMaximized()) {
         w->showNormal();
     }
     else {
@@ -203,7 +207,7 @@ void CadTitleBar::toggleMaximized() {
     updateMaximizeButton();
 }
 
-void CadTitleBar::updateMaximizeButton() {
+void CadTitleBar::updateMaximizeButton() const {
     const auto icon = window()->isMaximized()
                           ? QStyle::SP_TitleBarNormalButton
                           : QStyle::SP_TitleBarMaxButton;

@@ -6,11 +6,11 @@
 class QMenuBar;
 class QToolButton;
 
-/// @brief IntelliJ-style unified title bar for a frameless window.
+/// @brief IntelliJ-style unified title bar for a frameless window
 ///
 /// Hosts the application menu bar on the left and minimize / maximize / close
 /// controls on the right. The empty area drags the window; double-clicking it
-/// toggles the maximized state.
+/// toggles the maximized state
 class CadTitleBar final : public QWidget {
     Q_OBJECT
 
@@ -30,16 +30,16 @@ private:
     QToolButton *m_maxButton;
     QToolButton *m_closeButton;
 
-    void toggleMaximized();
+    void toggleMaximized() const;
 
     /// @brief Refresh the maximize/restore button icon for the window's current state
-    void updateMaximizeButton();
+    void updateMaximizeButton() const;
 };
 
-/// @brief Install resize handling on a frameless top-level @p window.
+/// @brief Install resize handling on a frameless top-level @p window
 ///
 /// Watches the @p margin-wide border for hover/press and drives the platform's
-/// native system-resize, so a FramelessWindowHint window stays resizable.
+/// native system-resize, so a FramelessWindowHint window stays resizable
 void enableFramelessResize(QWidget *window, int margin = 6);
 
 #endif
