@@ -12,12 +12,27 @@
 namespace {
     constexpr int kTitleBarHeight = 30;
 
-    QToolButton* makeWindowButton(QWidget *parent, const QStyle::StandardPixmap icon) {
+    QToolButton* makeWindowButton(QWidget *parent, const QStyle::StandardPixmap icon, const bool isClose = false) {
         auto *btn = new QToolButton(parent);
         btn->setIcon(parent->style()->standardIcon(icon));
         btn->setAutoRaise(true);
         btn->setFocusPolicy(Qt::NoFocus);
         btn->setFixedSize(kTitleBarHeight + 12, kTitleBarHeight);
+        // Coherent with the menu theming: flat by default, a subtle grey wash on hover.
+        // The close button mirrors the platform convention with a red hover instead.
+        const char *hover = isClose
+                                ? "#E81123"
+                                : "rgba(0, 0, 0, 0.08)";
+        const char *pressed = isClose
+                                  ? "#C50E1F"
+                                  : "rgba(0, 0, 0, 0.14)";
+        btn->setStyleSheet(
+            QStringLiteral(
+                "QToolButton { background: transparent; border: none; }"
+                "QToolButton:hover { background: %1; }"
+                "QToolButton:pressed { background: %2; }"
+            ).arg(QLatin1String(hover), QLatin1String(pressed))
+        );
         return btn;
     }
 
@@ -120,7 +135,7 @@ CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent) : QWidget(parent) {
 
     m_minButton = makeWindowButton(this, QStyle::SP_TitleBarMinButton);
     m_maxButton = makeWindowButton(this, QStyle::SP_TitleBarMaxButton);
-    m_closeButton = makeWindowButton(this, QStyle::SP_TitleBarCloseButton);
+    m_closeButton = makeWindowButton(this, QStyle::SP_TitleBarCloseButton, true);
     layout->addWidget(m_minButton);
     layout->addWidget(m_maxButton);
     layout->addWidget(m_closeButton);

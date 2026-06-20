@@ -53,6 +53,29 @@ int main(int argc, char *argv[]) {
 
     // custom title bar embedding the menu bar + window controls (frameless window)
     const auto menuBar = new CadMenuBar;
+    // IntelliJ-style menus: top-level items grey on hover, dropdowns painted in the
+    // app background with a blue + white-text highlight, and muted (not bland-grey)
+    // disabled entries derived from the app background.
+    {
+        const QColor hover = kAppBackground.darker(112); // subtle grey wash on hover
+        const QColor highlight = window.palette().color(QPalette::Highlight);
+        const QColor disabled = kAppBackground.darker(140); // muted, tinted from app bg
+        const QColor border = kAppBackground.darker(125);
+        menuBar->setStyleSheet(
+            QStringLiteral(
+                "QMenuBar { background: transparent; }"
+                "QMenuBar::item { padding: 4px 8px; background: transparent; border-radius: 3px; }"
+                "QMenuBar::item:selected { background: %1; }"
+                "QMenuBar::item:pressed { background: %1; }"
+                "QMenu { background-color: %2; border: 1px solid %5; padding: 4px; }"
+                "QMenu::item { padding: 4px 24px; border-radius: 3px; }"
+                "QMenu::item:selected { background-color: %3; color: white; }"
+                "QMenu::item:disabled { color: %4; }"
+                "QMenu::separator { height: 1px; background: %5; margin: 4px 8px; }"
+            )
+            .arg(hover.name(), kAppBackground.name(), highlight.name(), disabled.name(), border.name())
+        );
+    }
     const auto titleBar = new CadTitleBar(menuBar);
     outerLayout->addWidget(titleBar);
 
