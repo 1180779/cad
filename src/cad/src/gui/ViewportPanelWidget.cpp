@@ -19,7 +19,7 @@ ViewportPanelWidget::ViewportPanelWidget(QWidget *parent) : ToolPanelWidget("Vie
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(6, 6, 6, 6);
     layout->setAlignment(Qt::AlignTop);
     layout->addWidget(m_gridSettings);
     layout->addWidget(new QLabel("Transform pivot:", this));

@@ -27,10 +27,12 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
     QStyleOptionToolButton opt;
     initStyleOption(&opt);
 
-    // rotate the painter 90° counter-clockwise around the widget center
+    // rotate -90° so text reads bottom-to-top; axes swap, so rect uses (height, width)
     p.translate(0, height());
     p.rotate(-90);
-    opt.rect = QRect(0, 0, width(), height());
+    const auto rotatedWidth = height();
+    const auto rotatedHeight = width();
+    opt.rect = QRect(0, 0, rotatedWidth, rotatedHeight);
     p.drawComplexControl(QStyle::CC_ToolButton, opt);
 }
 
@@ -38,10 +40,17 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
 
 ToolPanelBar::ToolPanelBar(QWidget *parent) : QWidget(parent) {
     m_layout = new QVBoxLayout(this);
-    m_layout->setContentsMargins(2, 4, 2, 4);
+    m_layout->setContentsMargins(3, 4, 3, 4);
     m_layout->setSpacing(2);
     m_layout->addStretch();
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+}
+
+void ToolPanelBar::paintEvent(QPaintEvent *event) {
+    QWidget::paintEvent(event);
+    QPainter p(this);
+    p.setPen(palette().color(QPalette::Mid));
+    p.drawLine(0, 0, 0, height());
 }
 
 PanelTabButton* ToolPanelBar::addPanel(const QString &name) {

@@ -8,8 +8,9 @@
 ScenePanelWidget::ScenePanelWidget(QWidget *parent) : ToolPanelWidget("Scene", parent),
                                                       m_hierarchy(new SceneHierarchyWidget(this)),
                                                       m_entityProperties(new EntityPropertiesWidget(this)) {
+    // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(6, 6, 6, 6);
     layout->setAlignment(Qt::AlignTop);
     layout->addWidget(m_hierarchy);
     layout->addWidget(m_entityProperties);

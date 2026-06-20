@@ -49,4 +49,6 @@ private:
     int m_activeIndex = -1;
 
     void onButtonToggled(int index, bool checked);
+
+    void paintEvent(QPaintEvent *event) override;
 };

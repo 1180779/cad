@@ -1,4 +1,6 @@
 #include <QApplication>
+#include <QPalette>
+#include <QSplitter>
 #include <QStackedWidget>
 
 #include "CameraFactory.hpp"
@@ -27,15 +29,17 @@ int main(int argc, char *argv[]) {
 
     const auto rootLayout = new QHBoxLayout(&window);
     rootLayout->setSpacing(0);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
 
     // menu bar
     const auto menuBar = new CadMenuBar;
     rootLayout->setMenuBar(menuBar);
 
-    // left: viewport + status bar
-    const auto leftLayout = new QVBoxLayout;
+    // left side: GL widget + status bar in a container
+    const auto leftContainer = new QWidget;
+    const auto leftLayout = new QVBoxLayout(leftContainer);
     leftLayout->setSpacing(0);
-    rootLayout->addLayout(leftLayout, 1);
+    leftLayout->setContentsMargins(0, 0, 0, 0);
 
     const auto glWidget = new OpenGlWidget;
     glWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -44,17 +48,37 @@ int main(int argc, char *argv[]) {
     const auto statusBar = new StatusBarWidget;
     leftLayout->addWidget(statusBar);
 
-    // right: collapsible panel content + thin tab strip
     const auto scenePanel = new ScenePanelWidget;
-    scenePanel->setFixedWidth(450);
-
     const auto viewportPanel = new ViewportPanelWidget;
-    viewportPanel->setFixedWidth(450);
 
     const auto panelStack = new QStackedWidget;
     panelStack->addWidget(scenePanel); // index 0
     panelStack->addWidget(viewportPanel); // index 1
-    rootLayout->addWidget(panelStack, 0);
+    panelStack->setMinimumWidth(200);
+
+    // white tool-window background, distinct from the app background
+    QPalette panelPalette = panelStack->palette();
+    panelPalette.setColor(QPalette::Window, panelPalette.color(QPalette::Base));
+    for (QWidget *w : {
+             static_cast<QWidget*>(panelStack),
+             static_cast<QWidget*>(scenePanel),
+             static_cast<QWidget*>(viewportPanel)
+         }) {
+        w->setPalette(panelPalette);
+        w->setAutoFillBackground(true);
+    }
+
+    // splitter owns left + panelStack; panelBar sits outside so hiding panelStack
+    // collapses cleanly without leaving an empty rightContainer
+    const auto splitter = new QSplitter(Qt::Horizontal);
+    splitter->setChildrenCollapsible(false);
+    splitter->setHandleWidth(1);
+    splitter->addWidget(leftContainer); // index 0 — stretches
+    splitter->addWidget(panelStack); // index 1 — resizable, collapsible
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 0);
+    splitter->setSizes({10000, 450});
+    rootLayout->addWidget(splitter, 1);
 
     const auto panelBar = new ToolPanelBar;
     rootLayout->addWidget(panelBar, 0);
@@ -87,7 +111,7 @@ int main(int argc, char *argv[]) {
         }
     );
 
-    // Tools menu <-> panel buttons
+    // tools menu <-> panel buttons
     QObject::connect(sceneAction, &QAction::toggled, sceneBtn, &QToolButton::setVisible);
     QObject::connect(viewportAction, &QAction::toggled, viewportBtn, &QToolButton::setVisible);
     QObject::connect(
