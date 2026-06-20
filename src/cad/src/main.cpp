@@ -90,7 +90,9 @@ int main(int argc, char *argv[]) {
     auto *viewportBtn = panelBar->addPanel("Viewport");
 
     // open Scene panel by default
-    sceneBtn->setChecked(true);
+    panelBar->openPanel(0);
+    panelStack->setCurrentIndex(0);
+    panelStack->show();
 
     // panel bar → show/hide stack
     QObject::connect(

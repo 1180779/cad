@@ -17,6 +17,9 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
+
+    /// @brief No-op so the button never auto-toggles; ToolPanelBar owns the checked state
+    void nextCheckState() override;
 };
 
 /// @brief Thin vertical strip of checkable panel-tab buttons, IntelliJ-style
@@ -38,6 +41,9 @@ public:
     /// @brief Number of registered panels
     [[nodiscard]] int count() const;
 
+    /// @brief Programmatically open a panel without emitting panelRequested
+    void openPanel(int index);
+
 signals:
     void panelRequested(int index);
 
@@ -48,7 +54,10 @@ private:
     QList<PanelTabButton*> m_buttons;
     int m_activeIndex = -1;
 
-    void onButtonToggled(int index, bool checked);
+    /// @brief Set the active panel and derive all button checked states from it
+    void setActiveIndex(int index);
+
+    void onButtonClicked(int index);
 
     void paintEvent(QPaintEvent *event) override;
 };

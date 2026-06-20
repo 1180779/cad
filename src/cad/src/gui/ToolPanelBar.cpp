@@ -1,7 +1,8 @@
 #include "ToolPanelBar.hpp"
 
-#include <QStyleOptionToolButton>
-#include <QStylePainter>
+#include <QPainter>
+#include <QPainterPath>
+#include <QStyleOption>
 
 // ── PanelTabButton ────────────────────────────────────────────────────────────
 
@@ -22,18 +23,48 @@ QSize PanelTabButton::minimumSizeHint() const {
     return sizeHint();
 }
 
-void PanelTabButton::paintEvent(QPaintEvent *) {
-    QStylePainter p(this);
-    QStyleOptionToolButton opt;
-    initStyleOption(&opt);
+void PanelTabButton::nextCheckState() {
+    // intentionally empty: ToolPanelBar drives the checked state explicitly,
+    // so the button must not toggle itself on click
+}
 
-    // rotate -90° so text reads bottom-to-top; axes swap, so rect uses (height, width)
-    p.translate(0, height());
+void PanelTabButton::paintEvent(QPaintEvent *) {
+    // Paint the tab explicitly rather than delegating to the style's complex-control
+    // renderer: the latter swaps in highlight backgrounds / white text on transient
+    // focus/sunken/"on" states, which produced intermittent style flips. Here the
+    // appearance is a controlled function of just isChecked()/underMouse().
+    const QPalette &pal = palette();
+
+    QColor bg;
+    if (isChecked()) {
+        bg = pal.color(QPalette::Base);
+    }
+    else if (underMouse()) {
+        bg = pal.color(QPalette::Button).lighter(105);
+    }
+    else {
+        bg = pal.color(QPalette::Button);
+    }
+
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    // rounded body with a subtle border
+    const QRectF body = QRectF(rect()).adjusted(1.5, 1.5, -1.5, -1.5);
+    QPainterPath path;
+    path.addRoundedRect(body, 3, 3);
+    p.fillPath(path, bg);
+    p.setPen(QPen(pal.color(QPalette::Mid), 1));
+    p.drawPath(path);
+
+    // rotated text, baseline-centered within the body
+    p.save();
+    p.translate(rect().center());
     p.rotate(-90);
-    const auto rotatedWidth = height();
-    const auto rotatedHeight = width();
-    opt.rect = QRect(0, 0, rotatedWidth, rotatedHeight);
-    p.drawComplexControl(QStyle::CC_ToolButton, opt);
+    p.setPen(pal.color(QPalette::ButtonText));
+    const QRect textRect(-height() / 2, -width() / 2, height(), width());
+    p.drawText(textRect, Qt::AlignCenter, text());
+    p.restore();
 }
 
 // ── ToolPanelBar ─────────────────────────────────────────────────────────────
@@ -63,10 +94,10 @@ PanelTabButton* ToolPanelBar::addPanel(const QString &name) {
 
     connect(
         btn,
-        &QToolButton::toggled,
+        &QToolButton::clicked,
         this,
-        [this, index](const bool checked) {
-            onButtonToggled(index, checked);
+        [this, index] {
+            onButtonClicked(index);
         }
     );
 
@@ -84,22 +115,30 @@ int ToolPanelBar::count() const {
     return m_buttons.size();
 }
 
-void ToolPanelBar::onButtonToggled(const int index, const bool checked) {
-    if (checked) {
-        // uncheck all others (exclusive)
-        for (int i = 0; i < m_buttons.size(); ++i) {
-            if (i != index) {
-                QSignalBlocker blocker(m_buttons[i]);
-                m_buttons[i]->setChecked(false);
-            }
-        }
-        m_activeIndex = index;
-        emit panelRequested(index);
+void ToolPanelBar::openPanel(const int index) {
+    if (index < 0 || index >= m_buttons.size()) {
+        return;
+    }
+    setActiveIndex(index);
+}
+
+void ToolPanelBar::setActiveIndex(const int index) {
+    // single source of truth: button checked states are derived from m_activeIndex,
+    // never from the buttons' own (now disabled) auto-toggle
+    m_activeIndex = index;
+    for (int i = 0; i < m_buttons.size(); ++i) {
+        m_buttons[i]->setChecked(i == index);
+    }
+}
+
+void ToolPanelBar::onButtonClicked(const int index) {
+    if (m_activeIndex == index) {
+        // clicking the open panel's tab closes it
+        setActiveIndex(-1);
+        emit panelClosed();
     }
     else {
-        if (m_activeIndex == index) {
-            m_activeIndex = -1;
-            emit panelClosed();
-        }
+        setActiveIndex(index);
+        emit panelRequested(index);
     }
 }
