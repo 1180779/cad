@@ -1,6 +1,5 @@
 #include <QApplication>
-#include <QComboBox>
-#include <QMenuBar>
+#include <QStackedWidget>
 
 #include "CameraFactory.hpp"
 #include "components/BezierC0Component.hpp"
@@ -13,10 +12,11 @@
 #include "components/INewPointsTargetComponent.hpp"
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/BlenderCameraStrategy.hpp"
-#include "gui/EntityPropertiesWidget.hpp"
-#include "gui/GridSettingsWidget.hpp"
-#include "gui/SceneHierarchyWidget.hpp"
+#include "gui/CadMenuBar.hpp"
+#include "gui/ScenePanelWidget.hpp"
 #include "gui/StatusBarWidget.hpp"
+#include "gui/ToolPanelBar.hpp"
+#include "gui/ViewportPanelWidget.hpp"
 
 int main(int argc, char *argv[]) {
     glSetDefaults();
@@ -25,63 +25,100 @@ int main(int argc, char *argv[]) {
     QWidget window;
     window.setMinimumSize(QSize(500, 500));
 
-    const auto layout = new QHBoxLayout(&window);
+    const auto rootLayout = new QHBoxLayout(&window);
+    rootLayout->setSpacing(0);
 
     // menu bar
-    const auto menuBar = new QMenuBar;
-    const auto editMenu = menuBar->addMenu("Edit");
-    const auto undoAction = editMenu->addAction("Undo");
-    const auto redoAction = editMenu->addAction("Redo");
-    layout->setMenuBar(menuBar);
+    const auto menuBar = new CadMenuBar;
+    rootLayout->setMenuBar(menuBar);
 
-    const auto leftControlsLayout = new QVBoxLayout;
-    layout->addLayout(leftControlsLayout, 1);
+    // left: viewport + status bar
+    const auto leftLayout = new QVBoxLayout;
+    leftLayout->setSpacing(0);
+    rootLayout->addLayout(leftLayout, 1);
 
     const auto glWidget = new OpenGlWidget;
     glWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    leftControlsLayout->addWidget(glWidget);
+    leftLayout->addWidget(glWidget);
 
     const auto statusBar = new StatusBarWidget;
-    leftControlsLayout->addWidget(statusBar);
+    leftLayout->addWidget(statusBar);
 
-    // right panel: tabbed widget
-    const auto tabWidget = new QTabWidget;
-    tabWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-    tabWidget->setFixedWidth(450);
-    layout->addWidget(tabWidget, 0);
+    // right: collapsible panel content + thin tab strip
+    const auto scenePanel = new ScenePanelWidget;
+    scenePanel->setFixedWidth(450);
 
-    // scene tab
-    const auto sceneTab = new QWidget;
-    const auto sceneTabLayout = new QVBoxLayout(sceneTab);
-    sceneTabLayout->setAlignment(Qt::AlignTop);
-    const auto hierarchyWidget = new SceneHierarchyWidget;
-    const auto entityPropertiesWidget = new EntityPropertiesWidget;
-    sceneTabLayout->addWidget(hierarchyWidget);
-    sceneTabLayout->addWidget(entityPropertiesWidget);
-    tabWidget->addTab(sceneTab, "Scene");
+    const auto viewportPanel = new ViewportPanelWidget;
+    viewportPanel->setFixedWidth(450);
 
-    // viewport tab
-    const auto viewportTab = new QWidget;
-    const auto viewportTabLayout = new QVBoxLayout(viewportTab);
-    viewportTabLayout->setAlignment(Qt::AlignTop);
-    const auto gridSettingsWidget = new GridSettingsWidget;
-    viewportTabLayout->addWidget(gridSettingsWidget);
+    const auto panelStack = new QStackedWidget;
+    panelStack->addWidget(scenePanel); // index 0
+    panelStack->addWidget(viewportPanel); // index 1
+    rootLayout->addWidget(panelStack, 0);
 
-    const auto pivotLabel = new QLabel("Transform pivot:");
-    const auto pivotCombo = new QComboBox;
-    pivotCombo->addItem("Median point", static_cast<int>(PivotMode::medianPoint));
-    pivotCombo->addItem("Active cursor", static_cast<int>(PivotMode::activeCursor));
-    viewportTabLayout->addWidget(pivotLabel);
-    viewportTabLayout->addWidget(pivotCombo);
+    const auto panelBar = new ToolPanelBar;
+    rootLayout->addWidget(panelBar, 0);
 
-    const auto coordSpaceLabel = new QLabel("Transform space:");
-    const auto coordSpaceCombo = new QComboBox;
-    coordSpaceCombo->addItem("World", static_cast<int>(CoordSpace::world));
-    coordSpaceCombo->addItem("Local", static_cast<int>(CoordSpace::local));
-    viewportTabLayout->addWidget(coordSpaceLabel);
-    viewportTabLayout->addWidget(coordSpaceCombo);
+    const auto *sceneAction = menuBar->addToolPanelAction("Scene");
+    const auto *viewportAction = menuBar->addToolPanelAction("Viewport");
 
-    tabWidget->addTab(viewportTab, "Viewport");
+    auto *sceneBtn = panelBar->addPanel("Scene");
+    auto *viewportBtn = panelBar->addPanel("Viewport");
+
+    // open Scene panel by default
+    sceneBtn->setChecked(true);
+
+    // panel bar → show/hide stack
+    QObject::connect(
+        panelBar,
+        &ToolPanelBar::panelRequested,
+        panelStack,
+        [panelStack](const int index) {
+            panelStack->setCurrentIndex(index);
+            panelStack->show();
+        }
+    );
+    QObject::connect(
+        panelBar,
+        &ToolPanelBar::panelClosed,
+        panelStack,
+        [panelStack] {
+            panelStack->hide();
+        }
+    );
+
+    // Tools menu <-> panel buttons
+    QObject::connect(sceneAction, &QAction::toggled, sceneBtn, &QToolButton::setVisible);
+    QObject::connect(viewportAction, &QAction::toggled, viewportBtn, &QToolButton::setVisible);
+    QObject::connect(
+        sceneAction,
+        &QAction::toggled,
+        sceneBtn,
+        [sceneBtn, panelStack](const bool visible) {
+            if (!visible && sceneBtn->isChecked()) {
+                sceneBtn->setChecked(false);
+                panelStack->hide();
+            }
+        }
+    );
+    QObject::connect(
+        viewportAction,
+        &QAction::toggled,
+        viewportBtn,
+        [viewportBtn, panelStack](const bool visible) {
+            if (!visible && viewportBtn->isChecked()) {
+                viewportBtn->setChecked(false);
+                panelStack->hide();
+            }
+        }
+    );
+
+    // convenience aliases
+    auto *hierarchyWidget = scenePanel->hierarchyWidget();
+    auto *entityPropertiesWidget = scenePanel->entityPropertiesWidget();
+    const auto *gridSettingsWidget = viewportPanel->gridSettingsWidget();
+    auto *pivotCombo = viewportPanel->pivotCombo();
+    auto *coordSpaceCombo = viewportPanel->coordSpaceCombo();
 
     // default scene entities
     const GeometryFactory geometryFactory(glWidget->getScene());
@@ -116,29 +153,31 @@ int main(int argc, char *argv[]) {
     glWidget->getCameraController().addCamera("Cad", std::move(cadCameraStrat));
     statusBar->setCameraName(QString::fromStdString(glWidget->getCameraController().getActiveName()));
 
+    // menu bar undo/redo
     QObject::connect(
-        undoAction,
-        &QAction::triggered,
+        menuBar,
+        &CadMenuBar::undoRequested,
         glWidget,
         [glWidget] {
             glWidget->getCommandStack().undo();
         }
     );
     QObject::connect(
-        redoAction,
-        &QAction::triggered,
+        menuBar,
+        &CadMenuBar::redoRequested,
         glWidget,
         [glWidget] {
             glWidget->getCommandStack().redo();
         }
     );
+    // update enabled state when Edit menu opens
     QObject::connect(
-        editMenu,
-        &QMenu::aboutToShow,
+        menuBar,
+        &CadMenuBar::editMenuAboutToShow,
         glWidget,
-        [glWidget, undoAction, redoAction] {
-            undoAction->setEnabled(glWidget->getCommandStack().canUndo());
-            redoAction->setEnabled(glWidget->getCommandStack().canRedo());
+        [glWidget, menuBar] {
+            menuBar->setUndoEnabled(glWidget->getCommandStack().canUndo());
+            menuBar->setRedoEnabled(glWidget->getCommandStack().canRedo());
         }
     );
 
@@ -148,12 +187,7 @@ int main(int argc, char *argv[]) {
     entityPropertiesWidget->setScene(&glWidget->getScene());
     entityPropertiesWidget->setCommandStack(&glWidget->getCommandStack());
 
-    QObject::connect(
-        glWidget,
-        &OpenGlWidget::sceneChanged,
-        hierarchyWidget,
-        &SceneHierarchyWidget::refresh
-    );
+    QObject::connect(glWidget, &OpenGlWidget::sceneChanged, hierarchyWidget, &SceneHierarchyWidget::refresh);
 
     QObject::connect(
         glWidget,
@@ -257,19 +291,8 @@ int main(int argc, char *argv[]) {
         &OpenGlWidget::setGridPlanes
     );
 
-    QObject::connect(
-        glWidget,
-        &OpenGlWidget::transformModeChanged,
-        statusBar,
-        &StatusBarWidget::setTransformMode
-    );
-
-    QObject::connect(
-        glWidget,
-        &OpenGlWidget::clickToAddModeChanged,
-        statusBar,
-        &StatusBarWidget::setClickToAddMode
-    );
+    QObject::connect(glWidget, &OpenGlWidget::transformModeChanged, statusBar, &StatusBarWidget::setTransformMode);
+    QObject::connect(glWidget, &OpenGlWidget::clickToAddModeChanged, statusBar, &StatusBarWidget::setClickToAddMode);
 
     QObject::connect(
         &glWidget->getCameraController(),
@@ -396,9 +419,6 @@ int main(int argc, char *argv[]) {
 
     auto spawnPoint = [glWidget, spawnPos] {
         Scene &sc = glWidget->getScene();
-        // builder runs synchronously inside push();
-        // capture the new handle for the optional follow-up "add to active target" command
-
         PointHandle createdHandle = InvalidPointHandle;
         glWidget->getCommandStack().push(
             std::make_unique<CreateEntityCommand>(
@@ -435,7 +455,6 @@ int main(int argc, char *argv[]) {
         &SceneHierarchyWidget::createBezierC0Requested,
         glWidget,
         [glWidget] {
-            // collect currently selected point handles
             std::vector<PointHandle> handles;
             for (const auto &e : glWidget->getScene().getEntities()) {
                 if (!e->isSelected()) {
@@ -462,8 +481,7 @@ int main(int argc, char *argv[]) {
         glWidget,
         [glWidget](Entity *e) {
             glWidget->getScene().setNewPointsTargetEntity(e);
-            emit
-            glWidget->sceneChanged();
+            emit glWidget->sceneChanged();
         }
     );
 

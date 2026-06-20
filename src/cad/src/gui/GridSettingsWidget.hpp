@@ -5,9 +5,8 @@
 #ifndef CAD_GRIDSETTINGSWIDGET_H
 #define CAD_GRIDSETTINGSWIDGET_H
 
+#include <QCheckBox>
 #include <QWidget>
-
-class QCheckBox;
 
 class GridSettingsWidget final : public QWidget {
     Q_OBJECT
@@ -17,9 +16,7 @@ public:
 
     int getGridPlanes() const;
 
-signals  :
-    
-
+signals :
     void gridPlanesChanged(int planes);
 
 private:
