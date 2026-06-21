@@ -1,4 +1,3 @@
-#include <QApplication>
 #include <QFontDatabase>
 #include <QSplitter>
 #include <QStackedWidget>
@@ -411,6 +410,42 @@ namespace {
             }
         };
 
+        // ReSharper disable once CppDFAUnreachableFunctionCall
+        auto collectSelectedPointHandles = [glWidget] {
+            std::vector<PointHandle> handles;
+            for (const auto &e : glWidget->getScene().getEntities()) {
+                if (!e->isSelected()) {
+                    continue;
+                }
+                if (const auto pc = e->getComponent<PointComponent>()) {
+                    handles.push_back(pc.value()->m_handle);
+                }
+            }
+            return handles;
+        };
+
+        auto spawnBezierC0 = [glWidget, collectSelectedPointHandles] {
+            glWidget->getCommandStack().push(
+                std::make_unique<CreateEntityCommand>(
+                    glWidget->getScene(),
+                    [handles = collectSelectedPointHandles()](Scene &s) {
+                        return GeometryFactory(s).createBezierC0(handles, "BezierC0");
+                    }
+                )
+            );
+        };
+
+        auto spawnBezierC2 = [glWidget, collectSelectedPointHandles] {
+            glWidget->getCommandStack().push(
+                std::make_unique<CreateEntityCommand>(
+                    glWidget->getScene(),
+                    [handles = collectSelectedPointHandles()](Scene &s) {
+                        return GeometryFactory(s).createBezierC2(handles, "BezierC2");
+                    }
+                )
+            );
+        };
+
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createTorusRequested, glWidget, spawnTorus);
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createCursorRequested, glWidget, spawnCursor);
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPointRequested, glWidget, spawnPoint);
@@ -419,30 +454,8 @@ namespace {
         QObject::connect(glWidget, &OpenGlWidget::createPointRequested, glWidget, spawnPoint);
 
         // Bezier C0 signals
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::createBezierC0Requested,
-            glWidget,
-            [glWidget] {
-                std::vector<PointHandle> handles;
-                for (const auto &e : glWidget->getScene().getEntities()) {
-                    if (!e->isSelected()) {
-                        continue;
-                    }
-                    if (const auto pc = e->getComponent<PointComponent>()) {
-                        handles.push_back(pc.value()->m_handle);
-                    }
-                }
-                glWidget->getCommandStack().push(
-                    std::make_unique<CreateEntityCommand>(
-                        glWidget->getScene(),
-                        [handles](Scene &s) {
-                            return GeometryFactory(s).createBezierC0(handles, "BezierC0");
-                        }
-                    )
-                );
-            }
-        );
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createBezierC0Requested, glWidget, spawnBezierC0);
+        QObject::connect(glWidget, &OpenGlWidget::createBezierC0Requested, glWidget, spawnBezierC0);
 
         QObject::connect(
             hierarchyWidget,
@@ -478,30 +491,8 @@ namespace {
         );
 
         // Bezier C2 signals
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::createBezierC2Requested,
-            glWidget,
-            [glWidget] {
-                std::vector<PointHandle> handles;
-                for (const auto &e : glWidget->getScene().getEntities()) {
-                    if (!e->isSelected()) {
-                        continue;
-                    }
-                    if (const auto pc = e->getComponent<PointComponent>()) {
-                        handles.push_back(pc.value()->m_handle);
-                    }
-                }
-                glWidget->getCommandStack().push(
-                    std::make_unique<CreateEntityCommand>(
-                        glWidget->getScene(),
-                        [handles](Scene &s) {
-                            return GeometryFactory(s).createBezierC2(handles, "BezierC2");
-                        }
-                    )
-                );
-            }
-        );
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createBezierC2Requested, glWidget, spawnBezierC2);
+        QObject::connect(glWidget, &OpenGlWidget::createBezierC2Requested, glWidget, spawnBezierC2);
     }
 }
 

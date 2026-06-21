@@ -370,6 +370,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
 
         const EntityId id = cursor->getId();
         Scene *scene = &m_scene;
+        // ReSharper disable once CppDFAUnreachableFunctionCall
         auto setCursor = [scene, id](const cadm::Vec3 p) {
             if (const auto e = scene->getEntity(id)) {
                 if (const auto t = e.value()->getComponent<TransformComponent>()) {
@@ -480,7 +481,7 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
     case InputAction::deleteSelected:
         deleteSelectedEntities();
         break;
-    // undo/redo are handled by the Edit-menu actions, which own these shortcuts; 
+    // undo/redo are handled by the Edit-menu actions, which own these shortcuts;
     // the menu shortcut consumes the key before it reaches here
     case InputAction::undo:
     case InputAction::redo:
@@ -489,6 +490,9 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
         m_boxSelectMode = true;
         break;
     case InputAction::createMenu: {
+        if (m_createMenuOpen) {
+            break;
+        }
         QMenu menu(this);
         menu.addAction(
             "New Torus",
@@ -508,7 +512,22 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
                 emit createPointRequested();
             }
         );
+        menu.addSeparator();
+        menu.addAction(
+            "New Bezier C0",
+            [this] {
+                emit createBezierC0Requested();
+            }
+        );
+        menu.addAction(
+            "New Bezier C2",
+            [this] {
+                emit createBezierC2Requested();
+            }
+        );
+        m_createMenuOpen = true;
         menu.exec(QCursor::pos());
+        m_createMenuOpen = false;
     }
     break;
     case InputAction::toggleClickToAdd:

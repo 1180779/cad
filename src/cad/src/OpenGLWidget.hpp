@@ -113,6 +113,10 @@ signals :
 
     void createPointRequested();
 
+    void createBezierC0Requested();
+
+    void createBezierC2Requested();
+
 protected:
     void paintGL() override;
 
@@ -187,6 +191,9 @@ private:
     RenderSystem m_renderSystem;
 
     bool m_boxSelectMode{false};
+
+    /// @brief Guards against stacking multiple create menus
+    bool m_createMenuOpen{false};
     QPoint m_boxSelectStart;
     QPoint m_boxSelectCurrent;
 
