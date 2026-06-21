@@ -10,7 +10,7 @@
 #include <QSpinBox>
 
 /// Spinboxes that scale steps with modifiers
-class ModifierDoubleSpinBox : public QDoubleSpinBox {
+class ModifierDoubleSpinBox final : public QDoubleSpinBox {
     Q_OBJECT
 
 public:

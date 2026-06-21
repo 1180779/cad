@@ -76,6 +76,10 @@ public:
 
     void undo() override;
 
+    [[nodiscard]] ChangeFlags changeFlags() const override {
+        return ChangeFlags::geometry;
+    }
+
 private:
     void restore(const std::vector<EntitySnapshot> &snaps) const;
 
@@ -100,6 +104,10 @@ public:
     void undo() override;
 
     bool tryMerge(const Command &next) override;
+
+    [[nodiscard]] ChangeFlags changeFlags() const override {
+        return ChangeFlags::geometry;
+    }
 
 private:
     Scene &m_scene;
@@ -147,6 +155,10 @@ public:
     }
 
     bool tryMerge(const Command &next) override;
+
+    [[nodiscard]] ChangeFlags changeFlags() const override {
+        return ChangeFlags::geometry;
+    }
 
 private:
     std::function<void()> m_apply;

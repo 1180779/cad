@@ -5,6 +5,7 @@
 #ifndef CAD_BEZIERC2COMPONENT_HPP
 #define CAD_BEZIERC2COMPONENT_HPP
 
+#include <limits>
 #include <map>
 #include <vector>
 
@@ -14,14 +15,13 @@
 #include <cad_math/Vec3.hpp>
 
 #include "INewPointsTargetComponent.hpp"
-#include "../BSplineToBezierConverter.hpp"
 
-/// @brief Multi-segment cubic Bézier curve with C2 continuity between segments.
+/// @brief Multi-segment cubic Bézier curve with C2 continuity between segments
 ///
-/// Can be manipulated by manipulating De Boor points or Bernstein control points. 
-/// The Bernstein control points are virtual and are not part of the scene.
+/// Can be manipulated by manipulating de Boor points or Bernstein control points. 
+/// The Bernstein control points are virtual and are not part of the scene
 ///
-/// For supported parametrization modes see ParametrizationMode.
+/// Uses uniform parametrization (equal knot spacing)
 ///
 /// for n de Boor points (n >= 4) there are n-3 cubic segments.
 /// Segment i uses de Boor points d_i...d_{i+3}
@@ -32,15 +32,15 @@ public:
 
     ~BezierC2Component() override;
 
-    /// Add De Boor point to the curve
+    /// @brief Add de Boor point to the curve
     /// @param handle handle of the point to be added
     void addControlPoint(PointHandle handle) override;
 
-    /// Remove De Boor point from the curve
+    /// @brief Remove de Boor point from the curve
     /// @param index index of the point to be removed
     void removeControlPointAt(int index);
 
-    /// Remove De Boor point from the curve
+    /// @brief Remove de Boor point from the curve
     /// @param handle handle of the point to be removed
     void removeControlPoint(PointHandle handle) override;
 
@@ -60,17 +60,17 @@ public:
 
     void setShowBernsteinPolygon(bool v);
 
-    [[nodiscard]] ParametrizationMode getParametrizationMode() const {
-        return m_parametrizationMode;
+    [[nodiscard]] bool getShowBernsteinCps() const {
+        return m_showBernsteinCps;
     }
 
-    void setParametrizationMode(ParametrizationMode mode);
+    void setShowBernsteinCps(bool v);
 
-    /// @brief Move the Bernstein control point at bernsteinIndex to newPos.
-    /// @details 
-    /// Back-computes the affected de Boor point(s) in the registry 
-    /// and marks the Bernstein cache dirty
-    void setBernsteinPosition(int bernsteinIndex, cadm::Vec3 newPos);
+    /// @brief Move the Bernstein control point at bernsteinIndex to newPos
+    /// @details Back-computes the affected de Boor point in the registry. 
+    /// Inner points b1/b2 move one neighboring de Boor point;
+    /// joint points move the central de Boor point
+    void setBernsteinPosition(int bernsteinIndex, cadm::Vec3 newPos) const;
 
     [[nodiscard]] int segmentCount() const;
 
@@ -99,17 +99,29 @@ public:
     }
 
     [[nodiscard]] const std::vector<cadm::Vec3>& getBernsteinPositions() const {
-        return m_bernsteinPositions;
+        return m_bernsteinVbo.data();
     }
 
+    /// @brief Recompute the Bernstein CPU cache now if a recompute is pending
+    /// @details The cache is normally refreshed lazily at render time inside
+    /// syncToGpu(); call this before reading getBernsteinPositions() outside the
+    /// render loop to avoid observing a stale, one-edit-behind value
+    void ensureBernsteinUpToDate();
+
 private:
-    /// Patch VAO; binds m_bernsteinVBO (computed positions), EBO holds sequential indices
+    /// @brief Patch VAO
+    /// @details Binds m_bernsteinVBO, 
+    /// EBO holds 4 indices per segment
     GLuint m_patchVao = 0;
 
-    /// De Boor polygon VAO; binds PointRegistry position VBO, EBO holds de Boor PointHandle indices
+    /// @brief De Boor polygon VAO; 
+    /// @details Binds PointRegistry position VBO, 
+    /// EBO holds de Boor PointHandle indices
     GLuint m_deBoorVao = 0;
 
-    /// Bernstein polygon VAO; binds m_bernsteinVBO, EBO = same sequential indices as a patch
+    /// @brief Bernstein polygon VAO
+    /// @details binds m_bernsteinVBO, 
+    /// EBO = same patch indices
     GLuint m_bernsteinPolyVao = 0;
 
     PointRegistry *m_registry;
@@ -119,15 +131,44 @@ private:
 
     bool m_showDeBoorPolygon = true;
     bool m_showBernsteinPolygon = false;
-    bool m_bernsteinDirty = false;
-    ParametrizationMode m_parametrizationMode = ParametrizationMode::chordLength;
+    bool m_showBernsteinCps = true;
 
-    std::vector<cadm::Vec3> m_bernsteinPositions; // CPU cache of computed Bernstein points
-    GpuBuffer<cadm::Vec3, GL_ARRAY_BUFFER> m_bernsteinVbo; // GPU: computed Bernstein positions
-    GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_patchEbo; // sequential 0, 1, 2, 3, ...
-    GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_deBoorEbo; // PointHandle indices for de Boor polygon
+    /// @brief Set when the segment count / handles changed: forces a full
+    /// Bernstein recompute and EBO rebuild on the next sync
+    bool m_structureDirty = false;
+
+    /// @brief Inclusive range of segments whose Bernstein points need recompute after a
+    /// de Boor point moved. Empty when lo > hi; geometry-only
+    int m_dirtySegLo = std::numeric_limits<int>::max();
+    int m_dirtySegHi = -1;
+
+    /// @brief Bernstein positions
+    GpuBuffer<cadm::Vec3, GL_ARRAY_BUFFER> m_bernsteinVbo;
+
+    /// @brief 4 per segment: {3k, 3k+1, 3k+2, 3k+3}
+    /// Shared ones duplicated for the tesselation shader
+    GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_patchEbo;
+
+    /// @brief PointHandle indices for de Boor polygon
+    GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_deBoorEbo;
 
     void removeAssociatedCallback(PointHandle h);
+
+    /// @brief Flag a structural change:
+    /// the next sync rebuilds the Bernstein cache and the EBOs
+    void markStructureDirty();
+
+    /// @brief Expand the pending dirty segment range to include [@p firstSeg, @p lastSeg]
+    void markSegmentsDirty(int firstSeg, int lastSeg);
+
+    /// @brief Mark the segments affected by de Boor point @p deBoorIndex moving: segment s
+    /// is built from d[s...s+3], so moving d[index] touches segments [index-3, index]
+    void markDeBoorDirty(int deBoorIndex);
+
+    /// @brief Whether a Bernstein recompute is pending
+    [[nodiscard]] bool hasDirtyBernstein() const {
+        return m_structureDirty || m_dirtySegHi >= m_dirtySegLo;
+    }
 
     void recomputeBernstein();
 

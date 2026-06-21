@@ -18,12 +18,6 @@ public:
     explicit StatusBarWidget(QWidget *parent = nullptr);
 
     static constexpr int s_barHeight = 24;
-    static constexpr auto s_barStyle =
-        "background-color: #ffffff; color: #000000; font-family: monospace; font-size: 12px;";
-    static constexpr auto s_separatorStyle =
-        "color: #000000;";
-    static constexpr auto s_activeStyle =
-        "color: #ff00ff; font-weight: bold;";
 
 public
 slots :
@@ -47,5 +41,8 @@ private:
     QLabel *m_selectionLabel;
 
     void refreshModeLabel(TransformMode mode, const QString &axisInfo, bool clickToAdd) const;
+
+    /// @brief Flips the mode label's "modeActive" property (compare the global theme sheet)
+    void setModeLabelActive(bool active) const;
 };
 #endif //CAD_STATUSBARWIDGET_HPP

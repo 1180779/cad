@@ -1,8 +1,6 @@
 #ifndef TRANSFORMWIDGET_H
 #define TRANSFORMWIDGET_H
 
-#include <QFormLayout>
-
 #include "ComponentWidget.hpp"
 #include <common/ModifierSpinBox.hpp>
 #include "../components/TransformComponent.hpp"

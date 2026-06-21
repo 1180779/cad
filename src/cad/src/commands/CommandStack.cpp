@@ -10,10 +10,11 @@ CommandStack::CommandStack(const std::size_t capacity) : m_capacity(std::max<std
 
 void CommandStack::push(std::unique_ptr<Command> cmd, const bool coalesce) {
     cmd->execute();
+    const ChangeFlags flags = cmd->changeFlags();
 
     if (coalesce && !m_undo.empty() && m_undo.back()->tryMerge(*cmd)) {
         m_redo.clear();
-        notify();
+        notify(flags);
         return;
     }
 
@@ -24,7 +25,7 @@ void CommandStack::push(std::unique_ptr<Command> cmd, const bool coalesce) {
         m_undo.pop_front();
     }
 
-    notify();
+    notify(flags);
 }
 
 void CommandStack::undo() {
@@ -34,8 +35,9 @@ void CommandStack::undo() {
     auto cmd = std::move(m_undo.back());
     m_undo.pop_back();
     cmd->undo();
+    const ChangeFlags flags = cmd->changeFlags();
     m_redo.push_back(std::move(cmd));
-    notify();
+    notify(flags);
 }
 
 void CommandStack::redo() {
@@ -45,8 +47,9 @@ void CommandStack::redo() {
     auto cmd = std::move(m_redo.back());
     m_redo.pop_back();
     cmd->execute();
+    const ChangeFlags flags = cmd->changeFlags();
     m_undo.push_back(std::move(cmd));
-    notify();
+    notify(flags);
 }
 
 void CommandStack::clear() {

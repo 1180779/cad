@@ -5,17 +5,17 @@
 #include <QStyleOption>
 
 static QLabel* makeSeparator(QWidget *parent) {
+    // ReSharper disable once CppDFAMemoryLeak
     const auto sep = new QLabel("|", parent);
-    sep->setStyleSheet(StatusBarWidget::s_separatorStyle);
     sep->setContentsMargins(4, 0, 4, 0);
     return sep;
 }
 
 StatusBarWidget::StatusBarWidget(QWidget *parent) : QWidget(parent) {
     setFixedHeight(s_barHeight);
-    setStyleSheet(s_barStyle);
     setAutoFillBackground(true);
 
+    // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -37,6 +37,7 @@ StatusBarWidget::StatusBarWidget(QWidget *parent) : QWidget(parent) {
     layout->addWidget(makeSeparator(this));
     layout->addWidget(m_selectionLabel);
     layout->addStretch();
+    // ReSharper disable once CppDFAMemoryLeak
 }
 
 void StatusBarWidget::paintEvent(QPaintEvent *) {
@@ -58,32 +59,39 @@ void StatusBarWidget::refreshModeLabel(const TransformMode mode, const QString &
     QString text;
     if (clickToAdd) {
         text = "Mode: Add Point";
-        m_modeLabel->setStyleSheet(s_activeStyle);
+        setModeLabelActive(true);
     }
     else {
         switch (mode) {
         case TransformMode::translate:
             text = "Mode: Translate (G)";
-            m_modeLabel->setStyleSheet(s_activeStyle);
+            setModeLabelActive(true);
             break;
         case TransformMode::rotate:
             text = QString("Mode: Rotate (R)") + (axisInfo.isEmpty()
                                                       ? ""
                                                       : "  Axis: " + axisInfo);
-            m_modeLabel->setStyleSheet(s_activeStyle);
+            setModeLabelActive(true);
             break;
         case TransformMode::scale:
             text = "Mode: Scale (S)";
-            m_modeLabel->setStyleSheet(s_activeStyle);
+            setModeLabelActive(true);
             break;
         case TransformMode::none:
         default:
             text = "Mode: --";
-            m_modeLabel->setStyleSheet("");
+            setModeLabelActive(false);
             break;
         }
     }
     m_modeLabel->setText(text);
+}
+
+void StatusBarWidget::setModeLabelActive(const bool active) const {
+    m_modeLabel->setProperty("modeActive", active);
+    // dynamic-property selectors don't re-evaluate on their own; repolish to apply
+    m_modeLabel->style()->unpolish(m_modeLabel);
+    m_modeLabel->style()->polish(m_modeLabel);
 }
 
 void StatusBarWidget::setCameraName(const QString &name) const {

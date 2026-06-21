@@ -4,10 +4,7 @@
 
 #include "PointPropertiesWidget.hpp"
 
-#include <QAbstractButton>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
+#include <common/CoordinateSpinBox.hpp>
 
 #include "../Scene.hpp"
 #include "../commands/CommandStack.hpp"
@@ -19,21 +16,7 @@ PointPropertiesWidget::PointPropertiesWidget(PointRegistry *registry, QWidget *p
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(4);
 
-    const auto setupSb = [&](const QString &label, ModifierDoubleSpinBox *&sb) {
-        layout->addWidget(new QLabel(label));
-        sb = new ModifierDoubleSpinBox();
-        sb->setRange(s_coordMin, s_coordMax);
-        sb->setSingleStep(s_coordStep);
-        sb->setDecimals(4);
-        sb->setFixedWidth(s_widgetWidth);
-        sb->setKeyboardTracking(true);
-        sb->setButtonSymbols(QAbstractSpinBox::UpDownArrows);
-        layout->addWidget(sb);
-    };
-
-    setupSb("X:", m_x);
-    setupSb("Y:", m_y);
-    setupSb("Z:", m_z);
+    coordSpinBox::setUpRows(layout, m_x, m_y, m_z);
 
     connect(m_x, &QDoubleSpinBox::valueChanged, this, &PointPropertiesWidget::onXChanged);
     connect(m_y, &QDoubleSpinBox::valueChanged, this, &PointPropertiesWidget::onYChanged);

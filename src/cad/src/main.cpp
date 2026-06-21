@@ -1,4 +1,4 @@
-#include <QApplication>
+#include <QFontDatabase>
 #include <QSplitter>
 #include <QStackedWidget>
 
@@ -22,45 +22,17 @@
 #include "gui/ViewportPanelWidget.hpp"
 
 /// @brief Width of the app-colored separator strips between viewport, tool window and status line
-constexpr int gc_kSeparatorStripWidth = 5;
+constexpr int gc_separatorStripWidth = 5;
 
 /// @brief Border width around the frameless window reserved for native resize handling
-constexpr int gc_kResizeMargin = 6;
+constexpr int gc_resizeMargin = 6;
 
 namespace {
-    /// @brief Applies the IntelliJ-style menu theming
-    void styleMenuBar(CadMenuBar *menuBar) {
-        menuBar->setStyleSheet(
-            QStringLiteral(
-                "QMenuBar { background: transparent; }"
-                "QMenuBar::item { padding: 4px 8px; background: transparent; border-radius: %5px; }"
-                "QMenuBar::item:selected { background: %1; }"
-                "QMenuBar::item:pressed { background: %1; }"
-                "QMenu { background-color: %2; border: 1px solid %3; padding: 4px; }"
-                "QMenu::item { padding: 4px 24px; border-radius: %5px; }"
-                "QMenu::item:selected { background-color: palette(highlight); color: palette(highlighted-text); }"
-                "QMenu::item:disabled { color: %4; }"
-                "QMenu::separator { height: 1px; background: %3; margin: 4px 8px; }"
-            )
-            .arg(
-                theme::g_menuHover.name(),
-                theme::gc_appBackground.name(),
-                theme::g_menuBorder.name(),
-                theme::g_menuDisabled.name()
-            )
-            .arg(theme::gc_itemRadius)
-        );
-    }
-
-    void styleToolPanels(const std::initializer_list<QWidget*> panels, const QColor &base) {
-        const QString qss =
-            QStringLiteral("#toolPanel { background-color: %1; border-radius: %2px; }")
-            .arg(base.name())
-            .arg(theme::gc_cardRadius);
+    /// @brief Marks tool-window panels to the app-wide #toolPanel rule
+    void prepareToolPanels(const std::initializer_list<QWidget*> panels) {
         for (QWidget *panel : panels) {
             panel->setObjectName("toolPanel");
             panel->setAttribute(Qt::WA_StyledBackground, true);
-            panel->setStyleSheet(qss);
         }
     }
 
@@ -247,7 +219,7 @@ namespace {
             glWidget,
             &OpenGlWidget::geometryChanged,
             entityPropertiesWidget,
-            &EntityPropertiesWidget::refreshComponents
+            &EntityPropertiesWidget::refreshComponentGeometry
         );
     }
 
@@ -438,6 +410,42 @@ namespace {
             }
         };
 
+        // ReSharper disable once CppDFAUnreachableFunctionCall
+        auto collectSelectedPointHandles = [glWidget] {
+            std::vector<PointHandle> handles;
+            for (const auto &e : glWidget->getScene().getEntities()) {
+                if (!e->isSelected()) {
+                    continue;
+                }
+                if (const auto pc = e->getComponent<PointComponent>()) {
+                    handles.push_back(pc.value()->m_handle);
+                }
+            }
+            return handles;
+        };
+
+        auto spawnBezierC0 = [glWidget, collectSelectedPointHandles] {
+            glWidget->getCommandStack().push(
+                std::make_unique<CreateEntityCommand>(
+                    glWidget->getScene(),
+                    [handles = collectSelectedPointHandles()](Scene &s) {
+                        return GeometryFactory(s).createBezierC0(handles, "BezierC0");
+                    }
+                )
+            );
+        };
+
+        auto spawnBezierC2 = [glWidget, collectSelectedPointHandles] {
+            glWidget->getCommandStack().push(
+                std::make_unique<CreateEntityCommand>(
+                    glWidget->getScene(),
+                    [handles = collectSelectedPointHandles()](Scene &s) {
+                        return GeometryFactory(s).createBezierC2(handles, "BezierC2");
+                    }
+                )
+            );
+        };
+
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createTorusRequested, glWidget, spawnTorus);
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createCursorRequested, glWidget, spawnCursor);
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPointRequested, glWidget, spawnPoint);
@@ -446,30 +454,8 @@ namespace {
         QObject::connect(glWidget, &OpenGlWidget::createPointRequested, glWidget, spawnPoint);
 
         // Bezier C0 signals
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::createBezierC0Requested,
-            glWidget,
-            [glWidget] {
-                std::vector<PointHandle> handles;
-                for (const auto &e : glWidget->getScene().getEntities()) {
-                    if (!e->isSelected()) {
-                        continue;
-                    }
-                    if (const auto pc = e->getComponent<PointComponent>()) {
-                        handles.push_back(pc.value()->m_handle);
-                    }
-                }
-                glWidget->getCommandStack().push(
-                    std::make_unique<CreateEntityCommand>(
-                        glWidget->getScene(),
-                        [handles](Scene &s) {
-                            return GeometryFactory(s).createBezierC0(handles, "BezierC0");
-                        }
-                    )
-                );
-            }
-        );
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createBezierC0Requested, glWidget, spawnBezierC0);
+        QObject::connect(glWidget, &OpenGlWidget::createBezierC0Requested, glWidget, spawnBezierC0);
 
         QObject::connect(
             hierarchyWidget,
@@ -505,30 +491,8 @@ namespace {
         );
 
         // Bezier C2 signals
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::createBezierC2Requested,
-            glWidget,
-            [glWidget] {
-                std::vector<PointHandle> handles;
-                for (const auto &e : glWidget->getScene().getEntities()) {
-                    if (!e->isSelected()) {
-                        continue;
-                    }
-                    if (const auto pc = e->getComponent<PointComponent>()) {
-                        handles.push_back(pc.value()->m_handle);
-                    }
-                }
-                glWidget->getCommandStack().push(
-                    std::make_unique<CreateEntityCommand>(
-                        glWidget->getScene(),
-                        [handles](Scene &s) {
-                            return GeometryFactory(s).createBezierC2(handles, "BezierC2");
-                        }
-                    )
-                );
-            }
-        );
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createBezierC2Requested, glWidget, spawnBezierC2);
+        QObject::connect(glWidget, &OpenGlWidget::createBezierC2Requested, glWidget, spawnBezierC2);
     }
 }
 
@@ -536,9 +500,20 @@ int main(int argc, char *argv[]) {
     glSetDefaults();
     [[maybe_unused]] QApplication a(argc, argv);
 
-    // seed the theme onto the app-wide palette: every widget (and palette(...) QSS
-    // reference) inherits the app background, white card base and accent from here
-    QApplication::setPalette(theme::applyTheme(QApplication::palette()));
+    // load the bundled JetBrains Mono and make it the default application font;
+    // the family name is read back from the loaded font rather than hard-coded
+    QFontDatabase::addApplicationFont(":/fonts/JetBrainsMono-Bold.ttf");
+    if (const int fontId = QFontDatabase::addApplicationFont(":/fonts/JetBrainsMono-Regular.ttf");
+        fontId != -1) {
+        if (const QStringList families = QFontDatabase::applicationFontFamilies(fontId);
+            !families.isEmpty()) {
+            QFont appFont(families.first());
+            appFont.setPointSize(11);
+            QApplication::setFont(appFont);
+        }
+    }
+
+    theme::apply();
 
     QWidget window;
     window.setWindowFlag(Qt::FramelessWindowHint);
@@ -547,24 +522,17 @@ int main(int argc, char *argv[]) {
     // window paints its (now theme-seeded) QPalette::Window background
     window.setAutoFillBackground(true);
 
-    // outer column: custom title bar on top, app content below. The margin reserves
-    // a border that the frameless-resize filter uses for native edge resizing
     // ReSharper disable once CppDFAMemoryLeak
     const auto outerLayout = new QVBoxLayout(&window);
-    // spacing matches the border so the title bar is framed symmetrically
-    outerLayout->setSpacing(gc_kResizeMargin);
-    outerLayout->setContentsMargins(gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin);
+    outerLayout->setSpacing(gc_resizeMargin);
+    outerLayout->setContentsMargins(gc_resizeMargin, gc_resizeMargin, gc_resizeMargin, gc_resizeMargin);
 
-    // custom title bar embedding the menu bar + window controls (frameless window)
     const auto menuBar = new CadMenuBar;
-    styleMenuBar(menuBar);
     const auto titleBar = new CadTitleBar(menuBar);
     outerLayout->addWidget(titleBar);
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto content = new QWidget;
-    // explicit cursor so the window's border resize cursor never bleeds into the
-    // content area through inheritance (child widgets still override as needed)
     content->setCursor(Qt::ArrowCursor);
     // ReSharper disable once CppDFAMemoryLeak
     const auto rootLayout = new QHBoxLayout(content);
@@ -572,13 +540,11 @@ int main(int argc, char *argv[]) {
     rootLayout->setContentsMargins(0, 0, 0, 0);
     outerLayout->addWidget(content, 1);
 
-    // left side: GL widget + status bar in a container
     // ReSharper disable once CppDFAMemoryLeak
     const auto leftContainer = new QWidget;
     // ReSharper disable once CppDFAMemoryLeak
     const auto leftLayout = new QVBoxLayout(leftContainer);
-    // small app-colored strip between the viewport and the vim-style status line
-    leftLayout->setSpacing(gc_kSeparatorStripWidth);
+    leftLayout->setSpacing(gc_separatorStripWidth);
     leftLayout->setContentsMargins(0, 0, 0, 0);
 
     const auto glWidget = new OpenGlWidget;
@@ -590,7 +556,6 @@ int main(int argc, char *argv[]) {
 
     const auto statusBar = new StatusBarWidget;
     statusBar->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-    leftLayout->addWidget(statusBar);
 
     const auto scenePanel = new ScenePanelWidget;
     const auto viewportPanel = new ViewportPanelWidget;
@@ -604,16 +569,12 @@ int main(int argc, char *argv[]) {
     panelStack->addWidget(viewportPanel);
     panelStack->setMinimumWidth(200);
 
-    styleToolPanels({scenePanel, viewportPanel}, window.palette().color(QPalette::Base));
+    prepareToolPanels({scenePanel, viewportPanel});
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto splitter = new QSplitter(Qt::Horizontal);
     splitter->setChildrenCollapsible(false);
-    // app-colored strip separating the viewport from the open tool window
-    splitter->setHandleWidth(gc_kSeparatorStripWidth);
-    splitter->setStyleSheet(
-        QStringLiteral("QSplitter::handle { background-color: %1; }").arg(theme::gc_appBackground.name())
-    );
+    splitter->setHandleWidth(gc_separatorStripWidth);
     splitter->addWidget(leftContainer); // index 0: stretches
     splitter->addWidget(panelStack); // index 1: resizable, collapsible
     splitter->setStretchFactor(0, 1);
@@ -623,6 +584,8 @@ int main(int argc, char *argv[]) {
 
     const auto panelBar = new ToolPanelBar;
     rootLayout->addWidget(panelBar, 0);
+
+    outerLayout->addWidget(statusBar);
 
     const auto *sceneAction = menuBar->addToolPanelAction("Scene");
     const auto *viewportAction = menuBar->addToolPanelAction("Viewport");
@@ -637,7 +600,7 @@ int main(int argc, char *argv[]) {
 
     wirePanelToggles(panelBar, panelStack, sceneAction, viewportAction, sceneBtn, viewportBtn);
 
-    // intelliJ-style active-tab accent:
+    // intelliJ inspired active-tab accent:
     // the open tab paints accent color only while the tool panel holds focus,
     // falling back to the hover color otherwise
     QObject::connect(
@@ -698,7 +661,7 @@ int main(int argc, char *argv[]) {
     wireEntityCreation(glWidget, hierarchyWidget);
 
     QApplication::instance()->installEventFilter(glWidget);
-    enableFramelessResize(&window, gc_kResizeMargin);
+    enableFramelessResize(&window, gc_resizeMargin);
     window.show();
     return QApplication::exec();
 }

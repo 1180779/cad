@@ -7,11 +7,12 @@
 #include "../components/BezierC2Component.hpp"
 #include "../components/CursorComponent.hpp"
 #include "../components/CameraComponent.hpp"
-#include "../components/PointComponent.hpp"
+//#include "../components/PointComponent.hpp"
 #include "../commands/CommandStack.hpp"
 #include "../commands/Commands.hpp"
 
 SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent) : QWidget(parent) {
+    // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
     m_listWidget = new QListWidget(this);
     m_listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -188,7 +189,7 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
 
     const bool isCursor = e->hasComponent<CursorComponent>();
     const bool isCamera = e->hasComponent<CameraComponent>();
-    const bool isPoint = e->hasComponent<PointComponent>();
+    // const bool isPoint = e->hasComponent<PointComponent>();
     const bool isViableNewPointsTarget = e->hasComponent<INewPointsTargetBase>();
     const bool isActiveCursor = m_scene && m_scene->getActiveCursor() == e;
     const bool isActiveCamera = m_cameraController && m_cameraController->isActiveCamera(e->getId());

@@ -14,7 +14,6 @@
 
 #include "PointRegistry.hpp"
 #include "components/Entity.hpp"
-#include "BSplineToBezierConverter.hpp" // ParametrizationMode
 
 class Scene;
 
@@ -55,7 +54,7 @@ struct BezierC2Data {
     std::vector<PointHandle> controlPoints;
     bool showDeBoorPolygon{true};
     bool showBernsteinPolygon{false};
-    ParametrizationMode parametrization{ParametrizationMode::chordLength};
+    bool showBernsteinCps{true};
 };
 
 using ComponentSpec =

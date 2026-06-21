@@ -27,10 +27,6 @@ public:
 
     void refresh();
 
-    static constexpr double s_coordMin = std::numeric_limits<double>::lowest();
-    static constexpr double s_coordMax = std::numeric_limits<double>::max();
-    static constexpr double s_coordStep = 0.1;
-    static constexpr int s_widgetWidth = 100;
 signals :
     void propertyChanged();
 

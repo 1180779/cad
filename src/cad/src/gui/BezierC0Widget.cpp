@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
+#include "Scene.hpp"
 #include "../commands/CommandStack.hpp"
 #include "../commands/Commands.hpp"
 
@@ -139,7 +140,7 @@ void BezierC0Widget::populatePointList() {
     }
 }
 
-void BezierC0Widget::syncSelectionFromScene() {
+void BezierC0Widget::syncSelection() {
     if (!m_scene) {
         return;
     }

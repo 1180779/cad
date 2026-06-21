@@ -3,7 +3,11 @@ file(GLOB_RECURSE CAD_SOURCES
         src/*.hpp
 )
 
-add_executable(cad ${CAD_SOURCES})
+# AUTORCC compiles this; it must be listed as a target source (the GLOB above
+# only picks up .cpp/.hpp). Registers the vendored JetBrains icons + Mono font.
+set(CAD_RESOURCES resources/resources.qrc)
+
+add_executable(cad ${CAD_SOURCES} ${CAD_RESOURCES})
 
 target_link_libraries(cad
         Qt::Core
