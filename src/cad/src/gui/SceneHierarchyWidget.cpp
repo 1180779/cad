@@ -40,7 +40,23 @@ void SceneHierarchyWidget::addEntityToList(const std::unique_ptr<Entity> &e) con
     const auto item = new QListWidgetItem(QString::fromStdString(e->getName()));
     item->setData(Qt::UserRole, QVariant::fromValue(e.get()));
     item->setFlags(item->flags() | Qt::ItemIsEditable);
-    m_listWidget->addItem(item);
+
+    // the list is kept ordered by entity id. Binary-search the insertion row so a resurrected
+    // entity (undo of delete) drops back into its original slot rather than at the end
+    const EntityId id = e->getId();
+    int lo = 0;
+    int hi = m_listWidget->count();
+    while (lo < hi) {
+        const int mid = (lo + hi) / 2;
+        const auto *other = m_listWidget->item(mid)->data(Qt::UserRole).value<Entity*>();
+        if (other->getId() < id) {
+            lo = mid + 1;
+        }
+        else {
+            hi = mid;
+        }
+    }
+    m_listWidget->insertItem(lo, item);
 }
 
 void SceneHierarchyWidget::refresh() {
