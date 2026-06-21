@@ -23,3 +23,15 @@ add_subdirectory(src/cad)
 
 enable_testing()
 add_subdirectory(tests)
+
+# comment-style check, runnable on demand from CLion (green hammer) or the CLI.
+# checks every tracked C/C++ source; the git pre-commit hook checks staged files only.
+find_program(LUA_EXECUTABLE NAMES lua5.4 lua)
+if (LUA_EXECUTABLE)
+    add_custom_target(check_comments
+            COMMAND ${CMAKE_COMMAND} -DLUA=${LUA_EXECUTABLE} -DROOT=${CMAKE_SOURCE_DIR}
+            -P ${CMAKE_SOURCE_DIR}/tools/lint/run_check_comments.cmake
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            COMMENT "Checking comment style"
+            VERBATIM)
+endif ()

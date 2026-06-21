@@ -1,36 +1,46 @@
 #ifndef TRANSFORMWIDGET_H
 #define TRANSFORMWIDGET_H
 
-#include <QFormLayout>
-
 #include "ComponentWidget.hpp"
 #include <common/ModifierSpinBox.hpp>
 #include "../components/TransformComponent.hpp"
 
-class TransformWidget : public ComponentWidget
-{
+class TransformWidget final : public ComponentWidget {
     Q_OBJECT
 
 public:
     explicit TransformWidget(TransformComponent *transform, QWidget *parent = nullptr);
 
-private slots:
+private
+slots :
     void onTranslationXChanged(double value) const;
+
     void onTranslationYChanged(double value) const;
+
     void onTranslationZChanged(double value) const;
 
     void onScaleXChanged(double value) const;
+
     void onScaleYChanged(double value) const;
+
     void onScaleZChanged(double value) const;
 
     void onRotationXChanged(double value) const;
+
     void onRotationYChanged(double value) const;
+
     void onRotationZChanged(double value) const;
 
 private:
-    void setUpTranslationControls(QFormLayout *layout);
-    void setUpScaleControls(QFormLayout *layout);
-    void setUpRotationControls(QFormLayout *layout);
+    /// @brief Build one axis spin box with the shared styling and the given
+    /// per-group range/step/wrapping and initial value
+    static ModifierDoubleSpinBox* makeAxisSpin(
+        double step,
+        double min,
+        double max,
+        bool wrapping,
+        double value
+    );
 
     static constexpr double s_angleMin = -180.0;
     static constexpr double s_angleMax = 180.0;

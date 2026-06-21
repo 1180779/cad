@@ -8,9 +8,8 @@
 #include <QHBoxLayout>
 #include <numbers>
 
-CameraWidget::CameraWidget(BlenderCameraComponent *camera, QWidget *parent)
-    : ComponentWidget(camera, parent), m_camera(camera)
-{
+CameraWidget::CameraWidget(BlenderCameraComponent *camera, QWidget *parent) : ComponentWidget(camera, parent),
+                                                                              m_camera(camera) {
     const auto layout = new QFormLayout(this);
     setUpArcBallControls(layout);
     setUpTargetControls(layout);
@@ -20,99 +19,98 @@ CameraWidget::CameraWidget(BlenderCameraComponent *camera, QWidget *parent)
         m_camera,
         &BlenderCameraComponent::radiusChanged,
         this,
-        &CameraWidget::onRadiusChanged);
+        &CameraWidget::onRadiusChanged
+    );
     connect(
         m_camera,
         &BlenderCameraComponent::fovChanged,
         this,
-        &CameraWidget::onFovChanged);
+        &CameraWidget::onFovChanged
+    );
     connect(
         m_camera,
         &BlenderCameraComponent::nearPlaneChanged,
         this,
-        &CameraWidget::onNearPlaneChanged);
+        &CameraWidget::onNearPlaneChanged
+    );
     connect(
         m_camera,
         &BlenderCameraComponent::farPlaneChanged,
         this,
-        &CameraWidget::onFarPlaneChanged);
+        &CameraWidget::onFarPlaneChanged
+    );
 
     connect(
         m_camera,
         &BlenderCameraComponent::targetXChanged,
         this,
-        &CameraWidget::onTargetXChanged);
+        &CameraWidget::onTargetXChanged
+    );
     connect(
         m_camera,
         &BlenderCameraComponent::targetYChanged,
         this,
-        &CameraWidget::onTargetYChanged);
+        &CameraWidget::onTargetYChanged
+    );
     connect(
         m_camera,
         &BlenderCameraComponent::targetZChanged,
         this,
-        &CameraWidget::onTargetZChanged);
+        &CameraWidget::onTargetZChanged
+    );
 
     connect(
         m_camera,
         &BlenderCameraComponent::propertyUpdated,
         this,
-        &ComponentWidget::propertyChanged);
+        &ComponentWidget::propertyChanged
+    );
 }
 
-void CameraWidget::onRadiusChanged(const double value)
-{
+void CameraWidget::onRadiusChanged(const double value) {
     m_radius->blockSignals(true);
     m_radius->setValue(value);
     m_radius->blockSignals(false);
     emit propertyChanged();
 }
 
-void CameraWidget::onFovChanged(const double value) const
-{
+void CameraWidget::onFovChanged(const double value) const {
     m_fov->blockSignals(true);
     m_fov->setValue(value * 180.0 / std::numbers::pi);
     m_fov->blockSignals(false);
 }
 
-
-void CameraWidget::onNearPlaneChanged(const double value) const
-{
+void CameraWidget::onNearPlaneChanged(const double value) const {
     m_nearPlane->blockSignals(true);
     m_nearPlane->setValue(value);
     m_nearPlane->blockSignals(false);
 }
 
-void CameraWidget::onFarPlaneChanged(const double value) const
-{
+void CameraWidget::onFarPlaneChanged(const double value) const {
     m_farPlane->blockSignals(true);
     m_farPlane->setValue(value);
     m_farPlane->blockSignals(false);
 }
 
-void CameraWidget::onTargetXChanged(const double value) const
-{
+void CameraWidget::onTargetXChanged(const double value) const {
     m_targetX->blockSignals(true);
     m_targetX->setValue(value);
     m_targetX->blockSignals(false);
 }
 
-void CameraWidget::onTargetYChanged(const double value) const
-{
+void CameraWidget::onTargetYChanged(const double value) const {
     m_targetY->blockSignals(true);
     m_targetY->setValue(value);
     m_targetY->blockSignals(false);
 }
 
-void CameraWidget::onTargetZChanged(const double value) const
-{
+void CameraWidget::onTargetZChanged(const double value) const {
     m_targetZ->blockSignals(true);
     m_targetZ->setValue(value);
     m_targetZ->blockSignals(false);
 }
 
-void CameraWidget::setUpArcBallControls(QFormLayout *layout)
-{
+void CameraWidget::setUpArcBallControls(QFormLayout *layout) {
     m_radius = new QDoubleSpinBox();
     m_radius->setRange(s_radiusMin, s_radiusMax);
     m_radius->setSingleStep(s_radiusStep);
@@ -122,13 +120,12 @@ void CameraWidget::setUpArcBallControls(QFormLayout *layout)
         m_radius,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &BlenderCameraComponent::setRadius);
+        &BlenderCameraComponent::setRadius
+    );
     layout->addRow("Radius", m_radius);
-
 }
 
-void CameraWidget::setUpProjectionControls(QFormLayout *layout)
-{
+void CameraWidget::setUpProjectionControls(QFormLayout *layout) {
     m_fov = new QDoubleSpinBox();
     m_fov->setRange(s_fovMin, s_fovMax);
     m_fov->setSingleStep(s_fovStep);
@@ -138,12 +135,11 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_fov,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         this,
-        [this](const double value)
-        {
+        [this](const double value) {
             m_camera->setFov(value * std::numbers::pi / 180.0);
-        });
+        }
+    );
     layout->addRow("FOV", m_fov);
-
 
     m_nearPlane = new QDoubleSpinBox();
     m_nearPlane->setRange(s_nearPlaneMin, s_nearPlaneMax);
@@ -154,7 +150,8 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_nearPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &BlenderCameraComponent::setNearPlane);
+        &BlenderCameraComponent::setNearPlane
+    );
     layout->addRow("Near Plane", m_nearPlane);
 
     m_farPlane = new QDoubleSpinBox();
@@ -166,12 +163,12 @@ void CameraWidget::setUpProjectionControls(QFormLayout *layout)
         m_farPlane,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &BlenderCameraComponent::setFarPlane);
+        &BlenderCameraComponent::setFarPlane
+    );
     layout->addRow("Far Plane", m_farPlane);
 }
 
-void CameraWidget::setUpTargetControls(QFormLayout *layout)
-{
+void CameraWidget::setUpTargetControls(QFormLayout *layout) {
     m_targetX = new QDoubleSpinBox();
     m_targetY = new QDoubleSpinBox();
     m_targetZ = new QDoubleSpinBox();
@@ -200,17 +197,20 @@ void CameraWidget::setUpTargetControls(QFormLayout *layout)
         m_targetX,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &BlenderCameraComponent::setTargetX);
+        &BlenderCameraComponent::setTargetX
+    );
     connect(
         m_targetY,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &BlenderCameraComponent::setTargetY);
+        &BlenderCameraComponent::setTargetY
+    );
     connect(
         m_targetZ,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         m_camera,
-        &BlenderCameraComponent::setTargetZ);
+        &BlenderCameraComponent::setTargetZ
+    );
 
     const auto targetLayout = new QHBoxLayout();
     targetLayout->addWidget(m_targetX);

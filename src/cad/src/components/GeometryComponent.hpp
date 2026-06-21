@@ -6,22 +6,20 @@
 #define CAD_GEOMETRY_H
 
 #include "Entity.hpp"
-#include <cad_math/vec3.hpp>
+#include <cad_math/Vec3.hpp>
 #include <vector>
 #include <QObject>
 #include <string>
 
-#include "cad_math/vec4.hpp"
+#include "cad_math/Vec4.hpp"
 
-struct Vertex
-{
-    cadm::vec3 position;
-    cadm::vec3 normal;
+struct Vertex {
+    cadm::Vec3 position;
+    cadm::Vec3 normal;
     cadm::vec4 color;
 };
 
-class GeometryComponent : public Component
-{
+class GeometryComponent : public Component {
 public:
     virtual void regenerateMesh() = 0;
 
@@ -39,33 +37,51 @@ public:
     uint32_t m_EBO_Lines = 0;
 
     bool m_selected = false;
+
+    /// @brief Indicates whether component regeneration and GPU sync are required
     bool m_needsUpdate = true;
 };
 
-class TorusGeometry final : public QObject, public GeometryComponent
-{
-    Q_OBJECT
+class TorusGeometry final : public QObject, public GeometryComponent {
+    Q_OBJECT Q_PROPERTY(double majorRadius READ getMajorRadius WRITE setMajorRadius NOTIFY majorRadiusChanged)
 
-    Q_PROPERTY(double majorRadius READ getMajorRadius WRITE setMajorRadius NOTIFY majorRadiusChanged)
     Q_PROPERTY(double minorRadius READ getMinorRadius WRITE setMinorRadius NOTIFY minorRadiusChanged)
+
     Q_PROPERTY(int majorSegments READ getMajorSegments WRITE setMajorSegments NOTIFY majorSegmentsChanged)
+
     Q_PROPERTY(int minorSegments READ getMinorSegments WRITE setMinorSegments NOTIFY minorSegmentsChanged)
 
 public:
     TorusGeometry();
 
-    [[nodiscard]] cadm::cadf getMajorRadius() const { return m_majorRadius; }
-    [[nodiscard]] cadm::cadf getMinorRadius() const { return m_minorRadius; }
-    [[nodiscard]] uint32_t getMajorSegments() const { return m_majorSegments; }
-    [[nodiscard]] uint32_t getMinorSegments() const { return m_minorSegments; }
+    [[nodiscard]] cadm::cadf getMajorRadius() const {
+        return m_majorRadius;
+    }
 
-    void setMajorRadius(cadm::cadf m_majorRadius);
-    void setMinorRadius(cadm::cadf m_minorRadius);
-    void setMajorSegments(uint32_t m_majorSegments);
-    void setMinorSegments(uint32_t m_minorSegments);
+    [[nodiscard]] cadm::cadf getMinorRadius() const {
+        return m_minorRadius;
+    }
+
+    [[nodiscard]] uint32_t getMajorSegments() const {
+        return m_majorSegments;
+    }
+
+    [[nodiscard]] uint32_t getMinorSegments() const {
+        return m_minorSegments;
+    }
+
+    void setMajorRadius(cadm::cadf majorRadius);
+
+    void setMinorRadius(cadm::cadf minorRadius);
+
+    void setMajorSegments(uint32_t majorSegments);
+
+    void setMinorSegments(uint32_t minorSegments);
 
     void regenerateMesh() override;
+
     [[nodiscard]] std::vector<Vertex> generateVertices() const;
+
     [[nodiscard]] std::vector<std::uint32_t> generateIndicesForWireframe() const;
 
 private:
@@ -74,15 +90,17 @@ private:
     uint32_t m_majorSegments = 48;
     uint32_t m_minorSegments = 24;
 
-signals:
+signals :
     void majorRadiusChanged(double radius);
+
     void minorRadiusChanged(double radius);
+
     void majorSegmentsChanged(int segments);
+
     void minorSegmentsChanged(int segments);
 };
 
-class AxesGeometry final : public GeometryComponent
-{
+class AxesGeometry final : public GeometryComponent {
 public:
     cadm::cadf m_length = 5.0f;
     float m_lineWidth = 1.0f;
@@ -92,6 +110,5 @@ public:
 
     void regenerateMesh() override;
 };
-
 
 #endif //CAD_GEOMETRY_H

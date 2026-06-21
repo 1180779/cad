@@ -10,9 +10,9 @@
 
 Entity* CameraFactory::createBlenderCamera(
     const cadm::cadf radius,
-    const cadm::vec3 target,
-    const std::string &name) const
-{
+    const cadm::Vec3 target,
+    const std::string &name
+) const {
     const auto entity = m_scene.createEntity(name);
     const auto camera = entity->addComponent<BlenderCameraComponent>();
     camera->setRadius(radius);
@@ -21,11 +21,11 @@ Entity* CameraFactory::createBlenderCamera(
 }
 
 Entity* CameraFactory::createCadCamera(
-    const cadm::vec3 &position,
-    const cadm::vec3 &target,
-    const cadm::vec3 &worldUp,
-    const std::string &name) const
-{
+    const cadm::Vec3 &position,
+    const cadm::Vec3 &target,
+    const cadm::Vec3 &worldUp,
+    const std::string &name
+) const {
     const auto entity = m_scene.createEntity(name);
     const auto camera = entity->addComponent<CadCameraComponent>();
     camera->setPosition(position);

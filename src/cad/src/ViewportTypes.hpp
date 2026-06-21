@@ -5,12 +5,12 @@
 #ifndef CAD_VIEWPORTTYPES_HPP
 #define CAD_VIEWPORTTYPES_HPP
 
-enum class PivotMode { MedianPoint, ActiveCursor };
+enum class PivotMode { medianPoint, activeCursor };
 
-enum class TransformMode { None, Rotate, Scale, Translate };
+enum class TransformMode { none, rotate, scale, translate };
 
-enum class CoordSpace { World, Local };
+enum class CoordSpace { world, local };
 
-enum class AxisConstraint { None, X, Y, Z };
+enum class AxisConstraint { none, x, y, z };
 
 #endif //CAD_VIEWPORTTYPES_HPP

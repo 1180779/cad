@@ -9,67 +9,96 @@
 #include "Quad.hpp"
 #include "components/GeometryComponent.hpp"
 #include <memory>
-#include <cad_math/vec3.hpp>
-#include <cad_math/mat4.hpp>
+#include <cad_math/Vec3.hpp>
+#include <cad_math/Mat4.hpp>
 
 class Scene;
 
-class RenderSystem
-{
+class RenderSystem {
 public:
     void initialize();
+
     static void regenerateGeometry(const Scene &scene);
-    void render(Scene &scene, const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVP);
+
+    void render(Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+
     void renderSelectionRect(
         cadm::cadf x0Ndc,
         cadm::cadf y0Ndc,
         cadm::cadf x1Ndc,
-        cadm::cadf y1Ndc) const;
+        cadm::cadf y1Ndc
+    ) const;
+
     void renderPivotMarker(
-        const cadm::vec3 &pos,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection) const;
+        const cadm::Vec3 &pos,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
+
     void renderTransformAxis(
-        const cadm::vec3 &pivot,
-        const cadm::mat4 &axisModel,
+        const cadm::Vec3 &pivot,
+        const cadm::Mat4 &axisModel,
         int axesMask,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection,
-        const cadm::mat4 &invVP) const;
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &invVp
+    ) const;
+
     void shutdown();
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
-    void setGridPlanes(const int planes) { m_gridPlanes = planes; }
-    [[nodiscard]] int getGridPlanes() const { return m_gridPlanes; }
+    void setGridPlanes(const int planes) {
+        m_gridPlanes = planes;
+    }
 
-    void setViewport(const int w, const int h)
-    {
+    [[nodiscard]] int getGridPlanes() const {
+        return m_gridPlanes;
+    }
+
+    void setViewport(const int w, const int h) {
         m_viewportW = w;
         m_viewportH = h;
     }
 
 private:
-    void renderInfiniteGrid(const cadm::mat4 &view, const cadm::mat4 &projection, const cadm::mat4 &invVP) const;
+    void renderInfiniteGrid(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+
     void renderInfiniteAxes(
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection,
-        const cadm::mat4 &invVP) const;
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &invVp
+    ) const;
+
     void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+
     void renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+
     void renderControlPoints(
         Scene &scene,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection,
-        QOpenGLFunctions_4_5_Core *gl) const;
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        QOpenGLFunctions_4_5_Core *gl
+    ) const;
+
     void renderC0BezierCurves(
         Scene &scene,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection,
-        const cadm::mat4 &VP) const;
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &vp
+    ) const;
+
+    void renderC2BezierCurves(
+        const Scene &scene,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &vp
+    ) const;
+
     void renderBezierCurves(
         Scene &scene,
-        const cadm::mat4 &view,
-        const cadm::mat4 &projection) const;
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
 
     AxesGeometry m_pivotAxes;
 
@@ -82,7 +111,9 @@ private:
     std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
 
-    int m_gridPlanes{1};
+    /// @note Should be set from the widget at program start
+    /// (or widget set based on this value)
+    int m_gridPlanes{0};
     int m_viewportW{1};
     int m_viewportH{1};
 

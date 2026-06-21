@@ -5,22 +5,26 @@
 #ifndef CAD_SHADERPROGRAM_H
 #define CAD_SHADERPROGRAM_H
 
-#include "GL.hpp"
+#include "Gl.hpp"
 #include <map>
 #include <string>
 
-class ShaderProgram
-{
+class ShaderProgram {
 public:
     explicit ShaderProgram();
+
     ~ShaderProgram();
 
     bool attachShader(GLenum type, const std::string &source);
+
     bool attachShaderFromFile(GLenum type, std::string filename);
+
     bool compile();
+
     void deleteShaders();
 
     void bind() const;
+
     void release() const;
 
     void setUniform1i(const std::string &name, int value) const;
@@ -29,6 +33,5 @@ private:
     GLuint m_program;
     std::map<GLenum, GLint> m_shaders;
 };
-
 
 #endif //CAD_SHADERPROGRAM_H
