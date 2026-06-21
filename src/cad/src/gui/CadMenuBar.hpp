@@ -7,13 +7,18 @@
 
 #include <QMenuBar>
 
-class QAction;
+#include "input/InputMap.hpp"
 
 class CadMenuBar final : public QMenuBar {
     Q_OBJECT
 
 public:
     explicit CadMenuBar(QWidget *parent = nullptr);
+
+    /// @brief Sources the Undo/Redo menu shortcuts from the input map.
+    /// Keeps the binding table the single source of truth and lets the menu
+    /// actions own (and display) the chords
+    void applyShortcuts(const InputMap &inputMap) const;
 
     void setUndoEnabled(bool enabled) const;
 

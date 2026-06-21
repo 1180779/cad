@@ -1,5 +1,4 @@
 #include <QApplication>
-#include <QPalette>
 #include <QSplitter>
 #include <QStackedWidget>
 
@@ -22,13 +21,13 @@
 #include "gui/ViewportPanelWidget.hpp"
 
 /// @brief Width of the app-colored separator strips between viewport, tool window and status line
-constexpr int kSeparatorStripWidth = 5;
+constexpr int gc_kSeparatorStripWidth = 5;
 
 /// @brief Soft off-white app background (IntelliJ-like), distinct from the white tool-window cards
-const QColor kAppBackground(0xF2, 0xF3, 0xF5);
+constexpr QColor gc_kAppBackground(0xF2, 0xF3, 0xF5);
 
 /// @brief Border width around the frameless window reserved for native resize handling
-constexpr int kResizeMargin = 6;
+constexpr int gc_kResizeMargin = 6;
 
 int main(int argc, char *argv[]) {
     glSetDefaults();
@@ -40,7 +39,7 @@ int main(int argc, char *argv[]) {
 
     // soft off-white app background; tool-window cards and separator strips read from this
     QPalette windowPalette = window.palette();
-    windowPalette.setColor(QPalette::Window, kAppBackground);
+    windowPalette.setColor(QPalette::Window, gc_kAppBackground);
     window.setPalette(windowPalette);
     window.setAutoFillBackground(true);
 
@@ -48,8 +47,8 @@ int main(int argc, char *argv[]) {
     // a border that the frameless-resize filter uses for native edge resizing
     const auto outerLayout = new QVBoxLayout(&window);
     // spacing matches the border so the title bar is framed symmetrically
-    outerLayout->setSpacing(kResizeMargin);
-    outerLayout->setContentsMargins(kResizeMargin, kResizeMargin, kResizeMargin, kResizeMargin);
+    outerLayout->setSpacing(gc_kResizeMargin);
+    outerLayout->setContentsMargins(gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin);
 
     // custom title bar embedding the menu bar + window controls (frameless window)
     const auto menuBar = new CadMenuBar;
@@ -57,10 +56,10 @@ int main(int argc, char *argv[]) {
     // app background with a blue + white-text highlight, and muted (not bland-grey)
     // disabled entries derived from the app background
 
-    const QColor hover = kAppBackground.darker(112); // subtle grey wash on hover
+    const QColor hover = gc_kAppBackground.darker(112); // subtle grey wash on hover
     const QColor highlight = window.palette().color(QPalette::Highlight);
-    const QColor disabled = kAppBackground.darker(140); // muted, tinted from app bg
-    const QColor border = kAppBackground.darker(125);
+    const QColor disabled = gc_kAppBackground.darker(140); // muted, tinted from app bg
+    const QColor border = gc_kAppBackground.darker(125);
     menuBar->setStyleSheet(
         QStringLiteral(
             "QMenuBar { background: transparent; }"
@@ -73,7 +72,7 @@ int main(int argc, char *argv[]) {
             "QMenu::item:disabled { color: %4; }"
             "QMenu::separator { height: 1px; background: %5; margin: 4px 8px; }"
         )
-        .arg(hover.name(), kAppBackground.name(), highlight.name(), disabled.name(), border.name())
+        .arg(hover.name(), gc_kAppBackground.name(), highlight.name(), disabled.name(), border.name())
     );
     const auto titleBar = new CadTitleBar(menuBar);
     outerLayout->addWidget(titleBar);
@@ -91,12 +90,14 @@ int main(int argc, char *argv[]) {
     const auto leftContainer = new QWidget;
     const auto leftLayout = new QVBoxLayout(leftContainer);
     // small app-colored strip between the viewport and the vim-style status line
-    leftLayout->setSpacing(kSeparatorStripWidth);
+    leftLayout->setSpacing(gc_kSeparatorStripWidth);
     leftLayout->setContentsMargins(0, 0, 0, 0);
 
     const auto glWidget = new OpenGlWidget;
     glWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     leftLayout->addWidget(glWidget);
+
+    menuBar->applyShortcuts(glWidget->getInputMap());
 
     const auto statusBar = new StatusBarWidget;
     leftLayout->addWidget(statusBar);
@@ -130,12 +131,12 @@ int main(int argc, char *argv[]) {
     const auto splitter = new QSplitter(Qt::Horizontal);
     splitter->setChildrenCollapsible(false);
     // app-colored strip separating the viewport from the open tool window
-    splitter->setHandleWidth(kSeparatorStripWidth);
+    splitter->setHandleWidth(gc_kSeparatorStripWidth);
     splitter->setStyleSheet(
-        QStringLiteral("QSplitter::handle { background-color: %1; }").arg(kAppBackground.name())
+        QStringLiteral("QSplitter::handle { background-color: %1; }").arg(gc_kAppBackground.name())
     );
-    splitter->addWidget(leftContainer); // index 0 — stretches
-    splitter->addWidget(panelStack); // index 1 — resizable, collapsible
+    splitter->addWidget(leftContainer); // index 0: stretches
+    splitter->addWidget(panelStack); // index 1: resizable, collapsible
     splitter->setStretchFactor(0, 1);
     splitter->setStretchFactor(1, 0);
     splitter->setSizes({10000, 450});
@@ -631,7 +632,7 @@ int main(int argc, char *argv[]) {
     );
 
     QApplication::instance()->installEventFilter(glWidget);
-    enableFramelessResize(&window, kResizeMargin);
+    enableFramelessResize(&window, gc_kResizeMargin);
     window.show();
     return QApplication::exec();
 }

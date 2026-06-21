@@ -20,6 +20,7 @@
 
 // restore Qt's emit macro
 #ifdef QT_EMIT_DEFINED
+// ReSharper disable once CppInconsistentNaming
 #define emit
 #undef QT_EMIT_DEFINED
 #endif
@@ -474,11 +475,10 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
     case InputAction::deleteSelected:
         deleteSelectedEntities();
         break;
+    // undo/redo are handled by the Edit-menu actions, which own these shortcuts; 
+    // the menu shortcut consumes the key before it reaches here
     case InputAction::undo:
-        m_commandStack.undo();
-        break;
     case InputAction::redo:
-        m_commandStack.redo();
         break;
     case InputAction::setBoxSelectMode:
         m_boxSelectMode = true;

@@ -54,6 +54,10 @@ public:
         return m_commandStack;
     }
 
+    [[nodiscard]] const InputMap& getInputMap() const {
+        return m_inputMap;
+    }
+
     [[nodiscard]] CoordSpace getCoordSpace() const {
         return m_coordSpace;
     }

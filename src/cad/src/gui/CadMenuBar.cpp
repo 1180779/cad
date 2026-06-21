@@ -7,12 +7,12 @@
 #include <QAction>
 #include <QMenu>
 
+#include "input/InputMap.hpp"
+
 CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     m_editMenu = addMenu("Edit");
     m_undoAction = m_editMenu->addAction("Undo", this, &CadMenuBar::undoRequested);
-    m_undoAction->setShortcut(QKeySequence::Undo);
     m_redoAction = m_editMenu->addAction("Redo", this, &CadMenuBar::redoRequested);
-    m_redoAction->setShortcut(QKeySequence::Redo);
 
     connect(
         m_editMenu,
@@ -24,6 +24,11 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     );
 
     m_toolsMenu = addMenu("Tools");
+}
+
+void CadMenuBar::applyShortcuts(const InputMap &inputMap) const {
+    m_undoAction->setShortcuts(inputMap.sequencesFor(InputAction::undo));
+    m_redoAction->setShortcuts(inputMap.sequencesFor(InputAction::redo));
 }
 
 void CadMenuBar::setUndoEnabled(const bool enabled) const {
