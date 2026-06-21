@@ -7,6 +7,7 @@
 
 #include <QColor>
 #include <QPalette>
+#include <QString>
 
 /// @brief Centralized custom theme palette
 namespace theme {
@@ -37,6 +38,53 @@ namespace theme {
 
     /// @brief Dropdown border + separators
     inline const QColor g_menuBorder = gc_appBackground.darker(125);
+
+    // text inputs / spinboxes
+
+    /// @brief Corner rounding for text inputs and spinboxes
+    inline constexpr int gc_inputRadius = 4;
+
+    /// @brief Resting 1px border around inputs (tinted from the app bg)
+    inline const QColor g_inputBorder = gc_appBackground.darker(125);
+
+    /// @brief Flat, IntelliJ-like coordinate spinbox: soft border + rounded corners,
+    /// accent border on focus, and slim themed up/down steppers with a hover tint.
+    /// Set on a parent widget so it cascades to its child QAbstractSpinBoxes
+    inline const QString g_spinBoxStyle = QStringLiteral(
+            R"(
+                QAbstractSpinBox {
+                    background-color: %1;
+                    border: 1px solid %2;
+                    border-radius: %3px;
+                    padding: 2px 6px;
+                    selection-background-color: %4;
+                    selection-color: white;
+                }
+                QAbstractSpinBox:focus { border: 1px solid %4; }
+                QAbstractSpinBox:disabled { color: %5; background-color: %6; }
+                QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
+                    subcontrol-origin: border;
+                    width: 15px;
+                    border-left: 1px solid %2;
+                    background-color: transparent;
+                }
+                QAbstractSpinBox::up-button { subcontrol-position: top right; border-top-right-radius: %3px; }
+                QAbstractSpinBox::down-button { subcontrol-position: bottom right; border-bottom-right-radius: %3px; }
+                QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover { background-color: %7; }
+                QAbstractSpinBox::up-arrow { image: url(:/icons/chevron-up.svg); width: 9px; height: 9px; }
+                QAbstractSpinBox::down-arrow { image: url(:/icons/chevron-down.svg); width: 9px; height: 9px; }
+                QAbstractSpinBox::up-arrow:disabled, QAbstractSpinBox::down-arrow:disabled { image: none; }
+            )"
+        )
+        .arg(
+            gc_cardBackground.name(),
+            g_inputBorder.name(),
+            QString::number(gc_inputRadius),
+            gc_accent.name(),
+            g_menuDisabled.name(),
+            gc_appBackground.name(),
+            g_menuHover.name()
+        );
 
     // frameless window-control buttons (QSS color literals)
 

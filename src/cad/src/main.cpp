@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QFontDatabase>
 #include <QSplitter>
 #include <QStackedWidget>
 
@@ -540,6 +541,21 @@ int main(int argc, char *argv[]) {
     // reference) inherits the app background, white card base and accent from here
     QApplication::setPalette(theme::applyTheme(QApplication::palette()));
 
+    // load the bundled JetBrains Mono and make it the default application font;
+    // the family name is read back from the loaded font rather than hard-coded
+    QFontDatabase::addApplicationFont(":/fonts/JetBrainsMono-Bold.ttf");
+    if (const int fontId = QFontDatabase::addApplicationFont(":/fonts/JetBrainsMono-Regular.ttf");
+        fontId != -1) {
+        if (const QStringList families = QFontDatabase::applicationFontFamilies(fontId);
+            !families.isEmpty()) {
+            QFont appFont(families.first());
+            appFont.setPointSize(11);
+            QApplication::setFont(appFont);
+        }
+    }
+
+    a.setStyleSheet(theme::g_spinBoxStyle);
+
     QWidget window;
     window.setWindowFlag(Qt::FramelessWindowHint);
     window.setMinimumSize(QSize(500, 500));
@@ -551,11 +567,9 @@ int main(int argc, char *argv[]) {
     // a border that the frameless-resize filter uses for native edge resizing
     // ReSharper disable once CppDFAMemoryLeak
     const auto outerLayout = new QVBoxLayout(&window);
-    // spacing matches the border so the title bar is framed symmetrically
     outerLayout->setSpacing(gc_kResizeMargin);
     outerLayout->setContentsMargins(gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin);
 
-    // custom title bar embedding the menu bar + window controls (frameless window)
     const auto menuBar = new CadMenuBar;
     styleMenuBar(menuBar);
     const auto titleBar = new CadTitleBar(menuBar);
@@ -563,8 +577,6 @@ int main(int argc, char *argv[]) {
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto content = new QWidget;
-    // explicit cursor so the window's border resize cursor never bleeds into the
-    // content area through inheritance (child widgets still override as needed)
     content->setCursor(Qt::ArrowCursor);
     // ReSharper disable once CppDFAMemoryLeak
     const auto rootLayout = new QHBoxLayout(content);
@@ -572,12 +584,10 @@ int main(int argc, char *argv[]) {
     rootLayout->setContentsMargins(0, 0, 0, 0);
     outerLayout->addWidget(content, 1);
 
-    // left side: GL widget + status bar in a container
     // ReSharper disable once CppDFAMemoryLeak
     const auto leftContainer = new QWidget;
     // ReSharper disable once CppDFAMemoryLeak
     const auto leftLayout = new QVBoxLayout(leftContainer);
-    // small app-colored strip between the viewport and the vim-style status line
     leftLayout->setSpacing(gc_kSeparatorStripWidth);
     leftLayout->setContentsMargins(0, 0, 0, 0);
 
