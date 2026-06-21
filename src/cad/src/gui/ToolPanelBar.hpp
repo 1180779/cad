@@ -20,11 +20,18 @@ public:
 
     [[nodiscard]] QSize minimumSizeHint() const override;
 
+    /// @brief Whether the open panel currently holds focus; only a focused active tab
+    /// paints with the blue accent, otherwise it falls back to the hover gray
+    void setPanelFocused(bool focused);
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 
     /// @brief No-op so the button never auto-toggles; ToolPanelBar owns the checked state
     void nextCheckState() override;
+
+private:
+    bool m_panelFocused = false;
 };
 
 /// @brief Thin vertical strip of checkable panel-tab buttons, IntelliJ-style
@@ -48,6 +55,10 @@ public:
 
     /// @brief Programmatically open a panel without emitting panelRequested
     void openPanel(int index);
+
+    /// @brief Reflect whether the open tool panel holds keyboard focus, so the active
+    /// tab shows the blue accent only while focused and the hover gray otherwise
+    void setPanelFocused(bool focused);
 
 signals:
     void panelRequested(int index);

@@ -85,6 +85,7 @@ namespace {
             [panelStack](const int index) {
                 panelStack->setCurrentIndex(index);
                 panelStack->show();
+                panelStack->currentWidget()->setFocus(Qt::OtherFocusReason);
             }
         );
         QObject::connect(
@@ -598,6 +599,9 @@ int main(int argc, char *argv[]) {
     const auto scenePanel = new ScenePanelWidget;
     const auto viewportPanel = new ViewportPanelWidget;
 
+    scenePanel->setFocusPolicy(Qt::ClickFocus);
+    viewportPanel->setFocusPolicy(Qt::ClickFocus);
+
     // ReSharper disable once CppDFAMemoryLeak
     const auto panelStack = new QStackedWidget;
     panelStack->addWidget(scenePanel);
@@ -636,6 +640,18 @@ int main(int argc, char *argv[]) {
     panelStack->show();
 
     wirePanelToggles(panelBar, panelStack, sceneAction, viewportAction, sceneBtn, viewportBtn);
+
+    // IntelliJ-style active-tab accent: the open tab paints blue only while the tool panel
+    // holds focus, falling back to the hover gray otherwise. Track app focus and report
+    // whether it currently lives inside the panel stack
+    QObject::connect(
+        qApp,
+        &QApplication::focusChanged,
+        panelBar,
+        [panelBar, panelStack](QWidget *, const QWidget *now) {
+            panelBar->setPanelFocused(now != nullptr && panelStack->isAncestorOf(now));
+        }
+    );
 
     auto *hierarchyWidget = scenePanel->hierarchyWidget();
     auto *entityPropertiesWidget = scenePanel->entityPropertiesWidget();

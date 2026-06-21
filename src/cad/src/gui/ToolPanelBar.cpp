@@ -35,6 +35,14 @@ void PanelTabButton::nextCheckState() {
     // so the button must not toggle itself on click
 }
 
+void PanelTabButton::setPanelFocused(const bool focused) {
+    if (m_panelFocused == focused) {
+        return;
+    }
+    m_panelFocused = focused;
+    update();
+}
+
 void PanelTabButton::paintEvent(QPaintEvent *) {
     // paint the tab explicitly rather than delegating to the style's complex-control
     // renderer: the latter swaps in highlight backgrounds / white text on transient
@@ -42,14 +50,15 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
     // appearance is a controlled function of just isChecked()/underMouse()
     const QPalette &pal = palette();
 
-    // intelliJ-style states: white when idle, gray on hover, blue + white text when selected
+    // intelliJ-style states: white when idle, gray on hover, blue + white text only when
+    // the open panel is focused; an active-but-unfocused tab falls back to the hover gray
     QColor bg;
     QColor fg = pal.color(QPalette::ButtonText);
-    if (isChecked()) {
+    if (isChecked() && m_panelFocused) {
         bg = pal.color(QPalette::Highlight);
         fg = pal.color(QPalette::HighlightedText);
     }
-    else if (underMouse()) {
+    else if (isChecked() || underMouse()) {
         bg = pal.color(QPalette::Button);
     }
     else {
@@ -142,6 +151,15 @@ void ToolPanelBar::setActiveIndex(const int index) {
     m_activeIndex = index;
     for (int i = 0; i < m_buttons.size(); ++i) {
         m_buttons[i]->setChecked(i == index);
+        // focus is re-reported by the app's focusChanged signal; a freshly switched tab
+        // starts unfocused until focus actually lands in the panel
+        m_buttons[i]->setPanelFocused(false);
+    }
+}
+
+void ToolPanelBar::setPanelFocused(const bool focused) {
+    if (auto *btn = buttonAt(m_activeIndex)) {
+        btn->setPanelFocused(focused);
     }
 }
 
