@@ -5,23 +5,32 @@
 #ifndef CAD_COMMANDSTACK_HPP
 #define CAD_COMMANDSTACK_HPP
 
+#include <cstddef>
+#include <deque>
 #include <functional>
 #include <memory>
-#include <vector>
 
 #include "Command.hpp"
 
-/// @brief 
-/// Undo/redo history. 
-/// undo()/redo() move between the two stacks. A fresh push clears the redo stack.
+/// @brief
+/// Bounded undo/redo history.
+/// undo()/redo() move commands between the two deques. A fresh push clears the redo
+/// deque, and once the undo history exceeds the capacity the oldest entry is dropped
+/// from the front in O(1).
 ///
-/// Kept free of Qt, so it is unit-testable in isolation; 
-/// callers hook onChange to refresh the UI
+/// TODO (low priority): swap the two deques for a single fixed-capacity ring buffer
+///     (no noticeable performance gain)
 class CommandStack {
 public:
-    /// @brief Executes a command and pushes it onto the undo stack, clearing redo history.
-    /// If coalesce and the previous command accepts a merge, the two collapse
-    /// into a single undo step
+    /// @brief Default number of undo steps retained before the oldest is dropped
+    static constexpr std::size_t gc_defaultCapacity = 1024;
+
+    /// @brief Construct with a fixed undo-history capacity (clamped to at least 1)
+    explicit CommandStack(std::size_t capacity = gc_defaultCapacity);
+
+    /// @brief Executes a command and pushes it onto the undo history, clearing redo
+    /// history. If coalesce and the previous command accepts a merge, the two collapse
+    /// into a single undo step. When the history is full, the oldest entry is dropped
     /// @param cmd The command to execute and store
     /// @param coalesce Whether to attempt merging this command with the previous one
     void push(std::unique_ptr<Command> cmd, bool coalesce = false);
@@ -50,8 +59,11 @@ private:
         }
     }
 
-    std::vector<std::unique_ptr<Command>> m_undo;
-    std::vector<std::unique_ptr<Command>> m_redo;
+    /// @brief Maximum number of retained undo steps; older entries are evicted
+    std::size_t m_capacity;
+
+    std::deque<std::unique_ptr<Command>> m_undo;
+    std::deque<std::unique_ptr<Command>> m_redo;
 };
 
 #endif //CAD_COMMANDSTACK_HPP

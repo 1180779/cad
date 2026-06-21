@@ -641,7 +641,7 @@ int main(int argc, char *argv[]) {
 
     wirePanelToggles(panelBar, panelStack, sceneAction, viewportAction, sceneBtn, viewportBtn);
 
-    // IntelliJ-style active-tab accent: the open tab paints blue only while the tool panel
+    // intelliJ-style active-tab accent: the open tab paints blue only while the tool panel
     // holds focus, falling back to the hover gray otherwise. Track app focus and report
     // whether it currently lives inside the panel stack
     QObject::connect(

@@ -4,6 +4,10 @@
 
 #include "CommandStack.hpp"
 
+#include <algorithm>
+
+CommandStack::CommandStack(const std::size_t capacity) : m_capacity(std::max<std::size_t>(1, capacity)) {}
+
 void CommandStack::push(std::unique_ptr<Command> cmd, const bool coalesce) {
     cmd->execute();
 
@@ -15,6 +19,11 @@ void CommandStack::push(std::unique_ptr<Command> cmd, const bool coalesce) {
 
     m_undo.push_back(std::move(cmd));
     m_redo.clear();
+
+    while (m_undo.size() > m_capacity) {
+        m_undo.pop_front();
+    }
+
     notify();
 }
 
