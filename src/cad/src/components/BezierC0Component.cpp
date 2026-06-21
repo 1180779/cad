@@ -179,8 +179,12 @@ void BezierC0Component::removeMidPointPartial(const int removedIndex) {
 }
 
 void BezierC0Component::setShowPolygon(const bool v) {
-    m_showPolygon = v;
-    m_needsUpdate = true;
+    if (v != m_showPolygon) {
+        m_showPolygon = v;
+        if (v) {
+            m_needsUpdate = true;
+        }
+    }
 }
 
 int BezierC0Component::segmentCount() const {

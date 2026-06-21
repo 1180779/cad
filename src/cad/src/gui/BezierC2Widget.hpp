@@ -61,8 +61,15 @@ private:
     /// @brief Which of the two lists uses the shared spinboxes right now
     enum class SelectedPointKind { none, deBoor, bernstein };
 
-    /// @brief Rebuild the Bernstein list from the curve's current Bernstein positions
+    /// @brief Rebuild the Bernstein list from scratch (clear + re-add every row)
+    /// @note Used for the initial fill / curve (re)loading; prefer reconcileBernsteinList()
+    /// for live updates so editing a Bernstein point doesn't drop the row being edited
     void refreshBernsteinList() const;
+
+    /// @brief Update the Bernstein list in place to match the curve's Bernstein point
+    /// count: append/remove only the trailing rows. Row labels derive purely from the
+    /// index, so existing rows are left untouched -- preserving selection and the edit
+    void reconcileBernsteinList() const;
 
     /// @brief Load the spinboxes with the position of de Boor point @p h
     void updateSpinboxesForDeBoor(PointHandle h);
@@ -77,9 +84,7 @@ private:
 
     QCheckBox *m_showDeBoorPolygonCheckbox{};
     QCheckBox *m_showBernsteinPolygonCheckbox{};
-
-    /// @brief Toggles uniform vs chord-length parametrization
-    QCheckBox *m_uniformCheckbox{};
+    QCheckBox *m_showBernsteinCpsCheckbox{};
 
     /// @brief Editable control points (curve order)
     QListWidget *m_deBoorList{};
@@ -101,11 +106,11 @@ private:
     SelectedPointKind m_selectedKind = SelectedPointKind::none;
 
     /// @note valid when m_selectedKind == deBoor
-    PointHandle m_selectedDeBoor = InvalidPointHandle;
+    PointHandle m_selectedDeBoorHandle = InvalidPointHandle;
 
-    /// @brief Bernstein index, 
-    ///@note valid when m_selectedKind == bernstein
-    int m_selectedBernstein = -1;
+    /// @brief Bernstein index 
+    /// @note valid when m_selectedKind == bernstein
+    int m_selectedBernsteinIndex = -1;
 
     /// @brief Guards spinbox value-changed handlers while the values are set,
     /// so a refresh doesn't get mistaken for a user edit

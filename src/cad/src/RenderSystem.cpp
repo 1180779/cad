@@ -197,7 +197,7 @@ void RenderSystem::renderControlPoints(
     const cadm::Mat4 &projection,
     QOpenGLFunctions_4_5_Core *const gl
 ) const {
-    auto &pointRegistry = scene.getPointRegistry();
+    const auto &pointRegistry = scene.getPointRegistry();
     if (!pointRegistry.empty()) {
         m_pointShader->bind();
         SHADER_SET_UNIFORM_CHECK(m_pointShader->setUniformMat4("view", view));
@@ -360,11 +360,12 @@ void RenderSystem::renderC2BezierCurves(
             gl->glPatchParameteri(GL_PATCH_VERTICES, 4);
             gl->glBindVertexArray(pBezier->getPatchVao());
             for (int p = 0; p < segments; ++p) {
+                // shared-endpoint layout: patch p uses slots [3p, 3p+1, 3p+2, 3p+3]
                 const cadm::Vec3 pts[4] = {
-                    bps[4 * p + 0],
-                    bps[4 * p + 1],
-                    bps[4 * p + 2],
-                    bps[4 * p + 3],
+                    bps[3 * p + 0],
+                    bps[3 * p + 1],
+                    bps[3 * p + 2],
+                    bps[3 * p + 3],
                 };
                 const auto pixelsOpt = bezierUtils::screenExtent(pts, view, projection, m_viewportW, m_viewportH);
                 if (!pixelsOpt.has_value()) {
@@ -389,27 +390,29 @@ void RenderSystem::renderC2BezierCurves(
             m_bezierCurveShader->release();
 
             // draw virtual Bernstein points as dots
-            m_wireframeShader->bind();
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
-            SHADER_SET_UNIFORM_CHECK(
-                m_wireframeShader->setUniform1(
-                    "u_highlightStrength",
-                    e->isSelected()
-                    ? s_selectionHS
-                    : s_noSelectionHS
-                )
-            );
-            static constexpr cadm::vec4 bernsteinPointColor{0.9f, 0.9f, 0.2f, 1.0f};
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", bernsteinPointColor));
-            gl->glPointSize(6.0f);
-            gl->glBindVertexArray(pBezier->getPatchVao());
-            gl->glDrawElements(GL_POINTS, pBezier->getPatchIndexCount(), GL_UNSIGNED_INT, nullptr);
-            gl->glPointSize(1.0f);
-            gl->glBindVertexArray(0);
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
-            m_wireframeShader->release();
+            if (pBezier->getShowBernsteinCps()) {
+                m_wireframeShader->bind();
+                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
+                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
+                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+                SHADER_SET_UNIFORM_CHECK(
+                    m_wireframeShader->setUniform1(
+                        "u_highlightStrength",
+                        e->isSelected()
+                        ? s_selectionHS
+                        : s_noSelectionHS
+                    )
+                );
+                static constexpr cadm::vec4 bernsteinPointColor{0.9f, 0.9f, 0.2f, 1.0f};
+                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", bernsteinPointColor));
+                gl->glPointSize(6.0f);
+                gl->glBindVertexArray(pBezier->getPatchVao());
+                gl->glDrawElements(GL_POINTS, pBezier->getPatchIndexCount(), GL_UNSIGNED_INT, nullptr);
+                gl->glPointSize(1.0f);
+                gl->glBindVertexArray(0);
+                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+                m_wireframeShader->release();
+            }
 
             // bernstein polygon
             if (pBezier->getShowBernsteinPolygon()) {
@@ -435,7 +438,7 @@ void RenderSystem::renderC2BezierCurves(
             }
         }
 
-        // De Boor polygon
+        // de Boor polygon
         if (pBezier->getShowDeBoorPolygon() && pBezier->getDeBoorIndexCount() >= 2) {
             m_wireframeShader->bind();
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));

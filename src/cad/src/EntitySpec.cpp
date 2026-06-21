@@ -65,8 +65,7 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
             BezierC2Data{
                 bc.value()->getDeBoorPoints(),
                 bc.value()->getShowDeBoorPolygon(),
-                bc.value()->getShowBernsteinPolygon(),
-                bc.value()->getParametrizationMode()
+                bc.value()->getShowBernsteinPolygon()
             }
         );
     }
@@ -116,7 +115,7 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                     }
                     bezier->setShowDeBoorPolygon(d.showDeBoorPolygon);
                     bezier->setShowBernsteinPolygon(d.showBernsteinPolygon);
-                    bezier->setParametrizationMode(d.parametrization);
+                    bezier->setShowBernsteinCps(d.showBernsteinCps);
                 },
             },
             component

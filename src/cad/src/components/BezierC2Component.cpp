@@ -5,17 +5,20 @@
 #include "BezierC2Component.hpp"
 
 #include <algorithm>
+#include <iterator>
+#include <limits>
 #include <ranges>
 #include <span>
 
+#include "BSplineToBezierConverter.hpp"
 #include "GlCommon.hpp"
 
 BezierC2Component::BezierC2Component(PointRegistry *registry) : m_registry{registry} {
     m_positionCallbackId = registry->subscribeToPositionChanges(
         [this](const PointHandle h) {
-            if (std::ranges::find(m_deBoorPoints, h) != m_deBoorPoints.end()) {
-                m_bernsteinDirty = true;
-                m_needsUpdate = true;
+            if (const auto it = std::ranges::find(m_deBoorPoints, h);
+                it != m_deBoorPoints.end()) {
+                markDeBoorDirty(static_cast<int>(std::distance(m_deBoorPoints.begin(), it)));
             }
         }
     );
@@ -60,8 +63,7 @@ void BezierC2Component::addControlPoint(const PointHandle handle) {
     );
     m_removeControlPointCallbacks[handle] = id;
 
-    m_needsUpdate = true;
-    m_bernsteinDirty = true;
+    markStructureDirty();
 }
 
 void BezierC2Component::removeControlPointAt(const int index) {
@@ -71,8 +73,7 @@ void BezierC2Component::removeControlPointAt(const int index) {
     const PointHandle h = m_deBoorPoints[index];
     removeAssociatedCallback(h);
     m_deBoorPoints.erase(m_deBoorPoints.begin() + index);
-    m_needsUpdate = true;
-    m_bernsteinDirty = true;
+    markStructureDirty();
 }
 
 void BezierC2Component::removeControlPoint(const PointHandle handle) {
@@ -82,62 +83,62 @@ void BezierC2Component::removeControlPoint(const PointHandle handle) {
     }
     removeAssociatedCallback(handle);
     m_deBoorPoints.erase(it);
-    m_needsUpdate = true;
-    m_bernsteinDirty = true;
+    markStructureDirty();
 }
 
 void BezierC2Component::setShowDeBoorPolygon(const bool v) {
-    m_showDeBoorPolygon = v;
-    m_needsUpdate = true;
+    if (m_showDeBoorPolygon != v) {
+        m_showDeBoorPolygon = v;
+        if (v) {
+            m_needsUpdate = true;
+        }
+    }
 }
 
-void BezierC2Component::setParametrizationMode(const ParametrizationMode mode) {
-    if (m_parametrizationMode == mode) {
-        return;
-    }
-    m_parametrizationMode = mode;
-    m_bernsteinDirty = true;
-    m_needsUpdate = true;
-}
+void BezierC2Component::setBernsteinPosition(const int bernsteinIndex, const cadm::Vec3 newPos) const {
+    const int local = bernsteinIndex % 3;
+    const int k = bernsteinIndex / 3;
 
-void BezierC2Component::setBernsteinPosition(const int bernsteinIndex, const cadm::Vec3 newPos) {
-    const int local = bernsteinIndex % 4;
-    const int segment = bernsteinIndex / 4;
-
-    // all inverses use the uniform-knot formula. In chord-length mode the result is
-    // approximate (the de Boor point shifts, the curve recomputes with new chord lengths),
-    // but it gives meaningful interactive control
-    if (local == 0) {
-        // b0 = (d0 + 4*d1 + d2)/6  →  d0 = 6*b0 - 4*d1 - d2
-        const cadm::Vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
-        const cadm::Vec3 d2 = m_registry->getPosition(m_deBoorPoints[segment + 2]);
-        m_registry->setPosition(m_deBoorPoints[segment], newPos * 6.0f - d1 * 4.0f - d2);
-    }
-    else if (local == 1) {
-        // b1 = (2*d1 + d2)/3  →  d1 = (3*b1 - d2) / 2
-        const cadm::Vec3 d2 = m_registry->getPosition(m_deBoorPoints[segment + 2]);
-        m_registry->setPosition(m_deBoorPoints[segment + 1], (newPos * 3.0f - d2) * 0.5f);
+    if (local == 1) {
+        // move the closer de Boor point
+        // b1 = (2*d[k+1] + d[k+2])/3
+        // <->
+        // d[k+1] = (3*b1 - d[k+2]) / 2
+        const cadm::Vec3 dNext = m_registry->getPosition(m_deBoorPoints[k + 2]);
+        m_registry->setPosition(m_deBoorPoints[k + 1], (newPos * 3.0f - dNext) * 0.5f);
     }
     else if (local == 2) {
-        // b2 = (d1 + 2*d2)/3  →  d2 = (3*b2 - d1) / 2
-        const cadm::Vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
-        m_registry->setPosition(m_deBoorPoints[segment + 2], (newPos * 3.0f - d1) * 0.5f);
+        // move the closer De Boor point
+        // b2 = (d[k+1] + 2*d[k+2])/3
+        // <->
+        // d[k+2] = (3*b2 - d[k+1]) / 2
+        const cadm::Vec3 dPrev = m_registry->getPosition(m_deBoorPoints[k + 1]);
+        m_registry->setPosition(m_deBoorPoints[k + 2], (newPos * 3.0f - dPrev) * 0.5f);
     }
-    else // local == 3
-    {
-        // b3 = (d1 + 4*d2 + d3)/6  →  d3 = 6*b3 - d1 - 4*d2
-        const cadm::Vec3 d1 = m_registry->getPosition(m_deBoorPoints[segment + 1]);
-        const cadm::Vec3 d2 = m_registry->getPosition(m_deBoorPoints[segment + 2]);
-        m_registry->setPosition(m_deBoorPoints[segment + 3], newPos * 6.0f - d1 - d2 * 4.0f);
+    else {
+        // move the middle De Boor point
+        // joint j = (d[k] + 4*d[k+1] + d[k+2])/6
+        // <->
+        // d[k+1] = (6*j - d[k] - d[k+2]) / 4
+        const cadm::Vec3 dPrev = m_registry->getPosition(m_deBoorPoints[k]);
+        const cadm::Vec3 dNext = m_registry->getPosition(m_deBoorPoints[k + 2]);
+        m_registry->setPosition(m_deBoorPoints[k + 1], (newPos * 6.0f - dPrev - dNext) * 0.25f);
     }
-
-    m_bernsteinDirty = true;
-    m_needsUpdate = true;
+    // each branch moves one de Boor point via setPosition;
+    // change callback already marks the affected segments dirty
 }
 
 void BezierC2Component::setShowBernsteinPolygon(const bool v) {
-    m_showBernsteinPolygon = v;
-    m_needsUpdate = true;
+    if (m_showBernsteinPolygon != v) {
+        m_showBernsteinPolygon = v;
+        if (v) {
+            m_needsUpdate = true;
+        }
+    }
+}
+
+void BezierC2Component::setShowBernsteinCps(const bool v) {
+    m_showBernsteinCps = v;
 }
 
 int BezierC2Component::segmentCount() const {
@@ -148,8 +149,30 @@ int BezierC2Component::segmentCount() const {
 }
 
 void BezierC2Component::regenerateMesh() {
+    markStructureDirty();
+}
+
+void BezierC2Component::markStructureDirty() {
+    m_structureDirty = true;
     m_needsUpdate = true;
-    m_bernsteinDirty = true;
+}
+
+void BezierC2Component::markSegmentsDirty(const int firstSeg, const int lastSeg) {
+    m_dirtySegLo = std::min(m_dirtySegLo, firstSeg);
+    m_dirtySegHi = std::max(m_dirtySegHi, lastSeg);
+    m_needsUpdate = true;
+}
+
+void BezierC2Component::markDeBoorDirty(const int deBoorIndex) {
+    const int segs = segmentCount();
+    if (segs <= 0) {
+        return;
+    }
+    // segment s is built only from positions d[s...s+3] -> moving d[j] hits [j-3, j]
+    markSegmentsDirty(
+        std::max(0, deBoorIndex - 3),
+        std::min(segs - 1, deBoorIndex)
+    );
 }
 
 void BezierC2Component::removeAssociatedCallback(const PointHandle h) {
@@ -161,38 +184,79 @@ void BezierC2Component::removeAssociatedCallback(const PointHandle h) {
     m_removeControlPointCallbacks.erase(it);
 }
 
+void BezierC2Component::ensureBernsteinUpToDate() {
+    if (hasDirtyBernstein()) {
+        recomputeBernstein();
+    }
+}
+
 void BezierC2Component::recomputeBernstein() {
-    bsplineToBezier::convert(
-        m_parametrizationMode,
-        std::span<const PointHandle>(m_deBoorPoints),
-        *m_registry,
-        m_bernsteinPositions
-    );
+    const int segs = segmentCount();
 
-    m_bernsteinVbo.assign(m_bernsteinPositions);
-
-    // sequential patch EBO: 0,1,2,3, 4,5,6,7, ...
-
-    const int totalBernstein = static_cast<int>(m_bernsteinPositions.size());
-    std::vector<uint32_t> patchIdx(static_cast<size_t>(totalBernstein));
-    for (int i = 0; i < totalBernstein; ++i) {
-        patchIdx[i] = static_cast<uint32_t>(i);
+    const int expectedPositions = segs > 0
+                                      ? segs * 3 + 1
+                                      : 0;
+    if (!m_structureDirty && m_bernsteinVbo.size() != expectedPositions) {
+        m_structureDirty = true;
     }
-    m_patchEbo.assign(std::move(patchIdx));
 
-    // De Boor EBO: PointHandle values (slot indices) for line strip through de Boor points
-    const int n = static_cast<int>(m_deBoorPoints.size());
-    std::vector<uint32_t> deBoorIdx(static_cast<size_t>(n));
-    for (int i = 0; i < n; ++i) {
-        deBoorIdx[i] = m_deBoorPoints[i];
+    if (m_structureDirty) {
+        std::vector<cadm::Vec3> positions;
+        bsplineToBezier::convert(std::span<const PointHandle>(m_deBoorPoints), *m_registry, positions);
+
+        m_bernsteinVbo.diffAssign(std::move(positions));
+
+        std::vector<uint32_t> patchIdx(static_cast<size_t>(segs) * 4);
+        for (int s = 0; s < segs; ++s) {
+            const auto base = static_cast<uint32_t>(s * 3);
+            patchIdx[static_cast<size_t>(s) * 4 + 0] = base;
+            patchIdx[static_cast<size_t>(s) * 4 + 1] = base + 1;
+            patchIdx[static_cast<size_t>(s) * 4 + 2] = base + 2;
+            patchIdx[static_cast<size_t>(s) * 4 + 3] = base + 3;
+        }
+        m_patchEbo.diffAssign(std::move(patchIdx));
+
+        const int n = static_cast<int>(m_deBoorPoints.size());
+        std::vector<uint32_t> deBoorIdx(static_cast<size_t>(n));
+        for (int i = 0; i < n; ++i) {
+            deBoorIdx[i] = m_deBoorPoints[i];
+        }
+        m_deBoorEbo.diffAssign(std::move(deBoorIdx));
+
+        m_structureDirty = false;
+        m_dirtySegLo = std::numeric_limits<int>::max();
+        m_dirtySegHi = -1;
+        return;
     }
-    m_deBoorEbo.assign(std::move(deBoorIdx));
+
+    // geometry-only: recompute and re-upload just the dirty segments straight into the VBO slots
+    const int first = std::max(0, m_dirtySegLo);
+    const int last = std::min(segs - 1, m_dirtySegHi);
+    for (int g = first; g <= last; ++g) {
+        cadm::Vec3 b[4];
+        bsplineToBezier::uniformSegment(
+            m_registry->getPosition(m_deBoorPoints[g]),
+            m_registry->getPosition(m_deBoorPoints[g + 1]),
+            m_registry->getPosition(m_deBoorPoints[g + 2]),
+            m_registry->getPosition(m_deBoorPoints[g + 3]),
+            std::span(b)
+        );
+        // segment g occupies slots [3g, 3g+1, 3g+2, 3g+3]; the boundary slots 3g and
+        // 3g+3 are shared with neighbours but get the same join value, so re-writing
+        // them here is consistent
+        const int base = 3 * g;
+        for (int j = 0; j < 4; ++j) {
+            m_bernsteinVbo.set(base + j, b[j]);
+        }
+    }
+
+    m_dirtySegLo = std::numeric_limits<int>::max();
+    m_dirtySegHi = -1;
 }
 
 void BezierC2Component::syncToGpu() {
-    if (m_bernsteinDirty) {
+    if (hasDirtyBernstein()) {
         recomputeBernstein();
-        m_bernsteinDirty = false;
     }
 
     const auto gl = getGl();
