@@ -1,3 +1,7 @@
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
 #include "ViewportPanelWidget.hpp"
 
 #include <QComboBox>

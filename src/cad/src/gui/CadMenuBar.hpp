@@ -1,3 +1,7 @@
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
 #ifndef CAD_CADMENUBAR_HPP
 #define CAD_CADMENUBAR_HPP
 
@@ -11,12 +15,12 @@ class CadMenuBar final : public QMenuBar {
 public:
     explicit CadMenuBar(QWidget *parent = nullptr);
 
-    void setUndoEnabled(bool enabled);
+    void setUndoEnabled(bool enabled) const;
 
-    void setRedoEnabled(bool enabled);
+    void setRedoEnabled(bool enabled) const;
 
     /// @brief Register a toggleable panel entry under the Tools menu; returns the action
-    QAction* addToolPanelAction(const QString &name);
+    [[nodiscard]] QAction* addToolPanelAction(const QString &name) const;
 
 signals:
     void undoRequested();
@@ -33,4 +37,4 @@ private:
     QAction *m_redoAction;
 };
 
-#endif
+#endif //CAD_CADMENUBAR_HPP

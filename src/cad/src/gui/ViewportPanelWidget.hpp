@@ -1,3 +1,7 @@
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
 #ifndef CAD_VIEWPORTPANELWIDGET_HPP
 #define CAD_VIEWPORTPANELWIDGET_HPP
 
@@ -24,4 +28,4 @@ private:
     QComboBox *m_coordSpaceCombo;
 };
 
-#endif
+#endif //CAD_VIEWPORTPANELWIDGET_HPP

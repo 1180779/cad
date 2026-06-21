@@ -1,3 +1,7 @@
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
 #include "CadTitleBar.hpp"
 
 #include <QHBoxLayout>
@@ -16,7 +20,7 @@ namespace {
         btn->setAutoRaise(true);
         btn->setFocusPolicy(Qt::NoFocus);
         btn->setFixedSize(gc_kTitleBarHeight + 12, gc_kTitleBarHeight);
-        // coherent with the menu theming: flat by default, a subtle grey wash on hover
+        // coherent with the menu theming: flat by default, a subtle gray wash on hover
         // the close button mirrors the platform convention with a red hover instead
         const char *hover = isClose
                                 ? "#E81123"
@@ -66,8 +70,8 @@ namespace {
                 m_window->unsetCursor();
                 break;
             case QEvent::MouseButtonPress: {
-                const auto *me = static_cast<QMouseEvent*>(event);
-                if (me->button() == Qt::LeftButton && !m_window->isMaximized()) {
+                if (const auto *me = static_cast<QMouseEvent*>(event);
+                    me->button() == Qt::LeftButton && !m_window->isMaximized()) {
                     if (const Qt::Edges edges = edgesAt(me->pos());
                         edges != Qt::Edges()) {
                         if (QWindow *handle = m_window->windowHandle()) {

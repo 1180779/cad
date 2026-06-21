@@ -1,3 +1,7 @@
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
 #ifndef CAD_SCENEPANELWIDGET_HPP
 #define CAD_SCENEPANELWIDGET_HPP
 
@@ -20,4 +24,4 @@ private:
     EntityPropertiesWidget *m_entityProperties;
 };
 
-#endif
+#endif //CAD_SCENEPANELWIDGET_HPP

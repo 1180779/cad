@@ -1,10 +1,13 @@
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
 #ifndef CAD_CADTITLEBAR_HPP
 #define CAD_CADTITLEBAR_HPP
 
-#include <QWidget>
+#include <QToolButton>
 
-class QMenuBar;
-class QToolButton;
+#include "CadMenuBar.hpp"
 
 /// @brief IntelliJ-style unified title bar for a frameless window
 ///
@@ -41,5 +44,4 @@ private:
 /// Watches the @p margin-wide border for hover/press and drives the platform's
 /// native system-resize, so a FramelessWindowHint window stays resizable
 void enableFramelessResize(QWidget *window, int margin = 6);
-
-#endif
+#endif //CAD_CADTITLEBAR_HPP

@@ -1,4 +1,9 @@
-#pragma once
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
+#ifndef CAD_TOOLPANELBAR_HPP
+#define CAD_TOOLPANELBAR_HPP
 
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -49,6 +54,9 @@ signals:
 
     void panelClosed();
 
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
 private:
     QVBoxLayout *m_layout;
     QList<PanelTabButton*> m_buttons;
@@ -58,6 +66,6 @@ private:
     void setActiveIndex(int index);
 
     void onButtonClicked(int index);
-
-    void paintEvent(QPaintEvent *event) override;
 };
+
+#endif //CAD_TOOLPANELBAR_HPP

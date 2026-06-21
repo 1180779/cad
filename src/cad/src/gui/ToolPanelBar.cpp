@@ -1,3 +1,7 @@
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
 #include "ToolPanelBar.hpp"
 
 #include <QPainter>
@@ -36,7 +40,7 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
     // appearance is a controlled function of just isChecked()/underMouse()
     const QPalette &pal = palette();
 
-    // intelliJ-style states: white when idle, grey on hover, blue + white text when selected
+    // intelliJ-style states: white when idle, gray on hover, blue + white text when selected
     QColor bg;
     QColor fg = pal.color(QPalette::ButtonText);
     if (isChecked()) {
@@ -66,7 +70,11 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
     p.translate(rect().center());
     p.rotate(-90);
     p.setPen(fg);
-    const QRect textRect(-height() / 2, -width() / 2, height(), width());
+    const auto trLeft = -height() / 2;
+    const auto trTop = -width() / 2;
+    const auto trWidth = height();
+    const auto trHeight = width();
+    const QRect textRect(trLeft, trTop, trWidth, trHeight);
     p.drawText(textRect, Qt::AlignCenter, text());
     p.restore();
 }

@@ -1,3 +1,7 @@
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
 #ifndef CAD_TOOLPANELWIDGET_HPP
 #define CAD_TOOLPANELWIDGET_HPP
 
@@ -19,4 +23,4 @@ private:
     QString m_name;
 };
 
-#endif
+#endif //CAD_TOOLPANELWIDGET_HPP

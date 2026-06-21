@@ -1,3 +1,7 @@
+//
+// Created by Radosław Głasek on 21.06.2026
+//
+
 #include "CadMenuBar.hpp"
 
 #include <QAction>
@@ -22,15 +26,15 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     m_toolsMenu = addMenu("Tools");
 }
 
-void CadMenuBar::setUndoEnabled(const bool enabled) {
+void CadMenuBar::setUndoEnabled(const bool enabled) const {
     m_undoAction->setEnabled(enabled);
 }
 
-void CadMenuBar::setRedoEnabled(const bool enabled) {
+void CadMenuBar::setRedoEnabled(const bool enabled) const {
     m_redoAction->setEnabled(enabled);
 }
 
-QAction* CadMenuBar::addToolPanelAction(const QString &name) {
+QAction* CadMenuBar::addToolPanelAction(const QString &name) const {
     auto *action = m_toolsMenu->addAction(name);
     action->setCheckable(true);
     action->setChecked(true);
