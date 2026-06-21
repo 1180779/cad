@@ -28,12 +28,8 @@ constexpr int gc_kSeparatorStripWidth = 5;
 constexpr int gc_kResizeMargin = 6;
 
 namespace {
-    /// @brief Applies the IntelliJ-style menu theming: top-level items gray on hover,
-    /// dropdowns painted in the app background with a blue + white-text highlight, and
-    /// muted (not bland-gray) disabled entries derived from the app background
+    /// @brief Applies the IntelliJ-style menu theming
     void styleMenuBar(CadMenuBar *menuBar) {
-        // the selected-item color defers to the live palette (palette(highlight)) so it
-        // tracks the app accent and focus state; the surrounding tints are custom theme values
         menuBar->setStyleSheet(
             QStringLiteral(
                 "QMenuBar { background: transparent; }"
@@ -641,9 +637,9 @@ int main(int argc, char *argv[]) {
 
     wirePanelToggles(panelBar, panelStack, sceneAction, viewportAction, sceneBtn, viewportBtn);
 
-    // intelliJ-style active-tab accent: the open tab paints blue only while the tool panel
-    // holds focus, falling back to the hover gray otherwise. Track app focus and report
-    // whether it currently lives inside the panel stack
+    // intelliJ-style active-tab accent:
+    // the open tab paints accent color only while the tool panel holds focus,
+    // falling back to the hover color otherwise
     QObject::connect(
         qApp,
         &QApplication::focusChanged,

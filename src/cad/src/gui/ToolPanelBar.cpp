@@ -44,14 +44,15 @@ void PanelTabButton::setPanelFocused(const bool focused) {
 }
 
 void PanelTabButton::paintEvent(QPaintEvent *) {
-    // paint the tab explicitly rather than delegating to the style's complex-control
-    // renderer: the latter swaps in highlight backgrounds / white text on transient
-    // focus/sunken/"on" states, which produced intermittent style flips. Here the
-    // appearance is a controlled function of just isChecked()/underMouse()
+    // paint the tab explicitly since delegating to the style's renderer
+    // seems to produce visual artifacts in some cases
     const QPalette &pal = palette();
 
-    // intelliJ-style states: white when idle, gray on hover, blue + white text only when
-    // the open panel is focused; an active-but-unfocused tab falls back to the hover gray
+    // intelliJ-style states:
+    // distinct color when idle,
+    // distinct color on hover,
+    // distinct color when the open panel is focused;
+    // an active-but-unfocused tab falls back to the hover style
     QColor bg;
     QColor fg = pal.color(QPalette::ButtonText);
     if (isChecked() && m_panelFocused) {
@@ -68,7 +69,6 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
-    // rounded body with a subtle border
     const QRectF body = QRectF(rect()).adjusted(1.5, 1.5, -1.5, -1.5);
     QPainterPath path;
     path.addRoundedRect(body, theme::gc_itemRadius, theme::gc_itemRadius);
@@ -76,7 +76,7 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
     p.setPen(QPen(pal.color(QPalette::Mid), 1));
     p.drawPath(path);
 
-    // rotated text, baseline-centered within the body
+    // rotated text
     p.save();
     p.translate(rect().center());
     p.rotate(-90);
@@ -147,17 +147,15 @@ void ToolPanelBar::openPanel(const int index) {
 
 void ToolPanelBar::setActiveIndex(const int index) {
     // single source of truth: button checked states are derived from m_activeIndex,
-    // never from the buttons' own (now disabled) auto-toggle
+    // never from the buttons' own (disabled) auto-toggle
     m_activeIndex = index;
     for (int i = 0; i < m_buttons.size(); ++i) {
         m_buttons[i]->setChecked(i == index);
-        // focus is re-reported by the app's focusChanged signal; a freshly switched tab
-        // starts unfocused until focus actually lands in the panel
         m_buttons[i]->setPanelFocused(false);
     }
 }
 
-void ToolPanelBar::setPanelFocused(const bool focused) {
+void ToolPanelBar::setPanelFocused(const bool focused) const {
     if (auto *btn = buttonAt(m_activeIndex)) {
         btn->setPanelFocused(focused);
     }
@@ -165,7 +163,6 @@ void ToolPanelBar::setPanelFocused(const bool focused) {
 
 void ToolPanelBar::onButtonClicked(const int index) {
     if (m_activeIndex == index) {
-        // clicking the open panel's tab closes it
         setActiveIndex(-1);
         emit panelClosed();
     }

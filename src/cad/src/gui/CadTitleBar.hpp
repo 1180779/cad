@@ -11,14 +11,14 @@
 
 /// @brief IntelliJ-style unified title bar for a frameless window
 ///
-/// Hosts the application menu bar on the left and minimize / maximize / close
-/// controls on the right. The empty area drags the window; double-clicking it
-/// toggles the maximized state
+/// Hosts the application menu bar on the left and minimize / maximize / close controls on the right. 
+/// The empty area drags the window; 
+/// double-clicking it toggles the maximized state
 class CadTitleBar final : public QWidget {
     Q_OBJECT
 
 public:
-    /// @brief Build a title bar embedding @p menuBar (reparented into this strip)
+    /// @brief Build a title bar embedding @p menuBar
     explicit CadTitleBar(QMenuBar *menuBar, QWidget *parent = nullptr);
 
 protected:
@@ -44,4 +44,5 @@ private:
 /// Watches the @p margin-wide border for hover/press and drives the platform's
 /// native system-resize, so a FramelessWindowHint window stays resizable
 void enableFramelessResize(QWidget *window, int margin = 6);
+
 #endif //CAD_CADTITLEBAR_HPP

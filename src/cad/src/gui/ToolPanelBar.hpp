@@ -21,7 +21,7 @@ public:
     [[nodiscard]] QSize minimumSizeHint() const override;
 
     /// @brief Whether the open panel currently holds focus; only a focused active tab
-    /// paints with the blue accent, otherwise it falls back to the hover gray
+    /// paints with the accent color, otherwise it falls back to the hover color
     void setPanelFocused(bool focused);
 
 protected:
@@ -31,6 +31,9 @@ protected:
     void nextCheckState() override;
 
 private:
+    /// @brief Cached focus state pushed in via setPanelFocused. paintEvent can't reach the
+    /// panel stack or focus widget to compute this itself, so the fact is forwarded down 
+    /// and stored here for the painter to read
     bool m_panelFocused = false;
 };
 
@@ -58,7 +61,7 @@ public:
 
     /// @brief Reflect whether the open tool panel holds keyboard focus, so the active
     /// tab shows the blue accent only while focused and the hover gray otherwise
-    void setPanelFocused(bool focused);
+    void setPanelFocused(bool focused) const;
 
 signals:
     void panelRequested(int index);
