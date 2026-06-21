@@ -4,7 +4,6 @@
 
 #include "BezierC2Widget.hpp"
 
-#include <QFormLayout>
 #include <QFrame>
 #include <QLabel>
 #include <QVBoxLayout>
@@ -96,32 +95,10 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
     sep2->setFrameShape(QFrame::HLine);
     layout->addWidget(sep2);
 
-    // shared spinboxes for selected point
-    m_selectedLabel = new QLabel("Selected point:");
-    layout->addWidget(m_selectedLabel);
-
-    // ReSharper disable once CppDFAMemoryLeak
-    const auto spinForm = new QFormLayout;
-    spinForm->setContentsMargins(0, 0, 0, 0);
-
-    auto makeSpinbox = [&] {
-        auto *s = new QDoubleSpinBox;
-        s->setRange(-1e6, 1e6);
-        s->setDecimals(4);
-        s->setSingleStep(0.1);
-        return s;
-    };
-
-    m_xSpin = makeSpinbox();
-    m_ySpin = makeSpinbox();
-    m_zSpin = makeSpinbox();
-    spinForm->addRow("X:", m_xSpin);
-    spinForm->addRow("Y:", m_ySpin);
-    spinForm->addRow("Z:", m_zSpin);
-    layout->addLayout(spinForm);
-
-    setSpinboxesEnabled(false);
-    m_selectedLabel->setEnabled(false);
+    // shared editor for the selected de Boor / Bernstein point
+    m_pointProps = new VirtualPointPropertiesWidget;
+    layout->addWidget(m_pointProps);
+    m_pointProps->setActive(false);
 
     refreshList();
     m_bernsteinList->setEnabled(true);
@@ -197,8 +174,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
                 m_selectedKind == SelectedPointKind::deBoor && m_selectedDeBoorHandle == removing) {
                 m_selectedKind = SelectedPointKind::none;
                 m_selectedDeBoorHandle = InvalidPointHandle;
-                setSpinboxesEnabled(false);
-                m_selectedLabel->setEnabled(false);
+                m_pointProps->setActive(false);
             }
             if (const auto &cps = m_bezier->getDeBoorPoints();
                 m_scene && m_commandStack && row < static_cast<int>(cps.size())) {
@@ -235,8 +211,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             if (!cur || !cur->isSelected()) {
                 if (m_selectedKind == SelectedPointKind::deBoor) {
                     m_selectedKind = SelectedPointKind::none;
-                    setSpinboxesEnabled(false);
-                    m_selectedLabel->setEnabled(false);
+                    m_pointProps->setActive(false);
                 }
                 return;
             }
@@ -248,9 +223,8 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             m_selectedKind = SelectedPointKind::deBoor;
             m_selectedDeBoorHandle = cur->data(Qt::UserRole).value<PointHandle>();
             m_selectedBernsteinIndex = -1;
-            m_selectedLabel->setEnabled(true);
+            m_pointProps->setActive(true);
             updateSpinboxesForDeBoor(m_selectedDeBoorHandle);
-            setSpinboxesEnabled(true);
         }
     );
 
@@ -263,8 +237,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             if (!cur || !cur->isSelected()) {
                 if (m_selectedKind == SelectedPointKind::bernstein) {
                     m_selectedKind = SelectedPointKind::none;
-                    setSpinboxesEnabled(false);
-                    m_selectedLabel->setEnabled(false);
+                    m_pointProps->setActive(false);
                 }
                 return;
             }
@@ -276,67 +249,61 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             m_selectedKind = SelectedPointKind::bernstein;
             m_selectedDeBoorHandle = InvalidPointHandle;
             m_selectedBernsteinIndex = cur->data(Qt::UserRole).toInt();
-            m_selectedLabel->setEnabled(true);
+            m_pointProps->setActive(true);
             updateSpinboxesForBernstein(m_selectedBernsteinIndex);
-            setSpinboxesEnabled(true);
         }
     );
 
-    // spinbox edits
-    auto onSpinChanged = [this] {
-        if (m_spinboxRefreshing) {
-            return;
-        }
-        const cadm::Vec3 newPos{
-            static_cast<float>(m_xSpin->value()),
-            static_cast<float>(m_ySpin->value()),
-            static_cast<float>(m_zSpin->value())
-        };
-        auto &reg = m_scene->getPointRegistry();
-        if (m_selectedKind == SelectedPointKind::deBoor &&
-            m_selectedDeBoorHandle != InvalidPointHandle) {
-            // moving a de Boor point is a plain point move (coalesces by handle)
-            if (m_commandStack) {
-                const auto before = reg.getPosition(m_selectedDeBoorHandle);
-                m_commandStack->push(
-                    std::make_unique<MovePointCommand>(*m_scene, m_selectedDeBoorHandle, before, newPos),
-                    true
-                );
-            }
-            else {
-                reg.setPosition(m_selectedDeBoorHandle, newPos);
-            }
-            emit propertyChanged();
-        }
-        else if (m_selectedKind == SelectedPointKind::bernstein &&
-            m_selectedBernsteinIndex >= 0) {
-            // a Bernstein edit back-computes several de Boor points; snapshot them
-            // so undo can restore them; apply re-runs the back-computation
-            auto *lBezier = m_bezier;
-            auto *lScene = m_scene;
-            const int idx = m_selectedBernsteinIndex;
-            std::vector<std::pair<PointHandle, cadm::Vec3>> before;
-            for (const auto h : lBezier->getDeBoorPoints()) {
-                before.emplace_back(h, reg.getPosition(h));
-            }
-            pushEdit(
-                [lBezier, lScene, idx, newPos] {
-                    lBezier->setBernsteinPosition(idx, newPos);
-                    lScene->getPointRegistry().syncToGpu();
-                },
-                [lScene, before] {
-                    for (const auto &[h, p] : before) {
-                        lScene->getPointRegistry().setPosition(h, p);
-                    }
-                },
-                m_bernsteinList,
+    connect(
+        m_pointProps,
+        &VirtualPointPropertiesWidget::coordinateEdited,
+        this,
+        &BezierC2Widget::onCoordinateEdited
+    );
+}
+
+void BezierC2Widget::onCoordinateEdited(const cadm::Vec3 newPos) {
+    auto &reg = m_scene->getPointRegistry();
+    if (m_selectedKind == SelectedPointKind::deBoor &&
+        m_selectedDeBoorHandle != InvalidPointHandle) {
+        // moving a de Boor point is a plain point move (coalesces by handle)
+        if (m_commandStack) {
+            const auto before = reg.getPosition(m_selectedDeBoorHandle);
+            m_commandStack->push(
+                std::make_unique<MovePointCommand>(*m_scene, m_selectedDeBoorHandle, before, newPos),
                 true
             );
         }
-    };
-    connect(m_xSpin, &QDoubleSpinBox::valueChanged, this, onSpinChanged);
-    connect(m_ySpin, &QDoubleSpinBox::valueChanged, this, onSpinChanged);
-    connect(m_zSpin, &QDoubleSpinBox::valueChanged, this, onSpinChanged);
+        else {
+            reg.setPosition(m_selectedDeBoorHandle, newPos);
+        }
+        emit propertyChanged();
+    }
+    else if (m_selectedKind == SelectedPointKind::bernstein &&
+        m_selectedBernsteinIndex >= 0) {
+        // a Bernstein edit back-computes several de Boor points; snapshot them
+        // so undo can restore them; apply re-runs the back-computation
+        auto *lBezier = m_bezier;
+        auto *lScene = m_scene;
+        const int idx = m_selectedBernsteinIndex;
+        std::vector<std::pair<PointHandle, cadm::Vec3>> before;
+        for (const auto h : lBezier->getDeBoorPoints()) {
+            before.emplace_back(h, reg.getPosition(h));
+        }
+        pushEdit(
+            [lBezier, lScene, idx, newPos] {
+                lBezier->setBernsteinPosition(idx, newPos);
+                lScene->getPointRegistry().syncToGpu();
+            },
+            [lScene, before] {
+                for (const auto &[h, p] : before) {
+                    lScene->getPointRegistry().setPosition(h, p);
+                }
+            },
+            m_bernsteinList,
+            true
+        );
+    }
 }
 
 void BezierC2Widget::refreshList() {
@@ -477,14 +444,8 @@ void BezierC2Widget::refresh() {
     }
 }
 
-// TODO: refactor this to use dedicated fake point widget (analogous to the PointDetailsWidget)
 void BezierC2Widget::updateSpinboxesForDeBoor(const PointHandle h) {
-    const cadm::Vec3 pos = m_scene->getPointRegistry().getPosition(h);
-    m_spinboxRefreshing = true;
-    m_xSpin->setValue(pos.x);
-    m_ySpin->setValue(pos.y);
-    m_zSpin->setValue(pos.z);
-    m_spinboxRefreshing = false;
+    m_pointProps->setPosition(m_scene->getPointRegistry().getPosition(h));
 }
 
 void BezierC2Widget::updateSpinboxesForBernstein(const int index) {
@@ -493,16 +454,5 @@ void BezierC2Widget::updateSpinboxesForBernstein(const int index) {
     if (index < 0 || index >= static_cast<int>(positions.size())) {
         return;
     }
-    const cadm::Vec3 &pos = positions[index];
-    m_spinboxRefreshing = true;
-    m_xSpin->setValue(pos.x);
-    m_ySpin->setValue(pos.y);
-    m_zSpin->setValue(pos.z);
-    m_spinboxRefreshing = false;
-}
-
-void BezierC2Widget::setSpinboxesEnabled(const bool enabled) const {
-    m_xSpin->setEnabled(enabled);
-    m_ySpin->setEnabled(enabled);
-    m_zSpin->setEnabled(enabled);
+    m_pointProps->setPosition(positions[index]);
 }

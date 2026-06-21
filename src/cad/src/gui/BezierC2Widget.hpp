@@ -6,14 +6,13 @@
 #define CAD_BEZIERC2WIDGET_HPP
 
 #include <QCheckBox>
-#include <QDoubleSpinBox>
-#include <QLabel>
 #include <QListWidget>
 #include <QPushButton>
 #include <QWidget>
 #include <unordered_map>
 
 #include "ComponentWidget.hpp"
+#include "VirtualPointPropertiesWidget.hpp"
 #include "../components/BezierC2Component.hpp"
 #include "../Scene.hpp"
 
@@ -71,13 +70,15 @@ private:
     /// index, so existing rows are left untouched -- preserving selection and the edit
     void reconcileBernsteinList() const;
 
-    /// @brief Load the spinboxes with the position of de Boor point @p h
+    /// @brief Load the editor with the position of de Boor point @p h
     void updateSpinboxesForDeBoor(PointHandle h);
 
-    /// @brief Load the spinboxes with the Bernstein position at @p index
+    /// @brief Load the editor with the Bernstein position at @p index
     void updateSpinboxesForBernstein(int index);
 
-    void setSpinboxesEnabled(bool enabled) const;
+    /// @brief Commit a coordinate edit from the shared editor to whichever point
+    /// (de Boor or Bernstein) is currently selected
+    void onCoordinateEdited(cadm::Vec3 newPos);
 
     BezierC2Component *m_bezier;
     Scene *m_scene;
@@ -95,10 +96,8 @@ private:
     /// @brief Derived Bernstein points (read-only set)
     QListWidget *m_bernsteinList{};
 
-    QLabel *m_selectedLabel{};
-    QDoubleSpinBox *m_xSpin{};
-    QDoubleSpinBox *m_ySpin{};
-    QDoubleSpinBox *m_zSpin{};
+    /// @brief Shared X/Y/Z editor for the currently selected de Boor / Bernstein point
+    VirtualPointPropertiesWidget *m_pointProps{};
 
     /// @brief Handle -> de Boor row, so reconcileDeBoorList can reuse rows by handle
     std::unordered_map<PointHandle, QListWidgetItem*> m_deBoorItemMap;
@@ -108,13 +107,9 @@ private:
     /// @note valid when m_selectedKind == deBoor
     PointHandle m_selectedDeBoorHandle = InvalidPointHandle;
 
-    /// @brief Bernstein index 
+    /// @brief Bernstein index
     /// @note valid when m_selectedKind == bernstein
     int m_selectedBernsteinIndex = -1;
-
-    /// @brief Guards spinbox value-changed handlers while the values are set,
-    /// so a refresh doesn't get mistaken for a user edit
-    bool m_spinboxRefreshing = false;
 };
 
 #endif //CAD_BEZIERC2WIDGET_HPP
