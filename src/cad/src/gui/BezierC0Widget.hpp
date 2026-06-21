@@ -9,6 +9,7 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QWidget>
+#include <unordered_map>
 
 #include "ComponentWidget.hpp"
 #include "../components/BezierC0Component.hpp"
@@ -16,10 +17,16 @@
 
 class BezierC0Widget : public ComponentWidget
 {
+    Q_OBJECT
+
 public:
     explicit BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget *parent = nullptr);
 
-    void refreshList() const;
+    void refreshList();
+    void syncSelection();
+
+signals:
+    void pointSelectionChanged(QList<Entity*> selected);
 
 private:
     BezierC0Component *m_bezier;
@@ -27,6 +34,7 @@ private:
     QCheckBox *m_showPolygonCheckbox{};
     QListWidget *m_pointList{};
     QPushButton *m_removeButton{};
+    std::unordered_map<PointHandle, QListWidgetItem*> m_itemMap;
 };
 
 #endif //CAD_BEZIERC0WIDGET_HPP
