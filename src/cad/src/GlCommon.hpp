@@ -7,15 +7,16 @@
 
 #include <QOpenGLFunctions_4_5_Core>
 
-#include "cad_math/vec3.hpp"
+#include "cad_math/Vec3.hpp"
 
-void GLSetDefaults();
-QOpenGLFunctions_4_5_Core* GL();
+void glSetDefaults();
 
-static_assert(std::is_same_v<cadm::vec3::VT, float> || std::is_same_v<cadm::vec3::VT, double>);
-constexpr GLenum GL_CADM_VT_TYPE = std::is_same_v<cadm::vec3::VT, float>
+QOpenGLFunctions_4_5_Core* getGl();
+
+static_assert(std::is_same_v<cadm::Vec3::Vt, float> || std::is_same_v<cadm::Vec3::Vt, double>);
+constexpr GLenum gc_glCadmVtType = std::is_same_v<cadm::Vec3::Vt, float>
                                        ? GL_FLOAT
                                        : GL_DOUBLE;
-constexpr GLsizei GL_CADM_VT_SIZE = sizeof(cadm::vec3::VT);
+constexpr GLsizei gc_glCadmVtSize = sizeof(cadm::Vec3::Vt);
 
 #endif //CAD_GL_H

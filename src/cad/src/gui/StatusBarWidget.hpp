@@ -10,28 +10,26 @@
 
 #include "ViewportTypes.hpp"
 
-/// Vim-like status bar widget with the most relevant information available at a glance.
-class StatusBarWidget final : public QWidget
-{
+/// @brief Vim-like status bar widget with the most relevant information available at a glance
+class StatusBarWidget final : public QWidget {
     Q_OBJECT
 
 public:
     explicit StatusBarWidget(QWidget *parent = nullptr);
 
     static constexpr int s_barHeight = 24;
-    static constexpr auto s_barStyle =
-        "background-color: #ffffff; color: #000000; font-family: monospace; font-size: 12px;";
-    static constexpr auto s_separatorStyle =
-        "color: #000000;";
-    static constexpr auto s_activeStyle =
-        "color: #ff00ff; font-weight: bold;";
 
-public slots:
+public
+slots :
     void setTransformMode(TransformMode mode, const QString &axisInfo) const;
+
     void setClickToAddMode(bool active) const;
+
     void setCameraName(const QString &name) const;
+
     void setSelectionCount(int count) const;
-    void setActiveBezierName(const QString &name) const;
+
+    void setActiveNewPointsTargetName(const QString &name) const;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -39,9 +37,12 @@ protected:
 private:
     QLabel *m_modeLabel;
     QLabel *m_cameraLabel;
-    QLabel *m_bezierLabel;
+    QLabel *m_newPointsTargetLabel;
     QLabel *m_selectionLabel;
 
     void refreshModeLabel(TransformMode mode, const QString &axisInfo, bool clickToAdd) const;
+
+    /// @brief Flips the mode label's "modeActive" property (compare the global theme sheet)
+    void setModeLabelActive(bool active) const;
 };
 #endif //CAD_STATUSBARWIDGET_HPP

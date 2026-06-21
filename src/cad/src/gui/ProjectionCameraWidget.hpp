@@ -11,32 +11,35 @@
 #include "ComponentWidget.hpp"
 #include "../components/BlenderCameraComponent.hpp"
 
-class CameraWidget : public ComponentWidget
-{
+class CameraWidget final : public ComponentWidget {
     Q_OBJECT
 
 public:
     explicit CameraWidget(BlenderCameraComponent *camera, QWidget *parent = nullptr);
+
     ~CameraWidget() override = default;
 
 private
-    slots  :
-
-
-
+slots :
     void onRadiusChanged(double value);
 
     void onFovChanged(double value) const;
+
     void onNearPlaneChanged(double value) const;
+
     void onFarPlaneChanged(double value) const;
 
     void onTargetXChanged(double value) const;
+
     void onTargetYChanged(double value) const;
+
     void onTargetZChanged(double value) const;
 
 private:
     void setUpArcBallControls(QFormLayout *layout);
+
     void setUpProjectionControls(QFormLayout *layout);
+
     void setUpTargetControls(QFormLayout *layout);
 
     static constexpr double s_targetMin = -1000.0;
@@ -69,6 +72,5 @@ private:
     QDoubleSpinBox *m_targetY;
     QDoubleSpinBox *m_targetZ;
 };
-
 
 #endif //CAD_CAMERAWIDGET_HPP

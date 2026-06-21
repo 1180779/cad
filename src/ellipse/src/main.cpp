@@ -9,7 +9,7 @@
 #include <QLabel>
 #include <QPushButton>
 
-#include "OpenGLWidget.hpp"
+#include "OpenGlWidget.hpp"
 #include <common/DoubleSlider.hpp>
 
 void addFloatParameter(
@@ -18,8 +18,8 @@ void addFloatParameter(
     const float initialValue,
     const std::function<void(float)> &setter,
     const double mappingRangeStart = 0.0,
-    const double mappingRangeEnd = 1.0)
-{
+    const double mappingRangeEnd = 1.0
+) {
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
     const auto edit = new QLineEdit;
@@ -38,26 +38,25 @@ void addFloatParameter(
     QObject::connect(
         edit,
         &QLineEdit::textEdited,
-        [setter, slider](const QString &text)
-        {
+        [setter, slider](const QString &text) {
             bool ok;
             const float val = text.toFloat(&ok);
-            if (ok)
-            {
+            if (ok) {
                 setter(val);
                 const bool oldState = slider->blockSignals(true);
                 slider->setValue(val);
                 slider->blockSignals(oldState);
             }
-        });
+        }
+    );
     QObject::connect(
         slider,
         &DoubleSlider::doubleValueChanged,
-        [setter, edit](const double val)
-        {
+        [setter, edit](const double val) {
             setter(val);
             edit->setText(QString::number(val, 'g', 3));
-        });
+        }
+    );
 
     layout->addWidget(label);
     layout->addWidget(edit);
@@ -69,8 +68,8 @@ void addIntColor8BitParameter(
     QVBoxLayout *parentLayout,
     const QString &labelText,
     const int initialValue,
-    const std::function<void(int)> &setter)
-{
+    const std::function<void(int)> &setter
+) {
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
     const auto edit = new QLineEdit;
@@ -85,12 +84,14 @@ void addIntColor8BitParameter(
     QObject::connect(
         edit,
         &QLineEdit::textChanged,
-        [setter](const QString &text)
-        {
+        [setter](const QString &text) {
             bool ok;
             const int val = text.toInt(&ok);
-            if (ok) setter(val);
-        });
+            if (ok) {
+                setter(val);
+            }
+        }
+    );
 
     layout->addWidget(label);
     layout->addWidget(edit);
@@ -102,9 +103,9 @@ void addIntParameter(
     const QString &labelText,
     const int initialValue,
     const std::function<void(int)> &setter,
-    int minValue,
-    int maxValue)
-{
+    const int minValue,
+    const int maxValue
+) {
     const auto layout = new QHBoxLayout;
     const auto label = new QLabel(labelText);
     const auto edit = new QLineEdit;
@@ -123,26 +124,25 @@ void addIntParameter(
     QObject::connect(
         edit,
         &QLineEdit::textEdited,
-        [setter, slider](const QString &text)
-        {
+        [setter, slider](const QString &text) {
             bool ok;
             const int val = static_cast<int>(text.toUInt(&ok));
-            if (ok)
-            {
+            if (ok) {
                 setter(val);
                 const bool oldState = slider->blockSignals(true);
                 slider->setValue(val);
                 slider->blockSignals(oldState);
             }
-        });
+        }
+    );
     QObject::connect(
         slider,
         &QSlider::valueChanged,
-        [setter, edit](int val)
-        {
+        [setter, edit](const int val) {
             setter(val);
             edit->setText(QString::number(val));
-        });
+        }
+    );
 
     layout->addWidget(label);
     layout->addWidget(edit);
@@ -150,9 +150,8 @@ void addIntParameter(
     parentLayout->addWidget(slider);
 }
 
-int main(int argc, char *argv[])
-{
-    GLSetDefaults();
+int main(int argc, char *argv[]) {
+    glSetDefaults();
     QApplication a(argc, argv);
 
     QWidget window;
@@ -167,22 +166,45 @@ int main(int argc, char *argv[])
     layout->addLayout(leftControlsLayout);
     layout->addLayout(rightControlsLayout);
 
-    auto glWidget = new OpenGLWidget;
+    auto glWidget = new OpenGlWidget;
     leftControlsLayout->addWidget(glWidget);
 
-    // Ellipse Parameters group of widgets
+    // ellipse Parameters group of widgets
+
     const auto ellipseParametersGroup = new QGroupBox("Ellipse Parameters");
     ellipseParametersGroup->setMaximumWidth(rightWidgetsMaxSize);
     const auto ellipseParametersLayout = new QVBoxLayout;
     ellipseParametersGroup->setLayout(ellipseParametersLayout);
 
-    addFloatParameter(ellipseParametersLayout, "a", glWidget->getA(), [glWidget](const float v) { glWidget->setA(v); });
-    addFloatParameter(ellipseParametersLayout, "b", glWidget->getB(), [glWidget](const float v) { glWidget->setB(v); });
-    addFloatParameter(ellipseParametersLayout, "c", glWidget->getC(), [glWidget](const float v) { glWidget->setC(v); });
+    addFloatParameter(
+        ellipseParametersLayout,
+        "a",
+        glWidget->getA(),
+        [glWidget](const float v) {
+            glWidget->setA(v);
+        }
+    );
+    addFloatParameter(
+        ellipseParametersLayout,
+        "b",
+        glWidget->getB(),
+        [glWidget](const float v) {
+            glWidget->setB(v);
+        }
+    );
+    addFloatParameter(
+        ellipseParametersLayout,
+        "c",
+        glWidget->getC(),
+        [glWidget](const float v) {
+            glWidget->setC(v);
+        }
+    );
 
     rightControlsLayout->addWidget(ellipseParametersGroup, 0, Qt::AlignTop);
 
-    // Adaptive rendering group of widgets
+    // adaptive rendering group of widgets
+
     const auto adaptiveRenderingGroup = new QGroupBox("Adaptive rendering");
     adaptiveRenderingGroup->setMaximumWidth(rightWidgetsMaxSize);
 
@@ -191,9 +213,12 @@ int main(int argc, char *argv[])
         adaptiveRenderingLayout,
         "square size",
         glWidget->getAdaptationSize(),
-        [glWidget](const int v) { glWidget->setAdaptationSize(v); },
+        [glWidget](const int v) {
+            glWidget->setAdaptationSize(v);
+        },
         1,
-        16);
+        16
+    );
 
     adaptiveRenderingGroup->setLayout(adaptiveRenderingLayout);
     rightControlsLayout->addWidget(adaptiveRenderingGroup, 0, Qt::AlignTop);
@@ -206,9 +231,12 @@ int main(int argc, char *argv[])
         phongParametersLayout,
         "m",
         glWidget->getM(),
-        [glWidget](const float v) { glWidget->setM(v); },
+        [glWidget](const float v) {
+            glWidget->setM(v);
+        },
         0.001,
-        10);
+        10
+    );
 
     phongParametersGroup->setLayout(phongParametersLayout);
     rightControlsLayout->addWidget(phongParametersGroup, 0, Qt::AlignTop);
@@ -220,32 +248,59 @@ int main(int argc, char *argv[])
         ambientColorLayout,
         "r",
         glWidget->getAmbientR(),
-        [glWidget](const int v) { glWidget->setAmbientR(v); });
+        [glWidget](const int v) {
+            glWidget->setAmbientR(v);
+        }
+    );
     addIntColor8BitParameter(
         ambientColorLayout,
         "g",
         glWidget->getAmbientG(),
-        [glWidget](const int v) { glWidget->setAmbientG(v); });
+        [glWidget](const int v) {
+            glWidget->setAmbientG(v);
+        }
+    );
     addIntColor8BitParameter(
         ambientColorLayout,
         "b",
         glWidget->getAmbientB(),
-        [glWidget](const int v) { glWidget->setAmbientB(v); });
+        [glWidget](const int v) {
+            glWidget->setAmbientB(v);
+        }
+    );
     ambientColorGroup->setLayout(ambientColorLayout);
 
     phongParametersLayout->addWidget(ambientColorGroup);
 
     // reset buttons
     const auto resetScaleButton = new QPushButton("Reset Scale");
-    QObject::connect(resetScaleButton, &QPushButton::clicked, [&] { glWidget->resetScale(); });
+    QObject::connect(
+        resetScaleButton,
+        &QPushButton::clicked,
+        [&] {
+            glWidget->resetScale();
+        }
+    );
     rightControlsLayout->addWidget(resetScaleButton);
 
     const auto resetRotationButton = new QPushButton("Reset Rotation");
-    QObject::connect(resetRotationButton, &QPushButton::clicked, [&] { glWidget->resetRotation(); });
+    QObject::connect(
+        resetRotationButton,
+        &QPushButton::clicked,
+        [&] {
+            glWidget->resetRotation();
+        }
+    );
     rightControlsLayout->addWidget(resetRotationButton);
 
     const auto resetTranslationButton = new QPushButton("Reset Translation");
-    QObject::connect(resetTranslationButton, &QPushButton::clicked, [&] { glWidget->resetTranslation(); });
+    QObject::connect(
+        resetTranslationButton,
+        &QPushButton::clicked,
+        [&] {
+            glWidget->resetTranslation();
+        }
+    );
     rightControlsLayout->addWidget(resetTranslationButton);
 
     // help text
@@ -255,7 +310,8 @@ int main(int argc, char *argv[])
         "<b>Rotation</b>: move mouse to rotate around XY axis<br>"
         "&nbsp;&nbsp;&nbsp;&nbsp;Hold Z to rotate around Z axis<br>"
         "<b>Scale</b>: use mouse wheel<br>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;Hold X, Y, Z to scale only pressed axis");
+        "&nbsp;&nbsp;&nbsp;&nbsp;Hold X, Y, Z to scale only pressed axis"
+    );
     rightControlsLayout->addWidget(helpText);
 
     window.installEventFilter(glWidget);

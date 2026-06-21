@@ -7,8 +7,6 @@
 
 #include "Entity.hpp"
 
-class CursorComponent final : public Component
-{
-};
+class CursorComponent final : public Component {};
 
 #endif //CAD_CURSORCOMPONENT_HPP

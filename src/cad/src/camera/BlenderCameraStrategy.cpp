@@ -11,48 +11,42 @@
 BlenderCameraStrategy::BlenderCameraStrategy(
     Entity *cameraEntity,
     const std::function<int()> &widthGetter,
-    const std::function<int()> &heightGetter)
-    : ICameraStrategy(cameraEntity, widthGetter, heightGetter)
-{
-}
+    const std::function<int()> &heightGetter
+) : ICameraStrategy(cameraEntity, widthGetter, heightGetter) {}
 
-cadm::mat4 BlenderCameraStrategy::getView()
-{
+cadm::Mat4 BlenderCameraStrategy::getView() {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
-        return cadm::mat4::identity();
+        return cadm::Mat4::identity();
     }
     const auto pCamera = camera.value();
-    const auto view = cadm::mat4::lookAtRH(pCamera->getPosition(), pCamera->getTarget(), pCamera->up());
+    const auto view = cadm::Mat4::lookAtRh(pCamera->getPosition(), pCamera->getTarget(), pCamera->up());
     return view;
 }
 
-cadm::mat4 BlenderCameraStrategy::getProjection()
-{
+cadm::Mat4 BlenderCameraStrategy::getProjection() {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
-        return cadm::mat4::identity();
+        return cadm::Mat4::identity();
     }
     const auto pCamera = camera.value();
 
-    if (pCamera->isOrtho())
-    {
+    if (pCamera->isOrtho()) {
         const auto h = pCamera->getOrthoHeight();
         const auto w = h * pCamera->getAspectRatio();
-        return cadm::mat4::ortho(
+        return cadm::Mat4::ortho(
             static_cast<cadm::cadf>(-w / 2.0),
             static_cast<cadm::cadf>(w / 2.0),
             static_cast<cadm::cadf>(-h / 2.0),
             static_cast<cadm::cadf>(h / 2.0),
             pCamera->getNearPlane(),
-            pCamera->getFarPlane());
+            pCamera->getFarPlane()
+        );
     }
 
-    return cadm::mat4::projectionMO(
+    return cadm::Mat4::projectionMo(
         pCamera->getAspectRatio(),
         pCamera->getFov(),
         pCamera->getNearPlane(),
@@ -60,169 +54,160 @@ cadm::mat4 BlenderCameraStrategy::getProjection()
     );
 }
 
-cadm::mat4 BlenderCameraStrategy::getInvProjection()
-{
+cadm::Mat4 BlenderCameraStrategy::getInvProjection() {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
-        return cadm::mat4::identity();
+        return cadm::Mat4::identity();
     }
-    if (camera.value()->isOrtho())
+    if (camera.value()->isOrtho()) {
         return getProjection().inversedOrtho();
-    return getProjection().inversedProjectionMO();
+    }
+    return getProjection().inversedProjectionMo();
 }
 
-void BlenderCameraStrategy::setLookTarget(const cadm::vec3 target)
-{
+void BlenderCameraStrategy::setLookTarget(const cadm::Vec3 target) {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
         return;
     }
     camera.value()->setTarget(target);
 }
 
-bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QPoint delta)
-{
+bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QPoint delta) {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
         return false;
     }
 
     const auto pCamera = camera.value();
 
-    switch (action)
-    {
-    case CameraAction::Orbit:
-        {
-            // Horizontal: rotate around world Y
-            // Vertical: rotate around camera's current local X
-            const cadm::cadf yawAngle = -static_cast<cadm::cadf>(delta.x()) * s_sensitivity;
-            const cadm::cadf pitchAngle = -static_cast<cadm::cadf>(delta.y()) * s_sensitivity;
-            pCamera->m_orbitRot = (cadm::mat3::rotY(yawAngle) * pCamera->m_orbitRot
-                * cadm::mat3::rotX(pitchAngle)).orthonormalized();
-            emit pCamera->propertyUpdated();
-            return true;
+    switch (action) {
+    case CameraAction::orbit: {
+        // horizontal: rotate around world Y
+        // vertical: rotate around camera's current local X
+        const cadm::cadf yawAngle = -static_cast<cadm::cadf>(delta.x()) * s_sensitivity;
+        const cadm::cadf pitchAngle = -static_cast<cadm::cadf>(delta.y()) * s_sensitivity;
+        pCamera->m_orbitRot = (cadm::Mat3::rotY(yawAngle) * pCamera->m_orbitRot
+            * cadm::Mat3::rotX(pitchAngle)).orthonormalized();
+        emit
+        pCamera->propertyUpdated();
+        return true;
+    }
+    case CameraAction::pan: {
+        cadm::cadf scale;
+        if (pCamera->isOrtho()) {
+            scale = pCamera->getOrthoHeight() / static_cast<cadm::cadf>(m_heightGetter());
         }
-    case CameraAction::Pan:
-        {
-            cadm::cadf scale;
-            if (pCamera->isOrtho())
-            {
-                scale = pCamera->getOrthoHeight() / static_cast<cadm::cadf>(m_heightGetter());
-            }
-            else
-            {
-                // hWorld = 2 * radius * tan(fov / 2)
-                // scale = hWorld / hScreen
-                scale = static_cast<cadm::cadf>(
-                    2.0 * pCamera->getRadius() * std::tan(pCamera->getFov() / 2.0)
-                    / static_cast<cadm::cadf>(m_heightGetter()));
-            }
-            const auto translationChange = pCamera->right() * (-scale * static_cast<cadm::cadf>(delta.x()))
-                + pCamera->up() * (scale * static_cast<cadm::cadf>(delta.y()));
-            pCamera->setTarget(pCamera->getTarget() + translationChange);
-            return true;
+        else {
+            // hWorld = 2 * radius * tan(fov / 2)
+            // scale = hWorld / hScreen
+            scale = static_cast<cadm::cadf>(
+                2.0 * pCamera->getRadius() * std::tan(pCamera->getFov() / 2.0)
+                / static_cast<cadm::cadf>(m_heightGetter()));
         }
-    case CameraAction::ZoomDrag:
-        {
-            const cadm::cadf factor = std::exp(
-                static_cast<cadm::cadf>(-delta.y()) * static_cast<cadm::cadf>(0.01));
-            pCamera->setRadius(pCamera->getRadius() * factor);
-            return true;
-        }
+        const auto translationChange = pCamera->right() * (-scale * static_cast<cadm::cadf>(delta.x()))
+            + pCamera->up() * (scale * static_cast<cadm::cadf>(delta.y()));
+        pCamera->setTarget(pCamera->getTarget() + translationChange);
+        return true;
+    }
+    case CameraAction::zoomDrag: {
+        const cadm::cadf factor = std::exp(
+            static_cast<cadm::cadf>(-delta.y()) * static_cast<cadm::cadf>(0.01)
+        );
+        pCamera->setRadius(pCamera->getRadius() * factor);
+        return true;
+    }
     }
 
     return false;
 }
 
-bool BlenderCameraStrategy::handleCameraKeyAction(const CameraKeyAction action)
-{
+bool BlenderCameraStrategy::handleCameraKeyAction(const CameraKeyAction action) {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
-    if (!camera)
+    if (!camera) {
         return false;
+    }
     const auto pCamera = camera.value();
     const auto step = m_translationStep * (pCamera->isOrtho()
                                                ? pCamera->getOrthoHeight()
                                                : pCamera->getRadius());
 
-    cadm::vec3 newTarget;
-    switch (action)
-    {
-    case CameraKeyAction::MoveUp:
+    cadm::Vec3 newTarget;
+    switch (action) {
+    case CameraKeyAction::moveUp:
         newTarget = pCamera->getTarget() + pCamera->up() * step;
         break;
-    case CameraKeyAction::MoveDown:
+    case CameraKeyAction::moveDown:
         newTarget = pCamera->getTarget() - pCamera->up() * step;
         break;
-    case CameraKeyAction::MoveLeft:
+    case CameraKeyAction::moveLeft:
         newTarget = pCamera->getTarget() - pCamera->right() * step;
         break;
-    case CameraKeyAction::MoveRight:
+    case CameraKeyAction::moveRight:
         newTarget = pCamera->getTarget() + pCamera->right() * step;
         break;
-    default: return false;
+    default:
+        return false;
     }
 
     pCamera->setTarget(newTarget);
-    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>())
+    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>()) {
         transform.value()->setTranslation(pCamera->getPosition());
+    }
     return true;
 }
 
-bool BlenderCameraStrategy::handleWheelEvent(QWheelEvent *event)
-{
+bool BlenderCameraStrategy::handleWheelEvent(QWheelEvent *event) {
     const int delta = event->angleDelta().y();
-    if (delta == 0)
+    if (delta == 0) {
         return false;
+    }
 
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
         return false;
     }
 
     if (const auto pCamera = camera.value();
-        pCamera->isOrtho())
-    {
+        pCamera->isOrtho()) {
         auto newOrthoHeight = pCamera->getOrthoHeight();
-        if (delta > 0)
+        if (delta > 0) {
             newOrthoHeight /= pCamera->getZoomFactor();
-        else
+        }
+        else {
             newOrthoHeight *= pCamera->getZoomFactor();
+        }
         pCamera->setOrthoHeight(newOrthoHeight);
     }
-    else
-    {
+    else {
         auto newRadius = pCamera->getRadius();
-        if (delta > 0)
+        if (delta > 0) {
             newRadius /= pCamera->getZoomFactor();
-        else
+        }
+        else {
             newRadius *= pCamera->getZoomFactor();
+        }
         pCamera->setRadius(newRadius);
     }
 
     return true;
 }
 
-void BlenderCameraStrategy::toggleProjection()
-{
+void BlenderCameraStrategy::toggleProjection() {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
-    if (!camera)
-    {
+    if (!camera) {
         EXPECTED_COMPONENT_MISSING();
         return;
     }
     const auto pCamera = camera.value();
 
-    if (!pCamera->isOrtho())
-    {
-        // Switching to ortho: compute orthoHeight that matches the perspective visible height at target distance
+    if (!pCamera->isOrtho()) {
+        // switching to ortho: compute orthoHeight that matches the perspective visible height at target distance
+
         const auto orthoHeight = static_cast<cadm::cadf>(2.0 * pCamera->getRadius() *
             std::tan(pCamera->getFov() / 2.0));
         pCamera->setOrthoHeight(orthoHeight);

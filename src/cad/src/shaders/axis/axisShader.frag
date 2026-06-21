@@ -18,15 +18,15 @@ out vec4 FragColor;
 #define SOFT_EDGE 1.0
 
 const vec3 AXIS_DIR[3] = vec3[3](
-vec3(1, 0, 0),
-vec3(0, 1, 0),
-vec3(0, 0, 1)
+        vec3(1, 0, 0),
+        vec3(0, 1, 0),
+        vec3(0, 0, 1)
 );
 
 const vec4 AXIS_COLOR[3] = vec4[3](
-vec4(1.0, 0.0, 0.0, 1.0),
-vec4(0.0, 1.0, 0.0, 1.0),
-vec4(0.0, 0.0, 1.0, 1.0)
+        vec4(1.0, 0.0, 0.0, 1.0),
+        vec4(0.0, 1.0, 0.0, 1.0),
+        vec4(0.0, 0.0, 1.0, 1.0)
 );
 
 //
@@ -79,7 +79,7 @@ void main()
     vec4 nearH = invVP * vec4(fragNDC, -1.0, 1.0);
     vec4 farH = invVP * vec4(fragNDC, 1.0, 1.0);
     vec3 nearW = nearH.xyz / nearH.w;
-    vec3 farW = farH.xyz  / farH.w;
+    vec3 farW = farH.xyz / farH.w;
 
     float halfW = u_lineWidth * 0.5;
     float threshold = halfW + SOFT_EDGE;

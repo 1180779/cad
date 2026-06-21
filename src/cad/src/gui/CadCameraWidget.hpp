@@ -9,39 +9,51 @@
 #include "ComponentWidget.hpp"
 #include "../components/CadCameraComponent.hpp"
 
-
 class QDoubleSpinBox;
 
-class CadCameraWidget : public ComponentWidget
-{
+class CadCameraWidget final : public ComponentWidget {
     Q_OBJECT
 
 public:
     explicit CadCameraWidget(CadCameraComponent *camera, QWidget *parent = nullptr);
+
     ~CadCameraWidget() override = default;
 
 private
-slots :
+slots  :
+    
+
     void onPositionXChanged(double value) const;
+
     void onPositionYChanged(double value) const;
+
     void onPositionZChanged(double value) const;
 
     void onTargetXChanged(double value) const;
+
     void onTargetYChanged(double value) const;
+
     void onTargetZChanged(double value) const;
 
     void onWorldUpXChanged(double value) const;
+
     void onWorldUpYChanged(double value) const;
+
     void onWorldUpZChanged(double value) const;
 
     void onNearPlaneChanged(double value) const;
+
     void onFarPlaneChanged(double value) const;
+
     void onOrthoHeightChanged(double value) const;
 
 private:
     void setUpPositionControls(QFormLayout *layout);
+
     void setUpTargetControls(QFormLayout *layout);
+
     void setUpWorldUpControls(QFormLayout *layout);
+
     void setUpProjectionControls(QFormLayout *layout);
 
     static constexpr double s_positionMin = CadCameraComponent::s_positionMin;
@@ -83,6 +95,5 @@ private:
     QDoubleSpinBox *m_worldUpY;
     QDoubleSpinBox *m_worldUpZ;
 };
-
 
 #endif //CAD_CADCAMERAWIDGET_HPP

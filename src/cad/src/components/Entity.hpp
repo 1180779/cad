@@ -10,46 +10,68 @@
 #include <memory>
 #include <unordered_map>
 #include <typeindex>
-#include <cstdint>
 #include <optional>
 #include <ranges>
 #include <type_traits>
 #include <utility>
 #include <QMetaType>
 
-using EntityID = uint32_t;
+using EntityId = uint32_t;
 
-class Component
-{
+/// @brief Opaque token that only Scene can construct, used to restrict Entity::setSelected
+/// to Scene::setSelected / Scene::clearSelection callers
+class SelectionKey final {
+    SelectionKey() = default;
+
+    friend class Scene;
+};
+
+class Component {
 public:
     virtual ~Component() = default;
+
     bool enabled{true};
 };
 
-class Entity
-{
+class Entity {
 public:
-    explicit Entity(const EntityID id, std::string name = "Entity")
-        : m_id(id), m_name(std::move(name))
-    {
-    }
+    explicit Entity(const EntityId id, std::string name = "Entity") : m_id(id), m_name(std::move(name)) {}
 
     ~Entity() = default;
 
-    EntityID getId() const { return m_id; }
-    const std::string& getName() const { return m_name; }
-    void setName(const std::string &name) { m_name = name; }
+    EntityId getId() const {
+        return m_id;
+    }
 
-    bool isVisible() const { return m_visible; }
-    void setVisible(const bool visible) { m_visible = visible; }
+    const std::string& getName() const {
+        return m_name;
+    }
 
-    bool isSelected() const { return m_selected; }
-    void setSelected(const bool selected) { m_selected = selected; }
+    void setName(const std::string &name) {
+        m_name = name;
+    }
+
+    bool isVisible() const {
+        return m_visible;
+    }
+
+    void setVisible(const bool visible) {
+        m_visible = visible;
+    }
+
+    bool isSelected() const {
+        return m_selected;
+    }
+
+    void setSelected(const bool selected, SelectionKey) {
+        m_selected = selected;
+    }
 
     template <typename T, typename... Args>
     T* addComponent(Args &&... args);
 
-    // returns the component of the entity or [std::nullopt] if the entity does not have a component of the desired type
+    /// @brief Returns the component of the entity 
+    /// or [std::nullopt] if the entity does not have a component of the desired type
     template <typename T>
     std::optional<T*> getComponent();
 
@@ -60,7 +82,7 @@ public:
     void removeComponent();
 
 private:
-    EntityID m_id;
+    EntityId m_id;
     std::string m_name;
     bool m_visible{true};
     bool m_selected{false};
@@ -70,8 +92,7 @@ private:
 Q_DECLARE_METATYPE(Entity *)
 
 template <typename T, typename... Args>
-T* Entity::addComponent(Args &&... args)
-{
+T* Entity::addComponent(Args &&... args) {
     static_assert(std::is_base_of_v<Component, T>, "T must derive from Component");
     auto component = std::make_unique<T>(std::forward<Args>(args)...);
     T *ptr = component.get();
@@ -80,36 +101,41 @@ T* Entity::addComponent(Args &&... args)
 }
 
 template <typename T>
-std::optional<T*> Entity::getComponent()
-{
-    static_assert(std::is_base_of_v<Component, T>, "T must derive from Component");
+std::optional<T*> Entity::getComponent() {
+    if constexpr (std::is_base_of_v<Component, T>) {
+        if (const auto it = m_components.find(std::type_index(typeid(T)));
+            it != m_components.end()) {
+            return static_cast<T*>(it->second.get());
+        }
+    }
 
-    if (const auto it = m_components.find(std::type_index(typeid(T))); it != m_components.end())
-        return static_cast<T*>(it->second.get());
-
-    for (const auto &val : m_components | std::views::values)
-        if (T *ptr = dynamic_cast<T*>(val.get()))
+    for (const auto &val : m_components | std::views::values) {
+        if (T *ptr = dynamic_cast<T*>(val.get())) {
             return ptr;
+        }
+    }
 
     return std::nullopt;
 }
 
 template <typename T>
-bool Entity::hasComponent() const
-{
-    static_assert(std::is_base_of_v<Component, T>, "T must derive from Component");
-
-    if (m_components.contains(std::type_index(typeid(T))))
-        return true;
+bool Entity::hasComponent() const {
+    if constexpr (std::is_base_of_v<Component, T>) {
+        if (m_components.contains(std::type_index(typeid(T)))) {
+            return true;
+        }
+    }
 
     return std::ranges::any_of(
         m_components | std::views::values,
-        [](const auto &val) { return dynamic_cast<T*>(val.get()) != nullptr; });
+        [](const auto &val) {
+            return dynamic_cast<T*>(val.get()) != nullptr;
+        }
+    );
 }
 
 template <typename T>
-void Entity::removeComponent()
-{
+void Entity::removeComponent() {
     static_assert(std::is_base_of_v<Component, T>, "T must derive from Component");
     m_components.erase(std::type_index(typeid(T)));
 }
