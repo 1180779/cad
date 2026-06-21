@@ -47,9 +47,7 @@ namespace theme {
     /// @brief Resting 1px border around inputs (tinted from the app bg)
     inline const QColor g_inputBorder = gc_appBackground.darker(125);
 
-    /// @brief Flat, IntelliJ-like coordinate spinbox: soft border + rounded corners,
-    /// accent border on focus, and slim themed up/down steppers with a hover tint.
-    /// Set on a parent widget so it cascades to its child QAbstractSpinBoxes
+    /// @brief IntelliJ inspired spin box style
     inline const QString g_spinBoxStyle = QStringLiteral(
             R"(
                 QAbstractSpinBox {
@@ -86,7 +84,90 @@ namespace theme {
             g_menuHover.name()
         );
 
-    // frameless window-control buttons (QSS color literals)
+    /// @brief IntelliJ inspired combo box style
+    inline const QString g_comboBoxStyle = QStringLiteral(
+            R"(
+                QComboBox {
+                    background-color: %1;
+                    border: 1px solid %2;
+                    border-radius: %3px;
+                    padding: 2px 6px;
+                }
+                QComboBox:focus, QComboBox:on { border: 1px solid %4; }
+                QComboBox:disabled { color: %5; background-color: %6; }
+                QComboBox::drop-down {
+                    subcontrol-origin: border;
+                    subcontrol-position: center right;
+                    width: 18px;
+                    border-left: 1px solid %2;
+                    border-top-right-radius: %3px;
+                    border-bottom-right-radius: %3px;
+                    background-color: transparent;
+                }
+                QComboBox::drop-down:hover { background-color: %7; }
+                QComboBox::down-arrow { image: url(:/icons/chevron-down.svg); width: 9px; height: 9px; }
+                QComboBox::down-arrow:disabled { image: none; }
+                QComboBox QAbstractItemView {
+                    background-color: %1;
+                    border: 1px solid %8;
+                    border-radius: %9px;
+                    padding: 4px;
+                    outline: 0;
+                    selection-background-color: %4;
+                    selection-color: white;
+                }
+                QComboBox QAbstractItemView::item { padding: 4px 8px; border-radius: %9px; }
+            )"
+        )
+        .arg(
+            gc_cardBackground.name(),
+            g_inputBorder.name(),
+            QString::number(gc_inputRadius),
+            gc_accent.name(),
+            g_menuDisabled.name(),
+            gc_appBackground.name(),
+            g_menuHover.name(),
+            g_menuBorder.name(),
+            QString::number(gc_itemRadius)
+        );
+
+    /// @brief IntelliJ inspired menu bar and menus style
+    inline const QString g_menuStyle = QStringLiteral(
+            R"(
+                QMenuBar { background: transparent; }
+                QMenuBar::item { padding: 4px 8px; background: transparent; border-radius: %5px; }
+                QMenuBar::item:selected { background: %1; }
+                QMenuBar::item:pressed { background: %1; }
+                QMenu { background-color: %2; border: 1px solid %3; padding: 4px; }
+                QMenu::item { padding: 4px 24px; border-radius: %5px; }
+                QMenu::item:selected { background-color: palette(highlight); color: palette(highlighted-text); }
+                QMenu::item:disabled { color: %4; }
+                QMenu::separator { height: 1px; background: %3; margin: 4px 8px; }
+            )"
+        )
+                                       .arg(
+                                           g_menuHover.name(),
+                                           gc_appBackground.name(),
+                                           g_menuBorder.name(),
+                                           g_menuDisabled.name()
+                                       )
+                                       .arg(gc_itemRadius);
+
+    /// @brief IntelliJ inspired style for tool windows
+    /// @details Targets widgets named "toolPanel"; 
+    /// each panel must also set that objectName + WA_StyledBackground
+    inline const QString g_toolPanelStyle = QStringLiteral(
+            "#toolPanel { background-color: %1; border-radius: %2px; }"
+        )
+                                            .arg(gc_cardBackground.name())
+                                            .arg(gc_cardRadius);
+
+    /// @brief Full application stylesheet
+    inline QString appStyleSheet() {
+        return g_spinBoxStyle + g_comboBoxStyle + g_menuStyle + g_toolPanelStyle;
+    }
+
+    // frameless window-control buttons
 
     inline constexpr auto gc_windowButtonHover = "rgba(0, 0, 0, 0.08)";
     inline constexpr auto gc_windowButtonPressed = "rgba(0, 0, 0, 0.14)";

@@ -30,38 +30,11 @@ constexpr int gc_kResizeMargin = 6;
 
 namespace {
     /// @brief Applies the IntelliJ-style menu theming
-    void styleMenuBar(CadMenuBar *menuBar) {
-        menuBar->setStyleSheet(
-            QStringLiteral(
-                "QMenuBar { background: transparent; }"
-                "QMenuBar::item { padding: 4px 8px; background: transparent; border-radius: %5px; }"
-                "QMenuBar::item:selected { background: %1; }"
-                "QMenuBar::item:pressed { background: %1; }"
-                "QMenu { background-color: %2; border: 1px solid %3; padding: 4px; }"
-                "QMenu::item { padding: 4px 24px; border-radius: %5px; }"
-                "QMenu::item:selected { background-color: palette(highlight); color: palette(highlighted-text); }"
-                "QMenu::item:disabled { color: %4; }"
-                "QMenu::separator { height: 1px; background: %3; margin: 4px 8px; }"
-            )
-            .arg(
-                theme::g_menuHover.name(),
-                theme::gc_appBackground.name(),
-                theme::g_menuBorder.name(),
-                theme::g_menuDisabled.name()
-            )
-            .arg(theme::gc_itemRadius)
-        );
-    }
-
-    void styleToolPanels(const std::initializer_list<QWidget*> panels, const QColor &base) {
-        const QString qss =
-            QStringLiteral("#toolPanel { background-color: %1; border-radius: %2px; }")
-            .arg(base.name())
-            .arg(theme::gc_cardRadius);
+    /// @brief Marks tool-window panels to the app-wide #toolPanel rule
+    void prepareToolPanels(const std::initializer_list<QWidget*> panels) {
         for (QWidget *panel : panels) {
             panel->setObjectName("toolPanel");
             panel->setAttribute(Qt::WA_StyledBackground, true);
-            panel->setStyleSheet(qss);
         }
     }
 
@@ -554,7 +527,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    a.setStyleSheet(theme::g_spinBoxStyle);
+    a.setStyleSheet(theme::appStyleSheet());
 
     QWidget window;
     window.setWindowFlag(Qt::FramelessWindowHint);
@@ -571,7 +544,6 @@ int main(int argc, char *argv[]) {
     outerLayout->setContentsMargins(gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin);
 
     const auto menuBar = new CadMenuBar;
-    styleMenuBar(menuBar);
     const auto titleBar = new CadTitleBar(menuBar);
     outerLayout->addWidget(titleBar);
 
@@ -600,7 +572,6 @@ int main(int argc, char *argv[]) {
 
     const auto statusBar = new StatusBarWidget;
     statusBar->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-    leftLayout->addWidget(statusBar);
 
     const auto scenePanel = new ScenePanelWidget;
     const auto viewportPanel = new ViewportPanelWidget;
@@ -614,7 +585,7 @@ int main(int argc, char *argv[]) {
     panelStack->addWidget(viewportPanel);
     panelStack->setMinimumWidth(200);
 
-    styleToolPanels({scenePanel, viewportPanel}, window.palette().color(QPalette::Base));
+    prepareToolPanels({scenePanel, viewportPanel});
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto splitter = new QSplitter(Qt::Horizontal);
@@ -633,6 +604,10 @@ int main(int argc, char *argv[]) {
 
     const auto panelBar = new ToolPanelBar;
     rootLayout->addWidget(panelBar, 0);
+
+    // IntelliJ-style: the status bar spans the full window width below everything
+    // (viewport, tool window and its tab bar all sit above it)
+    outerLayout->addWidget(statusBar);
 
     const auto *sceneAction = menuBar->addToolPanelAction("Scene");
     const auto *viewportAction = menuBar->addToolPanelAction("Viewport");
