@@ -31,10 +31,10 @@ public:
     /// @brief Refresh the list items in the m_pointList list based on points from the m_bezier
     void populatePointList();
 
-    /// @brief Sync the selection of list items in the m_pointList from the m_scene entities
-    void syncSelectionFromScene();
+    /// @brief Mirror the scene's entity selection onto the m_pointList rows
+    void syncSelection();
 
-signals  :
+    signals  :
     
 
     void pointSelectionChanged(QList<Entity*> selected);

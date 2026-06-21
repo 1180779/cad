@@ -140,7 +140,7 @@ void BezierC0Widget::populatePointList() {
     }
 }
 
-void BezierC0Widget::syncSelectionFromScene() {
+void BezierC0Widget::syncSelection() {
     if (!m_scene) {
         return;
     }

@@ -46,10 +46,14 @@ public:
     /// @brief Mirror the scene's entity selection onto the de Boor list rows
     void syncSelection();
 
-    /// @brief Re-sync the panel with the curve after a geometry/structure change:
-    /// reconciles the de Boor list, rebuilds the Bernstein list, and refreshes the
+    /// @brief Re-sync the panel with the curve after a structural change:
+    /// reconciles the lists (de Boor; Bernstein) and refreshes the
     /// spinbox values for the currently selected point
     void refresh();
+
+    /// @brief Re-sync the panel after a position-only change: 
+    /// refreshes just the selected point's spinboxes, leaving the lists untouched
+    void refreshGeometry() const;
 
 signals :
     /// @brief Emitted when the de Boor list selection changes, carrying the point
@@ -61,8 +65,8 @@ private:
     enum class SelectedPointKind { none, deBoor, bernstein };
 
     /// @brief Rebuild the Bernstein list from scratch (clear + re-add every row)
-    /// @note Used for the initial fill / curve (re)loading; prefer reconcileBernsteinList()
-    /// for live updates so editing a Bernstein point doesn't drop the row being edited
+    /// @note Used for the initial fill / curve (re)loading; prefer reconciling
+    /// for live updates so editing a point doesn't drop rows or cause flicker
     void refreshBernsteinList() const;
 
     /// @brief Update the Bernstein list in place to match the curve's Bernstein point
@@ -70,11 +74,15 @@ private:
     /// index, so existing rows are left untouched -- preserving selection and the edit
     void reconcileBernsteinList() const;
 
+    /// @brief Refresh the shared editor from whichever point (de Boor / Bernstein) is
+    /// currently selected, without touching the lists
+    void refreshSelectedSpinboxes() const;
+
     /// @brief Load the editor with the position of de Boor point @p h
-    void updateSpinboxesForDeBoor(PointHandle h);
+    void updateSpinboxesForDeBoor(PointHandle h) const;
 
     /// @brief Load the editor with the Bernstein position at @p index
-    void updateSpinboxesForBernstein(int index);
+    void updateSpinboxesForBernstein(int index) const;
 
     /// @brief Commit a coordinate edit from the shared editor to whichever point
     /// (de Boor or Bernstein) is currently selected

@@ -27,8 +27,8 @@ namespace {
     /// @brief Label for a Bernstein row in the shared-endpoint layout
     QString bernsteinLabel(const int i, const int segments) {
         const int seg = i / 3;
-        const int local = i % 3;
-        if (local != 0) {
+        if (const int local = i % 3;
+            local != 0) {
             return QString("b%1 [seg %2]").arg(local).arg(seg);
         }
         if (i == 0) {
@@ -80,6 +80,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
     m_removeButton = new QPushButton("Remove selected from curve");
     layout->addWidget(m_removeButton);
 
+    // ReSharper disable once CppDFAMemoryLeak
     auto *sep1 = new QFrame;
     sep1->setFrameShape(QFrame::HLine);
     layout->addWidget(sep1);
@@ -91,6 +92,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
     m_bernsteinList->setMaximumHeight(120);
     layout->addWidget(m_bernsteinList);
 
+    // ReSharper disable once CppDFAMemoryLeak
     auto *sep2 = new QFrame;
     sep2->setFrameShape(QFrame::HLine);
     layout->addWidget(sep2);
@@ -183,7 +185,8 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
             else {
                 m_bezier->removeControlPointAt(row);
             }
-            refreshList();
+            reconcileDeBoorList();
+            reconcileBernsteinList();
             emit propertyChanged();
         }
     );
@@ -432,7 +435,14 @@ void BezierC2Widget::syncSelection() {
 void BezierC2Widget::refresh() {
     reconcileDeBoorList();
     reconcileBernsteinList();
+    refreshSelectedSpinboxes();
+}
 
+void BezierC2Widget::refreshGeometry() const {
+    refreshSelectedSpinboxes();
+}
+
+void BezierC2Widget::refreshSelectedSpinboxes() const {
     if (m_selectedKind == SelectedPointKind::deBoor &&
         m_selectedDeBoorHandle != InvalidPointHandle) {
         updateSpinboxesForDeBoor(m_selectedDeBoorHandle);
@@ -444,11 +454,11 @@ void BezierC2Widget::refresh() {
     }
 }
 
-void BezierC2Widget::updateSpinboxesForDeBoor(const PointHandle h) {
+void BezierC2Widget::updateSpinboxesForDeBoor(const PointHandle h) const {
     m_pointProps->setPosition(m_scene->getPointRegistry().getPosition(h));
 }
 
-void BezierC2Widget::updateSpinboxesForBernstein(const int index) {
+void BezierC2Widget::updateSpinboxesForBernstein(const int index) const {
     m_bezier->ensureBernsteinUpToDate();
     const auto &positions = m_bezier->getBernsteinPositions();
     if (index < 0 || index >= static_cast<int>(positions.size())) {

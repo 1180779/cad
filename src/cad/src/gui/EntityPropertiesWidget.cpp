@@ -32,7 +32,7 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
     clearLayout();
     m_entity = entity;
     m_pointWidget = nullptr;
-    m_bezierWidget = nullptr;
+    m_bezierC0Widget = nullptr;
     m_bezierC2Widget = nullptr;
 
     if (!m_entity) {
@@ -75,12 +75,12 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
     }
 
     if (const auto bezier = m_entity->getComponent<BezierC0Component>()) {
-        m_bezierWidget = new BezierC0Widget(bezier.value(), m_scene);
-        m_bezierWidget->setCommandContext(m_scene, m_commandStack, m_entity->getId());
-        m_layout->addWidget(m_bezierWidget);
-        connect(m_bezierWidget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+        m_bezierC0Widget = new BezierC0Widget(bezier.value(), m_scene);
+        m_bezierC0Widget->setCommandContext(m_scene, m_commandStack, m_entity->getId());
+        m_layout->addWidget(m_bezierC0Widget);
+        connect(m_bezierC0Widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
         connect(
-            m_bezierWidget,
+            m_bezierC0Widget,
             &BezierC0Widget::pointSelectionChanged,
             this,
             &EntityPropertiesWidget::pointSelectionChanged
@@ -102,8 +102,8 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
 }
 
 void EntityPropertiesWidget::syncBezierSelection() const {
-    if (m_bezierWidget) {
-        m_bezierWidget->syncSelectionFromScene();
+    if (m_bezierC0Widget) {
+        m_bezierC0Widget->syncSelection();
     }
     if (m_bezierC2Widget) {
         m_bezierC2Widget->syncSelection();
@@ -116,6 +116,15 @@ void EntityPropertiesWidget::refreshComponents() const {
     }
     if (m_bezierC2Widget) {
         m_bezierC2Widget->refresh();
+    }
+}
+
+void EntityPropertiesWidget::refreshComponentGeometry() const {
+    if (m_pointWidget) {
+        m_pointWidget->refresh();
+    }
+    if (m_bezierC2Widget) {
+        m_bezierC2Widget->refreshGeometry();
     }
 }
 

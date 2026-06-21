@@ -220,7 +220,7 @@ namespace {
             glWidget,
             &OpenGlWidget::geometryChanged,
             entityPropertiesWidget,
-            &EntityPropertiesWidget::refreshComponents
+            &EntityPropertiesWidget::refreshComponentGeometry
         );
     }
 
@@ -594,8 +594,6 @@ int main(int argc, char *argv[]) {
     const auto panelBar = new ToolPanelBar;
     rootLayout->addWidget(panelBar, 0);
 
-    // IntelliJ-style: the status bar spans the full window width below everything
-    // (viewport, tool window and its tab bar all sit above it)
     outerLayout->addWidget(statusBar);
 
     const auto *sceneAction = menuBar->addToolPanelAction("Scene");
