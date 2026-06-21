@@ -122,7 +122,13 @@ void EntityPropertiesWidget::refreshComponents() const {
 void EntityPropertiesWidget::clearLayout() const {
     QLayoutItem *item;
     while ((item = m_layout->takeAt(0)) != nullptr) {
-        delete item->widget();
+        // deleteLater (not delete) as a safety net: the widget should not be deleted while
+        // its own handler is on the call stack, but this prevents application crash in case
+        // that happens for some reason (ex. due to future changes to the codebase)
+        if (auto *w = item->widget()) {
+            w->setParent(nullptr);
+            w->deleteLater();
+        }
         delete item;
     }
 }

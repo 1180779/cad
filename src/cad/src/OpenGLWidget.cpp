@@ -41,12 +41,17 @@ OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent),
                                                   std::make_unique<GridPlanePlacementStrategy>(1 /*XY plane*/)
                                               ) {
     setFocusPolicy(Qt::StrongFocus);
-    // refresh the viewport and dependent panels after any undo/redo/push
-    m_commandStack.onChange = [this] {
-        m_scene.syncPointSelectionToRegistry();
-        emit sceneChanged();
-        emit viewportSelectionChanged();
-        emit geometryChanged();
+    m_commandStack.onChange = [this](const ChangeFlags flags) {
+        if (hasFlag(flags, ChangeFlags::structure)) {
+            emit sceneChanged();
+        }
+        if (hasFlag(flags, ChangeFlags::selection)) {
+            m_scene.syncPointSelectionToRegistry();
+            emit viewportSelectionChanged();
+        }
+        if (hasFlag(flags, ChangeFlags::geometry)) {
+            emit geometryChanged();
+        }
         update();
     };
 }

@@ -49,13 +49,14 @@ public:
 
     void clear();
 
-    /// @brief Called after any push/undo/redo that changed state, so the UI can refresh
-    std::function<void()> onChange;
+    /// @brief Called after any push/undo/redo that changed state, so the UI can refresh.
+    /// The flags say what changed, so listeners emit only the affected signals
+    std::function<void(ChangeFlags)> onChange;
 
 private:
-    void notify() const {
+    void notify(const ChangeFlags flags) const {
         if (onChange) {
-            onChange();
+            onChange(flags);
         }
     }
 

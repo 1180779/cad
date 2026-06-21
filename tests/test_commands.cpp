@@ -135,7 +135,7 @@ TEST_CASE("onChange fires on push, undo and redo", "[command]") {
     int value = 0;
     int changes = 0;
     CommandStack stack;
-    stack.onChange = [&changes] {
+    stack.onChange = [&changes](ChangeFlags) {
         ++changes;
     };
 

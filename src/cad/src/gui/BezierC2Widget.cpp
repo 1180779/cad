@@ -8,9 +8,23 @@
 #include <QFrame>
 #include <QLabel>
 #include <QVBoxLayout>
+#include <unordered_set>
 
 #include "../commands/CommandStack.hpp"
 #include "../commands/Commands.hpp"
+
+namespace {
+    /// @brief Label shown for a de Boor row at position i, resolving the entity name
+    QString deBoorLabel(Scene *scene, const int i, const PointHandle h) {
+        QString name = QString("Point #%1").arg(h);
+        if (scene) {
+            if (const auto entityOpt = scene->getEntityByPointHandle(h)) {
+                name = QString::fromStdString(entityOpt.value()->getName());
+            }
+        }
+        return QString("[%1] %2").arg(i).arg(name);
+    }
+}
 
 BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget *parent) : ComponentWidget(
         bezier,
@@ -18,9 +32,11 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
     ),
     m_bezier(bezier),
     m_scene(scene) {
+    // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
 
+    // ReSharper disable once CppDFAMemoryLeak
     const auto titleLabel = new QLabel("Bezier C2 Curve");
     QFont f = titleLabel->font();
     f.setBold(true);
@@ -68,6 +84,7 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
     m_selectedLabel = new QLabel("Selected point:");
     layout->addWidget(m_selectedLabel);
 
+    // ReSharper disable once CppDFAMemoryLeak
     const auto spinForm = new QFormLayout;
     spinForm->setContentsMargins(0, 0, 0, 0);
 
@@ -316,19 +333,63 @@ void BezierC2Widget::refreshList() {
     const auto &deBoorPts = m_bezier->getDeBoorPoints();
     for (int i = 0; i < static_cast<int>(deBoorPts.size()); ++i) {
         const PointHandle h = deBoorPts[i];
-        QString name = QString("Point #%1").arg(h);
-        if (m_scene) {
-            if (const auto entityOpt = m_scene->getEntityByPointHandle(h)) {
-                name = QString::fromStdString(entityOpt.value()->getName());
-            }
-        }
-        const auto item = new QListWidgetItem(QString("[%1] %2").arg(i).arg(name));
+        const auto item = new QListWidgetItem(deBoorLabel(m_scene, i, h));
         item->setData(Qt::UserRole, QVariant::fromValue(h));
         m_deBoorList->addItem(item);
         m_deBoorItemMap[h] = item;
     }
 
     refreshBernsteinList();
+}
+
+void BezierC2Widget::reconcileDeBoorList() {
+    const auto &handles = m_bezier->getDeBoorPoints();
+
+    // block signals: insert/remove/reorder would otherwise fire itemSelectionChanged
+    const QSignalBlocker blocker(m_deBoorList);
+
+    const std::unordered_set live(handles.begin(), handles.end());
+
+    // drop rows whose point is gone from the curve
+    for (auto it = m_deBoorItemMap.begin(); it != m_deBoorItemMap.end();) {
+        if (!live.contains(it->first)) {
+            delete m_deBoorList->takeItem(m_deBoorList->row(it->second));
+            it = m_deBoorItemMap.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+
+    // walk the target order, reusing/creating/moving rows into place
+    for (std::size_t i = 0; i < handles.size(); ++i) {
+        const auto h = handles[i];
+        QListWidgetItem *item;
+        // insert new row if there's no associated one already
+        if (const auto found = m_deBoorItemMap.find(h);
+            found == m_deBoorItemMap.end()) {
+            item = new QListWidgetItem;
+            item->setData(Qt::UserRole, QVariant::fromValue(h));
+            m_deBoorList->insertItem(static_cast<int>(i), item);
+            m_deBoorItemMap[h] = item;
+        }
+        else {
+            // row exists; reorder it if needed
+            item = found->second;
+            if (const int row = m_deBoorList->row(item);
+                row != i) {
+                const bool wasSelected = item->isSelected();
+                m_deBoorList->takeItem(row);
+                m_deBoorList->insertItem(static_cast<int>(i), item);
+                item->setSelected(wasSelected);
+            }
+        }
+
+        if (const QString label = deBoorLabel(m_scene, static_cast<int>(i), h);
+            item->text() != label) {
+            item->setText(label);
+        }
+    }
 }
 
 void BezierC2Widget::refreshBernsteinList() const {
@@ -338,6 +399,7 @@ void BezierC2Widget::refreshBernsteinList() const {
     for (int i = 0; i < count; ++i) {
         const int seg = i / 4;
         const int local = i % 4;
+        // ReSharper disable once CppDFAMemoryLeak
         const auto item = new QListWidgetItem(
             QString("b%1 [seg %2]").arg(local).arg(seg)
         );
@@ -365,6 +427,7 @@ void BezierC2Widget::syncSelection() {
 }
 
 void BezierC2Widget::refresh() {
+    reconcileDeBoorList();
     refreshBernsteinList();
 
     if (m_selectedKind == SelectedPointKind::deBoor &&
