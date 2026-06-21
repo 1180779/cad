@@ -5,6 +5,7 @@
 #ifndef CAD_THEME_HPP
 #define CAD_THEME_HPP
 
+#include <QApplication>
 #include <QColor>
 #include <QPalette>
 #include <QString>
@@ -47,107 +48,117 @@ namespace theme {
     /// @brief Resting 1px border around inputs (tinted from the app bg)
     inline const QColor g_inputBorder = gc_appBackground.darker(125);
 
+    // status bar
+
+    /// @brief Magenta accent for the active transform / add-point mode (vim-like)
+    inline constexpr QColor gc_statusActive(0xFF, 0x00, 0xFF);
+
+    // frameless window-control buttons (QSS color literals, consumed by g_windowButtonStyle)
+
+    inline constexpr auto gc_windowButtonHover = "rgba(0, 0, 0, 0.08)";
+    inline constexpr auto gc_windowButtonPressed = "rgba(0, 0, 0, 0.14)";
+    inline constexpr auto gc_closeButtonHover = "#E81123";
+    inline constexpr auto gc_closeButtonPressed = "#C50E1F";
+
     /// @brief IntelliJ inspired spin box style
+    /// @note Standard colors come from palette(...); only the derived tints are args
     inline const QString g_spinBoxStyle = QStringLiteral(
             R"(
                 QAbstractSpinBox {
-                    background-color: %1;
-                    border: 1px solid %2;
-                    border-radius: %3px;
+                    background-color: palette(base);
+                    border: 1px solid %1;
+                    border-radius: %2px;
                     padding: 2px 6px;
-                    selection-background-color: %4;
-                    selection-color: white;
+                    selection-background-color: palette(highlight);
+                    selection-color: palette(highlighted-text);
                 }
-                QAbstractSpinBox:focus { border: 1px solid %4; }
-                QAbstractSpinBox:disabled { color: %5; background-color: %6; }
+                QAbstractSpinBox:focus { border: 1px solid palette(highlight); }
+                QAbstractSpinBox:disabled { color: %3; background-color: palette(window); }
                 QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
                     subcontrol-origin: border;
                     width: 15px;
-                    border-left: 1px solid %2;
+                    border-left: 1px solid %1;
                     background-color: transparent;
                 }
-                QAbstractSpinBox::up-button { subcontrol-position: top right; border-top-right-radius: %3px; }
-                QAbstractSpinBox::down-button { subcontrol-position: bottom right; border-bottom-right-radius: %3px; }
-                QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover { background-color: %7; }
+                QAbstractSpinBox::up-button { subcontrol-position: top right; border-top-right-radius: %2px; }
+                QAbstractSpinBox::down-button { subcontrol-position: bottom right; border-bottom-right-radius: %2px; }
+                QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover { background-color: %4; }
                 QAbstractSpinBox::up-arrow { image: url(:/icons/chevron-up.svg); width: 9px; height: 9px; }
                 QAbstractSpinBox::down-arrow { image: url(:/icons/chevron-down.svg); width: 9px; height: 9px; }
                 QAbstractSpinBox::up-arrow:disabled, QAbstractSpinBox::down-arrow:disabled { image: none; }
             )"
         )
         .arg(
-            gc_cardBackground.name(),
             g_inputBorder.name(),
             QString::number(gc_inputRadius),
-            gc_accent.name(),
             g_menuDisabled.name(),
-            gc_appBackground.name(),
             g_menuHover.name()
         );
 
     /// @brief IntelliJ inspired combo box style
+    /// @note Standard colors come from palette(...); only the derived tints are args
     inline const QString g_comboBoxStyle = QStringLiteral(
             R"(
                 QComboBox {
-                    background-color: %1;
-                    border: 1px solid %2;
-                    border-radius: %3px;
+                    background-color: palette(base);
+                    border: 1px solid %1;
+                    border-radius: %2px;
                     padding: 2px 6px;
                 }
-                QComboBox:focus, QComboBox:on { border: 1px solid %4; }
-                QComboBox:disabled { color: %5; background-color: %6; }
+                QComboBox:focus, QComboBox:on { border: 1px solid palette(highlight); }
+                QComboBox:disabled { color: %3; background-color: palette(window); }
                 QComboBox::drop-down {
                     subcontrol-origin: border;
                     subcontrol-position: center right;
                     width: 18px;
-                    border-left: 1px solid %2;
-                    border-top-right-radius: %3px;
-                    border-bottom-right-radius: %3px;
+                    border-left: 1px solid %1;
+                    border-top-right-radius: %2px;
+                    border-bottom-right-radius: %2px;
                     background-color: transparent;
                 }
-                QComboBox::drop-down:hover { background-color: %7; }
+                QComboBox::drop-down:hover { background-color: %4; }
                 QComboBox::down-arrow { image: url(:/icons/chevron-down.svg); width: 9px; height: 9px; }
                 QComboBox::down-arrow:disabled { image: none; }
                 QComboBox QAbstractItemView {
-                    background-color: %1;
-                    border: 1px solid %8;
-                    border-radius: %9px;
+                    background-color: palette(base);
+                    border: 1px solid %5;
+                    border-radius: %6px;
                     padding: 4px;
                     outline: 0;
-                    selection-background-color: %4;
-                    selection-color: white;
                 }
-                QComboBox QAbstractItemView::item { padding: 4px 8px; border-radius: %9px; }
+                QComboBox QAbstractItemView::item { padding: 4px 8px; border-radius: %6px; }
+                QComboBox QAbstractItemView::item:selected {
+                    background-color: palette(highlight);
+                    color: palette(highlighted-text);
+                }
             )"
         )
         .arg(
-            gc_cardBackground.name(),
             g_inputBorder.name(),
             QString::number(gc_inputRadius),
-            gc_accent.name(),
             g_menuDisabled.name(),
-            gc_appBackground.name(),
             g_menuHover.name(),
             g_menuBorder.name(),
             QString::number(gc_itemRadius)
         );
 
     /// @brief IntelliJ inspired menu bar and menus style
+    /// @note Standard colors come from palette(...); only the derived tints are args
     inline const QString g_menuStyle = QStringLiteral(
             R"(
                 QMenuBar { background: transparent; }
-                QMenuBar::item { padding: 4px 8px; background: transparent; border-radius: %5px; }
+                QMenuBar::item { padding: 4px 8px; background: transparent; border-radius: %4px; }
                 QMenuBar::item:selected { background: %1; }
                 QMenuBar::item:pressed { background: %1; }
-                QMenu { background-color: %2; border: 1px solid %3; padding: 4px; }
-                QMenu::item { padding: 4px 24px; border-radius: %5px; }
+                QMenu { background-color: palette(window); border: 1px solid %2; padding: 4px; }
+                QMenu::item { padding: 4px 24px; border-radius: %4px; }
                 QMenu::item:selected { background-color: palette(highlight); color: palette(highlighted-text); }
-                QMenu::item:disabled { color: %4; }
-                QMenu::separator { height: 1px; background: %3; margin: 4px 8px; }
+                QMenu::item:disabled { color: %3; }
+                QMenu::separator { height: 1px; background: %2; margin: 4px 8px; }
             )"
         )
                                        .arg(
                                            g_menuHover.name(),
-                                           gc_appBackground.name(),
                                            g_menuBorder.name(),
                                            g_menuDisabled.name()
                                        )
@@ -157,22 +168,48 @@ namespace theme {
     /// @details Targets widgets named "toolPanel"; 
     /// each panel must also set that objectName + WA_StyledBackground
     inline const QString g_toolPanelStyle = QStringLiteral(
-            "#toolPanel { background-color: %1; border-radius: %2px; }"
+            "#toolPanel { background-color: palette(base); border-radius: %1px; }"
         )
-                                            .arg(gc_cardBackground.name())
-                                            .arg(gc_cardRadius);
+        .arg(gc_cardRadius);
+
+    /// @brief Vim inspired status bar style
+    inline const QString g_statusBarStyle = QStringLiteral(
+            R"(
+                StatusBarWidget { background-color: palette(base); font-family: monospace; font-size: 12px; }
+                StatusBarWidget QLabel { color: palette(text); }
+                StatusBarWidget QLabel[modeActive="true"] { color: %1; font-weight: bold; }
+            )"
+        )
+        .arg(gc_statusActive.name());
+
+    /// @brief App-colored strip the splitter draws between the viewport and tool window
+    inline const auto g_splitterStyle = QStringLiteral(
+        "QSplitter::handle { background-color: palette(window); }"
+    );
+
+    /// @brief Frameless window controls (objectName "windowButton"); the close button
+    /// (the "close" dynamic property) gets the red hover / pressed accents
+    inline const QString g_windowButtonStyle = QStringLiteral(
+            R"(
+                QToolButton#windowButton { background: transparent; border: none; }
+                QToolButton#windowButton:hover { background: %1; }
+                QToolButton#windowButton:pressed { background: %2; }
+                QToolButton#windowButton[close="true"]:hover { background: %3; }
+                QToolButton#windowButton[close="true"]:pressed { background: %4; }
+            )"
+        )
+        .arg(
+            QLatin1String(gc_windowButtonHover),
+            QLatin1String(gc_windowButtonPressed),
+            QLatin1String(gc_closeButtonHover),
+            QLatin1String(gc_closeButtonPressed)
+        );
 
     /// @brief Full application stylesheet
     inline QString appStyleSheet() {
-        return g_spinBoxStyle + g_comboBoxStyle + g_menuStyle + g_toolPanelStyle;
+        return g_spinBoxStyle + g_comboBoxStyle + g_menuStyle + g_toolPanelStyle
+            + g_statusBarStyle + g_splitterStyle + g_windowButtonStyle;
     }
-
-    // frameless window-control buttons
-
-    inline constexpr auto gc_windowButtonHover = "rgba(0, 0, 0, 0.08)";
-    inline constexpr auto gc_windowButtonPressed = "rgba(0, 0, 0, 0.14)";
-    inline constexpr auto gc_closeButtonHover = "#E81123";
-    inline constexpr auto gc_closeButtonPressed = "#C50E1F";
 
     /// @brief Overlays the theme's colors onto the standard roles of an existing palette,
     /// leaving every other role at the style's defaults
@@ -182,6 +219,12 @@ namespace theme {
         palette.setColor(QPalette::Highlight, gc_accent);
         palette.setColor(QPalette::HighlightedText, QColor(Qt::white));
         return palette;
+    }
+
+    /// @brief Applies the full theme to the running application
+    inline void apply() {
+        QApplication::setPalette(applyTheme(QApplication::palette()));
+        qApp->setStyleSheet(appStyleSheet());
     }
 }
 

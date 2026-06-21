@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
+#include "Scene.hpp"
 #include "../commands/CommandStack.hpp"
 #include "../commands/Commands.hpp"
 

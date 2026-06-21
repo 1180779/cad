@@ -4,9 +4,6 @@
 
 #include "PointPropertiesWidget.hpp"
 
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
 #include <common/CoordinateSpinBox.hpp>
 
 #include "../Scene.hpp"

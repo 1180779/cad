@@ -23,13 +23,12 @@
 #include "gui/ViewportPanelWidget.hpp"
 
 /// @brief Width of the app-colored separator strips between viewport, tool window and status line
-constexpr int gc_kSeparatorStripWidth = 5;
+constexpr int gc_separatorStripWidth = 5;
 
 /// @brief Border width around the frameless window reserved for native resize handling
-constexpr int gc_kResizeMargin = 6;
+constexpr int gc_resizeMargin = 6;
 
 namespace {
-    /// @brief Applies the IntelliJ-style menu theming
     /// @brief Marks tool-window panels to the app-wide #toolPanel rule
     void prepareToolPanels(const std::initializer_list<QWidget*> panels) {
         for (QWidget *panel : panels) {
@@ -510,10 +509,6 @@ int main(int argc, char *argv[]) {
     glSetDefaults();
     [[maybe_unused]] QApplication a(argc, argv);
 
-    // seed the theme onto the app-wide palette: every widget (and palette(...) QSS
-    // reference) inherits the app background, white card base and accent from here
-    QApplication::setPalette(theme::applyTheme(QApplication::palette()));
-
     // load the bundled JetBrains Mono and make it the default application font;
     // the family name is read back from the loaded font rather than hard-coded
     QFontDatabase::addApplicationFont(":/fonts/JetBrainsMono-Bold.ttf");
@@ -527,7 +522,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    a.setStyleSheet(theme::appStyleSheet());
+    theme::apply();
 
     QWidget window;
     window.setWindowFlag(Qt::FramelessWindowHint);
@@ -536,12 +531,10 @@ int main(int argc, char *argv[]) {
     // window paints its (now theme-seeded) QPalette::Window background
     window.setAutoFillBackground(true);
 
-    // outer column: custom title bar on top, app content below. The margin reserves
-    // a border that the frameless-resize filter uses for native edge resizing
     // ReSharper disable once CppDFAMemoryLeak
     const auto outerLayout = new QVBoxLayout(&window);
-    outerLayout->setSpacing(gc_kResizeMargin);
-    outerLayout->setContentsMargins(gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin, gc_kResizeMargin);
+    outerLayout->setSpacing(gc_resizeMargin);
+    outerLayout->setContentsMargins(gc_resizeMargin, gc_resizeMargin, gc_resizeMargin, gc_resizeMargin);
 
     const auto menuBar = new CadMenuBar;
     const auto titleBar = new CadTitleBar(menuBar);
@@ -560,7 +553,7 @@ int main(int argc, char *argv[]) {
     const auto leftContainer = new QWidget;
     // ReSharper disable once CppDFAMemoryLeak
     const auto leftLayout = new QVBoxLayout(leftContainer);
-    leftLayout->setSpacing(gc_kSeparatorStripWidth);
+    leftLayout->setSpacing(gc_separatorStripWidth);
     leftLayout->setContentsMargins(0, 0, 0, 0);
 
     const auto glWidget = new OpenGlWidget;
@@ -590,11 +583,7 @@ int main(int argc, char *argv[]) {
     // ReSharper disable once CppDFAMemoryLeak
     const auto splitter = new QSplitter(Qt::Horizontal);
     splitter->setChildrenCollapsible(false);
-    // app-colored strip separating the viewport from the open tool window
-    splitter->setHandleWidth(gc_kSeparatorStripWidth);
-    splitter->setStyleSheet(
-        QStringLiteral("QSplitter::handle { background-color: %1; }").arg(theme::gc_appBackground.name())
-    );
+    splitter->setHandleWidth(gc_separatorStripWidth);
     splitter->addWidget(leftContainer); // index 0: stretches
     splitter->addWidget(panelStack); // index 1: resizable, collapsible
     splitter->setStretchFactor(0, 1);
@@ -622,7 +611,7 @@ int main(int argc, char *argv[]) {
 
     wirePanelToggles(panelBar, panelStack, sceneAction, viewportAction, sceneBtn, viewportBtn);
 
-    // intelliJ-style active-tab accent:
+    // intelliJ inspired active-tab accent:
     // the open tab paints accent color only while the tool panel holds focus,
     // falling back to the hover color otherwise
     QObject::connect(
@@ -683,7 +672,7 @@ int main(int argc, char *argv[]) {
     wireEntityCreation(glWidget, hierarchyWidget);
 
     QApplication::instance()->installEventFilter(glWidget);
-    enableFramelessResize(&window, gc_kResizeMargin);
+    enableFramelessResize(&window, gc_resizeMargin);
     window.show();
     return QApplication::exec();
 }

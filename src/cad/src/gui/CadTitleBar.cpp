@@ -11,32 +11,19 @@
 #include <QToolButton>
 #include <QWindow>
 
-#include "Theme.hpp"
-
 namespace {
-    constexpr int gc_kTitleBarHeight = 30;
+    constexpr int gc_titleBarHeight = 30;
 
     QToolButton* makeWindowButton(QWidget *parent, const QStyle::StandardPixmap icon, const bool isClose = false) {
         auto *btn = new QToolButton(parent);
         btn->setIcon(parent->style()->standardIcon(icon));
         btn->setAutoRaise(true);
         btn->setFocusPolicy(Qt::NoFocus);
-        btn->setFixedSize(gc_kTitleBarHeight, gc_kTitleBarHeight);
+        btn->setFixedSize(gc_titleBarHeight, gc_titleBarHeight);
         btn->setCursor(Qt::ArrowCursor);
 
-        const char *hover = isClose
-                                ? theme::gc_closeButtonHover
-                                : theme::gc_windowButtonHover;
-        const char *pressed = isClose
-                                  ? theme::gc_closeButtonPressed
-                                  : theme::gc_windowButtonPressed;
-        btn->setStyleSheet(
-            QStringLiteral(
-                "QToolButton { background: transparent; border: none; }"
-                "QToolButton:hover { background: %1; }"
-                "QToolButton:pressed { background: %2; }"
-            ).arg(QLatin1String(hover), QLatin1String(pressed))
-        );
+        btn->setObjectName("windowButton");
+        btn->setProperty("close", isClose);
         return btn;
     }
 
@@ -138,7 +125,7 @@ namespace {
 }
 
 CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent) : QWidget(parent) {
-    setFixedHeight(gc_kTitleBarHeight);
+    setFixedHeight(gc_titleBarHeight);
 
     // ReSharper disable once CppDFAMemoryLeak
     auto *layout = new QHBoxLayout(this);

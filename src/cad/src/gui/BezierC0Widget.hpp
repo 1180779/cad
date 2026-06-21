@@ -14,7 +14,6 @@
 #include "ComponentWidget.hpp"
 #include "PointPropertiesWidget.hpp"
 #include "../components/BezierC0Component.hpp"
-#include "../Scene.hpp"
 
 class BezierC0Widget final : public ComponentWidget {
     Q_OBJECT

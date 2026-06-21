@@ -4,8 +4,6 @@
 
 #include "VirtualPointPropertiesWidget.hpp"
 
-#include <QHBoxLayout>
-#include <QLabel>
 #include <QVBoxLayout>
 #include <common/CoordinateSpinBox.hpp>
 
