@@ -139,13 +139,13 @@ std::vector<Vertex> TorusGeometry::generateVertices() const {
 
             const cadm::Vec3 majorRadiusPosition{
                 m_majorRadius * std::cos(majorAngle),
-                m_majorRadius * std::sin(majorAngle),
                 0,
+                m_majorRadius * std::sin(majorAngle),
             };
             const cadm::Vec3 pos{
                 majorRadiusPosition.x + std::cos(majorAngle) * std::cos(minorAngle) * m_minorRadius,
-                majorRadiusPosition.y + std::sin(majorAngle) * std::cos(minorAngle) * m_minorRadius,
                 std::sin(minorAngle) * m_minorRadius,
+                majorRadiusPosition.z + std::sin(majorAngle) * std::cos(minorAngle) * m_minorRadius,
             };
             vertices.push_back({pos, {}, {0, 0, 0, 1}});
         }

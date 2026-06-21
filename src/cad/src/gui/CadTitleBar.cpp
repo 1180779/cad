@@ -11,6 +11,8 @@
 #include <QToolButton>
 #include <QWindow>
 
+#include "Theme.hpp"
+
 namespace {
     constexpr int gc_kTitleBarHeight = 30;
 
@@ -19,15 +21,15 @@ namespace {
         btn->setIcon(parent->style()->standardIcon(icon));
         btn->setAutoRaise(true);
         btn->setFocusPolicy(Qt::NoFocus);
-        btn->setFixedSize(gc_kTitleBarHeight + 12, gc_kTitleBarHeight);
-        // coherent with the menu theming: flat by default, a subtle gray wash on hover
-        // the close button mirrors the platform convention with a red hover instead
+        btn->setFixedSize(gc_kTitleBarHeight, gc_kTitleBarHeight);
+        btn->setCursor(Qt::ArrowCursor);
+
         const char *hover = isClose
-                                ? "#E81123"
-                                : "rgba(0, 0, 0, 0.08)";
+                                ? theme::gc_closeButtonHover
+                                : theme::gc_windowButtonHover;
         const char *pressed = isClose
-                                  ? "#C50E1F"
-                                  : "rgba(0, 0, 0, 0.14)";
+                                  ? theme::gc_closeButtonPressed
+                                  : theme::gc_windowButtonPressed;
         btn->setStyleSheet(
             QStringLiteral(
                 "QToolButton { background: transparent; border: none; }"
@@ -38,8 +40,7 @@ namespace {
         return btn;
     }
 
-    /// @brief Drives native system-resize from the border of a frameless window.
-    /// No Q_OBJECT/signals, so it needs no moc pass
+    /// @brief Drives native system-resize from the border of a frameless window
     class FramelessResizeFilter final : public QObject {
     public:
         FramelessResizeFilter(QWidget *window, const int margin) : QObject(window), m_window(window), m_margin(margin) {
@@ -52,7 +53,8 @@ namespace {
 
             switch (event->type()) {
             case QEvent::MouseMove: {
-                if (!m_window->isMaximized()) {
+                // don't offer a resize cursor on platforms that refused the gesture (e.g., tiling window managers)
+                if (m_resizeSupported && !m_window->isMaximized()) {
                     const auto *me = static_cast<QMouseEvent*>(event);
                     if (const Qt::Edges edges = edgesAt(me->pos());
                         edges != Qt::Edges()) {
@@ -65,18 +67,21 @@ namespace {
                 break;
             }
             case QEvent::Leave:
-                // pointer entered a child widget: drop any resize cursor so it
-                // doesn't stick on the interior content
                 m_window->unsetCursor();
                 break;
             case QEvent::MouseButtonPress: {
                 if (const auto *me = static_cast<QMouseEvent*>(event);
-                    me->button() == Qt::LeftButton && !m_window->isMaximized()) {
+                    me->button() == Qt::LeftButton && m_resizeSupported && !m_window->isMaximized()) {
                     if (const Qt::Edges edges = edgesAt(me->pos());
                         edges != Qt::Edges()) {
                         if (QWindow *handle = m_window->windowHandle()) {
-                            handle->startSystemResize(edges);
-                            return true;
+                            // consume the press only if the platform actually began the resize;
+                            // otherwise latch off the affordance and fall through
+                            if (handle->startSystemResize(edges)) {
+                                return true;
+                            }
+                            m_resizeSupported = false;
+                            m_window->unsetCursor();
                         }
                     }
                 }
@@ -91,6 +96,9 @@ namespace {
     private:
         QWidget *m_window;
         int m_margin;
+
+        /// @brief Latched off if the platform refuses startSystemResize
+        bool m_resizeSupported = true;
 
         [[nodiscard]] Qt::Edges edgesAt(const QPoint &pos) const {
             Qt::Edges edges;
@@ -138,8 +146,16 @@ CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent) : QWidget(parent) {
     layout->setSpacing(0);
 
     menuBar->setParent(this);
+    menuBar->setCursor(Qt::ArrowCursor);
     layout->addWidget(menuBar);
-    layout->addStretch(); // draggable area
+
+    // a filler widget that carries its own arrow cursor,
+    // so the empty drag region between the menu and the buttons doesn't inherit the window's resize cursor
+    // ReSharper disable once CppDFAMemoryLeak
+    auto *filler = new QWidget(this);
+    filler->setCursor(Qt::ArrowCursor);
+    filler->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    layout->addWidget(filler, 1);
 
     m_minButton = makeWindowButton(this, QStyle::SP_TitleBarMinButton);
     m_maxButton = makeWindowButton(this, QStyle::SP_TitleBarMaxButton);
@@ -176,8 +192,10 @@ CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent) : QWidget(parent) {
 
 void CadTitleBar::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
-        if (QWindow *handle = window()->windowHandle()) {
-            handle->startSystemMove();
+        // take over the press only if the platform actually began the window move;
+        // otherwise fall through to the base handler
+        if (QWindow *handle = window()->windowHandle();
+            handle && handle->startSystemMove()) {
             return;
         }
     }

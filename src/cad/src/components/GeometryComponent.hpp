@@ -90,10 +90,7 @@ private:
     uint32_t m_majorSegments = 48;
     uint32_t m_minorSegments = 24;
 
-    signals  :
-
-    
-
+signals :
     void majorRadiusChanged(double radius);
 
     void minorRadiusChanged(double radius);

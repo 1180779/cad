@@ -13,6 +13,8 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     m_editMenu = addMenu("Edit");
     m_undoAction = m_editMenu->addAction("Undo", this, &CadMenuBar::undoRequested);
     m_redoAction = m_editMenu->addAction("Redo", this, &CadMenuBar::redoRequested);
+    m_undoAction->setShortcutContext(Qt::ApplicationShortcut);
+    m_redoAction->setShortcutContext(Qt::ApplicationShortcut);
 
     connect(
         m_editMenu,

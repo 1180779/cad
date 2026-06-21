@@ -8,6 +8,8 @@
 #include <QPainterPath>
 #include <QStyleOption>
 
+#include "Theme.hpp"
+
 // ── PanelTabButton ────────────────────────────────────────────────────────────
 
 PanelTabButton::PanelTabButton(const QString &text, QWidget *parent) : QToolButton(parent) {
@@ -60,7 +62,7 @@ void PanelTabButton::paintEvent(QPaintEvent *) {
     // rounded body with a subtle border
     const QRectF body = QRectF(rect()).adjusted(1.5, 1.5, -1.5, -1.5);
     QPainterPath path;
-    path.addRoundedRect(body, 3, 3);
+    path.addRoundedRect(body, theme::gc_itemRadius, theme::gc_itemRadius);
     p.fillPath(path, bg);
     p.setPen(QPen(pal.color(QPalette::Mid), 1));
     p.drawPath(path);
