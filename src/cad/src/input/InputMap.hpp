@@ -1,9 +1,17 @@
-#pragma once
+//
+// Created by Radosław Głasek on 21.06.2026
+//
 
+#ifndef CAD_INPUTMAP_HPP
+#define CAD_INPUTMAP_HPP
+
+#include <algorithm>
 #include <optional>
 #include <variant>
 #include <QHash>
-#include <Qt>
+#include <QKeyCombination>
+#include <QKeySequence>
+#include <QList>
 
 enum class InputAction {
     // transform mode
@@ -58,7 +66,7 @@ struct InputBinding {
     bool allowAutoRepeat{false};
 };
 
-class InputMap {
+class InputMap final {
 public:
     InputMap();
 
@@ -74,6 +82,10 @@ public:
 
     /// @brief Returns the action bound to this input
     [[nodiscard]] std::optional<InputAction> matchAction(Qt::MouseButton button, Qt::KeyboardModifiers mods) const;
+
+    /// @brief Returns every key chord bound to this action, simplest chord first.
+    /// Lets menus display (and own) shortcuts sourced from the single binding table
+    [[nodiscard]] QList<QKeySequence> sequencesFor(InputAction action) const;
 
     // TODO: Key release events should not match on modifiers, because the user may release modifier keys
     //  before releasing the main key. Currently this is not a problem because all release-sensitive bindings
@@ -187,3 +199,24 @@ inline std::optional<InputAction> InputMap::matchAction(
     }
     return std::nullopt;
 }
+
+inline QList<QKeySequence> InputMap::sequencesFor(const InputAction action) const {
+    QList<QKeySequence> sequences;
+    for (auto it = m_keyBindings.cbegin(); it != m_keyBindings.cend(); ++it) {
+        if (it->action == action) {
+            sequences.append(QKeySequence(QKeyCombination(it.key().mods, it.key().key)));
+        }
+    }
+    // deterministic order: hash iteration is unordered, so sort by chord complexity
+    // (fewest modifiers first) to keep the conventional shortcut as the menu's primary
+    std::ranges::sort(
+        sequences,
+        [](const QKeySequence &a, const QKeySequence &b) {
+            return a.toString(QKeySequence::PortableText).count(QLatin1Char('+'))
+                < b.toString(QKeySequence::PortableText).count(QLatin1Char('+'));
+        }
+    );
+    return sequences;
+}
+
+#endif //CAD_INPUTMAP_HPP

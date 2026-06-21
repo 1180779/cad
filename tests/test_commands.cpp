@@ -100,6 +100,37 @@ TEST_CASE("coalescing folds a gesture into one undo step", "[command]") {
     REQUIRE_FALSE(stack.canUndo());
 }
 
+TEST_CASE("capacity caps the undo history, dropping the oldest steps", "[command]") {
+    int value = 0;
+    CommandStack stack(2);
+
+    stack.push(std::make_unique<AddCommand>(value, 1));
+    stack.push(std::make_unique<AddCommand>(value, 10));
+    stack.push(std::make_unique<AddCommand>(value, 100)); // evicts the first (+1) step
+    REQUIRE(value == 111);
+
+    // only the two most recent steps remain undoable
+    stack.undo();
+    REQUIRE(value == 11);
+    stack.undo();
+    REQUIRE(value == 1); // the dropped +1 step is gone, so its undo is unreachable
+    REQUIRE_FALSE(stack.canUndo());
+}
+
+TEST_CASE("capacity is clamped to at least one step", "[command]") {
+    int value = 0;
+    CommandStack stack(0);
+
+    stack.push(std::make_unique<AddCommand>(value, 5));
+    stack.push(std::make_unique<AddCommand>(value, 7));
+    REQUIRE(value == 12);
+
+    // capacity floored at 1: only the most recent step survives
+    stack.undo();
+    REQUIRE(value == 5);
+    REQUIRE_FALSE(stack.canUndo());
+}
+
 TEST_CASE("onChange fires on push, undo and redo", "[command]") {
     int value = 0;
     int changes = 0;

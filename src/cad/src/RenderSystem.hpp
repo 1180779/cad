@@ -111,7 +111,9 @@ private:
     std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
 
-    int m_gridPlanes{1};
+    /// @note Should be set from the widget at program start
+    /// (or widget set based on this value)
+    int m_gridPlanes{0};
     int m_viewportW{1};
     int m_viewportH{1};
 

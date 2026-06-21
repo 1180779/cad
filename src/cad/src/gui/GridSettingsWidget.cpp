@@ -9,18 +9,21 @@
 #include <QVBoxLayout>
 
 GridSettingsWidget::GridSettingsWidget(QWidget *parent) : QWidget(parent) {
+    // ReSharper disable once CppDFAMemoryLeak
     const auto outerLayout = new QVBoxLayout(this);
     outerLayout->setAlignment(Qt::AlignTop);
 
+    // ReSharper disable once CppDFAMemoryLeak
     const auto groupBox = new QGroupBox("Grid Planes");
+    // ReSharper disable once CppDFAMemoryLeak
     const auto groupLayout = new QVBoxLayout(groupBox);
 
-    m_xyPlane = new QCheckBox("XY Plane  (z = 0)");
-    m_xzPlane = new QCheckBox("XZ Plane  (y = 0)");
-    m_yzPlane = new QCheckBox("YZ Plane  (x = 0)");
+    m_xyPlane = new QCheckBox("XY Plane (z = 0)");
+    m_xzPlane = new QCheckBox("XZ Plane (y = 0)");
+    m_yzPlane = new QCheckBox("YZ Plane (x = 0)");
 
-    m_xyPlane->setChecked(true);
-    m_xzPlane->setChecked(false);
+    m_xyPlane->setChecked(false);
+    m_xzPlane->setChecked(true);
     m_yzPlane->setChecked(false);
 
     groupLayout->addWidget(m_xyPlane);
