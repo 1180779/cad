@@ -221,19 +221,14 @@ void RenderSystem::renderC0BezierCurves(
     const cadm::Mat4 &projection,
     const cadm::Mat4 &vp
 ) const {
-    // TODO: refactor to not bind shaders multiple times
     const auto gl = getGl();
-    for (const auto &e : scene.getEntities()) {
-        const auto bezier = e->getComponent<BezierC0Component>();
-        if (!bezier) {
-            continue;
-        }
-        const auto *pBezier = bezier.value();
 
+    const auto renderTesselated = [&](
+        const Entity *e,
+        const BezierC0Component *pBezier
+    ) {
         if (const int segments = pBezier->segmentCount();
             segments > 0 || pBezier->trailingEdges() > 0) {
-            m_bezierCurveShader->bind();
-            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniformMat4("MVP", vp));
             SHADER_SET_UNIFORM_CHECK(
                 m_bezierCurveShader->setUniform1(
                     "u_highlightStrength",
@@ -249,7 +244,7 @@ void RenderSystem::renderC0BezierCurves(
                                                      : 0);
 
             const auto &cps = pBezier->getControlPoints();
-            auto &registry = scene.getPointRegistry();
+            const auto &registry = scene.getPointRegistry();
 
             gl->glPatchParameteri(GL_PATCH_VERTICES, 4);
             gl->glBindVertexArray(pBezier->getPatchVao());
@@ -292,16 +287,14 @@ void RenderSystem::renderC0BezierCurves(
                     numInstances
                 );
             }
-            gl->glBindVertexArray(0);
-            m_bezierCurveShader->release();
         }
+    };
 
-        // draw control polygon
+    const auto renderControlPolygon = [&](
+        const Entity *e,
+        const BezierC0Component *pBezier
+    ) {
         if (pBezier->getShowPolygon() && pBezier->getPolygonIndexCount() >= 2) {
-            m_wireframeShader->bind();
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
             SHADER_SET_UNIFORM_CHECK(
                 m_wireframeShader->setUniform1(
                     "u_highlightStrength",
@@ -319,11 +312,31 @@ void RenderSystem::renderC0BezierCurves(
                 GL_UNSIGNED_INT,
                 nullptr
             );
-            gl->glBindVertexArray(0);
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
-            m_wireframeShader->release();
         }
-    }
+    };
+
+    const auto forEachBezier = [&](const auto &doWork) {
+        for (const auto &e : scene.getEntities()) {
+            if (const auto bezier = e->getComponent<BezierC0Component>()) {
+                doWork(e.get(), bezier.value());
+            }
+        }
+    };
+
+    // control polygons
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    forEachBezier(renderControlPolygon);
+    gl->glBindVertexArray(0);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    m_wireframeShader->release();
+
+    // tessellated curves
+    m_bezierCurveShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniformMat4("MVP", vp));
+    forEachBezier(renderTesselated);
 }
 
 void RenderSystem::renderC2BezierCurves(
@@ -333,34 +346,36 @@ void RenderSystem::renderC2BezierCurves(
     const cadm::Mat4 &vp
 ) const {
     const auto gl = getGl();
-    for (const auto &e : scene.getEntities()) {
-        const auto bezier = e->getComponent<BezierC2Component>();
-        if (!bezier) {
-            continue;
+
+    const auto forEachBezier = [&](const auto &doWork) {
+        for (const auto &e : scene.getEntities()) {
+            if (const auto bezier = e->getComponent<BezierC2Component>()) {
+                doWork(e.get(), bezier.value());
+            }
         }
-        const auto *pBezier = bezier.value();
+    };
+    const auto highlight = [&](const Entity *e) {
+        return e->isSelected()
+                   ? s_selectionHS
+                   : s_noSelectionHS;
+    };
 
-        if (const int segments = pBezier->segmentCount();
-            segments > 0) {
+    // tessellated curves
+    m_bezierCurveShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniformMat4("MVP", vp));
+    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastDegree", 3));
+    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastPrimitive", 0));
+    gl->glPatchParameteri(GL_PATCH_VERTICES, 4);
+    forEachBezier(
+        [&](const Entity *e, const BezierC2Component *pBezier) {
+            const int segments = pBezier->segmentCount();
+            if (segments <= 0) {
+                return;
+            }
             const auto &bps = pBezier->getBernsteinPositions();
-
-            m_bezierCurveShader->bind();
-            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniformMat4("MVP", vp));
-            SHADER_SET_UNIFORM_CHECK(
-                m_bezierCurveShader->setUniform1(
-                    "u_highlightStrength",
-                    e->isSelected()
-                    ? s_selectionHS
-                    : s_noSelectionHS
-                )
-            );
-            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastDegree", 3));
-            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastPrimitive", 0));
-
-            gl->glPatchParameteri(GL_PATCH_VERTICES, 4);
+            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("u_highlightStrength", highlight(e)));
             gl->glBindVertexArray(pBezier->getPatchVao());
             for (int p = 0; p < segments; ++p) {
-                // shared-endpoint layout: patch p uses slots [3p, 3p+1, 3p+2, 3p+3]
                 const cadm::Vec3 pts[4] = {
                     bps[3 * p + 0],
                     bps[3 * p + 1],
@@ -386,81 +401,62 @@ void RenderSystem::renderC2BezierCurves(
                     numInstances
                 );
             }
-            gl->glBindVertexArray(0);
-            m_bezierCurveShader->release();
+        }
+    );
+    gl->glBindVertexArray(0);
+    m_bezierCurveShader->release();
 
-            // draw virtual Bernstein points as dots
-            if (pBezier->getShowBernsteinCps()) {
-                m_wireframeShader->bind();
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
-                SHADER_SET_UNIFORM_CHECK(
-                    m_wireframeShader->setUniform1(
-                        "u_highlightStrength",
-                        e->isSelected()
-                        ? s_selectionHS
-                        : s_noSelectionHS
-                    )
-                );
-                static constexpr cadm::vec4 bernsteinPointColor{0.9f, 0.9f, 0.2f, 1.0f};
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", bernsteinPointColor));
-                gl->glPointSize(6.0f);
-                gl->glBindVertexArray(pBezier->getPatchVao());
-                gl->glDrawElements(GL_POINTS, pBezier->getPatchIndexCount(), GL_UNSIGNED_INT, nullptr);
-                gl->glPointSize(1.0f);
-                gl->glBindVertexArray(0);
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
-                m_wireframeShader->release();
+    // overlays (bernstein points/polygon, de Boor polygon)
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    const auto drawWire = [&](
+        const cadm::vec4 &color,
+        const GLuint vao,
+        const GLenum mode,
+        const int count
+    ) {
+        SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", color));
+        gl->glBindVertexArray(vao);
+        gl->glDrawElements(mode, count, GL_UNSIGNED_INT, nullptr);
+    };
+    forEachBezier(
+        [&](const Entity *e, const BezierC2Component *pBezier) {
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", highlight(e)));
+            if (pBezier->segmentCount() > 0) {
+                if (pBezier->getShowBernsteinCps()) {
+                    gl->glPointSize(6.0f);
+                    drawWire(
+                        {0.9f, 0.9f, 0.2f, 1.0f},
+                        pBezier->getPatchVao(),
+                        GL_POINTS,
+                        pBezier->getPatchIndexCount()
+                    );
+                    gl->glPointSize(1.0f);
+                }
+                if (pBezier->getShowBernsteinPolygon()) {
+                    drawWire(
+                        {0.9f, 0.8f, 0.1f, 1.0f},
+                        pBezier->getBernsteinPolyVao(),
+                        GL_LINE_STRIP,
+                        pBezier->getPatchIndexCount()
+                    );
+                }
             }
-
-            // bernstein polygon
-            if (pBezier->getShowBernsteinPolygon()) {
-                m_wireframeShader->bind();
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
-                SHADER_SET_UNIFORM_CHECK(
-                    m_wireframeShader->setUniform1(
-                        "u_highlightStrength",
-                        e->isSelected()
-                        ? s_selectionHS
-                        : s_noSelectionHS
-                    )
+            if (pBezier->getShowDeBoorPolygon() && pBezier->getDeBoorIndexCount() >= 2) {
+                drawWire(
+                    {0.9f, 0.6f, 0.1f, 1.0f},
+                    pBezier->getDeBoorVao(),
+                    GL_LINE_STRIP,
+                    pBezier->getDeBoorIndexCount()
                 );
-                static constexpr cadm::vec4 bernsteinPolyColor{0.9f, 0.8f, 0.1f, 1.0f};
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", bernsteinPolyColor));
-                gl->glBindVertexArray(pBezier->getBernsteinPolyVao());
-                gl->glDrawElements(GL_LINE_STRIP, pBezier->getPatchIndexCount(), GL_UNSIGNED_INT, nullptr);
-                gl->glBindVertexArray(0);
-                SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
-                m_wireframeShader->release();
             }
         }
-
-        // de Boor polygon
-        if (pBezier->getShowDeBoorPolygon() && pBezier->getDeBoorIndexCount() >= 2) {
-            m_wireframeShader->bind();
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
-            SHADER_SET_UNIFORM_CHECK(
-                m_wireframeShader->setUniform1(
-                    "u_highlightStrength",
-                    e->isSelected()
-                    ? s_selectionHS
-                    : s_noSelectionHS
-                )
-            );
-            static constexpr cadm::vec4 deBoorColor{0.9f, 0.6f, 0.1f, 1.0f};
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", deBoorColor));
-            gl->glBindVertexArray(pBezier->getDeBoorVao());
-            gl->glDrawElements(GL_LINE_STRIP, pBezier->getDeBoorIndexCount(), GL_UNSIGNED_INT, nullptr);
-            gl->glBindVertexArray(0);
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
-            m_wireframeShader->release();
-        }
-    }
+    );
+    gl->glBindVertexArray(0);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    m_wireframeShader->release();
 }
 
 void RenderSystem::renderBezierCurves(
