@@ -87,7 +87,7 @@ void OpenGlWidget::paintGL() {
     m_renderSystem.render(m_scene, view, projection, invVp);
 
     if (const auto pivot = computePivot()) {
-        m_renderSystem.renderPivotMarker(pivot.value(), view, projection);
+        m_renderSystem.renderPivotMarker(pivot.value());
     }
 
     if (m_transformMode != TransformMode::none) {
@@ -117,7 +117,7 @@ void OpenGlWidget::paintGL() {
                     cadm::vec4::unitW()
                 };
             }
-            m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask, projection, invVp);
+            m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask);
         }
     }
 

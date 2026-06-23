@@ -46,17 +46,13 @@ public:
     ) const;
 
     void renderPivotMarker(
-        const cadm::Vec3 &pos,
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection
+        const cadm::Vec3 &pos
     ) const;
 
     void renderTransformAxis(
         const cadm::Vec3 &pivot,
         const cadm::Mat4 &axisModel,
-        int axesMask,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &invVp
+        int axesMask
     ) const;
 
     void shutdown();
@@ -96,6 +92,11 @@ private:
     ) const;
 
     void renderLineGeometry(const Scene &scene) const;
+
+    /// @brief Redraw the active cursor with its baked RGB axis colors
+    /// @note It is necessary to redraw the cursor after the rendering passes
+    /// since theme color overrides the color in the vertices by default
+    void renderActiveCursorColors(const Scene &scene) const;
 
     void renderTriangleGeometry(const Scene &scene) const;
 

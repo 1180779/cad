@@ -160,29 +160,26 @@ void RenderSystem::render(
 ) const {
     const auto gl = getGl();
 
-    // shared matrices + theme colors for every shader this frame (per-eye in stereo)
     uploadCameraUbo(view, projection, invVp);
     uploadPaletteUbo();
 
     if (drawHelpers) {
         renderInfiniteGrid(view);
-
         gl->glDepthFunc(GL_LEQUAL);
         renderInfiniteAxes();
         gl->glDepthFunc(GL_LESS);
     }
 
     m_wireframeShader->bind();
-    // scene mesh geometry (torus) bakes a black vertex color; override it with the theme line
-    // color so it follows the theme. ponytail: per-vertex colors aren't used by scene meshes yet;
-    // drop the override here when some geometry needs its baked colors.
     const QColor &lc = theme::active().line;
     SHADER_SET_UNIFORM_CHECK(
         m_wireframeShader->setUniform4(
             "u_overrideColor",
             cadm::vec4{
-            static_cast<cadm::cadf>(lc.redF()), static_cast<cadm::cadf>(lc.greenF()),
-            static_cast<cadm::cadf>(lc.blueF()), 1.0f
+            static_cast<cadm::cadf>(lc.redF()),
+            static_cast<cadm::cadf>(lc.greenF()),
+            static_cast<cadm::cadf>(lc.blueF()),
+            1.0f
             }
         )
     );
@@ -198,10 +195,9 @@ void RenderSystem::render(
     GET_GL_ERRORS();
     renderControlPoints(scene, gl);
 
-    // clear the override so later wireframe draws (pivot marker RGB axes, drawn after render())
-    // keep their per-vertex colors
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    renderActiveCursorColors(scene);
     m_wireframeShader->release();
 
     GET_GL_ERRORS();
@@ -293,9 +289,7 @@ void RenderSystem::renderSelectionRect(
 }
 
 void RenderSystem::renderPivotMarker(
-    const cadm::Vec3 &pos,
-    const cadm::Mat4 &view,
-    const cadm::Mat4 &projection
+    const cadm::Vec3 &pos
 ) const {
     const auto gl = getGl();
     const cadm::Mat4 model = cadm::Mat4::translation(pos);
@@ -303,6 +297,7 @@ void RenderSystem::renderPivotMarker(
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", model));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
 
     gl->glBindVertexArray(m_pivotAxes.m_VAO);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pivotAxes.m_EBO_Lines);
@@ -319,9 +314,7 @@ void RenderSystem::renderPivotMarker(
 void RenderSystem::renderTransformAxis(
     const cadm::Vec3 &pivot,
     const cadm::Mat4 &axisModel,
-    const int axesMask,
-    const cadm::Mat4 &projection,
-    const cadm::Mat4 &invVp
+    const int axesMask
 ) const {
     m_axesShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", axisModel));
@@ -420,6 +413,29 @@ void RenderSystem::renderLineGeometry(const Scene &scene) const {
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pGeo->m_EBO_Lines);
         gl->glDrawElements(GL_LINES, static_cast<GLsizei>(pGeo->m_lineIndices.size()), GL_UNSIGNED_INT, nullptr);
     }
+}
+
+void RenderSystem::renderActiveCursorColors(const Scene &scene) const {
+    Entity *cursor = scene.getActiveCursor();
+    if (!cursor) {
+        return;
+    }
+    const auto geometry = cursor->getComponent<GeometryComponent>();
+    const auto transform = cursor->getComponent<TransformComponent>();
+    if (!geometry || !transform || geometry.value()->m_lineIndices.empty()) {
+        return;
+    }
+    const auto gl = getGl();
+    const auto *pGeo = geometry.value();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
+    gl->glBindVertexArray(pGeo->m_VAO);
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pGeo->m_EBO_Lines);
+    // LEQUAL: same fragments were already drawn (black) in the first pass at equal depth
+    gl->glDepthFunc(GL_LEQUAL);
+    gl->glDrawElements(GL_LINES, static_cast<GLsizei>(pGeo->m_lineIndices.size()), GL_UNSIGNED_INT, nullptr);
+    gl->glDepthFunc(GL_LESS);
+    gl->glBindVertexArray(0);
 }
 
 void RenderSystem::renderTriangleGeometry(const Scene &scene) const {
@@ -724,7 +740,6 @@ void RenderSystem::renderBezierCurves(
     const cadm::Mat4 &view,
     const cadm::Mat4 &projection
 ) const {
-    const cadm::Mat4 vp = projection * view;
     renderC0BezierCurves(scene, view, projection);
     renderC2BezierCurves(scene, view, projection);
 }
