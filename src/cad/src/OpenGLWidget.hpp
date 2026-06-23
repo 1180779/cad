@@ -78,6 +78,11 @@ public:
         update();
     }
 
+    void setInfiniteAxesMask(const int mask) {
+        m_renderSystem.setInfiniteAxesMask(mask);
+        update();
+    }
+
     void setCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy) {
         m_cursorPlacementStrategy = std::move(strategy);
     }

@@ -335,6 +335,23 @@ namespace cadm {
             };
         }
 
+        /// @brief Analytic inverse of an off-axis frustum() matrix (asymmetric perspective)
+        [[nodiscard]] Mat inversedFrustum() const {
+            const auto a = col(0)[0]; // 2n/(r-l)
+            const auto b = col(1)[1]; // 2n/(t-b)
+            const auto c = col(2)[0]; // (r+l)/(r-l)
+            const auto d = col(2)[1]; // (t+b)/(t-b)
+            const auto e = col(2)[2]; // -(f+n)/(f-n)
+            const auto f = col(3)[2]; // -2fn/(f-n)
+
+            return {
+                {static_cast<cadf>(1.0 / a), 0, 0, 0},
+                {0, static_cast<cadf>(1.0 / b), 0, 0},
+                {0, 0, 0, static_cast<cadf>(1.0 / f)},
+                {c / a, d / b, -1, e / f},
+            };
+        }
+
         void inverseOrtho() {
             *this = inversedOrtho();
         }

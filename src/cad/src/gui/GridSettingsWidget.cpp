@@ -35,6 +35,44 @@ GridSettingsWidget::GridSettingsWidget(QWidget *parent) : QWidget(parent) {
     connect(m_xyPlane, &QCheckBox::toggled, this, &GridSettingsWidget::onCheckboxToggled);
     connect(m_xzPlane, &QCheckBox::toggled, this, &GridSettingsWidget::onCheckboxToggled);
     connect(m_yzPlane, &QCheckBox::toggled, this, &GridSettingsWidget::onCheckboxToggled);
+
+    // ReSharper disable once CppDFAMemoryLeak
+    const auto axesBox = new QGroupBox("Axes");
+    // ReSharper disable once CppDFAMemoryLeak
+    const auto axesLayout = new QVBoxLayout(axesBox);
+
+    m_xAxis = new QCheckBox("X");
+    m_yAxis = new QCheckBox("Y");
+    m_zAxis = new QCheckBox("Z");
+    m_xAxis->setChecked(true);
+    m_yAxis->setChecked(true);
+    m_zAxis->setChecked(true);
+
+    axesLayout->addWidget(m_xAxis);
+    axesLayout->addWidget(m_yAxis);
+    axesLayout->addWidget(m_zAxis);
+    outerLayout->addWidget(axesBox);
+
+    const auto emitAxes = [this] {
+        emit axesMaskChanged(getAxesMask());
+    };
+    connect(m_xAxis, &QCheckBox::toggled, this, emitAxes);
+    connect(m_yAxis, &QCheckBox::toggled, this, emitAxes);
+    connect(m_zAxis, &QCheckBox::toggled, this, emitAxes);
+}
+
+int GridSettingsWidget::getAxesMask() const {
+    int mask = 0;
+    if (m_xAxis->isChecked()) {
+        mask |= 1 << 0;
+    }
+    if (m_yAxis->isChecked()) {
+        mask |= 1 << 1;
+    }
+    if (m_zAxis->isChecked()) {
+        mask |= 1 << 2;
+    }
+    return mask;
 }
 
 int GridSettingsWidget::getGridPlanes() const {

@@ -560,7 +560,7 @@ void RenderSystem::renderInfiniteAxes(
         )
     );
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", 7));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", m_infiniteAxesMask));
     m_screenQuad->draw();
     m_axesShader->release();
 }
@@ -764,8 +764,9 @@ void RenderSystem::renderStereo(
         const auto &bg = theme::active().viewport;
         gl->glClearColor(bg.redF(), bg.greenF(), bg.blueF(), 1.0f);
         gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // helpers (grid/axes) need an inverse off-axis projection we don't build; skip them in stereo
-        render(scene, *views[i], *projs[i], cadm::Mat4::identity(), false);
+        // grid/axes need the inverse of the off-axis VP to reconstruct world rays per eye
+        const cadm::Mat4 invVp = views[i]->inversedView() * projs[i]->inversedFrustum();
+        render(scene, *views[i], *projs[i], invVp, true);
     }
 
     gl->glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);

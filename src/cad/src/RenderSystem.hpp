@@ -71,6 +71,15 @@ public:
         return m_gridPlanes;
     }
 
+    // bitmask: bit 0 = X, bit 1 = Y, bit 2 = Z
+    void setInfiniteAxesMask(const int mask) {
+        m_infiniteAxesMask = mask;
+    }
+
+    [[nodiscard]] int getInfiniteAxesMask() const {
+        return m_infiniteAxesMask;
+    }
+
     void setViewport(const int w, const int h) {
         m_viewportW = w;
         m_viewportH = h;
@@ -151,6 +160,7 @@ private:
     /// @note Should be set from the widget at program start
     /// (or widget set based on this value)
     int m_gridPlanes{0};
+    int m_infiniteAxesMask{7}; ///< X|Y|Z all on by default
     int m_viewportW{1};
     int m_viewportH{1};
 

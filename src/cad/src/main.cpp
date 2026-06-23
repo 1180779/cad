@@ -278,6 +278,14 @@ namespace {
         );
         glWidget->setGridPlanes(viewportPanel->gridSettingsWidget()->getGridPlanes());
 
+        QObject::connect(
+            viewportPanel->gridSettingsWidget(),
+            &GridSettingsWidget::axesMaskChanged,
+            glWidget,
+            &OpenGlWidget::setInfiniteAxesMask
+        );
+        glWidget->setInfiniteAxesMask(viewportPanel->gridSettingsWidget()->getAxesMask());
+
         auto *pivotCombo = viewportPanel->pivotCombo();
         QObject::connect(
             pivotCombo,
