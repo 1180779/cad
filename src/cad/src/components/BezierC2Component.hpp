@@ -52,6 +52,11 @@ public:
         return m_showDeBoorPolygon;
     }
 
+    /// @brief Generic alias used by the shared render path
+    [[nodiscard]] bool getShowControlPolyline() const {
+        return m_showDeBoorPolygon;
+    }
+
     void setShowDeBoorPolygon(bool v);
 
     [[nodiscard]] bool getShowBernsteinPolygon() const {
@@ -86,6 +91,11 @@ public:
         return m_deBoorVao;
     }
 
+    /// @brief Generic alias used by the shared render path
+    [[nodiscard]] GLuint getControlPolylineVao() const {
+        return m_deBoorVao;
+    }
+
     [[nodiscard]] GLuint getBernsteinPolyVao() const {
         return m_bernsteinPolyVao;
     }
@@ -95,6 +105,11 @@ public:
     }
 
     [[nodiscard]] int getDeBoorIndexCount() const {
+        return m_deBoorEbo.size();
+    }
+
+    /// @brief Generic alias used by the shared render path
+    [[nodiscard]] int getControlPolylineIndexCount() const {
         return m_deBoorEbo.size();
     }
 

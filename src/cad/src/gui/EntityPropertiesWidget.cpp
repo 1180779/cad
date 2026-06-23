@@ -1,6 +1,7 @@
 #include "EntityPropertiesWidget.hpp"
 #include "BezierC0Widget.hpp"
 #include "BezierC2Widget.hpp"
+#include "InterpC2Widget.hxx"
 #include "CadCameraWidget.hpp"
 #include "PointPropertiesWidget.hpp"
 #include "ProjectionCameraWidget.hpp"
@@ -8,6 +9,7 @@
 #include "TransformWidget.hpp"
 #include "../components/BezierC0Component.hpp"
 #include "../components/BezierC2Component.hpp"
+#include "../components/InterpC2Component.hxx"
 #include "../components/BlenderCameraComponent.hpp"
 #include "../components/CadCameraComponent.hpp"
 #include "../components/GeometryComponent.hpp"
@@ -34,6 +36,7 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
     m_pointWidget = nullptr;
     m_bezierC0Widget = nullptr;
     m_bezierC2Widget = nullptr;
+    m_interpC2Widget = nullptr;
 
     if (!m_entity) {
         return;
@@ -99,6 +102,19 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
             &EntityPropertiesWidget::pointSelectionChanged
         );
     }
+
+    if (const auto curve = m_entity->getComponent<InterpC2Component>()) {
+        m_interpC2Widget = new InterpC2Widget(curve.value(), m_scene);
+        m_interpC2Widget->setCommandContext(m_scene, m_commandStack, m_entity->getId());
+        m_layout->addWidget(m_interpC2Widget);
+        connect(m_interpC2Widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+        connect(
+            m_interpC2Widget,
+            &InterpC2Widget::pointSelectionChanged,
+            this,
+            &EntityPropertiesWidget::pointSelectionChanged
+        );
+    }
 }
 
 void EntityPropertiesWidget::syncBezierSelection() const {
@@ -107,6 +123,9 @@ void EntityPropertiesWidget::syncBezierSelection() const {
     }
     if (m_bezierC2Widget) {
         m_bezierC2Widget->syncSelection();
+    }
+    if (m_interpC2Widget) {
+        m_interpC2Widget->syncSelection();
     }
 }
 
@@ -117,6 +136,9 @@ void EntityPropertiesWidget::refreshComponents() const {
     if (m_bezierC2Widget) {
         m_bezierC2Widget->refresh();
     }
+    if (m_interpC2Widget) {
+        m_interpC2Widget->refresh();
+    }
 }
 
 void EntityPropertiesWidget::refreshComponentGeometry() const {
@@ -125,6 +147,9 @@ void EntityPropertiesWidget::refreshComponentGeometry() const {
     }
     if (m_bezierC2Widget) {
         m_bezierC2Widget->refreshGeometry();
+    }
+    if (m_interpC2Widget) {
+        m_interpC2Widget->refreshGeometry();
     }
 }
 

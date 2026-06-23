@@ -31,9 +31,7 @@ public:
         m_entityId = entityId;
     }
 
-signals  :
-    
-
+signals :
     void propertyChanged();
 
 protected:
@@ -50,6 +48,30 @@ protected:
         const void *mergeKey,
         bool coalesce = false
     );
+
+    /// @brief Build an undoable handler for a bool property toggle
+    /// @details Returns a <code>void(bool)</code> slot that pushes a setter/un-setter pair, 
+    /// coalesced by @p mergeKey 
+    /// @param component the component to mutate
+    /// @param setter the bool setter to invoke
+    /// @param mergeKey coalescing key (typically the source widget)
+    /// @note Lets a constructor wire toggles as plain one-line connects: <br>
+    /// <code>connect(box, &QCheckBox::toggled, this, makeBoolToggle(comp, &Comp::setFoo, box));</code>
+    template <class C>
+    auto makeBoolToggle(C *component, void (C::*setter)(bool), const void *mergeKey) {
+        return [this, component, setter, mergeKey](const bool checked) {
+            pushEdit(
+                [component, setter, checked] {
+                    (component->*setter)(checked);
+                },
+                [component, setter, checked] {
+                    (component->*setter)(!checked);
+                },
+                mergeKey,
+                false
+            );
+        };
+    }
 
     Component *m_component;
     Scene *m_scene = nullptr;

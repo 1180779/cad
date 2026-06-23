@@ -50,6 +50,7 @@ private:
     class PointPropertiesWidget *m_pointWidget = nullptr;
     class BezierC0Widget *m_bezierC0Widget = nullptr;
     class BezierC2Widget *m_bezierC2Widget = nullptr;
+    class InterpC2Widget *m_interpC2Widget = nullptr;
 };
 
 #endif // ENTITYPROPERTIESWIDGET_H

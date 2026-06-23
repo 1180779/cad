@@ -49,6 +49,11 @@ public:
         const std::string &name = "BezierC2"
     ) const;
 
+    Entity* createInterpC2(
+        const std::vector<PointHandle> &controlPoints = {},
+        const std::string &name = "InterpC2"
+    ) const;
+
 private:
     Scene &m_scene;
 };

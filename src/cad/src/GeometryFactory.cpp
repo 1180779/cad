@@ -6,6 +6,7 @@
 
 #include "components/BezierC0Component.hpp"
 #include "components/BezierC2Component.hpp"
+#include "components/InterpC2Component.hxx"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
@@ -70,6 +71,18 @@ Entity* GeometryFactory::createBezierC2(
     auto *bezier = entity->addComponent<BezierC2Component>(&m_scene.getPointRegistry());
     for (const auto h : controlPoints) {
         bezier->addControlPoint(h);
+    }
+    return entity;
+}
+
+Entity* GeometryFactory::createInterpC2(
+    const std::vector<PointHandle> &controlPoints,
+    const std::string &name
+) const {
+    const auto entity = m_scene.createEntity(name);
+    auto *curve = entity->addComponent<InterpC2Component>(&m_scene.getPointRegistry());
+    for (const auto h : controlPoints) {
+        curve->addControlPoint(h);
     }
     return entity;
 }

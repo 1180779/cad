@@ -446,6 +446,17 @@ namespace {
             );
         };
 
+        auto spawnInterpC2 = [glWidget, collectSelectedPointHandles] {
+            glWidget->getCommandStack().push(
+                std::make_unique<CreateEntityCommand>(
+                    glWidget->getScene(),
+                    [handles = collectSelectedPointHandles()](Scene &s) {
+                        return GeometryFactory(s).createInterpC2(handles, "InterpC2");
+                    }
+                )
+            );
+        };
+
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createTorusRequested, glWidget, spawnTorus);
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createCursorRequested, glWidget, spawnCursor);
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPointRequested, glWidget, spawnPoint);
@@ -493,6 +504,10 @@ namespace {
         // Bezier C2 signals
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createBezierC2Requested, glWidget, spawnBezierC2);
         QObject::connect(glWidget, &OpenGlWidget::createBezierC2Requested, glWidget, spawnBezierC2);
+
+        // interpolating C2 signals
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createInterpC2Requested, glWidget, spawnInterpC2);
+        QObject::connect(glWidget, &OpenGlWidget::createInterpC2Requested, glWidget, spawnInterpC2);
     }
 }
 

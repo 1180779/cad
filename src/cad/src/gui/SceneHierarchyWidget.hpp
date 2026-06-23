@@ -48,6 +48,8 @@ signals :
 
     void createBezierC2Requested();
 
+    void createInterpC2Requested();
+
     void setAsNewPointsTargetEntityRequested(Entity *e);
 
     void addSelectedPointsToNewPointsTargetEntityRequested(Entity *e);
