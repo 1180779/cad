@@ -528,7 +528,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    theme::apply();
+    theme::apply(theme::light);
 
     QWidget window;
     window.setWindowFlag(Qt::FramelessWindowHint);
@@ -668,6 +668,19 @@ int main(int argc, char *argv[]) {
     entityPropertiesWidget->setScene(&glWidget->getScene());
     entityPropertiesWidget->setCommandStack(&glWidget->getCommandStack());
 
+    QObject::connect(
+        menuBar,
+        &CadMenuBar::darkThemeChanged,
+        glWidget,
+        [glWidget](const bool dark) {
+            theme::apply(
+                dark
+                    ? theme::dark
+                    : theme::light
+            );
+            glWidget->update(); // repaint the viewport with the new clear color
+        }
+    );
     QObject::connect(menuBar, &CadMenuBar::stereoEnabledChanged, glWidget, &OpenGlWidget::setStereoEnabled);
     QObject::connect(
         menuBar,

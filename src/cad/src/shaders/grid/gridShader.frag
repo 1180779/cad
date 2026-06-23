@@ -1,8 +1,5 @@
 #version 450 core
 
-#define GRID_COLOR_MINOR vec3(0.72)
-#define GRID_COLOR_MAJOR vec3(0.50)
-
 #define GRID_ALPHA_MINOR 0.35
 #define GRID_ALPHA_MAJOR 0.80
 
@@ -16,8 +13,21 @@
 
 in vec2 fragNDC;
 
-uniform mat4 invVP;
-uniform mat4 VP;
+layout (std140, binding = 0) uniform Camera {
+    mat4 view;
+    mat4 projection;
+    mat4 VP;
+    mat4 invVP;
+};
+
+layout (std140, binding = 1) uniform Palette {
+    vec4 lineColor;
+    vec4 pointColor;
+    vec4 curveColor;
+    vec4 gridMinor;
+    vec4 gridMajor;
+};
+
 // bitmask: bit 0 = XY plane (z=0), bit 1 = XZ plane (y=0), bit 2 = YZ plane (x=0)
 uniform int u_gridPlanes;
 uniform vec3 u_viewDir;
@@ -73,7 +83,7 @@ float samplePlane(vec3 nearW, vec3 farW, int axis, out float outDepth, out vec3 
     if (alpha < GRID_DISCARD_THRESHOLD) return 0.0;
 
     outDepth = clamp(depth, GRID_MIN_DEPTH, GRID_MAX_DEPTH);
-    outColorPremult = mix(GRID_COLOR_MINOR, GRID_COLOR_MAJOR, major) * alpha;
+    outColorPremult = mix(gridMinor.rgb, gridMajor.rgb, major) * alpha;
     return alpha;
 }
 

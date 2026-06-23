@@ -2,8 +2,13 @@
 
 in vec2 fragNDC;
 
-uniform mat4 invVP;
-uniform mat4 VP;
+layout (std140, binding = 0) uniform Camera {
+    mat4 view;
+    mat4 projection;
+    mat4 VP;
+    mat4 invVP;
+};
+
 uniform mat4 u_model;
 uniform vec3 u_axisOrigin;
 uniform vec2 u_viewport;

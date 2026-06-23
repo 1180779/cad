@@ -27,6 +27,7 @@
 
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
+#include "gui/Theme.hpp"
 #include "PointRegistry.hpp"
 #include "commands/Commands.hpp"
 #include "ViewportTypes.hpp"
@@ -60,6 +61,8 @@ OpenGlWidget::~OpenGlWidget() = default;
 
 void OpenGlWidget::paintGL() {
     const auto gl = getGl();
+    const auto &vp = theme::active().viewport;
+    gl->glClearColor(vp.redF(), vp.greenF(), vp.blueF(), 1.0f);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     const auto view = m_cameraController.getActiveStrategy()->getView();

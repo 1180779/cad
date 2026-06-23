@@ -116,6 +116,12 @@ private:
         const cadm::Mat4 &projection
     ) const;
 
+    /// @brief Upload shared view/projection/VP/invVP into the Camera UBO (binding 0)
+    void uploadCameraUbo(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+
+    /// @brief Upload the active theme's geometry colors into the Palette UBO (binding 1)
+    void uploadPaletteUbo() const;
+
     AxesGeometry m_pivotAxes;
 
     std::unique_ptr<ShaderProgram> m_basicShader = std::make_unique<ShaderProgram>();
@@ -127,6 +133,10 @@ private:
     std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_stereoCompositeShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
+
+    // shared uniform buffers (std140); binding points match the shader layout qualifiers
+    uint32_t m_cameraUbo{}; ///< binding 0: view/projection/VP/invVP
+    uint32_t m_paletteUbo{}; ///< binding 1: theme geometry colors
 
     /// @brief Lazily (re)create the per-eye offscreen colour+depth targets when the viewport size changes
     void ensureStereoTargets();

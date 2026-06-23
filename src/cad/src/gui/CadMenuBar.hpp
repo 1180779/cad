@@ -32,6 +32,8 @@ signals:
 
     void redoRequested();
 
+    void darkThemeChanged(bool enabled);
+
     void stereoEnabledChanged(bool enabled);
 
     void stereoEyeSeparationChanged(double sep);
@@ -44,6 +46,7 @@ signals:
 private:
     QMenu *m_editMenu;
     QMenu *m_toolsMenu;
+    QMenu *m_viewMenu;
     QMenu *m_stereoMenu;
     QAction *m_undoAction;
     QAction *m_redoAction;

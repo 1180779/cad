@@ -57,6 +57,11 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
 
     m_toolsMenu = addMenu("Tools");
 
+    m_viewMenu = addMenu("View");
+    auto *darkThemeToggle = m_viewMenu->addAction("Dark theme");
+    darkThemeToggle->setCheckable(true);
+    connect(darkThemeToggle, &QAction::toggled, this, &CadMenuBar::darkThemeChanged);
+
     m_stereoMenu = addMenu("Stereo");
     auto *stereoToggle = m_stereoMenu->addAction("Enable Stereoscopy");
     stereoToggle->setCheckable(true);

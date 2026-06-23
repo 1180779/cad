@@ -13,6 +13,8 @@
 #include "components/InterpC2Component.hxx"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
+#include "gui/Theme.hpp"
+#include <array>
 #include <cad_math/Vec2.hpp>
 #include <cad_math/Vec3.hpp>
 #include <cmath>
@@ -110,6 +112,20 @@ void RenderSystem::initialize() {
 
     m_screenQuad = std::make_unique<Quad>();
 
+    // shared uniform buffers. Binding points are fixed in the shaders via
+    // layout(std140, binding = N), so no per-program block linkage is needed.
+    const auto gl0 = getGl();
+    gl0->glGenBuffers(1, &m_cameraUbo);
+    gl0->glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUbo);
+    gl0->glBufferData(GL_UNIFORM_BUFFER, 4 * sizeof(cadm::Mat4), nullptr, GL_DYNAMIC_DRAW);
+    gl0->glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_cameraUbo);
+
+    gl0->glGenBuffers(1, &m_paletteUbo);
+    gl0->glBindBuffer(GL_UNIFORM_BUFFER, m_paletteUbo);
+    gl0->glBufferData(GL_UNIFORM_BUFFER, 5 * 4 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+    gl0->glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_paletteUbo);
+    gl0->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
     // selection rect
 
     const auto gl = getGl();
@@ -124,16 +140,53 @@ void RenderSystem::initialize() {
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void RenderSystem::uploadCameraUbo(
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    const cadm::Mat4 &invVp
+) const {
+    const auto gl = getGl();
+    const cadm::Mat4 vp = projection * view;
+    constexpr int s = sizeof(cadm::Mat4); // 64 bytes, column-major == std140 mat4
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUbo);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 0 * s, s, view.data);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 1 * s, s, projection.data);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 2 * s, s, vp.data);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 3 * s, s, invVp.data);
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void RenderSystem::uploadPaletteUbo() const {
+    const theme::ThemeColors &t = theme::active();
+    // std140: 5 tightly packed vec4s (vec4 needs no padding). ponytail: vec4 throughout dodges the vec3 std140 trap.
+    const auto rgba = [](const QColor &c) {
+        return std::array{
+            static_cast<float>(c.redF()),
+            static_cast<float>(c.greenF()),
+            static_cast<float>(c.blueF()),
+            static_cast<float>(c.alphaF())
+        };
+    };
+    const std::array colors{
+        rgba(t.line),
+        rgba(t.point),
+        rgba(t.curve),
+        rgba(t.gridMinor),
+        rgba(t.gridMajor)
+    };
+    const auto gl = getGl();
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, m_paletteUbo);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(colors), colors.data());
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
 void RenderSystem::renderInfiniteGrid(
     const cadm::Mat4 &view,
     const cadm::Mat4 &projection,
     const cadm::Mat4 &invVp
 ) const {
-    const auto vp = projection * view;
     const cadm::Vec3 cameraForward{-view.row(2).xyz()};
     m_gridShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniformMat4("VP", vp));
-    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniformMat4("invVP", invVp));
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_gridPlanes", m_gridPlanes));
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform3("u_viewDir", cameraForward));
     m_screenQuad->draw();
@@ -228,8 +281,6 @@ void RenderSystem::renderControlPoints(
     const auto &pointRegistry = scene.getPointRegistry();
     if (!pointRegistry.empty()) {
         m_pointShader->bind();
-        SHADER_SET_UNIFORM_CHECK(m_pointShader->setUniformMat4("view", view));
-        SHADER_SET_UNIFORM_CHECK(m_pointShader->setUniformMat4("projection", projection));
         gl->glBindVertexArray(pointRegistry.getVAO());
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pointRegistry.getEBO());
         gl->glDrawElements(
@@ -353,8 +404,6 @@ void RenderSystem::renderC0BezierCurves(
 
     // control polygons
     m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
     forEachBezier(renderControlPolygon);
     gl->glBindVertexArray(0);
@@ -363,7 +412,6 @@ void RenderSystem::renderC0BezierCurves(
 
     // tessellated curves
     m_bezierCurveShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniformMat4("MVP", vp));
     forEachBezier(renderTesselated);
 }
 
@@ -393,7 +441,6 @@ void RenderSystem::renderC2BezierCurves(
 
     // tessellated curves
     m_bezierCurveShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniformMat4("MVP", vp));
     SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastDegree", 3));
     SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastPrimitive", 0));
     gl->glPatchParameteri(GL_PATCH_VERTICES, 4);
@@ -439,8 +486,6 @@ void RenderSystem::renderC2BezierCurves(
 
     // overlays (bernstein points/polygon, de Boor polygon)
     m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
     const auto drawWire = [&](
         const cadm::vec4 &color,
@@ -505,10 +550,7 @@ void RenderSystem::renderInfiniteAxes(
     const cadm::Mat4 &projection,
     const cadm::Mat4 &invVp
 ) const {
-    const cadm::Mat4 vp = projection * view;
     m_axesShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("VP", vp));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("invVP", invVp));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", cadm::Mat4::identity()));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", cadm::Vec3{}));
     SHADER_SET_UNIFORM_CHECK(
@@ -531,10 +573,7 @@ void RenderSystem::renderTransformAxis(
     const cadm::Mat4 &projection,
     const cadm::Mat4 &invVp
 ) const {
-    const cadm::Mat4 vp = projection * view;
     m_axesShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("VP", vp));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("invVP", invVp));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", axisModel));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", pivot));
     SHADER_SET_UNIFORM_CHECK(
@@ -558,6 +597,10 @@ void RenderSystem::render(
 ) const {
     const auto gl = getGl();
 
+    // shared matrices + theme colors for every shader this frame (per-eye in stereo)
+    uploadCameraUbo(view, projection, invVp);
+    uploadPaletteUbo();
+
     if (drawHelpers) {
         renderInfiniteGrid(view, projection, invVp);
 
@@ -567,8 +610,19 @@ void RenderSystem::render(
     }
 
     m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
+    // scene mesh geometry (torus) bakes a black vertex color; override it with the theme line
+    // color so it follows the theme. ponytail: per-vertex colors aren't used by scene meshes yet;
+    // drop the override here when some geometry needs its baked colors.
+    const QColor &lc = theme::active().line;
+    SHADER_SET_UNIFORM_CHECK(
+        m_wireframeShader->setUniform4(
+            "u_overrideColor",
+            cadm::vec4{
+            static_cast<cadm::cadf>(lc.redF()), static_cast<cadm::cadf>(lc.greenF()),
+            static_cast<cadm::cadf>(lc.blueF()), 1.0f
+            }
+        )
+    );
 
     scene.getPointRegistry().syncToGpu();
     regenerateGeometry(scene);
@@ -580,6 +634,12 @@ void RenderSystem::render(
     renderBezierCurves(scene, view, projection);
     GET_GL_ERRORS();
     renderControlPoints(scene, view, projection, gl);
+
+    // clear the override so later wireframe draws (pivot marker RGB axes, drawn after render())
+    // keep their per-vertex colors
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    m_wireframeShader->release();
 
     GET_GL_ERRORS();
 }
@@ -630,8 +690,6 @@ void RenderSystem::renderPivotMarker(
     const cadm::Mat4 model = cadm::Mat4::translation(pos);
 
     m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("projection", projection));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", model));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
 
@@ -701,7 +759,10 @@ void RenderSystem::renderStereo(
     for (int i = 0; i < 2; ++i) {
         gl->glBindFramebuffer(GL_FRAMEBUFFER, m_stereoFbo[i]);
         gl->glViewport(0, 0, m_stereoW, m_stereoH);
-        gl->glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        // clear to the theme background; the channel-swizzle composite preserves any
+        // neutral gray (left.r == right.g == right.b), so light and dark both reproduce it
+        const auto &bg = theme::active().viewport;
+        gl->glClearColor(bg.redF(), bg.greenF(), bg.blueF(), 1.0f);
         gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // helpers (grid/axes) need an inverse off-axis projection we don't build; skip them in stereo
         render(scene, *views[i], *projs[i], cadm::Mat4::identity(), false);
@@ -734,6 +795,12 @@ void RenderSystem::shutdown() {
         const auto gl = getGl();
         gl->glDeleteBuffers(1, &m_selectionRectVBO);
         gl->glDeleteVertexArrays(1, &m_selectionRectVAO);
+    }
+
+    if (m_cameraUbo != 0) {
+        const auto gl = getGl();
+        gl->glDeleteBuffers(1, &m_cameraUbo);
+        gl->glDeleteBuffers(1, &m_paletteUbo);
     }
 
     if (m_stereoFbo[0] != 0) {
