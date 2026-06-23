@@ -114,21 +114,19 @@ void RenderSystem::initialize() {
 
     // shared uniform buffers. Binding points are fixed in the shaders via
     // layout(std140, binding = N), so no per-program block linkage is needed.
-    const auto gl0 = getGl();
-    gl0->glGenBuffers(1, &m_cameraUbo);
-    gl0->glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUbo);
-    gl0->glBufferData(GL_UNIFORM_BUFFER, 4 * sizeof(cadm::Mat4), nullptr, GL_DYNAMIC_DRAW);
-    gl0->glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_cameraUbo);
+    const auto gl = getGl();
+    gl->glGenBuffers(1, &m_cameraUbo);
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUbo);
+    gl->glBufferData(GL_UNIFORM_BUFFER, 4 * sizeof(cadm::Mat4), nullptr, GL_DYNAMIC_DRAW);
+    gl->glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_cameraUbo);
 
-    gl0->glGenBuffers(1, &m_paletteUbo);
-    gl0->glBindBuffer(GL_UNIFORM_BUFFER, m_paletteUbo);
-    gl0->glBufferData(GL_UNIFORM_BUFFER, 5 * 4 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
-    gl0->glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_paletteUbo);
-    gl0->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    gl->glGenBuffers(1, &m_paletteUbo);
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, m_paletteUbo);
+    gl->glBufferData(GL_UNIFORM_BUFFER, 5 * 4 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+    gl->glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_paletteUbo);
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // selection rect
-
-    const auto gl = getGl();
     gl->glGenVertexArrays(1, &m_selectionRectVAO);
     gl->glGenBuffers(1, &m_selectionRectVBO);
     gl->glBindVertexArray(m_selectionRectVAO);
