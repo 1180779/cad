@@ -631,7 +631,11 @@ int main(int argc, char *argv[]) {
         &QApplication::focusChanged,
         panelBar,
         [panelBar, panelStack](QWidget *, const QWidget *now) {
-            panelBar->setPanelFocused(now != nullptr && panelStack->isAncestorOf(now));
+            const bool insideStack = now != nullptr && panelStack->isAncestorOf(now);
+            const QWidget *popup = QApplication::activePopupWidget();
+            const bool popupInStack = popup != nullptr && popup->parentWidget() != nullptr &&
+                panelStack->isAncestorOf(popup->parentWidget());
+            panelBar->setPanelFocused(insideStack || popupInStack);
         }
     );
 
