@@ -748,11 +748,14 @@ void RenderSystem::renderStereo(
     const cadm::Mat4 &rightProjection
 ) {
     const auto gl = getGl();
-    ensureStereoTargets();
 
-    // QOpenGLWidget renders into its own FBO, not 0 - restore exactly what was bound
+    // QOpenGLWidget renders into its own FBO, not 0 - restore exactly what was bound.
+    // Capture before ensureStereoTargets(), which leaves one of our FBOs bound on the
+    // frame it (re)creates them - capturing after would composite into the offscreen FBO.
     GLint prevFbo = 0;
     gl->glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFbo);
+
+    ensureStereoTargets();
 
     const cadm::Mat4 *views[2] = {&leftView, &rightView};
     const cadm::Mat4 *projs[2] = {&leftProjection, &rightProjection};
