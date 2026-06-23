@@ -65,6 +65,31 @@ void OpenGlWidget::paintGL() {
     const auto view = m_cameraController.getActiveStrategy()->getView();
     const auto projection = m_cameraController.getActiveStrategy()->getProjection();
     const auto invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
+
+    // stereoscopy only makes sense under perspective (col(2)[3] == -1 marks a perspective matrix)
+    if (m_stereoEnabled &&projection
+    .
+    col(2)[3] != static_cast<cadm::cadf>(0)
+    )
+    {
+        // recover the symmetric frustum from the perspective matrix
+        const cadm::cadf n = projection.col(3)[2] / (projection.col(2)[2] - 1);
+        const cadm::cadf f = projection.col(3)[2] / (projection.col(2)[2] + 1);
+        const cadm::cadf halfH = n / projection.col(1)[1];
+        const cadm::cadf halfW = n / projection.col(0)[0];
+        const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (n / m_stereoConvergence);
+        const cadm::cadf halfSep = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation;
+
+        const auto leftProj = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, n, f);
+        const auto rightProj = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, n, f);
+        // shift the eye sideways in view space (camera moves right -> scene shifts left)
+        const auto leftView = cadm::Mat4::translation(halfSep, 0, 0) * view;
+        const auto rightView = cadm::Mat4::translation(-halfSep, 0, 0) * view;
+
+        m_renderSystem.renderStereo(m_scene, leftView, leftProj, rightView, rightProj);
+        return;
+    }
+
     m_renderSystem.render(m_scene, view, projection, invVp);
 
     if (const auto pivot = computePivot()) {

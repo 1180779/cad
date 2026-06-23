@@ -121,6 +121,29 @@ namespace cadm {
             };
         }
 
+        /// @brief Off-axis (asymmetric) perspective frustum (the MPO matrix). NDC z in [-1, 1].
+        /// Used to build per-eye projections for stereoscopy.
+        static Mat frustum(
+            const cadf left,
+            const cadf right,
+            const cadf bottom,
+            const cadf top,
+            const cadf near,
+            const cadf far
+        ) {
+            return {
+                vec4(2 * near / (right - left), 0, 0, 0),
+                vec4(0, 2 * near / (top - bottom), 0, 0),
+                vec4(
+                    (right + left) / (right - left),
+                    (top + bottom) / (top - bottom),
+                    -(far + near) / (far - near),
+                    -1
+                ),
+                vec4(0, 0, -2 * far * near / (far - near), 0),
+            };
+        }
+
         constexpr static Mat scale(const Vec3 &s) {
             return scale(s.x, s.y, s.z);
         }

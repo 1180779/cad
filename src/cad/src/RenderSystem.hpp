@@ -20,7 +20,23 @@ public:
 
     static void regenerateGeometry(const Scene &scene);
 
-    void render(Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+    void render(
+        Scene &scene,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &invVp,
+        bool drawHelpers = true
+    ) const;
+
+    /// @brief Anaglyph stereoscopy: render the scene once per eye into offscreen targets,
+    /// then composite them (left -> red, right -> cyan) into the currently bound framebuffer.
+    void renderStereo(
+        Scene &scene,
+        const cadm::Mat4 &leftView,
+        const cadm::Mat4 &leftProjection,
+        const cadm::Mat4 &rightView,
+        const cadm::Mat4 &rightProjection
+    );
 
     void renderSelectionRect(
         cadm::cadf x0Ndc,
@@ -109,7 +125,18 @@ private:
     std::unique_ptr<ShaderProgram> m_selectionRectShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_pointShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
+    std::unique_ptr<ShaderProgram> m_stereoCompositeShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
+
+    /// @brief Lazily (re)create the per-eye offscreen colour+depth targets when the viewport size changes
+    void ensureStereoTargets();
+
+    // per-eye offscreen targets (index 0 = left, 1 = right)
+    uint32_t m_stereoFbo[2]{};
+    uint32_t m_stereoColor[2]{};
+    uint32_t m_stereoDepth[2]{};
+    int m_stereoW{0};
+    int m_stereoH{0};
 
     /// @note Should be set from the widget at program start
     /// (or widget set based on this value)

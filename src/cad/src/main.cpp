@@ -668,6 +668,15 @@ int main(int argc, char *argv[]) {
     entityPropertiesWidget->setScene(&glWidget->getScene());
     entityPropertiesWidget->setCommandStack(&glWidget->getCommandStack());
 
+    QObject::connect(menuBar, &CadMenuBar::stereoEnabledChanged, glWidget, &OpenGlWidget::setStereoEnabled);
+    QObject::connect(
+        menuBar,
+        &CadMenuBar::stereoEyeSeparationChanged,
+        glWidget,
+        &OpenGlWidget::setStereoEyeSeparation
+    );
+    QObject::connect(menuBar, &CadMenuBar::stereoConvergenceChanged, glWidget, &OpenGlWidget::setStereoConvergence);
+
     wireUndoRedo(menuBar, glWidget);
     wireSelectionSync(glWidget, hierarchyWidget, entityPropertiesWidget);
     wireStatusBar(glWidget, statusBar);

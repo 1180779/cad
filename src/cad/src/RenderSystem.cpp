@@ -88,6 +88,13 @@ void RenderSystem::initialize() {
         m_bezierCurveShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/bezierCurve/bezierCurveShader.frag")
     );
 
+    SHADER_ATTACHING_CHECK(
+        m_stereoCompositeShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/stereo/stereoComposite.vert")
+    );
+    SHADER_ATTACHING_CHECK(
+        m_stereoCompositeShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/stereo/stereoComposite.frag")
+    );
+
     SHADER_COMPILATION_CHECK(m_basicShader->compile());
     SHADER_COMPILATION_CHECK(m_wireframeShader->compile());
     SHADER_COMPILATION_CHECK(m_axesShader->compile());
@@ -95,6 +102,7 @@ void RenderSystem::initialize() {
     SHADER_COMPILATION_CHECK(m_selectionRectShader->compile());
     SHADER_COMPILATION_CHECK(m_pointShader->compile());
     SHADER_COMPILATION_CHECK(m_bezierCurveShader->compile());
+    SHADER_COMPILATION_CHECK(m_stereoCompositeShader->compile());
 
     m_pivotAxes.m_length = 0.5f;
     m_pivotAxes.regenerateMesh();
@@ -545,15 +553,18 @@ void RenderSystem::render(
     Scene &scene,
     const cadm::Mat4 &view,
     const cadm::Mat4 &projection,
-    const cadm::Mat4 &invVp
+    const cadm::Mat4 &invVp,
+    const bool drawHelpers
 ) const {
     const auto gl = getGl();
 
-    renderInfiniteGrid(view, projection, invVp);
+    if (drawHelpers) {
+        renderInfiniteGrid(view, projection, invVp);
 
-    gl->glDepthFunc(GL_LEQUAL);
-    renderInfiniteAxes(view, projection, invVp);
-    gl->glDepthFunc(GL_LESS);
+        gl->glDepthFunc(GL_LEQUAL);
+        renderInfiniteAxes(view, projection, invVp);
+        gl->glDepthFunc(GL_LESS);
+    }
 
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("view", view));
@@ -636,6 +647,83 @@ void RenderSystem::renderPivotMarker(
     m_wireframeShader->release();
 }
 
+void RenderSystem::ensureStereoTargets() {
+    if (m_stereoFbo[0] != 0 && m_stereoW == m_viewportW && m_stereoH == m_viewportH) {
+        return;
+    }
+
+    const auto gl = getGl();
+    if (m_stereoFbo[0] != 0) {
+        gl->glDeleteFramebuffers(2, m_stereoFbo);
+        gl->glDeleteTextures(2, m_stereoColor);
+        gl->glDeleteRenderbuffers(2, m_stereoDepth);
+    }
+
+    m_stereoW = m_viewportW;
+    m_stereoH = m_viewportH;
+
+    gl->glGenFramebuffers(2, m_stereoFbo);
+    gl->glGenTextures(2, m_stereoColor);
+    gl->glGenRenderbuffers(2, m_stereoDepth);
+    for (int i = 0; i < 2; ++i) {
+        gl->glBindFramebuffer(GL_FRAMEBUFFER, m_stereoFbo[i]);
+
+        gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[i]);
+        gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_stereoW, m_stereoH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_stereoColor[i], 0);
+
+        gl->glBindRenderbuffer(GL_RENDERBUFFER, m_stereoDepth[i]);
+        gl->glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, m_stereoW, m_stereoH);
+        gl->glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_stereoDepth[i]);
+    }
+    gl->glBindTexture(GL_TEXTURE_2D, 0);
+    gl->glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+void RenderSystem::renderStereo(
+    Scene &scene,
+    const cadm::Mat4 &leftView,
+    const cadm::Mat4 &leftProjection,
+    const cadm::Mat4 &rightView,
+    const cadm::Mat4 &rightProjection
+) {
+    const auto gl = getGl();
+    ensureStereoTargets();
+
+    // QOpenGLWidget renders into its own FBO, not 0 - restore exactly what was bound
+    GLint prevFbo = 0;
+    gl->glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFbo);
+
+    const cadm::Mat4 *views[2] = {&leftView, &rightView};
+    const cadm::Mat4 *projs[2] = {&leftProjection, &rightProjection};
+    for (int i = 0; i < 2; ++i) {
+        gl->glBindFramebuffer(GL_FRAMEBUFFER, m_stereoFbo[i]);
+        gl->glViewport(0, 0, m_stereoW, m_stereoH);
+        gl->glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // helpers (grid/axes) need an inverse off-axis projection we don't build; skip them in stereo
+        render(scene, *views[i], *projs[i], cadm::Mat4::identity(), false);
+    }
+
+    gl->glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);
+    gl->glViewport(0, 0, m_viewportW, m_viewportH);
+
+    gl->glDisable(GL_DEPTH_TEST);
+    m_stereoCompositeShader->bind();
+    gl->glActiveTexture(GL_TEXTURE0);
+    gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[0]);
+    gl->glActiveTexture(GL_TEXTURE1);
+    gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[1]);
+    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uLeft", 0));
+    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uRight", 1));
+    m_screenQuad->draw();
+    m_stereoCompositeShader->release();
+    gl->glActiveTexture(GL_TEXTURE0);
+    gl->glEnable(GL_DEPTH_TEST);
+}
+
 void RenderSystem::shutdown() {
     UNIQUE_PTR_RELEASE_CHECK(m_basicShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_wireframeShader.release());
@@ -646,5 +734,12 @@ void RenderSystem::shutdown() {
         const auto gl = getGl();
         gl->glDeleteBuffers(1, &m_selectionRectVBO);
         gl->glDeleteVertexArrays(1, &m_selectionRectVAO);
+    }
+
+    if (m_stereoFbo[0] != 0) {
+        const auto gl = getGl();
+        gl->glDeleteFramebuffers(2, m_stereoFbo);
+        gl->glDeleteTextures(2, m_stereoColor);
+        gl->glDeleteRenderbuffers(2, m_stereoDepth);
     }
 }

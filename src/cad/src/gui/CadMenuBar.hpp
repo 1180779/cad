@@ -32,12 +32,19 @@ signals:
 
     void redoRequested();
 
+    void stereoEnabledChanged(bool enabled);
+
+    void stereoEyeSeparationChanged(double sep);
+
+    void stereoConvergenceChanged(double dist);
+
     /// @brief Emitted just before the Edit menu opens so callers can refresh enabled state
     void editMenuAboutToShow();
 
 private:
     QMenu *m_editMenu;
     QMenu *m_toolsMenu;
+    QMenu *m_stereoMenu;
     QAction *m_undoAction;
     QAction *m_redoAction;
 };

@@ -91,6 +91,21 @@ public:
         emit clickToAddModeChanged(active);
     }
 
+    void setStereoEnabled(const bool enabled) {
+        m_stereoEnabled = enabled;
+        update();
+    }
+
+    void setStereoEyeSeparation(const double sep) {
+        m_stereoEyeSeparation = static_cast<cadm::cadf>(sep);
+        update();
+    }
+
+    void setStereoConvergence(const double dist) {
+        m_stereoConvergence = static_cast<cadm::cadf>(dist);
+        update();
+    }
+
 signals :
     void viewportSelectionChanged();
 
@@ -220,6 +235,11 @@ private:
     bool m_transformApplied = false;
     QPoint m_transformStartMousePos;
     cadm::Vec3 m_transformPivot;
+
+    /// @brief Anaglyph stereoscopy state (eye separation and projection-plane distance are world units)
+    bool m_stereoEnabled = false;
+    cadm::cadf m_stereoEyeSeparation = 0.3;
+    cadm::cadf m_stereoConvergence = 10.0;
 };
 
 #endif //CAD_RENDERINGWINDOW_H
