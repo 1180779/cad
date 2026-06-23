@@ -22,6 +22,9 @@ out vec4 FragColor;
 #define AXIS_FAR  0.9999
 #define AXIS_NEAR 0.0001
 #define SOFT_EDGE 1.0
+// small bias toward the camera so the axis wins over the near-coplanar grid, while
+// still being occluded by real geometry (which sits well off the ground plane)
+#define AXIS_DEPTH_BIAS 0.0001
 
 const vec3 AXIS_DIR[3] = vec3[3](
         vec3(1, 0, 0),
@@ -128,6 +131,6 @@ void main()
     }
 
     if (bestColor.a < 0.01) discard;
-    gl_FragDepth = bestDepth;
+    gl_FragDepth = clamp(bestDepth - AXIS_DEPTH_BIAS, AXIS_NEAR, AXIS_FAR);
     FragColor = bestColor;
 }
