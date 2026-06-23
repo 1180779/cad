@@ -10,11 +10,31 @@
 #include "BezierUtils.hpp"
 #include "components/BezierC0Component.hpp"
 #include "components/BezierC2Component.hpp"
+#include "components/InterpC2Component.hxx"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include <cad_math/Vec2.hpp>
 #include <cad_math/Vec3.hpp>
 #include <cmath>
+#include <concepts>
+
+namespace {
+    /// @brief Structural interface shared by the C2 curves that render through the Bernstein
+    /// patch tessellation path (BezierC2 and InterpC2)
+    template <class C>
+    concept bezierPatchCurve = requires(const C c) {
+        { c.segmentCount() } -> std::convertible_to<int>;
+        { c.getBernsteinPositions() } -> std::convertible_to<const std::vector<cadm::Vec3>&>;
+        { c.getPatchVao() } -> std::convertible_to<GLuint>;
+        { c.getPatchIndexCount() } -> std::convertible_to<int>;
+        { c.getBernsteinPolyVao() } -> std::convertible_to<GLuint>;
+        { c.getShowBernsteinCps() } -> std::convertible_to<bool>;
+        { c.getShowBernsteinPolygon() } -> std::convertible_to<bool>;
+        { c.getShowControlPolyline() } -> std::convertible_to<bool>;
+        { c.getControlPolylineVao() } -> std::convertible_to<GLuint>;
+        { c.getControlPolylineIndexCount() } -> std::convertible_to<int>;
+    };
+}
 
 void RenderSystem::initialize() {
     SHADER_ATTACHING_CHECK(m_basicShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/basicShader.vert"));
@@ -352,6 +372,9 @@ void RenderSystem::renderC2BezierCurves(
             if (const auto bezier = e->getComponent<BezierC2Component>()) {
                 doWork(e.get(), bezier.value());
             }
+            if (const auto bezier = e->getComponent<InterpC2Component>()) {
+                doWork(e.get(), bezier.value());
+            }
         }
     };
     const auto highlight = [&](const Entity *e) {
@@ -367,7 +390,7 @@ void RenderSystem::renderC2BezierCurves(
     SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastPrimitive", 0));
     gl->glPatchParameteri(GL_PATCH_VERTICES, 4);
     forEachBezier(
-        [&](const Entity *e, const BezierC2Component *pBezier) {
+        [&](const Entity *e, const bezierPatchCurve auto *pBezier) {
             const int segments = pBezier->segmentCount();
             if (segments <= 0) {
                 return;
@@ -422,7 +445,7 @@ void RenderSystem::renderC2BezierCurves(
         gl->glDrawElements(mode, count, GL_UNSIGNED_INT, nullptr);
     };
     forEachBezier(
-        [&](const Entity *e, const BezierC2Component *pBezier) {
+        [&](const Entity *e, const bezierPatchCurve auto *pBezier) {
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", highlight(e)));
             if (pBezier->segmentCount() > 0) {
                 if (pBezier->getShowBernsteinCps()) {
@@ -444,12 +467,12 @@ void RenderSystem::renderC2BezierCurves(
                     );
                 }
             }
-            if (pBezier->getShowDeBoorPolygon() && pBezier->getDeBoorIndexCount() >= 2) {
+            if (pBezier->getShowControlPolyline() && pBezier->getControlPolylineIndexCount() >= 2) {
                 drawWire(
                     {0.9f, 0.6f, 0.1f, 1.0f},
-                    pBezier->getDeBoorVao(),
+                    pBezier->getControlPolylineVao(),
                     GL_LINE_STRIP,
-                    pBezier->getDeBoorIndexCount()
+                    pBezier->getControlPolylineIndexCount()
                 );
             }
         }

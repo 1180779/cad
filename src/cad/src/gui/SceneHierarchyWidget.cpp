@@ -178,6 +178,8 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
         connect(createBezierC0Action, &QAction::triggered, this, &SceneHierarchyWidget::createBezierC0Requested);
         const auto *createBezierC2Action = menu.addAction("New Bezier C2");
         connect(createBezierC2Action, &QAction::triggered, this, &SceneHierarchyWidget::createBezierC2Requested);
+        const auto *createInterpC2Action = menu.addAction("New Interpolating C2");
+        connect(createInterpC2Action, &QAction::triggered, this, &SceneHierarchyWidget::createInterpC2Requested);
         menu.exec(m_listWidget->mapToGlobal(pos));
         return;
     }

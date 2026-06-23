@@ -10,6 +10,7 @@
 #include "../Scene.hpp"
 #include "../components/BezierC0Component.hpp"
 #include "../components/BezierC2Component.hpp"
+#include "../components/InterpC2Component.hxx"
 #include "../components/INewPointsTargetComponent.hpp"
 #include "../components/PointComponent.hpp"
 
@@ -23,6 +24,9 @@ namespace {
         }
         if (const auto bc = e->getComponent<BezierC2Component>()) {
             return bc.value()->getDeBoorPoints();
+        }
+        if (const auto ic = e->getComponent<InterpC2Component>()) {
+            return ic.value()->getControlPoints();
         }
         return {};
     }

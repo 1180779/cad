@@ -57,8 +57,15 @@ struct BezierC2Data {
     bool showBernsteinCps{true};
 };
 
+struct InterpC2Data {
+    std::vector<PointHandle> controlPoints;
+    bool showPolyline{true};
+    bool showBernsteinPolygon{false};
+    bool showBernsteinCps{true};
+};
+
 using ComponentSpec =
-std::variant<TransformData, PointData, TorusData, AxesData, CursorData, BezierC0Data, BezierC2Data>;
+std::variant<TransformData, PointData, TorusData, AxesData, CursorData, BezierC0Data, BezierC2Data, InterpC2Data>;
 
 /// @brief 
 /// Plain-data description of an entity: 

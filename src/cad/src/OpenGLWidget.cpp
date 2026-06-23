@@ -525,6 +525,12 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
                 emit createBezierC2Requested();
             }
         );
+        menu.addAction(
+            "New Interpolating C2",
+            [this] {
+                emit createInterpC2Requested();
+            }
+        );
         m_createMenuOpen = true;
         menu.exec(QCursor::pos());
         m_createMenuOpen = false;

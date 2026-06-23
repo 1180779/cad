@@ -7,6 +7,7 @@
 #include "Scene.hpp"
 #include "components/BezierC0Component.hpp"
 #include "components/BezierC2Component.hpp"
+#include "components/InterpC2Component.hxx"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/PointComponent.hpp"
@@ -69,6 +70,16 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
             }
         );
     }
+    if (const auto ic = entity->getComponent<InterpC2Component>()) {
+        out.components.emplace_back(
+            InterpC2Data{
+                ic.value()->getControlPoints(),
+                ic.value()->getShowControlPolyline(),
+                ic.value()->getShowBernsteinPolygon(),
+                ic.value()->getShowBernsteinCps()
+            }
+        );
+    }
 
     return !out.components.empty();
 }
@@ -116,6 +127,15 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                     bezier->setShowDeBoorPolygon(d.showDeBoorPolygon);
                     bezier->setShowBernsteinPolygon(d.showBernsteinPolygon);
                     bezier->setShowBernsteinCps(d.showBernsteinCps);
+                },
+                [&](const InterpC2Data &d) {
+                    const auto curve = e->addComponent<InterpC2Component>(&scene.getPointRegistry());
+                    for (const auto h : d.controlPoints) {
+                        curve->addControlPoint(h);
+                    }
+                    curve->setShowControlPolyline(d.showPolyline);
+                    curve->setShowBernsteinPolygon(d.showBernsteinPolygon);
+                    curve->setShowBernsteinCps(d.showBernsteinCps);
                 },
             },
             component

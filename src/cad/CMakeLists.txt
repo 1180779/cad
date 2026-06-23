@@ -1,6 +1,8 @@
 file(GLOB_RECURSE CAD_SOURCES
         src/*.cpp
         src/*.hpp
+        src/*.cxx
+        src/*.hxx
 )
 
 # AUTORCC compiles this; it must be listed as a target source (the GLOB above
