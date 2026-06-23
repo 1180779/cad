@@ -59,6 +59,22 @@ GridSettingsWidget::GridSettingsWidget(QWidget *parent) : QWidget(parent) {
     connect(m_xAxis, &QCheckBox::toggled, this, emitAxes);
     connect(m_yAxis, &QCheckBox::toggled, this, emitAxes);
     connect(m_zAxis, &QCheckBox::toggled, this, emitAxes);
+
+    m_lodFade = new QCheckBox("Fade distant grid / axes");
+    m_lodFade->setChecked(false);
+    outerLayout->addWidget(m_lodFade);
+    connect(
+        m_lodFade,
+        &QCheckBox::toggled,
+        this,
+        [this](const bool checked) {
+            emit lodFadeChanged(checked);
+        }
+    );
+}
+
+bool GridSettingsWidget::getLodFade() const {
+    return m_lodFade->isChecked();
 }
 
 int GridSettingsWidget::getAxesMask() const {

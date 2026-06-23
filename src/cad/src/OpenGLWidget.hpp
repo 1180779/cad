@@ -83,6 +83,11 @@ public:
         update();
     }
 
+    void setGridLodFade(const bool enabled) {
+        m_renderSystem.setGridLodFade(enabled);
+        update();
+    }
+
     void setCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy) {
         m_cursorPlacementStrategy = std::move(strategy);
     }

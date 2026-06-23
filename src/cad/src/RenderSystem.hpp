@@ -80,6 +80,11 @@ public:
         return m_infiniteAxesMask;
     }
 
+    /// @brief Toggle the distance LOD fade applied to both grid and axes
+    void setGridLodFade(const bool enabled) {
+        m_gridLodFade = enabled;
+    }
+
     void setViewport(const int w, const int h) {
         m_viewportW = w;
         m_viewportH = h;
@@ -161,6 +166,7 @@ private:
     /// (or widget set based on this value)
     int m_gridPlanes{0};
     int m_infiniteAxesMask{7}; ///< X|Y|Z all on by default
+    bool m_gridLodFade{true}; ///< distance fade for grid + axes
     int m_viewportW{1};
     int m_viewportH{1};
 

@@ -286,6 +286,14 @@ namespace {
         );
         glWidget->setInfiniteAxesMask(viewportPanel->gridSettingsWidget()->getAxesMask());
 
+        QObject::connect(
+            viewportPanel->gridSettingsWidget(),
+            &GridSettingsWidget::lodFadeChanged,
+            glWidget,
+            &OpenGlWidget::setGridLodFade
+        );
+        glWidget->setGridLodFade(viewportPanel->gridSettingsWidget()->getLodFade());
+
         auto *pivotCombo = viewportPanel->pivotCombo();
         QObject::connect(
             pivotCombo,

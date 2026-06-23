@@ -189,6 +189,7 @@ void RenderSystem::renderInfiniteGrid(
     m_gridShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_gridPlanes", m_gridPlanes));
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform3("u_viewDir", cameraForward));
+    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
     m_screenQuad->draw();
     m_gridShader->release();
 }
@@ -561,6 +562,7 @@ void RenderSystem::renderInfiniteAxes(
     );
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", m_infiniteAxesMask));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
     m_screenQuad->draw();
     m_axesShader->release();
 }
@@ -584,6 +586,7 @@ void RenderSystem::renderTransformAxis(
     );
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", axesMask));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", 0)); // gizmo stays crisp
     m_screenQuad->draw();
     m_axesShader->release();
 }

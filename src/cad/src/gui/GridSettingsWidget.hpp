@@ -20,10 +20,15 @@ public:
     /// @brief X|Y|Z bitmask for the infinite world axes (bit 0=X, 1=Y, 2=Z)
     int getAxesMask() const;
 
+    /// @brief Whether the distance LOD fade is enabled for grid + axes
+    bool getLodFade() const;
+
 signals :
     void gridPlanesChanged(int planes);
 
     void axesMaskChanged(int mask);
+
+    void lodFadeChanged(bool enabled);
 
 private:
     void onCheckboxToggled();
@@ -35,6 +40,8 @@ private:
     QCheckBox *m_xAxis{nullptr};
     QCheckBox *m_yAxis{nullptr};
     QCheckBox *m_zAxis{nullptr};
+
+    QCheckBox *m_lodFade{nullptr};
 };
 
 #endif //CAD_GRIDSETTINGSWIDGET_H
