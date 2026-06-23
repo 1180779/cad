@@ -46,7 +46,7 @@ cadm::Mat4 BlenderCameraStrategy::getProjection() {
         );
     }
 
-    return cadm::Mat4::projectionMo(
+    return cadm::Mat4::perspective(
         pCamera->getAspectRatio(),
         pCamera->getFov(),
         pCamera->getNearPlane(),
@@ -63,7 +63,7 @@ cadm::Mat4 BlenderCameraStrategy::getInvProjection() {
     if (camera.value()->isOrtho()) {
         return getProjection().inversedOrtho();
     }
-    return getProjection().inversedProjectionMo();
+    return getProjection().inversedPerspective();
 }
 
 void BlenderCameraStrategy::setLookTarget(const cadm::Vec3 target) {

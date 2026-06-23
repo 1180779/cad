@@ -40,17 +40,16 @@ GridSettingsWidget::GridSettingsWidget(QWidget *parent) : QWidget(parent) {
     const auto axesBox = new QGroupBox("Axes");
     // ReSharper disable once CppDFAMemoryLeak
     const auto axesLayout = new QVBoxLayout(axesBox);
+    const auto addAxisCheckBox = [&](const QString &text) {
+        const auto axis = new QCheckBox(text);
+        axis->setChecked(true);
+        axesLayout->addWidget(axis);
+        return axis;
+    };
 
-    m_xAxis = new QCheckBox("X");
-    m_yAxis = new QCheckBox("Y");
-    m_zAxis = new QCheckBox("Z");
-    m_xAxis->setChecked(true);
-    m_yAxis->setChecked(true);
-    m_zAxis->setChecked(true);
-
-    axesLayout->addWidget(m_xAxis);
-    axesLayout->addWidget(m_yAxis);
-    axesLayout->addWidget(m_zAxis);
+    m_xAxis = addAxisCheckBox("X");
+    m_yAxis = addAxisCheckBox("Y");
+    m_zAxis = addAxisCheckBox("Z");
     outerLayout->addWidget(axesBox);
 
     const auto emitAxes = [this] {

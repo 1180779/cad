@@ -5,7 +5,6 @@
 #include "OpenGLWidget.hpp"
 
 #include <QAbstractSpinBox>
-#include <QApplication>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QMenu>
@@ -61,31 +60,23 @@ OpenGlWidget::~OpenGlWidget() = default;
 
 void OpenGlWidget::paintGL() {
     const auto gl = getGl();
-    const auto &vp = theme::active().viewport;
-    gl->glClearColor(vp.redF(), vp.greenF(), vp.blueF(), 1.0f);
+    const auto &vpColor = theme::active().viewport;
+    gl->glClearColor(vpColor.redF(), vpColor.greenF(), vpColor.blueF(), 1.0f);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     const auto view = m_cameraController.getActiveStrategy()->getView();
     const auto projection = m_cameraController.getActiveStrategy()->getProjection();
     const auto invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
 
-    // stereoscopy only makes sense under perspective (col(2)[3] == -1 marks a perspective matrix)
-    if (m_stereoEnabled &&projection
-    .
-    col(2)[3] != static_cast<cadm::cadf>(0)
-    )
-    {
-        // recover the symmetric frustum from the perspective matrix
-        const cadm::cadf n = projection.col(3)[2] / (projection.col(2)[2] - 1);
-        const cadm::cadf f = projection.col(3)[2] / (projection.col(2)[2] + 1);
-        const cadm::cadf halfH = n / projection.col(1)[1];
-        const cadm::cadf halfW = n / projection.col(0)[0];
-        const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (n / m_stereoConvergence);
+    if (m_stereoEnabled && projection.isPerspective()) {
+        const auto [left, right, bottom, top, near, far] = projection.toFrustum();
+        const cadm::cadf halfH = static_cast<cadm::cadf>(0.5) * (top - bottom);
+        const cadm::cadf halfW = static_cast<cadm::cadf>(0.5) * (right - left);
+        const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (near / m_stereoConvergence);
         const cadm::cadf halfSep = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation;
 
-        const auto leftProj = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, n, f);
-        const auto rightProj = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, n, f);
-        // shift the eye sideways in view space (camera moves right -> scene shifts left)
+        const auto leftProj = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, near, far);
+        const auto rightProj = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, near, far);
         const auto leftView = cadm::Mat4::translation(halfSep, 0, 0) * view;
         const auto rightView = cadm::Mat4::translation(-halfSep, 0, 0) * view;
 
@@ -126,7 +117,7 @@ void OpenGlWidget::paintGL() {
                     cadm::vec4::unitW()
                 };
             }
-            m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask, view, projection, invVp);
+            m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask, projection, invVp);
         }
     }
 
@@ -950,7 +941,7 @@ void OpenGlWidget::handleTransformScale(const int dx, PointRegistry &registry) {
     );
 
     for (const auto &snap : m_transformSnapshots) {
-        const cadm::Vec3 pivot = (m_coordSpace == CoordSpace::local && snap.isTransformEntity)
+        const cadm::Vec3 pivot = m_coordSpace == CoordSpace::local && snap.isTransformEntity
                                      ? snap.origPos
                                      : m_transformPivot;
         const cadm::Vec3 newPos = pivot + (snap.origPos - pivot) * scaleFactor;

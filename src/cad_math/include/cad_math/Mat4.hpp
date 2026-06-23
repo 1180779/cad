@@ -110,8 +110,8 @@ namespace cadm {
 
         // TODO: check if constexpr is allowed here in MSVC
 
-        // projection minus one to one
-        static Mat projectionMo(const cadf aspect, const cadf fov, const cadf near, const cadf far) {
+        /// @brief Symmetric perspective frustum. NDC z in [-1, 1]
+        static Mat perspective(const cadf aspect, const cadf fov, const cadf near, const cadf far) {
             const cadf ctg = std::cos(fov / 2) / std::sin(fov / 2);
             return {
                 vec4(ctg / aspect, 0, 0, 0),
@@ -121,8 +121,7 @@ namespace cadm {
             };
         }
 
-        /// @brief Off-axis (asymmetric) perspective frustum (the MPO matrix). NDC z in [-1, 1].
-        /// Used to build per-eye projections for stereoscopy.
+        /// @brief Off-axis (asymmetric) perspective frustum. NDC z in [-1, 1]
         static Mat frustum(
             const cadf left,
             const cadf right,
@@ -141,6 +140,36 @@ namespace cadm {
                     -1
                 ),
                 vec4(0, 0, -2 * far * near / (far - near), 0),
+            };
+        }
+
+        /// @brief Frustum edges recovered from a perspective matrix
+        struct Frustum {
+            cadf left, right, bottom, top, near, far;
+        };
+
+        /// @brief True if this is a perspective projection, not orthographic
+        [[nodiscard]] bool isPerspective() const {
+            return std::abs(col(2)[3] + static_cast<cadf>(1)) < gc_eps;
+        }
+
+        /// @brief Decomposes a frustum()/perspective() matrix back into its six frustum edges
+        [[nodiscard]] Frustum toFrustum() const {
+            const auto a = col(0)[0]; // 2n/(r-l)
+            const auto b = col(1)[1]; // 2n/(t-b)
+            const auto c = col(2)[0]; // (r+l)/(r-l)
+            const auto d = col(2)[1]; // (t+b)/(t-b)
+            const auto e = col(2)[2]; // -(f+n)/(f-n)
+            const auto g = col(3)[2]; // -2fn/(f-n)
+            const cadf near = g / (e - 1);
+            const cadf far = g / (e + 1);
+            return {
+                .left = near * (c - 1) / a,
+                .right = near * (c + 1) / a,
+                .bottom = near * (d - 1) / b,
+                .top = near * (d + 1) / b,
+                .near = near,
+                .far = far,
             };
         }
 
@@ -317,11 +346,11 @@ namespace cadm {
             };
         }
 
-        void inverseProjectionMO() {
-            *this = inversedProjectionMo();
+        void inversePerspective() {
+            *this = inversedPerspective();
         }
 
-        [[nodiscard]] Mat inversedProjectionMo() const {
+        [[nodiscard]] Mat inversedPerspective() const {
             const auto a = col(0)[0];
             const auto b = col(1)[1];
             const auto c = col(2)[2];

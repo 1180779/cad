@@ -28,10 +28,9 @@ layout (std140, binding = 1) uniform Palette {
     vec4 gridMajor;
 };
 
-// bitmask: bit 0 = XY plane (z=0), bit 1 = XZ plane (y=0), bit 2 = YZ plane (x=0)
 uniform int u_gridPlanes;
 uniform vec3 u_viewDir;
-uniform int u_lodFade;// 1 = fade distant cells (clean horizon), 0 = raw grid
+uniform int u_lodFade;
 
 out vec4 FragColor;
 
@@ -43,8 +42,6 @@ float gridAlpha(vec2 coord2D, float scale)
     vec2 grid = abs(fract(coord - 0.5) - 0.5) / max(deriv, vec2(0.001));
     float line = 1.0 - min(min(grid.x, grid.y), 1.0);
 
-    // grid LOD: moiré peaks while cells are ~1-3 px apart. Fade fully out *before* that
-    // (cells still >~2 px, density < 0.5) so the grazing-angle band stays clean.
     float density = max(deriv.x, deriv.y);
     float lod = (u_lodFade == 0) ? 1.0 : 1.0 - smoothstep(0.25, 0.5, density);
     return line * lod;

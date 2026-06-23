@@ -13,8 +13,8 @@ uniform mat4 u_model;
 uniform vec3 u_axisOrigin;
 uniform vec2 u_viewport;
 uniform float u_lineWidth;
-uniform int u_axesMask;// bit 0=X, bit 1=Y, bit 2=Z
-uniform int u_lodFade;// 1 = fade near the horizon to match the grid, 0 = raw
+uniform int u_axesMask;
+uniform int u_lodFade;
 
 out vec4 FragColor;
 
@@ -22,8 +22,6 @@ out vec4 FragColor;
 #define AXIS_FAR  0.9999
 #define AXIS_NEAR 0.0001
 #define SOFT_EDGE 1.0
-// small bias toward the camera so the axis wins over the near-coplanar grid, while
-// still being occluded by real geometry (which sits well off the ground plane)
 #define AXIS_DEPTH_BIAS 0.0001
 
 const vec3 AXIS_DIR[3] = vec3[3](

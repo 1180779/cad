@@ -23,15 +23,19 @@ namespace {
         const double max,
         const double step
     ) {
+        // ReSharper disable once CppDFAMemoryLeak
         auto *container = new QWidget(menu);
+        // ReSharper disable once CppDFAMemoryLeak
         auto *layout = new QFormLayout(container);
         layout->setContentsMargins(8, 4, 8, 4);
+        // ReSharper disable once CppDFAMemoryLeak
         auto *spin = new QDoubleSpinBox(container);
         spin->setRange(min, max);
         spin->setSingleStep(step);
         spin->setValue(value);
         layout->addRow(label, spin);
 
+        // ReSharper disable once CppDFAMemoryLeak
         auto *action = new QWidgetAction(menu);
         action->setDefaultWidget(container);
         menu->addAction(action);
@@ -66,12 +70,12 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     auto *stereoToggle = m_stereoMenu->addAction("Enable Stereoscopy");
     stereoToggle->setCheckable(true);
     connect(stereoToggle, &QAction::toggled, this, &CadMenuBar::stereoEnabledChanged);
-
     m_stereoMenu->addSeparator();
-    auto *eyeSepSpin = addSpinBoxAction(m_stereoMenu, "Eye distance", 0.3, 0.0, 100.0, 0.05);
+    const auto *eyeSepSpin = addSpinBoxAction(m_stereoMenu, "Eye distance", 0.3, 0.0, 100.0, 0.05);
     connect(eyeSepSpin, &QDoubleSpinBox::valueChanged, this, &CadMenuBar::stereoEyeSeparationChanged);
-    auto *convergenceSpin = addSpinBoxAction(m_stereoMenu, "Plane distance", 10.0, 0.1, 1000.0, 0.5);
+    const auto *convergenceSpin = addSpinBoxAction(m_stereoMenu, "Plane distance", 10.0, 0.1, 1000.0, 0.5);
     connect(convergenceSpin, &QDoubleSpinBox::valueChanged, this, &CadMenuBar::stereoConvergenceChanged);
+    // ReSharper disable once CppDFAMemoryLeak
 }
 
 void CadMenuBar::applyShortcuts(const InputMap &inputMap) const {

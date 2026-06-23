@@ -112,8 +112,6 @@ void RenderSystem::initialize() {
 
     m_screenQuad = std::make_unique<Quad>();
 
-    // shared uniform buffers. Binding points are fixed in the shaders via
-    // layout(std140, binding = N), so no per-program block linkage is needed.
     const auto gl = getGl();
     gl->glGenBuffers(1, &m_cameraUbo);
     gl->glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUbo);
@@ -138,60 +136,6 @@ void RenderSystem::initialize() {
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void RenderSystem::uploadCameraUbo(
-    const cadm::Mat4 &view,
-    const cadm::Mat4 &projection,
-    const cadm::Mat4 &invVp
-) const {
-    const auto gl = getGl();
-    const cadm::Mat4 vp = projection * view;
-    constexpr int s = sizeof(cadm::Mat4); // 64 bytes, column-major == std140 mat4
-    gl->glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUbo);
-    gl->glBufferSubData(GL_UNIFORM_BUFFER, 0 * s, s, view.data);
-    gl->glBufferSubData(GL_UNIFORM_BUFFER, 1 * s, s, projection.data);
-    gl->glBufferSubData(GL_UNIFORM_BUFFER, 2 * s, s, vp.data);
-    gl->glBufferSubData(GL_UNIFORM_BUFFER, 3 * s, s, invVp.data);
-    gl->glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
-void RenderSystem::uploadPaletteUbo() const {
-    const theme::ThemeColors &t = theme::active();
-    // std140: 5 tightly packed vec4s (vec4 needs no padding). ponytail: vec4 throughout dodges the vec3 std140 trap.
-    const auto rgba = [](const QColor &c) {
-        return std::array{
-            static_cast<float>(c.redF()),
-            static_cast<float>(c.greenF()),
-            static_cast<float>(c.blueF()),
-            static_cast<float>(c.alphaF())
-        };
-    };
-    const std::array colors{
-        rgba(t.line),
-        rgba(t.point),
-        rgba(t.curve),
-        rgba(t.gridMinor),
-        rgba(t.gridMajor)
-    };
-    const auto gl = getGl();
-    gl->glBindBuffer(GL_UNIFORM_BUFFER, m_paletteUbo);
-    gl->glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(colors), colors.data());
-    gl->glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
-void RenderSystem::renderInfiniteGrid(
-    const cadm::Mat4 &view,
-    const cadm::Mat4 &projection,
-    const cadm::Mat4 &invVp
-) const {
-    const cadm::Vec3 cameraForward{-view.row(2).xyz()};
-    m_gridShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_gridPlanes", m_gridPlanes));
-    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform3("u_viewDir", cameraForward));
-    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
-    m_screenQuad->draw();
-    m_gridShader->release();
-}
-
 void RenderSystem::regenerateGeometry(const Scene &scene) {
     for (const auto &e : scene.getEntities()) {
         const auto geometry = e->getComponent<GeometryComponent>();
@@ -207,7 +151,251 @@ void RenderSystem::regenerateGeometry(const Scene &scene) {
     }
 }
 
-void RenderSystem::renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *const gl) const {
+void RenderSystem::render(
+    Scene &scene,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    const cadm::Mat4 &invVp,
+    const bool drawHelpers
+) const {
+    const auto gl = getGl();
+
+    // shared matrices + theme colors for every shader this frame (per-eye in stereo)
+    uploadCameraUbo(view, projection, invVp);
+    uploadPaletteUbo();
+
+    if (drawHelpers) {
+        renderInfiniteGrid(view);
+
+        gl->glDepthFunc(GL_LEQUAL);
+        renderInfiniteAxes();
+        gl->glDepthFunc(GL_LESS);
+    }
+
+    m_wireframeShader->bind();
+    // scene mesh geometry (torus) bakes a black vertex color; override it with the theme line
+    // color so it follows the theme. ponytail: per-vertex colors aren't used by scene meshes yet;
+    // drop the override here when some geometry needs its baked colors.
+    const QColor &lc = theme::active().line;
+    SHADER_SET_UNIFORM_CHECK(
+        m_wireframeShader->setUniform4(
+            "u_overrideColor",
+            cadm::vec4{
+            static_cast<cadm::cadf>(lc.redF()), static_cast<cadm::cadf>(lc.greenF()),
+            static_cast<cadm::cadf>(lc.blueF()), 1.0f
+            }
+        )
+    );
+
+    scene.getPointRegistry().syncToGpu();
+    regenerateGeometry(scene);
+
+    renderLineGeometry(scene);
+    GET_GL_ERRORS();
+    renderTriangleGeometry(scene);
+    GET_GL_ERRORS();
+    renderBezierCurves(scene, view, projection);
+    GET_GL_ERRORS();
+    renderControlPoints(scene, gl);
+
+    // clear the override so later wireframe draws (pivot marker RGB axes, drawn after render())
+    // keep their per-vertex colors
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    m_wireframeShader->release();
+
+    GET_GL_ERRORS();
+}
+
+void RenderSystem::renderStereo(
+    Scene &scene,
+    const cadm::Mat4 &leftView,
+    const cadm::Mat4 &leftProjection,
+    const cadm::Mat4 &rightView,
+    const cadm::Mat4 &rightProjection
+) {
+    const auto gl = getGl();
+
+    // QOpenGLWidget renders into its own FBO, not 0 - restore exactly what was bound.
+    // Capture before ensureStereoTargets(), which leaves one of our FBOs bound on the
+    // frame it (re)creates them - capturing after would composite into the offscreen FBO.
+    GLint prevFbo = 0;
+    gl->glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFbo);
+
+    ensureStereoTargets();
+
+    const cadm::Mat4 *views[2] = {&leftView, &rightView};
+    const cadm::Mat4 *projs[2] = {&leftProjection, &rightProjection};
+    for (int i = 0; i < 2; ++i) {
+        gl->glBindFramebuffer(GL_FRAMEBUFFER, m_stereoFbo[i]);
+        gl->glViewport(0, 0, m_stereoW, m_stereoH);
+        // clear to the theme background; the channel-swizzle composite preserves any
+        // neutral gray (left.r == right.g == right.b), so light and dark both reproduce it
+        const auto &bg = theme::active().viewport;
+        gl->glClearColor(bg.redF(), bg.greenF(), bg.blueF(), 1.0f);
+        gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        const cadm::Mat4 invVp = views[i]->inversedView() * projs[i]->inversedFrustum();
+        render(scene, *views[i], *projs[i], invVp, true);
+    }
+
+    gl->glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);
+    gl->glViewport(0, 0, m_viewportW, m_viewportH);
+
+    gl->glDisable(GL_DEPTH_TEST);
+    m_stereoCompositeShader->bind();
+    gl->glActiveTexture(GL_TEXTURE0);
+    gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[0]);
+    gl->glActiveTexture(GL_TEXTURE1);
+    gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[1]);
+    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uLeft", 0));
+    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uRight", 1));
+    m_screenQuad->draw();
+    m_stereoCompositeShader->release();
+    gl->glActiveTexture(GL_TEXTURE0);
+    gl->glEnable(GL_DEPTH_TEST);
+}
+
+void RenderSystem::renderSelectionRect(
+    const cadm::cadf x0Ndc,
+    const cadm::cadf y0Ndc,
+    const cadm::cadf x1Ndc,
+    const cadm::cadf y1Ndc
+) const {
+    const cadm::cadf verts[8] = {
+        x0Ndc,
+        y0Ndc,
+        x1Ndc,
+        y0Ndc,
+        x1Ndc,
+        y1Ndc,
+        x0Ndc,
+        y1Ndc,
+    };
+
+    const auto gl = getGl();
+    gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectionRectVBO);
+    gl->glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    m_selectionRectShader->bind();
+    gl->glBindVertexArray(m_selectionRectVAO);
+
+    // fill
+    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectColor));
+    gl->glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    // outline
+    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectOutlineColor));
+    gl->glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+    gl->glBindVertexArray(0);
+    m_selectionRectShader->release();
+}
+
+void RenderSystem::renderPivotMarker(
+    const cadm::Vec3 &pos,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+) const {
+    const auto gl = getGl();
+    const cadm::Mat4 model = cadm::Mat4::translation(pos);
+
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", model));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
+
+    gl->glBindVertexArray(m_pivotAxes.m_VAO);
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pivotAxes.m_EBO_Lines);
+    gl->glDrawElements(
+        GL_LINES,
+        static_cast<GLsizei>(m_pivotAxes.m_lineIndices.size()),
+        GL_UNSIGNED_INT,
+        nullptr
+    );
+    gl->glBindVertexArray(0);
+    m_wireframeShader->release();
+}
+
+void RenderSystem::renderTransformAxis(
+    const cadm::Vec3 &pivot,
+    const cadm::Mat4 &axisModel,
+    const int axesMask,
+    const cadm::Mat4 &projection,
+    const cadm::Mat4 &invVp
+) const {
+    m_axesShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", axisModel));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", pivot));
+    SHADER_SET_UNIFORM_CHECK(
+        m_axesShader->setUniform2(
+            "u_viewport",
+            cadm::vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
+        )
+    );
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", axesMask));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", 0));
+    m_screenQuad->draw();
+    m_axesShader->release();
+}
+
+void RenderSystem::shutdown() {
+    UNIQUE_PTR_RELEASE_CHECK(m_basicShader.release());
+    UNIQUE_PTR_RELEASE_CHECK(m_wireframeShader.release());
+    UNIQUE_PTR_RELEASE_CHECK(m_axesShader.release());
+    UNIQUE_PTR_RELEASE_CHECK(m_gridShader.release());
+
+    if (m_selectionRectVAO != 0) {
+        const auto gl = getGl();
+        gl->glDeleteBuffers(1, &m_selectionRectVBO);
+        gl->glDeleteVertexArrays(1, &m_selectionRectVAO);
+    }
+
+    if (m_cameraUbo != 0) {
+        const auto gl = getGl();
+        gl->glDeleteBuffers(1, &m_cameraUbo);
+        gl->glDeleteBuffers(1, &m_paletteUbo);
+    }
+
+    if (m_stereoFbo[0] != 0) {
+        const auto gl = getGl();
+        gl->glDeleteFramebuffers(2, m_stereoFbo);
+        gl->glDeleteTextures(2, m_stereoColor);
+        gl->glDeleteRenderbuffers(2, m_stereoDepth);
+    }
+}
+
+void RenderSystem::renderInfiniteGrid(
+    const cadm::Mat4 &view
+) const {
+    const cadm::Vec3 cameraForward{-view.row(2).xyz()};
+    m_gridShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_gridPlanes", m_gridPlanes));
+    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform3("u_viewDir", cameraForward));
+    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
+    m_screenQuad->draw();
+    m_gridShader->release();
+}
+
+void RenderSystem::renderInfiniteAxes() const {
+    m_axesShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", cadm::Mat4::identity()));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", cadm::Vec3{}));
+    SHADER_SET_UNIFORM_CHECK(
+        m_axesShader->setUniform2(
+            "u_viewport",
+            cadm::vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
+        )
+    );
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", m_infiniteAxesMask));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
+    m_screenQuad->draw();
+    m_axesShader->release();
+}
+
+void RenderSystem::renderLineGeometry(const Scene &scene) const {
+    const auto gl = getGl();
     for (const auto &e : scene.getEntities()) {
         const auto geometry = e->getComponent<GeometryComponent>();
         const auto transform = e->getComponent<TransformComponent>();
@@ -234,7 +422,8 @@ void RenderSystem::renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_C
     }
 }
 
-void RenderSystem::renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *const gl) const {
+void RenderSystem::renderTriangleGeometry(const Scene &scene) const {
+    const auto gl = getGl();
     gl->glDepthMask(GL_FALSE);
     for (const auto &e : scene.getEntities()) {
         const auto geometry = e->getComponent<GeometryComponent>();
@@ -273,12 +462,10 @@ void RenderSystem::renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4
 
 void RenderSystem::renderControlPoints(
     Scene &scene,
-    const cadm::Mat4 &view,
-    const cadm::Mat4 &projection,
     QOpenGLFunctions_4_5_Core *const gl
 ) const {
-    const auto &pointRegistry = scene.getPointRegistry();
-    if (!pointRegistry.empty()) {
+    if (const auto &pointRegistry = scene.getPointRegistry();
+        !pointRegistry.empty()) {
         m_pointShader->bind();
         gl->glBindVertexArray(pointRegistry.getVAO());
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pointRegistry.getEBO());
@@ -296,8 +483,7 @@ void RenderSystem::renderControlPoints(
 void RenderSystem::renderC0BezierCurves(
     Scene &scene,
     const cadm::Mat4 &view,
-    const cadm::Mat4 &projection,
-    const cadm::Mat4 &vp
+    const cadm::Mat4 &projection
 ) const {
     const auto gl = getGl();
 
@@ -417,8 +603,7 @@ void RenderSystem::renderC0BezierCurves(
 void RenderSystem::renderC2BezierCurves(
     const Scene &scene,
     const cadm::Mat4 &view,
-    const cadm::Mat4 &projection,
-    const cadm::Mat4 &vp
+    const cadm::Mat4 &projection
 ) const {
     const auto gl = getGl();
 
@@ -540,170 +725,47 @@ void RenderSystem::renderBezierCurves(
     const cadm::Mat4 &projection
 ) const {
     const cadm::Mat4 vp = projection * view;
-    renderC0BezierCurves(scene, view, projection, vp);
-    renderC2BezierCurves(scene, view, projection, vp);
+    renderC0BezierCurves(scene, view, projection);
+    renderC2BezierCurves(scene, view, projection);
 }
 
-void RenderSystem::renderInfiniteAxes(
+void RenderSystem::uploadCameraUbo(
     const cadm::Mat4 &view,
     const cadm::Mat4 &projection,
     const cadm::Mat4 &invVp
-) const {
-    m_axesShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", cadm::Mat4::identity()));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", cadm::Vec3{}));
-    SHADER_SET_UNIFORM_CHECK(
-        m_axesShader->setUniform2(
-            "u_viewport",
-            cadm::vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
-        )
-    );
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", m_infiniteAxesMask));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
-    m_screenQuad->draw();
-    m_axesShader->release();
-}
-
-void RenderSystem::renderTransformAxis(
-    const cadm::Vec3 &pivot,
-    const cadm::Mat4 &axisModel,
-    const int axesMask,
-    const cadm::Mat4 &view,
-    const cadm::Mat4 &projection,
-    const cadm::Mat4 &invVp
-) const {
-    m_axesShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", axisModel));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", pivot));
-    SHADER_SET_UNIFORM_CHECK(
-        m_axesShader->setUniform2(
-            "u_viewport",
-            cadm::vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
-        )
-    );
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", axesMask));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", 0)); // gizmo stays crisp
-    m_screenQuad->draw();
-    m_axesShader->release();
-}
-
-void RenderSystem::render(
-    Scene &scene,
-    const cadm::Mat4 &view,
-    const cadm::Mat4 &projection,
-    const cadm::Mat4 &invVp,
-    const bool drawHelpers
 ) const {
     const auto gl = getGl();
-
-    // shared matrices + theme colors for every shader this frame (per-eye in stereo)
-    uploadCameraUbo(view, projection, invVp);
-    uploadPaletteUbo();
-
-    if (drawHelpers) {
-        renderInfiniteGrid(view, projection, invVp);
-
-        gl->glDepthFunc(GL_LEQUAL);
-        renderInfiniteAxes(view, projection, invVp);
-        gl->glDepthFunc(GL_LESS);
-    }
-
-    m_wireframeShader->bind();
-    // scene mesh geometry (torus) bakes a black vertex color; override it with the theme line
-    // color so it follows the theme. ponytail: per-vertex colors aren't used by scene meshes yet;
-    // drop the override here when some geometry needs its baked colors.
-    const QColor &lc = theme::active().line;
-    SHADER_SET_UNIFORM_CHECK(
-        m_wireframeShader->setUniform4(
-            "u_overrideColor",
-            cadm::vec4{
-            static_cast<cadm::cadf>(lc.redF()), static_cast<cadm::cadf>(lc.greenF()),
-            static_cast<cadm::cadf>(lc.blueF()), 1.0f
-            }
-        )
-    );
-
-    scene.getPointRegistry().syncToGpu();
-    regenerateGeometry(scene);
-
-    renderLineGeometry(scene, gl);
-    GET_GL_ERRORS();
-    renderTriangleGeometry(scene, gl);
-    GET_GL_ERRORS();
-    renderBezierCurves(scene, view, projection);
-    GET_GL_ERRORS();
-    renderControlPoints(scene, view, projection, gl);
-
-    // clear the override so later wireframe draws (pivot marker RGB axes, drawn after render())
-    // keep their per-vertex colors
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
-    m_wireframeShader->release();
-
-    GET_GL_ERRORS();
+    const cadm::Mat4 vp = projection * view;
+    constexpr int s = sizeof(cadm::Mat4);
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUbo);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 0 * s, s, view.data);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 1 * s, s, projection.data);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 2 * s, s, vp.data);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 3 * s, s, invVp.data);
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void RenderSystem::renderSelectionRect(
-    const cadm::cadf x0Ndc,
-    const cadm::cadf y0Ndc,
-    const cadm::cadf x1Ndc,
-    const cadm::cadf y1Ndc
-) const {
-    const cadm::cadf verts[8] = {
-        x0Ndc,
-        y0Ndc,
-        x1Ndc,
-        y0Ndc,
-        x1Ndc,
-        y1Ndc,
-        x0Ndc,
-        y1Ndc,
+void RenderSystem::uploadPaletteUbo() const {
+    const theme::ThemeColors &t = theme::active();
+    const auto rgba = [](const QColor &c) {
+        return std::array{
+            c.redF(),
+            c.greenF(),
+            c.blueF(),
+            c.alphaF()
+        };
     };
-
+    const std::array colors{
+        rgba(t.line),
+        rgba(t.point),
+        rgba(t.curve),
+        rgba(t.gridMinor),
+        rgba(t.gridMajor)
+    };
     const auto gl = getGl();
-    gl->glBindBuffer(GL_ARRAY_BUFFER, m_selectionRectVBO);
-    gl->glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    m_selectionRectShader->bind();
-    gl->glBindVertexArray(m_selectionRectVAO);
-
-    // fill
-    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectColor));
-    gl->glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-    // outline
-    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectOutlineColor));
-    gl->glDrawArrays(GL_LINE_LOOP, 0, 4);
-
-    gl->glBindVertexArray(0);
-    m_selectionRectShader->release();
-}
-
-void RenderSystem::renderPivotMarker(
-    const cadm::Vec3 &pos,
-    const cadm::Mat4 &view,
-    const cadm::Mat4 &projection
-) const {
-    const auto gl = getGl();
-    const cadm::Mat4 model = cadm::Mat4::translation(pos);
-
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", model));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
-
-    gl->glBindVertexArray(m_pivotAxes.m_VAO);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pivotAxes.m_EBO_Lines);
-    gl->glDrawElements(
-        GL_LINES,
-        static_cast<GLsizei>(m_pivotAxes.m_lineIndices.size()),
-        GL_UNSIGNED_INT,
-        nullptr
-    );
-    gl->glBindVertexArray(0);
-    m_wireframeShader->release();
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, m_paletteUbo);
+    gl->glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(colors), colors.data());
+    gl->glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void RenderSystem::ensureStereoTargets() {
@@ -739,79 +801,4 @@ void RenderSystem::ensureStereoTargets() {
     }
     gl->glBindTexture(GL_TEXTURE_2D, 0);
     gl->glBindRenderbuffer(GL_RENDERBUFFER, 0);
-}
-
-void RenderSystem::renderStereo(
-    Scene &scene,
-    const cadm::Mat4 &leftView,
-    const cadm::Mat4 &leftProjection,
-    const cadm::Mat4 &rightView,
-    const cadm::Mat4 &rightProjection
-) {
-    const auto gl = getGl();
-
-    // QOpenGLWidget renders into its own FBO, not 0 - restore exactly what was bound.
-    // Capture before ensureStereoTargets(), which leaves one of our FBOs bound on the
-    // frame it (re)creates them - capturing after would composite into the offscreen FBO.
-    GLint prevFbo = 0;
-    gl->glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFbo);
-
-    ensureStereoTargets();
-
-    const cadm::Mat4 *views[2] = {&leftView, &rightView};
-    const cadm::Mat4 *projs[2] = {&leftProjection, &rightProjection};
-    for (int i = 0; i < 2; ++i) {
-        gl->glBindFramebuffer(GL_FRAMEBUFFER, m_stereoFbo[i]);
-        gl->glViewport(0, 0, m_stereoW, m_stereoH);
-        // clear to the theme background; the channel-swizzle composite preserves any
-        // neutral gray (left.r == right.g == right.b), so light and dark both reproduce it
-        const auto &bg = theme::active().viewport;
-        gl->glClearColor(bg.redF(), bg.greenF(), bg.blueF(), 1.0f);
-        gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // grid/axes need the inverse of the off-axis VP to reconstruct world rays per eye
-        const cadm::Mat4 invVp = views[i]->inversedView() * projs[i]->inversedFrustum();
-        render(scene, *views[i], *projs[i], invVp, true);
-    }
-
-    gl->glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);
-    gl->glViewport(0, 0, m_viewportW, m_viewportH);
-
-    gl->glDisable(GL_DEPTH_TEST);
-    m_stereoCompositeShader->bind();
-    gl->glActiveTexture(GL_TEXTURE0);
-    gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[0]);
-    gl->glActiveTexture(GL_TEXTURE1);
-    gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[1]);
-    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uLeft", 0));
-    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uRight", 1));
-    m_screenQuad->draw();
-    m_stereoCompositeShader->release();
-    gl->glActiveTexture(GL_TEXTURE0);
-    gl->glEnable(GL_DEPTH_TEST);
-}
-
-void RenderSystem::shutdown() {
-    UNIQUE_PTR_RELEASE_CHECK(m_basicShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_wireframeShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_axesShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_gridShader.release());
-
-    if (m_selectionRectVAO != 0) {
-        const auto gl = getGl();
-        gl->glDeleteBuffers(1, &m_selectionRectVBO);
-        gl->glDeleteVertexArrays(1, &m_selectionRectVAO);
-    }
-
-    if (m_cameraUbo != 0) {
-        const auto gl = getGl();
-        gl->glDeleteBuffers(1, &m_cameraUbo);
-        gl->glDeleteBuffers(1, &m_paletteUbo);
-    }
-
-    if (m_stereoFbo[0] != 0) {
-        const auto gl = getGl();
-        gl->glDeleteFramebuffers(2, m_stereoFbo);
-        gl->glDeleteTextures(2, m_stereoColor);
-        gl->glDeleteRenderbuffers(2, m_stereoDepth);
-    }
 }

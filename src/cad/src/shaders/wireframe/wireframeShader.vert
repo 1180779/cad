@@ -5,7 +5,7 @@ layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec4 aColor;
 
 uniform mat4 model;
-uniform vec4 u_overrideColor;// if alpha > 0, overrides per-vertex color
+uniform vec4 u_overrideColor; // if alpha > 0, overrides per-vertex color
 
 layout (std140, binding = 0) uniform Camera {
     mat4 view;

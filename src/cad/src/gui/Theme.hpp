@@ -7,71 +7,80 @@
 
 #include <QApplication>
 #include <QColor>
-#include <QFile>
-#include <QFileInfo>
-#include <QPalette>
+#include <QDir>
+#include <QSaveFile>
+#include <QStandardPaths>
 #include <QString>
 #include <QStyle>
-#include <QTemporaryDir>
 
 /// @brief Centralized custom theme palette
 namespace theme {
-    /// @brief A single theme's seed colors. Everything else (tints, QSS) derives from these.
-    /// @note ponytail: phase 1 keeps light+dark here; phase 2 lifts the generic builders
-    /// (spin/combo/menu) into a reusable submodule, leaving app overrides behind.
+    /// @brief A single theme's seed colors
     struct ThemeColors {
-        QColor window; ///< app background (QPalette::Window)
-        QColor base; ///< tool-window card / input base (QPalette::Base)
-        QColor accent; ///< selection / highlight (QPalette::Highlight)
-        QColor text; ///< primary foreground
-        QColor viewport; ///< OpenGL clear color for the non-stereo viewport
-        // viewport geometry colors (uploaded to the Palette UBO, binding 1)
-        QColor line; ///< basic geometry lines
-        QColor point; ///< unselected control points
-        QColor curve; ///< tessellated bezier curves
-        QColor gridMinor; ///< infinite grid minor lines
-        QColor gridMajor; ///< infinite grid major lines
-        bool dark; ///< flips derived tints between darker()/lighter()
+        /// @brief App background (QPalette::Window)
+        QColor window;
+
+        /// @brief  Tool-window card / input base (QPalette::Base)
+        QColor base;
+
+        /// @brief Selection / highlight (QPalette::Highlight)
+        QColor accent;
+
+        /// @brief Primary foreground
+        QColor text;
+
+        /// @brief OpenGL clear color for the non-stereo viewport
+        QColor viewport;
+
+        // viewport geometry colors
+
+        /// @brief Basic geometry lines
+        QColor line;
+
+        /// @brief Unselected control points
+        QColor point;
+
+        /// @brief Tessellated Bézier curves
+        QColor curve;
+
+        /// @brief Infinite grid minor lines
+        QColor gridMinor;
+
+        /// @brief Infinite grid major lines
+        QColor gridMajor;
+
+        /// @brief Flips derived tints between darker()/lighter()
+        bool dark;
     };
 
     /// @brief Soft off-white background, white cards, dark text
-    inline constexpr ThemeColors light{
-        QColor(0xF2, 0xF3, 0xF5),
-        QColor(0xFF, 0xFF, 0xFF),
-        QColor(0x56, 0xA0, 0xEB),
-        QColor(0x1A, 0x1A, 0x1A),
-        QColor(0xFF, 0xFF, 0xFF),
-        QColor(0x00, 0x00, 0x00),
-        // line
-        QColor(0x14, 0x14, 0x14),
-        // point (~0.08)
-        QColor(0x80, 0x80, 0x80),
-        // curve (~0.5)
-        QColor(0xB8, 0xB8, 0xB8),
-        // gridMinor (~0.72)
-        QColor(0x80, 0x80, 0x80),
-        // gridMajor (~0.5)
-        false
+    inline constexpr ThemeColors gc_light{
+        .window = QColor(0xF2, 0xF3, 0xF5),
+        .base = QColor(0xFF, 0xFF, 0xFF),
+        .accent = QColor(0x56, 0xA0, 0xEB),
+        .text = QColor(0x1A, 0x1A, 0x1A),
+        .viewport = QColor(0xFF, 0xFF, 0xFF),
+        .line = QColor(0x00, 0x00, 0x00),
+        .point = QColor(0x14, 0x14, 0x14),
+        .curve = QColor(0x80, 0x80, 0x80),
+        .gridMinor = QColor(0xB8, 0xB8, 0xB8),
+        .gridMajor = QColor(0x80, 0x80, 0x80),
+        .dark = false
     };
 
-    /// @brief IntelliJ-Darcula-ish: dark background, slightly darker cards, light text
-    inline constexpr ThemeColors dark{
-        QColor(0x2B, 0x2D, 0x30),
-        QColor(0x1E, 0x1F, 0x22),
-        QColor(0x56, 0xA0, 0xEB),
-        QColor(0xDF, 0xE1, 0xE5),
-        QColor(0x1E, 0x1F, 0x22),
-        QColor(0xD7, 0xD9, 0xDD),
-        // line
-        QColor(0xE0, 0xE2, 0xE6),
-        // point
-        QColor(0xA8, 0xAB, 0xB0),
-        // curve
-        QColor(0x4A, 0x4D, 0x52),
-        // gridMinor
-        QColor(0x6A, 0x6E, 0x74),
-        // gridMajor
-        true
+    /// @brief Dark background, slightly darker cards, light text
+    inline constexpr ThemeColors gc_dark{
+        .window = QColor(0x2B, 0x2D, 0x30),
+        .base = QColor(0x1E, 0x1F, 0x22),
+        .accent = QColor(0x56, 0xA0, 0xEB),
+        .text = QColor(0xDF, 0xE1, 0xE5),
+        .viewport = QColor(0x1E, 0x1F, 0x22),
+        .line = QColor(0xD7, 0xD9, 0xDD),
+        .point = QColor(0xE0, 0xE2, 0xE6),
+        .curve = QColor(0xA8, 0xAB, 0xB0),
+        .gridMinor = QColor(0x4A, 0x4D, 0x52),
+        .gridMajor = QColor(0x6A, 0x6E, 0x74),
+        .dark = true
     };
 
     // corner rounding scale (px)
@@ -88,19 +97,21 @@ namespace theme {
     /// @brief Magenta accent for the active transform / add-point mode (vim-like)
     inline constexpr QColor gc_statusActive(0xFF, 0x00, 0xFF);
 
-    // ---- derived tints (theme-relative: darken light bg, lighten dark bg) ----
+    // derived tints (theme-relative: darken light bg, lighten dark bg)
 
-    /// @brief Shifts the window color toward contrast by @p amount (Qt darker/lighter scale, 100 = no-op)
+    /// @brief Shifts the window color toward contrast by @p amount (Qt darker/lighter scale)
     inline QColor tint(const ThemeColors &t, const int amount) {
         return t.dark
                    ? t.window.lighter(amount)
                    : t.window.darker(amount);
     }
 
+    /// @brief Subtle hover wash
     inline QColor menuHover(const ThemeColors &t) {
         return tint(t, 112);
-    } ///< subtle hover wash
-    /// @brief Muted text; dark themes need a bigger lift off the bg to stay legible
+    }
+
+    /// @brief Muted text
     inline QColor menuDisabled(const ThemeColors &t) {
         return tint(
             t,
@@ -110,49 +121,59 @@ namespace theme {
         );
     }
 
+    /// @brief Dropdown border / separators
     inline QColor menuBorder(const ThemeColors &t) {
         return tint(t, 125);
-    } ///< dropdown border / separators
+    }
+
+    /// @brief Resting input border
     inline QColor inputBorder(const ThemeColors &t) {
         return tint(t, 125);
-    } ///< resting input border
+    }
 
-    /// @brief Translucent overlay for frameless window-control hover (black on light, white on dark)
+    /// @brief Translucent overlay for frameless window-control hover
     inline QString windowButtonOverlay(const ThemeColors &t, const double a) {
         return t.dark
                    ? QStringLiteral("rgba(255, 255, 255, %1)").arg(a)
                    : QStringLiteral("rgba(0, 0, 0, %1)").arg(a);
     }
 
-    /// @brief Recolors a `currentColor` SVG resource to @p color and returns a file path for QSS url().
+    /// @brief Recolors a `currentColor` SVG resource to @p color and returns a file path for QSS url()
     /// @details The SVGs use fill="currentColor" which QSvgRenderer resolves to black, so they vanish
-    /// on dark backgrounds. We substitute the literal color and cache one file per (name, color) in a
-    /// process-lifetime temp dir. ponytail: text substitution dodges linking Qt6::Svg just to recolor.
-    /// @param name resource basename under :/icons/ without extension (e.g. "chevron-up", "check")
+    /// on dark backgrounds. We substitute the literal color and cache one file per (name, color) in the
+    /// per-user OS cache dir (<code>QStandardPaths::CacheLocation</code>), regenerating only on a miss
+    /// @param name resource basename under :/icons/ without extension
+    /// @param color target color to replace "currentColor" with in the SVG
     inline QString recoloredIcon(const QString &name, const QColor &color) {
-        static QTemporaryDir dir;
+        static const QString cacheDir = [] {
+            const QString d = QStandardPaths::writableLocation(QStandardPaths::CacheLocation)
+                + QStringLiteral("/icons");
+            return QDir().mkpath(d)
+                       ? d
+                       : QString();
+        }();
         const QString src = QStringLiteral(":/icons/%1.svg").arg(name);
-        if (!dir.isValid()) {
-            return src; // fall back to the (dark) original rather than no icon
+        if (cacheDir.isEmpty()) {
+            return src;
         }
-        const QString out = dir.filePath(QStringLiteral("%1-%2.svg").arg(name, color.name().mid(1)));
-        if (!QFileInfo::exists(out)) {
-            QFile in(src);
-            if (in.open(QIODevice::ReadOnly)) {
-                QByteArray svg = in.readAll();
-                svg.replace("currentColor", color.name().toUtf8());
-                if (QFile f(out);
-                    f.open(QIODevice::WriteOnly)) {
-                    f.write(svg);
-                }
-            }
+        const QString out = QStringLiteral("%1/%2-%3.svg").arg(cacheDir, name, color.name().mid(1));
+        if (QFileInfo::exists(out)) {
+            return out;
         }
-        return out;
+        QFile in(src);
+        if (!in.open(QIODevice::ReadOnly)) {
+            return src; // resource missing
+        }
+        QByteArray svg = in.readAll();
+        svg.replace("currentColor", color.name().toUtf8());
+        if (QSaveFile f(out);
+            f.open(QIODevice::WriteOnly) && f.write(svg) == svg.size() && f.commit()) {
+            return out;
+        }
+        return src;
     }
 
-    // ==== generic, reusable QSS (palette()-driven; only derived tints are args) ====
-
-    /// @brief IntelliJ inspired spin box style
+    /// @brief IntelliJ inspired spin box QSS
     inline QString spinBoxStyle(const ThemeColors &t) {
         return QStringLiteral(
                 R"(
@@ -190,7 +211,7 @@ namespace theme {
             );
     }
 
-    /// @brief IntelliJ inspired combo box style
+    /// @brief IntelliJ inspired combo box QSS
     inline QString comboBoxStyle(const ThemeColors &t) {
         return QStringLiteral(
                 R"(
@@ -239,7 +260,7 @@ namespace theme {
             );
     }
 
-    /// @brief IntelliJ inspired check box style
+    /// @brief IntelliJ inspired check box QSS
     inline QString checkBoxStyle(const ThemeColors &t) {
         return QStringLiteral(
                 R"(
@@ -269,7 +290,7 @@ namespace theme {
             );
     }
 
-    /// @brief IntelliJ inspired push button style
+    /// @brief IntelliJ inspired push button QSS
     inline QString pushButtonStyle(const ThemeColors &t) {
         return QStringLiteral(
                 R"(
@@ -294,7 +315,7 @@ namespace theme {
             );
     }
 
-    /// @brief IntelliJ inspired menu bar and menus style
+    /// @brief IntelliJ inspired menu bar and menus QSS
     inline QString menuStyle(const ThemeColors &t) {
         return QStringLiteral(
                 R"(
@@ -313,15 +334,13 @@ namespace theme {
                .arg(gc_itemRadius);
     }
 
-    // ==== app-specific QSS overrides (depend on cad widget names; stay in the app at phase 2) ====
-
-    /// @brief IntelliJ inspired style for tool windows (widgets named "toolPanel")
+    /// @brief IntelliJ inspired tool windows QSS (widgets named "toolPanel")
     inline QString toolPanelStyle() {
         return QStringLiteral("#toolPanel { background-color: palette(base); border-radius: %1px; }")
             .arg(gc_cardRadius);
     }
 
-    /// @brief Vim inspired status bar style
+    /// @brief Vim inspired status bar QSS
     inline QString statusBarStyle() {
         return QStringLiteral(
                 R"(
@@ -333,12 +352,13 @@ namespace theme {
             .arg(gc_statusActive.name());
     }
 
-    /// @brief App-colored strip the splitter draws between the viewport and tool window
+    /// @brief App-colored strip the splitter draws between the viewport and tool window QSS
     inline QString splitterStyle() {
         return QStringLiteral("QSplitter::handle { background-color: palette(window); }");
     }
 
-    /// @brief Frameless window controls (objectName "windowButton"); the close button gets red accents
+    /// @brief Frameless window controls QSS (objectName "windowButton"); 
+    /// the close button gets red accents
     inline QString windowButtonStyle(const ThemeColors &t) {
         return QStringLiteral(
                 R"(
@@ -357,7 +377,7 @@ namespace theme {
             );
     }
 
-    /// @brief Full application stylesheet for a theme
+    /// @brief Full stylesheet for a theme
     inline QString appStyleSheet(const ThemeColors &t) {
         return spinBoxStyle(t) + comboBoxStyle(t) + pushButtonStyle(t) + checkBoxStyle(t) + menuStyle(t) +
             toolPanelStyle()
@@ -384,8 +404,8 @@ namespace theme {
         return palette;
     }
 
-    /// @brief The theme currently applied; the GL viewport reads its clear color each frame
-    inline const ThemeColors *g_active = &light;
+    /// @brief Currently applied theme
+    inline const ThemeColors *g_active = &gc_light;
 
     /// @brief Currently applied theme
     inline const ThemeColors& active() {
@@ -395,7 +415,6 @@ namespace theme {
     /// @brief Applies a theme to the running application (palette + stylesheet) live
     inline void apply(const ThemeColors &t) {
         g_active = &t;
-        // start from a clean standard palette so switching back drops the other theme's overrides
         QApplication::setPalette(buildPalette(QApplication::style()->standardPalette(), t));
         qApp->setStyleSheet(appStyleSheet(t));
     }

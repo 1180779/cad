@@ -29,7 +29,7 @@ public:
     ) const;
 
     /// @brief Anaglyph stereoscopy: render the scene once per eye into offscreen targets,
-    /// then composite them (left -> red, right -> cyan) into the currently bound framebuffer.
+    /// then composite them
     void renderStereo(
         Scene &scene,
         const cadm::Mat4 &leftView,
@@ -55,7 +55,6 @@ public:
         const cadm::Vec3 &pivot,
         const cadm::Mat4 &axisModel,
         int axesMask,
-        const cadm::Mat4 &view,
         const cadm::Mat4 &projection,
         const cadm::Mat4 &invVp
     ) const;
@@ -91,37 +90,30 @@ public:
     }
 
 private:
-    void renderInfiniteGrid(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+    void renderInfiniteGrid(const cadm::Mat4 &view) const;
 
     void renderInfiniteAxes(
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &invVp
     ) const;
 
-    void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+    void renderLineGeometry(const Scene &scene) const;
 
-    void renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+    void renderTriangleGeometry(const Scene &scene) const;
 
     void renderControlPoints(
         Scene &scene,
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
         QOpenGLFunctions_4_5_Core *gl
     ) const;
 
     void renderC0BezierCurves(
         Scene &scene,
         const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &vp
+        const cadm::Mat4 &projection
     ) const;
 
     void renderC2BezierCurves(
         const Scene &scene,
         const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &vp
+        const cadm::Mat4 &projection
     ) const;
 
     void renderBezierCurves(
@@ -130,10 +122,10 @@ private:
         const cadm::Mat4 &projection
     ) const;
 
-    /// @brief Upload shared view/projection/VP/invVP into the Camera UBO (binding 0)
+    /// @brief Upload shared view/projection/VP/invVP into the Camera UBO
     void uploadCameraUbo(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
 
-    /// @brief Upload the active theme's geometry colors into the Palette UBO (binding 1)
+    /// @brief Upload the active theme's geometry colors into the Palette UBO
     void uploadPaletteUbo() const;
 
     AxesGeometry m_pivotAxes;
@@ -148,25 +140,28 @@ private:
     std::unique_ptr<ShaderProgram> m_stereoCompositeShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
 
-    // shared uniform buffers (std140); binding points match the shader layout qualifiers
-    uint32_t m_cameraUbo{}; ///< binding 0: view/projection/VP/invVP
-    uint32_t m_paletteUbo{}; ///< binding 1: theme geometry colors
+    /// @brief UBO with view/projection/VP/invVP
+    /// @note binding 0
+    uint32_t m_cameraUbo{};
 
-    /// @brief Lazily (re)create the per-eye offscreen colour+depth targets when the viewport size changes
+    /// @brief UBO with theme geometry colors
+    /// @note binding 1
+    uint32_t m_paletteUbo{};
+
+    /// @brief Lazily (re)create the per-eye offscreen color+depth targets when the viewport size changes
     void ensureStereoTargets();
 
     // per-eye offscreen targets (index 0 = left, 1 = right)
+
     uint32_t m_stereoFbo[2]{};
     uint32_t m_stereoColor[2]{};
     uint32_t m_stereoDepth[2]{};
     int m_stereoW{0};
     int m_stereoH{0};
 
-    /// @note Should be set from the widget at program start
-    /// (or widget set based on this value)
     int m_gridPlanes{0};
-    int m_infiniteAxesMask{7}; ///< X|Y|Z all on by default
-    bool m_gridLodFade{true}; ///< distance fade for grid + axes
+    int m_infiniteAxesMask{0};
+    bool m_gridLodFade{true};
     int m_viewportW{1};
     int m_viewportH{1};
 

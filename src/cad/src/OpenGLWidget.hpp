@@ -246,9 +246,11 @@ private:
     QPoint m_transformStartMousePos;
     cadm::Vec3 m_transformPivot;
 
-    /// @brief Anaglyph stereoscopy state (eye separation and projection-plane distance are world units)
+    /// @brief Anaglyph stereoscopy state
     bool m_stereoEnabled = false;
+    /// @brief Eye separation for stereoscopy in world units
     cadm::cadf m_stereoEyeSeparation = 0.3;
+    /// @brief Projection-plane distance for stereoscopy in world units
     cadm::cadf m_stereoConvergence = 10.0;
 };
 
