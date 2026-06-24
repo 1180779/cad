@@ -32,7 +32,8 @@ public:
         const cadm::Mat4 &leftView,
         const cadm::Mat4 &leftProjection,
         const cadm::Mat4 &rightView,
-        const cadm::Mat4 &rightProjection
+        const cadm::Mat4 &rightProjection,
+        bool luminance
     );
 
     void renderSelectionRect(

@@ -111,6 +111,16 @@ public:
         update();
     }
 
+    void setStereoLuminance(const bool enabled) {
+        m_stereoLuminance = enabled;
+        update();
+    }
+
+    void setStereoAutoEyeSep(const bool enabled) {
+        m_stereoAutoEyeSep = enabled;
+        update();
+    }
+
     /// @brief Separation = convergence / N
     void setStereoSeparationRatio(const double divisor) {
         m_stereoSeparationRatio = static_cast<cadm::cadf>(1.0 / divisor);
@@ -275,6 +285,10 @@ private:
     bool m_stereoEnabled = false;
     /// @brief Derive convergence/separation from camera distance to target each frame
     bool m_stereoAuto = true;
+    /// @brief Use luminance anaglyph instead of channel split
+    bool m_stereoLuminance = true;
+    /// @brief Whether auto mode also drives eye distance
+    bool m_stereoAutoEyeSep = true;
     /// @brief Eye separation as a fraction of convergence distance in auto mode (~1/30 comfort rule)
     cadm::cadf m_stereoSeparationRatio = 1.0 / 30.0;
     /// @brief Eye separation for stereoscopy in world units

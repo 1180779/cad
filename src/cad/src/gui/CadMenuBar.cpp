@@ -73,16 +73,22 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     m_toolsMenu = addMenu("Tools");
 
     m_viewMenu = addMenu("View");
-    auto *darkThemeToggle = addCheckableAction(m_viewMenu, "Dark theme");
+    const auto *darkThemeToggle = addCheckableAction(m_viewMenu, "Dark theme");
     connect(darkThemeToggle, &QAction::toggled, this, &CadMenuBar::darkThemeChanged);
 
     m_stereoMenu = addMenu("Stereo");
-    auto *stereoToggle = addCheckableAction(m_stereoMenu, "Enable Stereoscopy");
+    const auto *stereoToggle = addCheckableAction(m_stereoMenu, "Enable Stereoscopy");
     connect(stereoToggle, &QAction::toggled, this, &CadMenuBar::stereoEnabledChanged);
     m_stereoMenu->addSeparator();
 
-    auto *autoToggle = addCheckableAction(m_stereoMenu, "Auto (track camera)", true);
+    const auto *autoToggle = addCheckableAction(m_stereoMenu, "Auto (track camera)", true);
     connect(autoToggle, &QAction::toggled, this, &CadMenuBar::stereoAutoChanged);
+
+    const auto *autoEyeSepToggle = addCheckableAction(m_stereoMenu, "Auto eye distance", true);
+    connect(autoEyeSepToggle, &QAction::toggled, this, &CadMenuBar::stereoAutoEyeSepChanged);
+
+    const auto *lumToggle = addCheckableAction(m_stereoMenu, "Luminance anaglyph", true);
+    connect(lumToggle, &QAction::toggled, this, &CadMenuBar::stereoLuminanceChanged);
 
     m_stereoEyeSepSpinbox = addSpinBoxAction(m_stereoMenu, "Eye distance", 0.3, 0.0, 100.0, 0.05);
     connect(m_stereoEyeSepSpinbox, &QDoubleSpinBox::valueChanged, this, &CadMenuBar::stereoEyeSeparationChanged);
@@ -98,17 +104,28 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     );
     connect(stereoSeparationRatioSpin, &QDoubleSpinBox::valueChanged, this, &CadMenuBar::stereoSepRatioChanged);
 
+    const auto updateSpinEnables = [this, autoToggle, autoEyeSepToggle] {
+        const bool autoOn = autoToggle->isChecked();
+        m_stereoConvergenceSpinbox->setEnabled(!autoOn);
+        m_stereoEyeSepSpinbox->setEnabled(!(autoOn && autoEyeSepToggle->isChecked()));
+    };
     connect(
         autoToggle,
         &QAction::toggled,
         this,
-        [this](const bool on) {
-            m_stereoEyeSepSpinbox->setEnabled(!on);
-            m_stereoConvergenceSpinbox->setEnabled(!on);
+        [updateSpinEnables](bool) {
+            updateSpinEnables();
         }
     );
-    m_stereoEyeSepSpinbox->setEnabled(false);
-    m_stereoConvergenceSpinbox->setEnabled(false);
+    connect(
+        autoEyeSepToggle,
+        &QAction::toggled,
+        this,
+        [updateSpinEnables](bool) {
+            updateSpinEnables();
+        }
+    );
+    updateSpinEnables();
     // ReSharper disable once CppDFAMemoryLeak
 }
 
