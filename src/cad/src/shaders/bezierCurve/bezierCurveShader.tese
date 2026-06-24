@@ -9,7 +9,21 @@ uniform int uLastPrimitive;// index of the last segment (numSegments - 1)
 in vec3 cpwPointPos[];
 flat in int tcInstanceID[];
 out vec4 color;
-uniform mat4 MVP;
+
+layout (std140, binding = 0) uniform Camera {
+    mat4 view;
+    mat4 projection;
+    mat4 VP;
+    mat4 invVP;
+};
+
+layout (std140, binding = 1) uniform Palette {
+    vec4 lineColor;
+    vec4 pointColor;
+    vec4 curveColor;
+    vec4 gridMinor;
+    vec4 gridMajor;
+};
 
 // lerp until you run out of things to lerp
 vec3 deCasteljau(float t, vec3[4] p) {
@@ -55,6 +69,6 @@ void main() {
     } else {
         pos = deCasteljauCubic(t, p);
     }
-    color = vec4(0.5, 0.5, 0.5, 1.0);// vec4(0.9, 0.9, 0.9, 1.0);
-    gl_Position = MVP * vec4(pos, 1.0f);
+    color = curveColor;
+    gl_Position = VP * vec4(pos, 1.0f);
 }

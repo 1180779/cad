@@ -278,6 +278,22 @@ namespace {
         );
         glWidget->setGridPlanes(viewportPanel->gridSettingsWidget()->getGridPlanes());
 
+        QObject::connect(
+            viewportPanel->gridSettingsWidget(),
+            &GridSettingsWidget::axesMaskChanged,
+            glWidget,
+            &OpenGlWidget::setInfiniteAxesMask
+        );
+        glWidget->setInfiniteAxesMask(viewportPanel->gridSettingsWidget()->getAxesMask());
+
+        QObject::connect(
+            viewportPanel->gridSettingsWidget(),
+            &GridSettingsWidget::lodFadeChanged,
+            glWidget,
+            &OpenGlWidget::setGridLodFade
+        );
+        glWidget->setGridLodFade(viewportPanel->gridSettingsWidget()->getLodFade());
+
         auto *pivotCombo = viewportPanel->pivotCombo();
         QObject::connect(
             pivotCombo,
@@ -528,7 +544,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    theme::apply();
+    theme::apply(theme::gc_light);
 
     QWidget window;
     window.setWindowFlag(Qt::FramelessWindowHint);
@@ -623,7 +639,11 @@ int main(int argc, char *argv[]) {
         &QApplication::focusChanged,
         panelBar,
         [panelBar, panelStack](QWidget *, const QWidget *now) {
-            panelBar->setPanelFocused(now != nullptr && panelStack->isAncestorOf(now));
+            const bool insideStack = now != nullptr && panelStack->isAncestorOf(now);
+            const QWidget *popup = QApplication::activePopupWidget();
+            const bool popupInStack = popup != nullptr && popup->parentWidget() != nullptr &&
+                panelStack->isAncestorOf(popup->parentWidget());
+            panelBar->setPanelFocused(insideStack || popupInStack);
         }
     );
 
@@ -667,6 +687,32 @@ int main(int argc, char *argv[]) {
     hierarchyWidget->setCameraController(&glWidget->getCameraController());
     entityPropertiesWidget->setScene(&glWidget->getScene());
     entityPropertiesWidget->setCommandStack(&glWidget->getCommandStack());
+
+    QObject::connect(
+        menuBar,
+        &CadMenuBar::darkThemeChanged,
+        glWidget,
+        [glWidget](const bool dark) {
+            theme::apply(
+                dark
+                    ? theme::gc_dark
+                    : theme::gc_light
+            );
+            glWidget->update();
+        }
+    );
+    QObject::connect(menuBar, &CadMenuBar::stereoEnabledChanged, glWidget, &OpenGlWidget::setStereoEnabled);
+    QObject::connect(menuBar, &CadMenuBar::stereoAutoChanged, glWidget, &OpenGlWidget::setStereoAuto);
+    QObject::connect(menuBar, &CadMenuBar::stereoSepRatioChanged, glWidget, &OpenGlWidget::setStereoSeparationRatio);
+    QObject::connect(
+        menuBar,
+        &CadMenuBar::stereoEyeSeparationChanged,
+        glWidget,
+        &OpenGlWidget::setStereoEyeSeparation
+    );
+    QObject::connect(menuBar, &CadMenuBar::stereoConvergenceChanged, glWidget, &OpenGlWidget::setStereoConvergence);
+    QObject::connect(glWidget, &OpenGlWidget::stereoEyeSepChanged, menuBar, &CadMenuBar::setStereoEyeSep);
+    QObject::connect(glWidget, &OpenGlWidget::stereoConvergenceChanged, menuBar, &CadMenuBar::setStereoConvergence);
 
     wireUndoRedo(menuBar, glWidget);
     wireSelectionSync(glWidget, hierarchyWidget, entityPropertiesWidget);

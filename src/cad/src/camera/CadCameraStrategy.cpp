@@ -64,6 +64,16 @@ void CadCameraStrategy::setLookTarget(const cadm::Vec3 target) {
     }
 }
 
+cadm::cadf CadCameraStrategy::distanceToTarget() {
+    const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
+    if (!camera) {
+        EXPECTED_COMPONENT_MISSING();
+        return 1.0;
+    }
+    const auto pCamera = camera.value();
+    return (pCamera->getPosition() - pCamera->getTarget()).length();
+}
+
 void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent *const pCamera) const {
     // TODO(raycast-pivot): rotation pivot should be the ray-scene intersection point under the cursor.
     //  Currently rotates around target

@@ -20,7 +20,20 @@ public:
 
     static void regenerateGeometry(const Scene &scene);
 
-    void render(Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+    void render(
+        Scene &scene,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &invVp
+    ) const;
+
+    void renderStereo(
+        Scene &scene,
+        const cadm::Mat4 &leftView,
+        const cadm::Mat4 &leftProjection,
+        const cadm::Mat4 &rightView,
+        const cadm::Mat4 &rightProjection
+    );
 
     void renderSelectionRect(
         cadm::cadf x0Ndc,
@@ -30,18 +43,13 @@ public:
     ) const;
 
     void renderPivotMarker(
-        const cadm::Vec3 &pos,
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection
+        const cadm::Vec3 &pos
     ) const;
 
     void renderTransformAxis(
         const cadm::Vec3 &pivot,
         const cadm::Mat4 &axisModel,
-        int axesMask,
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &invVp
+        int axesMask
     ) const;
 
     void shutdown();
@@ -55,43 +63,55 @@ public:
         return m_gridPlanes;
     }
 
+    // bitmask: bit 0 = X, bit 1 = Y, bit 2 = Z
+    void setInfiniteAxesMask(const int mask) {
+        m_infiniteAxesMask = mask;
+    }
+
+    [[nodiscard]] int getInfiniteAxesMask() const {
+        return m_infiniteAxesMask;
+    }
+
+    /// @brief Toggle the distance LOD fade applied to both grid and axes
+    void setGridLodFade(const bool enabled) {
+        m_gridLodFade = enabled;
+    }
+
     void setViewport(const int w, const int h) {
         m_viewportW = w;
         m_viewportH = h;
     }
 
 private:
-    void renderInfiniteGrid(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+    void renderInfiniteGrid(const cadm::Mat4 &view) const;
 
     void renderInfiniteAxes(
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &invVp
     ) const;
 
-    void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+    void renderLineGeometry(const Scene &scene) const;
 
-    void renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+    /// @brief Redraw the active cursor with its baked RGB axis colors
+    /// @note It is necessary to redraw the cursor after the rendering passes
+    /// since theme color overrides the color in the vertices by default
+    void renderActiveCursorColors(const Scene &scene) const;
+
+    void renderTriangleGeometry(const Scene &scene) const;
 
     void renderControlPoints(
         Scene &scene,
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
         QOpenGLFunctions_4_5_Core *gl
     ) const;
 
     void renderC0BezierCurves(
         Scene &scene,
         const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &vp
+        const cadm::Mat4 &projection
     ) const;
 
     void renderC2BezierCurves(
         const Scene &scene,
         const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &vp
+        const cadm::Mat4 &projection
     ) const;
 
     void renderBezierCurves(
@@ -99,6 +119,12 @@ private:
         const cadm::Mat4 &view,
         const cadm::Mat4 &projection
     ) const;
+
+    /// @brief Upload shared view/projection/VP/invVP into the Camera UBO
+    void uploadCameraUbo(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+
+    /// @brief Upload the active theme's geometry colors into the Palette UBO
+    void uploadPaletteUbo() const;
 
     AxesGeometry m_pivotAxes;
 
@@ -109,11 +135,31 @@ private:
     std::unique_ptr<ShaderProgram> m_selectionRectShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_pointShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
+    std::unique_ptr<ShaderProgram> m_stereoCompositeShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
 
-    /// @note Should be set from the widget at program start
-    /// (or widget set based on this value)
+    /// @brief UBO with view/projection/VP/invVP
+    /// @note binding 0
+    uint32_t m_cameraUbo{};
+
+    /// @brief UBO with theme geometry colors
+    /// @note binding 1
+    uint32_t m_paletteUbo{};
+
+    /// @brief Lazily (re)create the per-eye offscreen color+depth targets when the viewport size changes
+    void ensureStereoTargets();
+
+    // per-eye offscreen targets (index 0 = left, 1 = right)
+
+    uint32_t m_stereoFbo[2]{};
+    uint32_t m_stereoColor[2]{};
+    uint32_t m_stereoDepth[2]{};
+    int m_stereoW{0};
+    int m_stereoH{0};
+
     int m_gridPlanes{0};
+    int m_infiniteAxesMask{0};
+    bool m_gridLodFade{true};
     int m_viewportW{1};
     int m_viewportH{1};
 

@@ -46,7 +46,7 @@ cadm::Mat4 BlenderCameraStrategy::getProjection() {
         );
     }
 
-    return cadm::Mat4::projectionMo(
+    return cadm::Mat4::perspective(
         pCamera->getAspectRatio(),
         pCamera->getFov(),
         pCamera->getNearPlane(),
@@ -63,7 +63,7 @@ cadm::Mat4 BlenderCameraStrategy::getInvProjection() {
     if (camera.value()->isOrtho()) {
         return getProjection().inversedOrtho();
     }
-    return getProjection().inversedProjectionMo();
+    return getProjection().inversedPerspective();
 }
 
 void BlenderCameraStrategy::setLookTarget(const cadm::Vec3 target) {
@@ -73,6 +73,15 @@ void BlenderCameraStrategy::setLookTarget(const cadm::Vec3 target) {
         return;
     }
     camera.value()->setTarget(target);
+}
+
+cadm::cadf BlenderCameraStrategy::distanceToTarget() {
+    const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
+    if (!camera) {
+        EXPECTED_COMPONENT_MISSING();
+        return 1.0;
+    }
+    return camera.value()->getRadius();
 }
 
 bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QPoint delta) {

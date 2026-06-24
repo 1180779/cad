@@ -2,13 +2,19 @@
 
 in vec2 fragNDC;
 
-uniform mat4 invVP;
-uniform mat4 VP;
+layout (std140, binding = 0) uniform Camera {
+    mat4 view;
+    mat4 projection;
+    mat4 VP;
+    mat4 invVP;
+};
+
 uniform mat4 u_model;
 uniform vec3 u_axisOrigin;
 uniform vec2 u_viewport;
 uniform float u_lineWidth;
-uniform int u_axesMask;// bit 0=X, bit 1=Y, bit 2=Z
+uniform int u_axesMask;
+uniform int u_lodFade;
 
 out vec4 FragColor;
 
@@ -16,6 +22,7 @@ out vec4 FragColor;
 #define AXIS_FAR  0.9999
 #define AXIS_NEAR 0.0001
 #define SOFT_EDGE 1.0
+#define AXIS_DEPTH_BIAS 0.0001
 
 const vec3 AXIS_DIR[3] = vec3[3](
         vec3(1, 0, 0),
@@ -88,6 +95,7 @@ void main()
     float bestDist2 = 1e9;
     vec4  bestColor = vec4(0.0);
     float bestDepth = 1.0;
+    vec3  bestHit = u_axisOrigin;
 
     for (int i = 0; i < 3; i++)
     {
@@ -106,12 +114,21 @@ void main()
         float distAlongAxis = abs(dot(hit - u_axisOrigin, d));
         alpha *= 1.0 - smoothstep(AXIS_FADE_FAR * 0.5, AXIS_FADE_FAR, distAlongAxis);
         bestColor = vec4(AXIS_COLOR[i].rgb, alpha);
+        bestHit = hit;
 
         vec4 clip = VP * vec4(hit, 1.0);
         bestDepth = clamp((clip.z / clip.w) * 0.5 + 0.5, AXIS_NEAR, AXIS_FAR);
     }
 
+    // match the grid's grazing-angle LOD fade: thin the axis out where world units per
+    // pixel blow up near the horizon. Thresholds track the major grid (5-unit cells),
+    // which is what survives farthest, so axis and grid vanish together.
+    if (u_lodFade != 0) {
+        float density = max(fwidth(bestHit.x), max(fwidth(bestHit.y), fwidth(bestHit.z)));
+        bestColor.a *= 1.0 - smoothstep(1.25, 2.5, density);
+    }
+
     if (bestColor.a < 0.01) discard;
-    gl_FragDepth = bestDepth;
+    gl_FragDepth = clamp(bestDepth - AXIS_DEPTH_BIAS, AXIS_NEAR, AXIS_FAR);
     FragColor = bestColor;
 }

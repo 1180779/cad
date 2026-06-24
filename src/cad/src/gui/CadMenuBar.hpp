@@ -5,6 +5,7 @@
 #ifndef CAD_CADMENUBAR_HPP
 #define CAD_CADMENUBAR_HPP
 
+#include <QDoubleSpinBox>
 #include <QMenuBar>
 
 #include "input/InputMap.hpp"
@@ -24,6 +25,10 @@ public:
 
     void setRedoEnabled(bool enabled) const;
 
+    void setStereoEyeSep(double eyeSep) const;
+
+    void setStereoConvergence(double convergence) const;
+
     /// @brief Register a toggleable panel entry under the Tools menu; returns the action
     [[nodiscard]] QAction* addToolPanelAction(const QString &name) const;
 
@@ -32,14 +37,30 @@ signals:
 
     void redoRequested();
 
+    void darkThemeChanged(bool enabled);
+
+    void stereoEnabledChanged(bool enabled);
+
+    void stereoAutoChanged(bool enabled);
+
+    void stereoEyeSeparationChanged(double sep);
+
+    void stereoConvergenceChanged(double dist);
+
+    void stereoSepRatioChanged(double ratio);
+
     /// @brief Emitted just before the Edit menu opens so callers can refresh enabled state
     void editMenuAboutToShow();
 
 private:
     QMenu *m_editMenu;
     QMenu *m_toolsMenu;
+    QMenu *m_viewMenu;
+    QMenu *m_stereoMenu;
     QAction *m_undoAction;
     QAction *m_redoAction;
+    QDoubleSpinBox *m_stereoEyeSepSpinbox;
+    QDoubleSpinBox *m_stereoConvergenceSpinbox;
 };
 
 #endif //CAD_CADMENUBAR_HPP

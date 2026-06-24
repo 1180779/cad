@@ -78,6 +78,16 @@ public:
         update();
     }
 
+    void setInfiniteAxesMask(const int mask) {
+        m_renderSystem.setInfiniteAxesMask(mask);
+        update();
+    }
+
+    void setGridLodFade(const bool enabled) {
+        m_renderSystem.setGridLodFade(enabled);
+        update();
+    }
+
     void setCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy) {
         m_cursorPlacementStrategy = std::move(strategy);
     }
@@ -91,6 +101,42 @@ public:
         emit clickToAddModeChanged(active);
     }
 
+    void setStereoEnabled(const bool enabled) {
+        m_stereoEnabled = enabled;
+        update();
+    }
+
+    void setStereoAuto(const bool enabled) {
+        m_stereoAuto = enabled;
+        update();
+    }
+
+    /// @brief Separation = convergence / N
+    void setStereoSeparationRatio(const double divisor) {
+        m_stereoSeparationRatio = static_cast<cadm::cadf>(1.0 / divisor);
+        update();
+    }
+
+    void setStereoEyeSeparation(const double sep) {
+        const auto v = static_cast<cadm::cadf>(sep);
+        if (std::abs(v - m_stereoEyeSeparation) < cadm::gc_eps) {
+            return;
+        }
+        m_stereoEyeSeparation = v;
+        emit stereoEyeSepChanged(sep);
+        update();
+    }
+
+    void setStereoConvergence(const double dist) {
+        const auto v = static_cast<cadm::cadf>(dist);
+        if (std::abs(v - m_stereoConvergence) < cadm::gc_eps) {
+            return;
+        }
+        m_stereoConvergence = v;
+        emit stereoConvergenceChanged(dist);
+        update();
+    }
+
 signals :
     void viewportSelectionChanged();
 
@@ -102,6 +148,10 @@ signals :
     /// (e.g., point drag in progress, cursor placement)
     /// @note subscribe to this to sync the properties of displayed object properties
     void geometryChanged();
+
+    void stereoEyeSepChanged(double eyeSep);
+
+    void stereoConvergenceChanged(double convergence);
 
     void transformModeChanged(TransformMode mode, QString axisInfo);
 
@@ -220,6 +270,17 @@ private:
     bool m_transformApplied = false;
     QPoint m_transformStartMousePos;
     cadm::Vec3 m_transformPivot;
+
+    /// @brief Anaglyph stereoscopy state
+    bool m_stereoEnabled = false;
+    /// @brief Derive convergence/separation from camera distance to target each frame
+    bool m_stereoAuto = true;
+    /// @brief Eye separation as a fraction of convergence distance in auto mode (~1/30 comfort rule)
+    cadm::cadf m_stereoSeparationRatio = 1.0 / 30.0;
+    /// @brief Eye separation for stereoscopy in world units
+    cadm::cadf m_stereoEyeSeparation = 0.3;
+    /// @brief Projection-plane distance for stereoscopy in world units
+    cadm::cadf m_stereoConvergence = 10.0;
 };
 
 #endif //CAD_RENDERINGWINDOW_H

@@ -30,7 +30,7 @@ public:
 
     void bind() const;
 
-    void release() const;
+    static void release();
 
     [[nodiscard]] bool setUniform1(const std::string &name, int value) const;
 
