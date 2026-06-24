@@ -72,7 +72,9 @@ void OpenGlWidget::paintGL() {
         if (m_stereoAuto) {
             const auto convergence = m_cameraController.getActiveStrategy()->distanceToTarget();
             setStereoConvergence(convergence);
-            setStereoEyeSeparation(convergence * m_stereoSeparationRatio);
+            if (m_stereoAutoEyeSep) {
+                setStereoEyeSeparation(convergence * m_stereoSeparationRatio);
+            }
         }
 
         const auto [left, right, bottom, top, near, far] = projection.toFrustum();

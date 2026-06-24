@@ -45,6 +45,8 @@ signals:
 
     void stereoLuminanceChanged(bool enabled);
 
+    void stereoAutoEyeSepChanged(bool enabled);
+
     void stereoEyeSeparationChanged(double sep);
 
     void stereoConvergenceChanged(double dist);

@@ -84,6 +84,9 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     const auto *autoToggle = addCheckableAction(m_stereoMenu, "Auto (track camera)", true);
     connect(autoToggle, &QAction::toggled, this, &CadMenuBar::stereoAutoChanged);
 
+    const auto *autoEyeSepToggle = addCheckableAction(m_stereoMenu, "Auto eye distance", true);
+    connect(autoEyeSepToggle, &QAction::toggled, this, &CadMenuBar::stereoAutoEyeSepChanged);
+
     const auto *lumToggle = addCheckableAction(m_stereoMenu, "Luminance anaglyph", true);
     connect(lumToggle, &QAction::toggled, this, &CadMenuBar::stereoLuminanceChanged);
 
@@ -101,17 +104,28 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     );
     connect(stereoSeparationRatioSpin, &QDoubleSpinBox::valueChanged, this, &CadMenuBar::stereoSepRatioChanged);
 
+    const auto updateSpinEnables = [this, autoToggle, autoEyeSepToggle] {
+        const bool autoOn = autoToggle->isChecked();
+        m_stereoConvergenceSpinbox->setEnabled(!autoOn);
+        m_stereoEyeSepSpinbox->setEnabled(!(autoOn && autoEyeSepToggle->isChecked()));
+    };
     connect(
         autoToggle,
         &QAction::toggled,
         this,
-        [this](const bool on) {
-            m_stereoEyeSepSpinbox->setEnabled(!on);
-            m_stereoConvergenceSpinbox->setEnabled(!on);
+        [updateSpinEnables](bool) {
+            updateSpinEnables();
         }
     );
-    m_stereoEyeSepSpinbox->setEnabled(false);
-    m_stereoConvergenceSpinbox->setEnabled(false);
+    connect(
+        autoEyeSepToggle,
+        &QAction::toggled,
+        this,
+        [updateSpinEnables](bool) {
+            updateSpinEnables();
+        }
+    );
+    updateSpinEnables();
     // ReSharper disable once CppDFAMemoryLeak
 }
 
