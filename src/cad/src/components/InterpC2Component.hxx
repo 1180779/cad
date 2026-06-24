@@ -10,6 +10,7 @@
 
 #include "GeometryComponent.hpp"
 #include "GpuBuffer.hpp"
+#include "Vao.hxx"
 #include "PointRegistry.hpp"
 #include <cad_math/Vec3.hpp>
 
@@ -72,15 +73,15 @@ public:
     void syncToGpu() override;
 
     [[nodiscard]] GLuint getPatchVao() const {
-        return m_patchVao;
+        return m_patchVao.id();
     }
 
     [[nodiscard]] GLuint getControlPolylineVao() const {
-        return m_polylineVao;
+        return m_polylineVao.id();
     }
 
     [[nodiscard]] GLuint getBernsteinPolyVao() const {
-        return m_bernsteinPolyVao;
+        return m_bernsteinPolyVao.id();
     }
 
     [[nodiscard]] int getPatchIndexCount() const {
@@ -99,9 +100,9 @@ public:
     void ensureBernsteinUpToDate();
 
 private:
-    GLuint m_patchVao = 0;
-    GLuint m_polylineVao = 0;
-    GLuint m_bernsteinPolyVao = 0;
+    Vao m_patchVao;
+    Vao m_polylineVao;
+    Vao m_bernsteinPolyVao;
 
     PointRegistry *m_registry;
     std::vector<PointHandle> m_points;
@@ -124,12 +125,6 @@ private:
     void markDirty();
 
     void recompute();
-
-    void setupPatchVao(QOpenGLFunctions_4_5_Core *gl);
-
-    void setupPolylineVao(QOpenGLFunctions_4_5_Core *gl);
-
-    void setupBernsteinPolyVao(QOpenGLFunctions_4_5_Core *gl);
 };
 
 #endif //CAD_INTERPC2COMPONENT_HXX

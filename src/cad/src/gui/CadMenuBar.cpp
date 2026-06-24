@@ -44,6 +44,14 @@ namespace {
         menu->addAction(action);
         return spin;
     }
+
+    /// @brief Adds a checkable menu action
+    QAction* addCheckableAction(QMenu *menu, const QString &text, const bool checked = false) {
+        auto *action = menu->addAction(text);
+        action->setCheckable(true);
+        action->setChecked(checked);
+        return action;
+    }
 }
 
 CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
@@ -65,19 +73,15 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     m_toolsMenu = addMenu("Tools");
 
     m_viewMenu = addMenu("View");
-    auto *darkThemeToggle = m_viewMenu->addAction("Dark theme");
-    darkThemeToggle->setCheckable(true);
+    auto *darkThemeToggle = addCheckableAction(m_viewMenu, "Dark theme");
     connect(darkThemeToggle, &QAction::toggled, this, &CadMenuBar::darkThemeChanged);
 
     m_stereoMenu = addMenu("Stereo");
-    auto *stereoToggle = m_stereoMenu->addAction("Enable Stereoscopy");
-    stereoToggle->setCheckable(true);
+    auto *stereoToggle = addCheckableAction(m_stereoMenu, "Enable Stereoscopy");
     connect(stereoToggle, &QAction::toggled, this, &CadMenuBar::stereoEnabledChanged);
     m_stereoMenu->addSeparator();
 
-    auto *autoToggle = m_stereoMenu->addAction("Auto (track camera)");
-    autoToggle->setCheckable(true);
-    autoToggle->setChecked(true);
+    auto *autoToggle = addCheckableAction(m_stereoMenu, "Auto (track camera)", true);
     connect(autoToggle, &QAction::toggled, this, &CadMenuBar::stereoAutoChanged);
 
     m_stereoEyeSepSpinbox = addSpinBoxAction(m_stereoMenu, "Eye distance", 0.3, 0.0, 100.0, 0.05);
@@ -132,8 +136,5 @@ void CadMenuBar::setStereoConvergence(const double convergence) const {
 }
 
 QAction* CadMenuBar::addToolPanelAction(const QString &name) const {
-    auto *action = m_toolsMenu->addAction(name);
-    action->setCheckable(true);
-    action->setChecked(true);
-    return action;
+    return addCheckableAction(m_toolsMenu, name, true);
 }

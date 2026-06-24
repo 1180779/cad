@@ -2,33 +2,18 @@
 // Created by Radosław Głasek on 23.06.2026
 //
 
-#include "InterpC2Widget.hxx"
-
-#include <QFrame>
-#include <QLabel>
-#include <QVBoxLayout>
 #include <unordered_set>
 
+#include "InterpC2Widget.hxx"
 #include "../commands/CommandStack.hpp"
 #include "../commands/Commands.hpp"
+#include "WidgetBuilders.hxx"
+
+using namespace widgets;
 
 namespace {
     /// @brief Label shown for the row at position i, resolving the entity name
     QString pointLabel(Scene *scene, int i, PointHandle h);
-
-    // constructor helpers
-
-    void addTitle(QVBoxLayout *layout, const QString &text);
-
-    QCheckBox* addCheckbox(QVBoxLayout *layout, const QString &text, bool checked);
-
-    QListWidget* addPointList(QVBoxLayout *layout);
-
-    QPushButton* addRemoveButton(QVBoxLayout *layout);
-
-    void addSeparator(QVBoxLayout *layout);
-
-    VirtualPointPropertiesWidget* addPointProps(QVBoxLayout *layout);
 }
 
 InterpC2Widget::InterpC2Widget(InterpC2Component *curve, Scene *scene, QWidget *parent) : ComponentWidget(
@@ -45,8 +30,8 @@ InterpC2Widget::InterpC2Widget(InterpC2Component *curve, Scene *scene, QWidget *
     m_showPolylineCheckbox = addCheckbox(layout, "Show interpolation polyline", curve->getShowControlPolyline());
     m_showBernsteinPolygonCheckbox = addCheckbox(layout, "Show Bernstein polygon", curve->getShowBernsteinPolygon());
     m_showBernsteinCpsCheckbox = addCheckbox(layout, "Show Bernstein control points", curve->getShowBernsteinCps());
-    m_pointList = addPointList(layout);
-    m_removeButton = addRemoveButton(layout);
+    m_pointList = addPointList(layout, "Interpolated points:");
+    m_removeButton = addButton(layout, "Remove selected from curve");
     addSeparator(layout);
     m_pointProps = addPointProps(layout);
 
@@ -234,50 +219,5 @@ namespace {
             }
         }
         return QString("[%1] %2").arg(i).arg(name);
-    }
-
-    void addTitle(QVBoxLayout *layout, const QString &text) {
-        // ReSharper disable once CppDFAMemoryLeak
-        const auto title = new QLabel(text);
-        QFont f = title->font();
-        f.setBold(true);
-        title->setFont(f);
-        layout->addWidget(title);
-    }
-
-    QCheckBox* addCheckbox(QVBoxLayout *layout, const QString &text, const bool checked) {
-        const auto box = new QCheckBox(text);
-        box->setChecked(checked);
-        layout->addWidget(box);
-        return box;
-    }
-
-    QListWidget* addPointList(QVBoxLayout *layout) {
-        layout->addWidget(new QLabel("Interpolated points:"));
-        const auto list = new QListWidget;
-        list->setSelectionMode(QAbstractItemView::ExtendedSelection);
-        list->setMaximumHeight(120);
-        layout->addWidget(list);
-        return list;
-    }
-
-    QPushButton* addRemoveButton(QVBoxLayout *layout) {
-        const auto button = new QPushButton("Remove selected from curve");
-        layout->addWidget(button);
-        return button;
-    }
-
-    void addSeparator(QVBoxLayout *layout) {
-        // ReSharper disable once CppDFAMemoryLeak
-        const auto sep = new QFrame;
-        sep->setFrameShape(QFrame::HLine);
-        layout->addWidget(sep);
-    }
-
-    VirtualPointPropertiesWidget* addPointProps(QVBoxLayout *layout) {
-        const auto props = new VirtualPointPropertiesWidget;
-        layout->addWidget(props);
-        props->setActive(false);
-        return props;
     }
 }

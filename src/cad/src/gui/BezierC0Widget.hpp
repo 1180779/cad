@@ -34,9 +34,15 @@ public:
     /// @brief Mirror the scene's entity selection onto the m_pointList rows
     void syncSelection();
 
-    signals  :
-    
+private:
+    /// @brief Remove the selected control point from the curve
+    void onDetachClicked();
 
+    /// @brief Mirror the list selection to the scene and load the point editor when
+    /// exactly one row is selected
+    void onListSelectionChanged();
+
+signals :
     void pointSelectionChanged(QList<Entity*> selected);
 
 private:

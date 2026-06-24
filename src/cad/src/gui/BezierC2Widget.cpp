@@ -4,41 +4,20 @@
 
 #include "BezierC2Widget.hpp"
 
-#include <QFrame>
-#include <QLabel>
-#include <QVBoxLayout>
 #include <unordered_set>
 
 #include "../commands/CommandStack.hpp"
 #include "../commands/Commands.hpp"
+#include "WidgetBuilders.hxx"
+
+using namespace widgets;
 
 namespace {
     /// @brief Label shown for a de Boor row at position i, resolving the entity name
-    QString deBoorLabel(Scene *scene, const int i, const PointHandle h) {
-        QString name = QString("Point #%1").arg(h);
-        if (scene) {
-            if (const auto entityOpt = scene->getEntityByPointHandle(h)) {
-                name = QString::fromStdString(entityOpt.value()->getName());
-            }
-        }
-        return QString("[%1] %2").arg(i).arg(name);
-    }
+    QString deBoorLabel(Scene *scene, int i, PointHandle h);
 
     /// @brief Label for a Bernstein row in the shared-endpoint layout
-    QString bernsteinLabel(const int i, const int segments) {
-        const int seg = i / 3;
-        if (const int local = i % 3;
-            local != 0) {
-            return QString("b%1 [seg %2]").arg(local).arg(seg);
-        }
-        if (i == 0) {
-            return "b0 [seg 0]";
-        }
-        if (seg == segments) {
-            return QString("b3 [seg %1]").arg(seg - 1);
-        }
-        return QString("b3 [seg %1] / b0 [seg %2]").arg(seg - 1).arg(seg);
-    }
+    QString bernsteinLabel(int i, int segments);
 }
 
 BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget *parent) : ComponentWidget(
@@ -51,218 +30,121 @@ BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget 
     const auto layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    // ReSharper disable once CppDFAMemoryLeak
-    const auto titleLabel = new QLabel("Bezier C2 Curve");
-    QFont f = titleLabel->font();
-    f.setBold(true);
-    titleLabel->setFont(f);
-    layout->addWidget(titleLabel);
+    addTitle(layout, "Bezier C2 Curve");
+    m_showDeBoorPolygonCheckbox = addCheckbox(layout, "Show de Boor polygon", bezier->getShowDeBoorPolygon());
+    m_showBernsteinPolygonCheckbox = addCheckbox(layout, "Show Bernstein polygon", bezier->getShowBernsteinPolygon());
+    m_showBernsteinCpsCheckbox = addCheckbox(layout, "Show Bernstein control points", bezier->getShowBernsteinCps());
 
-    m_showDeBoorPolygonCheckbox = new QCheckBox("Show de Boor polygon");
-    m_showDeBoorPolygonCheckbox->setChecked(bezier->getShowDeBoorPolygon());
-    layout->addWidget(m_showDeBoorPolygonCheckbox);
-
-    m_showBernsteinPolygonCheckbox = new QCheckBox("Show Bernstein polygon");
-    m_showBernsteinPolygonCheckbox->setChecked(bezier->getShowBernsteinPolygon());
-    layout->addWidget(m_showBernsteinPolygonCheckbox);
-
-    m_showBernsteinCpsCheckbox = new QCheckBox("Show Bernstein control points");
-    m_showBernsteinCpsCheckbox->setChecked(bezier->getShowBernsteinCps());
-    layout->addWidget(m_showBernsteinCpsCheckbox);
-
-    // de Boor list
-    layout->addWidget(new QLabel("De Boor points:"));
-    m_deBoorList = new QListWidget;
-    m_deBoorList->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    m_deBoorList->setMaximumHeight(120);
-    layout->addWidget(m_deBoorList);
-
-    m_removeButton = new QPushButton("Remove selected from curve");
-    layout->addWidget(m_removeButton);
-
-    // ReSharper disable once CppDFAMemoryLeak
-    auto *sep1 = new QFrame;
-    sep1->setFrameShape(QFrame::HLine);
-    layout->addWidget(sep1);
-
-    // Bernstein list
-    layout->addWidget(new QLabel("Bernstein points:"));
-    m_bernsteinList = new QListWidget;
-    m_bernsteinList->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_bernsteinList->setMaximumHeight(120);
-    layout->addWidget(m_bernsteinList);
-
-    // ReSharper disable once CppDFAMemoryLeak
-    auto *sep2 = new QFrame;
-    sep2->setFrameShape(QFrame::HLine);
-    layout->addWidget(sep2);
-
-    // shared editor for the selected de Boor / Bernstein point
-    m_pointProps = new VirtualPointPropertiesWidget;
-    layout->addWidget(m_pointProps);
-    m_pointProps->setActive(false);
+    m_deBoorList = addPointList(layout, "De Boor points:");
+    m_removeButton = addButton(layout, "Remove selected from curve");
+    addSeparator(layout);
+    m_bernsteinList = addPointList(layout, "Bernstein points:", QAbstractItemView::SingleSelection);
+    addSeparator(layout);
+    m_pointProps = addPointProps(layout);
 
     refreshList();
-    m_bernsteinList->setEnabled(true);
 
-    // connections
     connect(
         m_showDeBoorPolygonCheckbox,
         &QCheckBox::toggled,
         this,
-        [this](const bool checked) {
-            auto *b = m_bezier;
-            pushEdit(
-                [b, checked] {
-                    b->setShowDeBoorPolygon(checked);
-                },
-                [b, checked] {
-                    b->setShowDeBoorPolygon(!checked);
-                },
-                m_showDeBoorPolygonCheckbox,
-                false
-            );
-        }
+        makeBoolToggle(m_bezier, &BezierC2Component::setShowDeBoorPolygon, m_showDeBoorPolygonCheckbox)
     );
-
     connect(
         m_showBernsteinPolygonCheckbox,
         &QCheckBox::toggled,
         this,
-        [this](const bool checked) {
-            auto *b = m_bezier;
-            pushEdit(
-                [b, checked] {
-                    b->setShowBernsteinPolygon(checked);
-                },
-                [b, checked] {
-                    b->setShowBernsteinPolygon(!checked);
-                },
-                m_showBernsteinPolygonCheckbox,
-                false
-            );
-        }
+        makeBoolToggle(m_bezier, &BezierC2Component::setShowBernsteinPolygon, m_showBernsteinPolygonCheckbox)
     );
-
     connect(
         m_showBernsteinCpsCheckbox,
         &QCheckBox::toggled,
         this,
-        [this](const bool checked) {
-            auto *b = m_bezier;
-            pushEdit(
-                [b, checked] {
-                    b->setShowBernsteinCps(checked);
-                },
-                [b, checked] {
-                    b->setShowBernsteinCps(!checked);
-                },
-                m_showBernsteinPolygonCheckbox,
-                false
-            );
+        makeBoolToggle(m_bezier, &BezierC2Component::setShowBernsteinCps, m_showBernsteinCpsCheckbox)
+    );
+    connect(m_removeButton, &QPushButton::clicked, this, &BezierC2Widget::onRemoveClicked);
+    connect(m_deBoorList, &QListWidget::itemSelectionChanged, this, &BezierC2Widget::onDeBoorSelectionChanged);
+    connect(m_bernsteinList, &QListWidget::itemSelectionChanged, this, &BezierC2Widget::onBernsteinSelectionChanged);
+    connect(m_pointProps, &VirtualPointPropertiesWidget::coordinateEdited, this, &BezierC2Widget::onCoordinateEdited);
+}
+
+void BezierC2Widget::onRemoveClicked() {
+    const int row = m_deBoorList->currentRow();
+    if (row < 0) {
+        return;
+    }
+    if (const PointHandle removing = m_bezier->getDeBoorPoints()[row];
+        m_selectedKind == SelectedPointKind::deBoor && m_selectedDeBoorHandle == removing) {
+        m_selectedKind = SelectedPointKind::none;
+        m_selectedDeBoorHandle = InvalidPointHandle;
+        m_pointProps->setActive(false);
+    }
+    if (const auto &cps = m_bezier->getDeBoorPoints();
+        m_scene && m_commandStack && row < static_cast<int>(cps.size())) {
+        m_commandStack->push(std::make_unique<RemoveControlPointCommand>(*m_scene, m_entityId, cps[row]));
+    }
+    else {
+        m_bezier->removeControlPointAt(row);
+    }
+    reconcileDeBoorList();
+    reconcileBernsteinList();
+    emit propertyChanged();
+}
+
+void BezierC2Widget::onDeBoorSelectionChanged() {
+    if (!m_scene) {
+        return;
+    }
+
+    QList<Entity*> selected;
+    for (const auto *item : m_deBoorList->selectedItems()) {
+        const auto h = item->data(Qt::UserRole).value<PointHandle>();
+        if (const auto opt = m_scene->getEntityByPointHandle(h)) {
+            selected.append(opt.value());
         }
-    );
+    }
+    emit pointSelectionChanged(selected);
 
-    connect(
-        m_removeButton,
-        &QPushButton::clicked,
-        this,
-        [this] {
-            const int row = m_deBoorList->currentRow();
-            if (row < 0) {
-                return;
-            }
-            if (const PointHandle removing = m_bezier->getDeBoorPoints()[row];
-                m_selectedKind == SelectedPointKind::deBoor && m_selectedDeBoorHandle == removing) {
-                m_selectedKind = SelectedPointKind::none;
-                m_selectedDeBoorHandle = InvalidPointHandle;
-                m_pointProps->setActive(false);
-            }
-            if (const auto &cps = m_bezier->getDeBoorPoints();
-                m_scene && m_commandStack && row < static_cast<int>(cps.size())) {
-                m_commandStack->push(std::make_unique<RemoveControlPointCommand>(*m_scene, m_entityId, cps[row]));
-            }
-            else {
-                m_bezier->removeControlPointAt(row);
-            }
-            reconcileDeBoorList();
-            reconcileBernsteinList();
-            emit propertyChanged();
+    // update spinboxes for the single current item
+    const auto *cur = m_deBoorList->currentItem();
+    if (!cur || !cur->isSelected()) {
+        if (m_selectedKind == SelectedPointKind::deBoor) {
+            m_selectedKind = SelectedPointKind::none;
+            m_pointProps->setActive(false);
         }
-    );
+        return;
+    }
 
-    connect(
-        m_deBoorList,
-        &QListWidget::itemSelectionChanged,
-        this,
-        [this] {
-            if (!m_scene) {
-                return;
-            }
+    // clear bernstein selection
+    const QSignalBlocker b(m_bernsteinList);
+    m_bernsteinList->clearSelection();
 
-            QList<Entity*> selected;
-            for (const auto *item : m_deBoorList->selectedItems()) {
-                const auto h = item->data(Qt::UserRole).value<PointHandle>();
-                if (const auto opt = m_scene->getEntityByPointHandle(h)) {
-                    selected.append(opt.value());
-                }
-            }
-            emit pointSelectionChanged(selected);
+    m_selectedKind = SelectedPointKind::deBoor;
+    m_selectedDeBoorHandle = cur->data(Qt::UserRole).value<PointHandle>();
+    m_selectedBernsteinIndex = -1;
+    m_pointProps->setActive(true);
+    updateSpinboxesForDeBoor(m_selectedDeBoorHandle);
+}
 
-            // update spinboxes for the single current item
-            const auto *cur = m_deBoorList->currentItem();
-            if (!cur || !cur->isSelected()) {
-                if (m_selectedKind == SelectedPointKind::deBoor) {
-                    m_selectedKind = SelectedPointKind::none;
-                    m_pointProps->setActive(false);
-                }
-                return;
-            }
-
-            // clear bernstein selection
-            const QSignalBlocker b(m_bernsteinList);
-            m_bernsteinList->clearSelection();
-
-            m_selectedKind = SelectedPointKind::deBoor;
-            m_selectedDeBoorHandle = cur->data(Qt::UserRole).value<PointHandle>();
-            m_selectedBernsteinIndex = -1;
-            m_pointProps->setActive(true);
-            updateSpinboxesForDeBoor(m_selectedDeBoorHandle);
+void BezierC2Widget::onBernsteinSelectionChanged() {
+    const auto *cur = m_bernsteinList->currentItem();
+    if (!cur || !cur->isSelected()) {
+        if (m_selectedKind == SelectedPointKind::bernstein) {
+            m_selectedKind = SelectedPointKind::none;
+            m_pointProps->setActive(false);
         }
-    );
+        return;
+    }
 
-    connect(
-        m_bernsteinList,
-        &QListWidget::itemSelectionChanged,
-        this,
-        [this] {
-            const auto *cur = m_bernsteinList->currentItem();
-            if (!cur || !cur->isSelected()) {
-                if (m_selectedKind == SelectedPointKind::bernstein) {
-                    m_selectedKind = SelectedPointKind::none;
-                    m_pointProps->setActive(false);
-                }
-                return;
-            }
+    // clear de Boor selection
+    const QSignalBlocker b(m_deBoorList);
+    m_deBoorList->clearSelection();
 
-            // clear de Boor selection
-            const QSignalBlocker b(m_deBoorList);
-            m_deBoorList->clearSelection();
-
-            m_selectedKind = SelectedPointKind::bernstein;
-            m_selectedDeBoorHandle = InvalidPointHandle;
-            m_selectedBernsteinIndex = cur->data(Qt::UserRole).toInt();
-            m_pointProps->setActive(true);
-            updateSpinboxesForBernstein(m_selectedBernsteinIndex);
-        }
-    );
-
-    connect(
-        m_pointProps,
-        &VirtualPointPropertiesWidget::coordinateEdited,
-        this,
-        &BezierC2Widget::onCoordinateEdited
-    );
+    m_selectedKind = SelectedPointKind::bernstein;
+    m_selectedDeBoorHandle = InvalidPointHandle;
+    m_selectedBernsteinIndex = cur->data(Qt::UserRole).toInt();
+    m_pointProps->setActive(true);
+    updateSpinboxesForBernstein(m_selectedBernsteinIndex);
 }
 
 void BezierC2Widget::onCoordinateEdited(const cadm::Vec3 newPos) {
@@ -465,4 +347,31 @@ void BezierC2Widget::updateSpinboxesForBernstein(const int index) const {
         return;
     }
     m_pointProps->setPosition(positions[index]);
+}
+
+namespace {
+    QString deBoorLabel(Scene *scene, const int i, const PointHandle h) {
+        QString name = QString("Point #%1").arg(h);
+        if (scene) {
+            if (const auto entityOpt = scene->getEntityByPointHandle(h)) {
+                name = QString::fromStdString(entityOpt.value()->getName());
+            }
+        }
+        return QString("[%1] %2").arg(i).arg(name);
+    }
+
+    QString bernsteinLabel(const int i, const int segments) {
+        const int seg = i / 3;
+        if (const int local = i % 3;
+            local != 0) {
+            return QString("b%1 [seg %2]").arg(local).arg(seg);
+        }
+        if (i == 0) {
+            return "b0 [seg 0]";
+        }
+        if (seg == segments) {
+            return QString("b3 [seg %1]").arg(seg - 1);
+        }
+        return QString("b3 [seg %1] / b0 [seg %2]").arg(seg - 1).arg(seg);
+    }
 }

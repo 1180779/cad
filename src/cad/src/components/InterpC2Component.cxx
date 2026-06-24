@@ -30,18 +30,9 @@ InterpC2Component::~InterpC2Component() {
     }
 
     const auto gl = getGl();
-    if (m_patchVao) {
-        gl->glDeleteVertexArrays(1, &m_patchVao);
-        m_patchVao = 0;
-    }
-    if (m_polylineVao) {
-        gl->glDeleteVertexArrays(1, &m_polylineVao);
-        m_polylineVao = 0;
-    }
-    if (m_bernsteinPolyVao) {
-        gl->glDeleteVertexArrays(1, &m_bernsteinPolyVao);
-        m_bernsteinPolyVao = 0;
-    }
+    m_patchVao.deleteGpu(gl);
+    m_polylineVao.deleteGpu(gl);
+    m_bernsteinPolyVao.deleteGpu(gl);
     m_bernsteinVbo.deleteGpu(gl);
     m_patchEbo.deleteGpu(gl);
     m_polylineEbo.deleteGpu(gl);
@@ -170,51 +161,15 @@ void InterpC2Component::syncToGpu() {
     m_patchEbo.syncToGpu(gl);
     m_polylineEbo.syncToGpu(gl);
 
-    if (m_patchVao == 0 && segmentCount() > 0) {
-        setupPatchVao(gl);
+    if (!m_patchVao.created() && segmentCount() > 0) {
+        m_patchVao.setup(gl, m_bernsteinVbo.vboId(), m_patchEbo.vboId());
     }
-    if (m_bernsteinPolyVao == 0 && segmentCount() > 0) {
-        setupBernsteinPolyVao(gl);
+    if (!m_bernsteinPolyVao.created() && segmentCount() > 0) {
+        m_bernsteinPolyVao.setup(gl, m_bernsteinVbo.vboId(), m_patchEbo.vboId());
     }
-    if (m_polylineVao == 0 && m_points.size() >= 2) {
-        setupPolylineVao(gl);
+    if (!m_polylineVao.created() && m_points.size() >= 2) {
+        m_polylineVao.setup(gl, m_registry->getPositionVBO(), m_polylineEbo.vboId());
     }
 
     m_needsUpdate = false;
-}
-
-void InterpC2Component::setupPatchVao(QOpenGLFunctions_4_5_Core *gl) {
-    gl->glGenVertexArrays(1, &m_patchVao);
-    gl->glBindVertexArray(m_patchVao);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, m_bernsteinVbo.vboId());
-    gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_patchEbo.vboId());
-    gl->glBindVertexArray(0);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
-void InterpC2Component::setupBernsteinPolyVao(QOpenGLFunctions_4_5_Core *gl) {
-    gl->glGenVertexArrays(1, &m_bernsteinPolyVao);
-    gl->glBindVertexArray(m_bernsteinPolyVao);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, m_bernsteinVbo.vboId());
-    gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_patchEbo.vboId());
-    gl->glBindVertexArray(0);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
-void InterpC2Component::setupPolylineVao(QOpenGLFunctions_4_5_Core *gl) {
-    gl->glGenVertexArrays(1, &m_polylineVao);
-    gl->glBindVertexArray(m_polylineVao);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, m_registry->getPositionVBO());
-    gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_polylineEbo.vboId());
-    gl->glBindVertexArray(0);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }

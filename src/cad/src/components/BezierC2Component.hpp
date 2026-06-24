@@ -15,6 +15,7 @@
 #include <cad_math/Vec3.hpp>
 
 #include "INewPointsTargetComponent.hpp"
+#include "Vao.hxx"
 
 /// @brief Multi-segment cubic Bézier curve with C2 continuity between segments
 ///
@@ -84,20 +85,20 @@ public:
     void syncToGpu() override;
 
     [[nodiscard]] GLuint getPatchVao() const {
-        return m_patchVao;
+        return m_patchVao.id();
     }
 
     [[nodiscard]] GLuint getDeBoorVao() const {
-        return m_deBoorVao;
+        return m_deBoorVao.id();
     }
 
     /// @brief Generic alias used by the shared render path
     [[nodiscard]] GLuint getControlPolylineVao() const {
-        return m_deBoorVao;
+        return m_deBoorVao.id();
     }
 
     [[nodiscard]] GLuint getBernsteinPolyVao() const {
-        return m_bernsteinPolyVao;
+        return m_bernsteinPolyVao.id();
     }
 
     [[nodiscard]] int getPatchIndexCount() const {
@@ -127,17 +128,17 @@ private:
     /// @brief Patch VAO
     /// @details Binds m_bernsteinVBO, 
     /// EBO holds 4 indices per segment
-    GLuint m_patchVao = 0;
+    Vao m_patchVao;
 
-    /// @brief De Boor polygon VAO; 
-    /// @details Binds PointRegistry position VBO, 
+    /// @brief De Boor polygon VAO;
+    /// @details Binds PointRegistry position VBO,
     /// EBO holds de Boor PointHandle indices
-    GLuint m_deBoorVao = 0;
+    Vao m_deBoorVao;
 
     /// @brief Bernstein polygon VAO
-    /// @details binds m_bernsteinVBO, 
+    /// @details binds m_bernsteinVBO,
     /// EBO = same patch indices
-    GLuint m_bernsteinPolyVao = 0;
+    Vao m_bernsteinPolyVao;
 
     PointRegistry *m_registry;
     std::vector<PointHandle> m_deBoorPoints;
@@ -186,12 +187,6 @@ private:
     }
 
     void recomputeBernstein();
-
-    void setupPatchVao(QOpenGLFunctions_4_5_Core *gl);
-
-    void setupDeBoorVao(QOpenGLFunctions_4_5_Core *gl);
-
-    void setupBernsteinPolyVao(QOpenGLFunctions_4_5_Core *gl);
 };
 
 #endif //CAD_BEZIERC2COMPONENT_HPP

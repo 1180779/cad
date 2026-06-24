@@ -130,6 +130,6 @@ void main()
 
     gl_FragDepth = closestDepth;
     // un-premultiply: the global blend is SRC_ALPHA/ONE_MINUS_SRC_ALPHA, so emitting the
-    // premultiplied color would darken partial-coverage pixels by alpha^2 (the blotching)
+    // premultiplied color would darken partial-coverage pixels by alpha^2
     FragColor = vec4(totalColorPremult / max(totalAlpha, 1e-4), totalAlpha);
 }
