@@ -24,12 +24,9 @@ public:
         Scene &scene,
         const cadm::Mat4 &view,
         const cadm::Mat4 &projection,
-        const cadm::Mat4 &invVp,
-        bool drawHelpers = true
+        const cadm::Mat4 &invVp
     ) const;
 
-    /// @brief Anaglyph stereoscopy: render the scene once per eye into offscreen targets,
-    /// then composite them
     void renderStereo(
         Scene &scene,
         const cadm::Mat4 &leftView,

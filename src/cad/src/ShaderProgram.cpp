@@ -91,9 +91,7 @@ void ShaderProgram::bind() const {
     gl->glUseProgram(m_program);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-
-void ShaderProgram::release() const {
+void ShaderProgram::release() {
     const auto gl = getGl();
     gl->glUseProgram(0);
 }

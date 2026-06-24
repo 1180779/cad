@@ -113,6 +113,7 @@ void RenderSystem::initialize() {
     m_screenQuad = std::make_unique<Quad>();
 
     const auto gl = getGl();
+    // UBOs
     gl->glGenBuffers(1, &m_cameraUbo);
     gl->glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUbo);
     gl->glBufferData(GL_UNIFORM_BUFFER, 4 * sizeof(cadm::Mat4), nullptr, GL_DYNAMIC_DRAW);
@@ -155,20 +156,17 @@ void RenderSystem::render(
     Scene &scene,
     const cadm::Mat4 &view,
     const cadm::Mat4 &projection,
-    const cadm::Mat4 &invVp,
-    const bool drawHelpers
+    const cadm::Mat4 &invVp
 ) const {
     const auto gl = getGl();
 
     uploadCameraUbo(view, projection, invVp);
     uploadPaletteUbo();
 
-    if (drawHelpers) {
-        renderInfiniteGrid(view);
-        gl->glDepthFunc(GL_LEQUAL);
-        renderInfiniteAxes();
-        gl->glDepthFunc(GL_LESS);
-    }
+    renderInfiniteGrid(view);
+    gl->glDepthFunc(GL_LEQUAL);
+    renderInfiniteAxes();
+    gl->glDepthFunc(GL_LESS);
 
     m_wireframeShader->bind();
     const QColor &lc = theme::active().line;
@@ -176,9 +174,9 @@ void RenderSystem::render(
         m_wireframeShader->setUniform4(
             "u_overrideColor",
             cadm::vec4{
-            static_cast<cadm::cadf>(lc.redF()),
-            static_cast<cadm::cadf>(lc.greenF()),
-            static_cast<cadm::cadf>(lc.blueF()),
+            lc.redF(),
+            lc.greenF(),
+            lc.blueF(),
             1.0f
             }
         )
@@ -194,12 +192,8 @@ void RenderSystem::render(
     renderBezierCurves(scene, view, projection);
     GET_GL_ERRORS();
     renderControlPoints(scene, gl);
-
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    GET_GL_ERRORS();
     renderActiveCursorColors(scene);
-    m_wireframeShader->release();
-
     GET_GL_ERRORS();
 }
 
@@ -211,10 +205,6 @@ void RenderSystem::renderStereo(
     const cadm::Mat4 &rightProjection
 ) {
     const auto gl = getGl();
-
-    // QOpenGLWidget renders into its own FBO, not 0 - restore exactly what was bound.
-    // Capture before ensureStereoTargets(), which leaves one of our FBOs bound on the
-    // frame it (re)creates them - capturing after would composite into the offscreen FBO.
     GLint prevFbo = 0;
     gl->glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFbo);
 
@@ -225,13 +215,11 @@ void RenderSystem::renderStereo(
     for (int i = 0; i < 2; ++i) {
         gl->glBindFramebuffer(GL_FRAMEBUFFER, m_stereoFbo[i]);
         gl->glViewport(0, 0, m_stereoW, m_stereoH);
-        // clear to the theme background; the channel-swizzle composite preserves any
-        // neutral gray (left.r == right.g == right.b), so light and dark both reproduce it
         const auto &bg = theme::active().viewport;
         gl->glClearColor(bg.redF(), bg.greenF(), bg.blueF(), 1.0f);
         gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         const cadm::Mat4 invVp = views[i]->inversedView() * projs[i]->inversedFrustum();
-        render(scene, *views[i], *projs[i], invVp, true);
+        render(scene, *views[i], *projs[i], invVp);
     }
 
     gl->glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);
@@ -246,7 +234,7 @@ void RenderSystem::renderStereo(
     SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uLeft", 0));
     SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uRight", 1));
     m_screenQuad->draw();
-    m_stereoCompositeShader->release();
+    ShaderProgram::release();
     gl->glActiveTexture(GL_TEXTURE0);
     gl->glEnable(GL_DEPTH_TEST);
 }
@@ -285,7 +273,7 @@ void RenderSystem::renderSelectionRect(
     gl->glDrawArrays(GL_LINE_LOOP, 0, 4);
 
     gl->glBindVertexArray(0);
-    m_selectionRectShader->release();
+    ShaderProgram::release();
 }
 
 void RenderSystem::renderPivotMarker(
@@ -308,7 +296,7 @@ void RenderSystem::renderPivotMarker(
         nullptr
     );
     gl->glBindVertexArray(0);
-    m_wireframeShader->release();
+    ShaderProgram::release();
 }
 
 void RenderSystem::renderTransformAxis(
@@ -329,7 +317,7 @@ void RenderSystem::renderTransformAxis(
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", axesMask));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", 0));
     m_screenQuad->draw();
-    m_axesShader->release();
+    ShaderProgram::release();
 }
 
 void RenderSystem::shutdown() {
@@ -337,6 +325,10 @@ void RenderSystem::shutdown() {
     UNIQUE_PTR_RELEASE_CHECK(m_wireframeShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_axesShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_gridShader.release());
+    UNIQUE_PTR_RELEASE_CHECK(m_selectionRectShader.release());
+    UNIQUE_PTR_RELEASE_CHECK(m_pointShader.release());
+    UNIQUE_PTR_RELEASE_CHECK(m_bezierCurveShader.release());
+    UNIQUE_PTR_RELEASE_CHECK(m_stereoCompositeShader.release());
 
     if (m_selectionRectVAO != 0) {
         const auto gl = getGl();
@@ -367,7 +359,7 @@ void RenderSystem::renderInfiniteGrid(
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform3("u_viewDir", cameraForward));
     SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
     m_screenQuad->draw();
-    m_gridShader->release();
+    ShaderProgram::release();
 }
 
 void RenderSystem::renderInfiniteAxes() const {
@@ -384,7 +376,7 @@ void RenderSystem::renderInfiniteAxes() const {
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", m_infiniteAxesMask));
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
     m_screenQuad->draw();
-    m_axesShader->release();
+    ShaderProgram::release();
 }
 
 void RenderSystem::renderLineGeometry(const Scene &scene) const {
@@ -427,15 +419,17 @@ void RenderSystem::renderActiveCursorColors(const Scene &scene) const {
     }
     const auto gl = getGl();
     const auto *pGeo = geometry.value();
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
     gl->glBindVertexArray(pGeo->m_VAO);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pGeo->m_EBO_Lines);
-    // LEQUAL: same fragments were already drawn (black) in the first pass at equal depth
     gl->glDepthFunc(GL_LEQUAL);
     gl->glDrawElements(GL_LINES, static_cast<GLsizei>(pGeo->m_lineIndices.size()), GL_UNSIGNED_INT, nullptr);
     gl->glDepthFunc(GL_LESS);
     gl->glBindVertexArray(0);
+    ShaderProgram::release();
 }
 
 void RenderSystem::renderTriangleGeometry(const Scene &scene) const {
@@ -473,7 +467,7 @@ void RenderSystem::renderTriangleGeometry(const Scene &scene) const {
     gl->glDepthMask(GL_TRUE);
 
     gl->glBindVertexArray(0);
-    m_wireframeShader->release();
+    ShaderProgram::release();
 }
 
 void RenderSystem::renderControlPoints(
@@ -492,7 +486,7 @@ void RenderSystem::renderControlPoints(
             nullptr
         );
         gl->glBindVertexArray(0);
-        m_pointShader->release();
+        ShaderProgram::release();
     }
 }
 
@@ -609,7 +603,7 @@ void RenderSystem::renderC0BezierCurves(
     forEachBezier(renderControlPolygon);
     gl->glBindVertexArray(0);
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
-    m_wireframeShader->release();
+    ShaderProgram::release();
 
     // tessellated curves
     m_bezierCurveShader->bind();
@@ -682,7 +676,7 @@ void RenderSystem::renderC2BezierCurves(
         }
     );
     gl->glBindVertexArray(0);
-    m_bezierCurveShader->release();
+    ShaderProgram::release();
 
     // overlays (bernstein points/polygon, de Boor polygon)
     m_wireframeShader->bind();
@@ -732,7 +726,7 @@ void RenderSystem::renderC2BezierCurves(
     );
     gl->glBindVertexArray(0);
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
-    m_wireframeShader->release();
+    ShaderProgram::release();
 }
 
 void RenderSystem::renderBezierCurves(
