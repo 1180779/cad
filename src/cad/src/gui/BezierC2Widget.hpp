@@ -88,6 +88,15 @@ private:
     /// (de Boor or Bernstein) is currently selected
     void onCoordinateEdited(cadm::Vec3 newPos);
 
+    /// @brief Remove the selected de Boor point from the curve
+    void onRemoveClicked();
+
+    /// @brief Handle de Boor list selection
+    void onDeBoorSelectionChanged();
+
+    /// @brief Handle Bernstein list selection
+    void onBernsteinSelectionChanged();
+
     BezierC2Component *m_bezier;
     Scene *m_scene;
 
