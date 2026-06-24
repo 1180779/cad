@@ -702,6 +702,8 @@ int main(int argc, char *argv[]) {
         }
     );
     QObject::connect(menuBar, &CadMenuBar::stereoEnabledChanged, glWidget, &OpenGlWidget::setStereoEnabled);
+    QObject::connect(menuBar, &CadMenuBar::stereoAutoChanged, glWidget, &OpenGlWidget::setStereoAuto);
+    QObject::connect(menuBar, &CadMenuBar::stereoSepRatioChanged, glWidget, &OpenGlWidget::setStereoSeparationRatio);
     QObject::connect(
         menuBar,
         &CadMenuBar::stereoEyeSeparationChanged,
@@ -709,6 +711,8 @@ int main(int argc, char *argv[]) {
         &OpenGlWidget::setStereoEyeSeparation
     );
     QObject::connect(menuBar, &CadMenuBar::stereoConvergenceChanged, glWidget, &OpenGlWidget::setStereoConvergence);
+    QObject::connect(glWidget, &OpenGlWidget::stereoEyeSepChanged, menuBar, &CadMenuBar::setStereoEyeSep);
+    QObject::connect(glWidget, &OpenGlWidget::stereoConvergenceChanged, menuBar, &CadMenuBar::setStereoConvergence);
 
     wireUndoRedo(menuBar, glWidget);
     wireSelectionSync(glWidget, hierarchyWidget, entityPropertiesWidget);

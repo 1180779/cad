@@ -27,6 +27,8 @@ public:
 
     void setLookTarget(cadm::Vec3 target) override;
 
+    cadm::cadf distanceToTarget() override;
+
     bool handleCameraMove(CameraAction action, QPoint mouseDelta) override;
 
     bool handleCameraKeyAction(CameraKeyAction action) override;

@@ -35,6 +35,9 @@ public:
 
     virtual void setLookTarget(cadm::Vec3 target) = 0;
 
+    /// @brief Distance from the camera to its look target, in world units
+    virtual cadm::cadf distanceToTarget() = 0;
+
     void syncAspectRatio() const;
 
     virtual bool handleCameraMove(CameraAction action, QPoint delta) = 0;

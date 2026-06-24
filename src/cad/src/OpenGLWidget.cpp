@@ -69,6 +69,12 @@ void OpenGlWidget::paintGL() {
     const auto invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
 
     if (m_stereoEnabled && projection.isPerspective()) {
+        if (m_stereoAuto) {
+            const auto convergence = m_cameraController.getActiveStrategy()->distanceToTarget();
+            setStereoConvergence(convergence);
+            setStereoEyeSeparation(convergence * m_stereoSeparationRatio);
+        }
+
         const auto [left, right, bottom, top, near, far] = projection.toFrustum();
         const cadm::cadf halfH = static_cast<cadm::cadf>(0.5) * (top - bottom);
         const cadm::cadf halfW = static_cast<cadm::cadf>(0.5) * (right - left);

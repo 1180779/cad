@@ -75,6 +75,15 @@ void BlenderCameraStrategy::setLookTarget(const cadm::Vec3 target) {
     camera.value()->setTarget(target);
 }
 
+cadm::cadf BlenderCameraStrategy::distanceToTarget() {
+    const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
+    if (!camera) {
+        EXPECTED_COMPONENT_MISSING();
+        return 1.0;
+    }
+    return camera.value()->getRadius();
+}
+
 bool BlenderCameraStrategy::handleCameraMove(const CameraAction action, const QPoint delta) {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
     if (!camera) {

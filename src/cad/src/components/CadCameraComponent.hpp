@@ -212,9 +212,7 @@ private:
     cadm::cadf m_rotationSpeed{0.005};
     cadm::cadf m_zoomFactor{1.1};
 
-    signals  :
-    
-
+signals :
     void positionChanged(double position);
 
     void positionXChanged(double x);
