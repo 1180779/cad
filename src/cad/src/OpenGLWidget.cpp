@@ -83,12 +83,12 @@ void OpenGlWidget::paintGL() {
         const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (near / m_stereoConvergence);
         const cadm::cadf halfSep = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation;
 
-        const auto leftProj = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, near, far);
-        const auto rightProj = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, near, far);
+        const auto leftProj = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, near, far);
+        const auto rightProj = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, near, far);
         const auto leftView = cadm::Mat4::translation(halfSep, 0, 0) * view;
         const auto rightView = cadm::Mat4::translation(-halfSep, 0, 0) * view;
 
-        m_renderSystem.renderStereo(m_scene, leftView, leftProj, rightView, rightProj);
+        m_renderSystem.renderStereo(m_scene, leftView, leftProj, rightView, rightProj, m_stereoLuminance);
         return;
     }
 

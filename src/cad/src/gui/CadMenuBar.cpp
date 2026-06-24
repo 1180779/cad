@@ -73,16 +73,19 @@ CadMenuBar::CadMenuBar(QWidget *parent) : QMenuBar(parent) {
     m_toolsMenu = addMenu("Tools");
 
     m_viewMenu = addMenu("View");
-    auto *darkThemeToggle = addCheckableAction(m_viewMenu, "Dark theme");
+    const auto *darkThemeToggle = addCheckableAction(m_viewMenu, "Dark theme");
     connect(darkThemeToggle, &QAction::toggled, this, &CadMenuBar::darkThemeChanged);
 
     m_stereoMenu = addMenu("Stereo");
-    auto *stereoToggle = addCheckableAction(m_stereoMenu, "Enable Stereoscopy");
+    const auto *stereoToggle = addCheckableAction(m_stereoMenu, "Enable Stereoscopy");
     connect(stereoToggle, &QAction::toggled, this, &CadMenuBar::stereoEnabledChanged);
     m_stereoMenu->addSeparator();
 
-    auto *autoToggle = addCheckableAction(m_stereoMenu, "Auto (track camera)", true);
+    const auto *autoToggle = addCheckableAction(m_stereoMenu, "Auto (track camera)", true);
     connect(autoToggle, &QAction::toggled, this, &CadMenuBar::stereoAutoChanged);
+
+    const auto *lumToggle = addCheckableAction(m_stereoMenu, "Luminance anaglyph", true);
+    connect(lumToggle, &QAction::toggled, this, &CadMenuBar::stereoLuminanceChanged);
 
     m_stereoEyeSepSpinbox = addSpinBoxAction(m_stereoMenu, "Eye distance", 0.3, 0.0, 100.0, 0.05);
     connect(m_stereoEyeSepSpinbox, &QDoubleSpinBox::valueChanged, this, &CadMenuBar::stereoEyeSeparationChanged);

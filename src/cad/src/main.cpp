@@ -703,6 +703,7 @@ int main(int argc, char *argv[]) {
     );
     QObject::connect(menuBar, &CadMenuBar::stereoEnabledChanged, glWidget, &OpenGlWidget::setStereoEnabled);
     QObject::connect(menuBar, &CadMenuBar::stereoAutoChanged, glWidget, &OpenGlWidget::setStereoAuto);
+    QObject::connect(menuBar, &CadMenuBar::stereoLuminanceChanged, glWidget, &OpenGlWidget::setStereoLuminance);
     QObject::connect(menuBar, &CadMenuBar::stereoSepRatioChanged, glWidget, &OpenGlWidget::setStereoSeparationRatio);
     QObject::connect(
         menuBar,

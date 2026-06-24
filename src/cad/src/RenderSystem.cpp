@@ -202,7 +202,8 @@ void RenderSystem::renderStereo(
     const cadm::Mat4 &leftView,
     const cadm::Mat4 &leftProjection,
     const cadm::Mat4 &rightView,
-    const cadm::Mat4 &rightProjection
+    const cadm::Mat4 &rightProjection,
+    const bool luminance
 ) {
     const auto gl = getGl();
     GLint prevFbo = 0;
@@ -233,6 +234,7 @@ void RenderSystem::renderStereo(
     gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[1]);
     SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uLeft", 0));
     SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uRight", 1));
+    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uLuminance", luminance ? 1 : 0));
     m_screenQuad->draw();
     ShaderProgram::release();
     gl->glActiveTexture(GL_TEXTURE0);
