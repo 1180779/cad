@@ -153,14 +153,21 @@ namespace cadm {
             return std::abs(col(2)[3] + static_cast<cadf>(1)) < gc_eps;
         }
 
-        /// @brief Decomposes a frustum()/perspective() matrix back into its six frustum edges
+        /// @brief Decomposes a frustum()/perspective() matrix back into its frustum edges
         [[nodiscard]] Frustum toFrustum() const {
-            const auto a = col(0)[0]; // 2n/(r-l)
-            const auto b = col(1)[1]; // 2n/(t-b)
-            const auto c = col(2)[0]; // (r+l)/(r-l)
-            const auto d = col(2)[1]; // (t+b)/(t-b)
-            const auto e = col(2)[2]; // -(f+n)/(f-n)
-            const auto g = col(3)[2]; // -2fn/(f-n)
+            const auto a = col(0)[0]; // 2n/(r - l)
+            const auto b = col(1)[1]; // 2n/(t - b)
+            const auto c = col(2)[0]; // (r + l)/(r - l)
+            const auto d = col(2)[1]; // (t + b)/(t - b)
+            const auto e = col(2)[2]; // -(f + n)/(f - n)
+            const auto g = col(3)[2]; // -2fn/(f - n)
+            // e - 1 = -(f + n - f + n)/(f - n) = -2n/(f - n)
+            // e + 1 = -(f + n + f - n)/(f - n) = -2f/(f - n)
+            // c - 1 = (r + l - r + l)/(r - l) = 2l/(r - l)
+            // c + 1 = (r + l + r - l)/(r - l) = 2r/(r - l)
+            // d - 1 = (t + b - t + b)/(t - b) = 2b/(t - b)
+            // d + 1 = (t + b + t - b)/(t - b) = 2t/(t - b)
+
             const cadf near = g / (e - 1);
             const cadf far = g / (e + 1);
             return {
@@ -247,9 +254,9 @@ namespace cadm {
             return rotZ(z) * rotY(y) * rotX(x);
         }
 
-        /// @brief Rodrigues rotation matrix around axis `u` by angle `phi` (radians)
+        /// @brief Rodrigues rotation matrix around axis @p u by angle @p phi (in radians)
         ///
-        /// @pre u must be a unit vector
+        /// @pre @p u must be a unit vector
         static Mat rotAxis(const cadf phi, const Vec3 &u) {
             assert(std::abs(u.lengthSquared() - cadf{1}) < gc_eps && "rotAxis: axis must be a unit vector");
             const auto sin = std::sin(phi);
@@ -286,18 +293,21 @@ namespace cadm {
             };
         }
 
+        /// @brief Analytic inverse of translation matrix
         constexpr void inverseTranslation() {
             (*this)(0, 3) = -(*this)(0, 3);
             (*this)(1, 3) = -(*this)(1, 3);
             (*this)(2, 3) = -(*this)(2, 3);
         }
 
+        /// @brief Analytic inverse of translation matrix
         [[nodiscard]] constexpr Mat inversedTranslation() const {
             auto copy = *this;
             copy.inverseTranslation();
             return copy;
         }
 
+        /// @brief Analytic inverse of scale matrix
         constexpr void inverseScale() {
             if ((*this)(0, 0) != 0.0) {
                 (*this)(0, 0) = static_cast<cadf>(1.0 / (*this)(0, 0));
@@ -310,24 +320,29 @@ namespace cadm {
             }
         }
 
+        /// @brief Analytic inverse of scale matrix
         [[nodiscard]] constexpr Mat inversedScale() const {
             auto copy = *this;
             copy.inverseScale();
             return copy;
         }
 
+        /// @brief Analytic inverse of rotation matrix
         constexpr void inverseRotation() {
             transpose();
         }
 
+        /// @brief Analytic inverse of rotation matrix
         [[nodiscard]] constexpr Mat inversedRotation() const {
             return transposed();
         }
 
+        /// @brief Analytic inverse of view matrix
         void inverseView() {
             *this = inversedView();
         }
 
+        /// @brief Analytic inverse of view matrix
         [[nodiscard]] constexpr Mat inversedView() const {
             const auto col0 = col(0).xyz();
             const auto col1 = col(1).xyz();
@@ -346,10 +361,12 @@ namespace cadm {
             };
         }
 
+        /// @brief Analytic inverse of a symmetric perspective matrix
         void inversePerspective() {
             *this = inversedPerspective();
         }
 
+        /// @brief Analytic inverse of a symmetric perspective matrix
         [[nodiscard]] Mat inversedPerspective() const {
             const auto a = col(0)[0];
             const auto b = col(1)[1];
@@ -364,7 +381,12 @@ namespace cadm {
             };
         }
 
-        /// @brief Analytic inverse of an off-axis frustum() matrix (asymmetric perspective)
+        /// @brief Analytic inverse of an asymmetric perspective matrix
+        void inverseFrustum() {
+            *this = inversedFrustum();
+        }
+
+        /// @brief Analytic inverse of an asymmetric perspective matrix
         [[nodiscard]] Mat inversedFrustum() const {
             const auto a = col(0)[0]; // 2n/(r-l)
             const auto b = col(1)[1]; // 2n/(t-b)
@@ -381,10 +403,12 @@ namespace cadm {
             };
         }
 
+        /// @brief Analytic inverse of orthogonal projection matrix
         void inverseOrtho() {
             *this = inversedOrtho();
         }
 
+        /// @brief Analytic inverse of orthogonal projection matrix
         [[nodiscard]] constexpr Mat inversedOrtho() const {
             const auto a = col(0)[0];
             const auto b = col(1)[1];
