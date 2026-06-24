@@ -72,6 +72,8 @@ void OpenGlWidget::paintGL() {
         const auto [left, right, bottom, top, near, far] = projection.toFrustum();
         const cadm::cadf halfH = static_cast<cadm::cadf>(0.5) * (top - bottom);
         const cadm::cadf halfW = static_cast<cadm::cadf>(0.5) * (right - left);
+        // frustum skew in near-plane units: a half-separation offset at the convergence
+        // plane rescales to the near plane by similar triangles (near / convergence)
         const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (near / m_stereoConvergence);
         const cadm::cadf halfSep = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation;
 
