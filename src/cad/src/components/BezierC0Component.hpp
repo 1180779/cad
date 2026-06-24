@@ -10,6 +10,7 @@
 #include "GeometryComponent.hpp"
 #include "PointRegistry.hpp"
 #include "GpuBuffer.hpp"
+#include "Vao.hxx"
 #include "INewPointsTargetComponent.hpp"
 
 /// @brief Multi-segment cubic Bézier curve with C0 continuity between segments.
@@ -40,11 +41,11 @@ public:
     [[nodiscard]] int segmentCount() const;
 
     [[nodiscard]] GLuint getPatchVao() const {
-        return m_patchVao;
+        return m_patchVao.id();
     }
 
     [[nodiscard]] GLuint getPolygonVao() const {
-        return m_polygonVao;
+        return m_polygonVao.id();
     }
 
     /// Get the number of edges of the trailing segment
@@ -68,10 +69,10 @@ public:
 
 private:
     /// Patch VAO; binds PointRegistry's position VBO, EBO holds PointHandle patch sequences
-    uint32_t m_patchVao = 0;
+    Vao m_patchVao;
 
     /// Polygon VAO; binds PointRegistry's position VBO, EBO holds PointHandle line pairs
-    uint32_t m_polygonVao = 0;
+    Vao m_polygonVao;
 
     PointRegistry *m_registry;
     std::vector<PointHandle> m_controlPoints;
@@ -90,10 +91,6 @@ private:
     void rebuildPatchIndices();
 
     void rebuildPolygonLines();
-
-    void setupPatchVao(QOpenGLFunctions_4_5_Core *gl);
-
-    void setupPolygonVao(QOpenGLFunctions_4_5_Core *gl);
 };
 
 #endif //CAD_BEZIERC0COMPONENT_HPP

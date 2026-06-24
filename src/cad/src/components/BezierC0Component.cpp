@@ -10,14 +10,10 @@ BezierC0Component::BezierC0Component(PointRegistry *registry) : m_registry(regis
 BezierC0Component::~BezierC0Component() {
     const auto gl = getGl();
     m_patchIndexBuf.deleteGpu(gl);
-    if (m_patchVao != 0) {
-        gl->glDeleteVertexArrays(1, &m_patchVao);
-    }
+    m_patchVao.deleteGpu(gl);
 
     m_polygonIndexBuf.deleteGpu(gl);
-    if (m_polygonVao != 0) {
-        gl->glDeleteVertexArrays(1, &m_polygonVao);
-    }
+    m_polygonVao.deleteGpu(gl);
 
     for (const auto subId : m_removeControlPointCallbacks | std::views::values) {
         m_registry->unsubscribeFromRemove(subId);
@@ -245,36 +241,6 @@ void BezierC0Component::rebuildPolygonLines() {
     m_polygonIndexBuf.assign(std::move(indices));
 }
 
-void BezierC0Component::setupPatchVao(QOpenGLFunctions_4_5_Core *const gl) {
-    assert(m_registry->getPositionVBO() != 0);
-    assert(m_patchIndexBuf.vboId() != 0);
-
-    gl->glGenVertexArrays(1, &m_patchVao);
-    gl->glBindVertexArray(m_patchVao);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, m_registry->getPositionVBO());
-    gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_patchIndexBuf.vboId());
-    gl->glBindVertexArray(0);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
-void BezierC0Component::setupPolygonVao(QOpenGLFunctions_4_5_Core *const gl) {
-    assert(m_registry->getPositionVBO() != 0);
-    assert(m_polygonIndexBuf.vboId() != 0);
-
-    gl->glGenVertexArrays(1, &m_polygonVao);
-    gl->glBindVertexArray(m_polygonVao);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, m_registry->getPositionVBO());
-    gl->glEnableVertexAttribArray(0);
-    gl->glVertexAttribPointer(0, 3, gc_glCadmVtType, GL_FALSE, 3 * gc_glCadmVtSize, nullptr);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_polygonIndexBuf.vboId());
-    gl->glBindVertexArray(0);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
 void BezierC0Component::regenerateMesh() {}
 
 void BezierC0Component::syncToGpu() {
@@ -283,10 +249,10 @@ void BezierC0Component::syncToGpu() {
     m_patchIndexBuf.syncToGpu(gl);
     m_polygonIndexBuf.syncToGpu(gl);
 
-    if (m_patchVao == 0) {
-        setupPatchVao(gl);
+    if (!m_patchVao.created()) {
+        m_patchVao.setup(gl, m_registry->getPositionVBO(), m_patchIndexBuf.vboId());
     }
-    if (m_polygonVao == 0) {
-        setupPolygonVao(gl);
+    if (!m_polygonVao.created()) {
+        m_polygonVao.setup(gl, m_registry->getPositionVBO(), m_polygonIndexBuf.vboId());
     }
 }
