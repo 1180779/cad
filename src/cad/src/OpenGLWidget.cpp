@@ -4,6 +4,9 @@
 
 #include "OpenGLWidget.hpp"
 
+#include <numeric>
+#include <tuple>
+
 #include <QAbstractSpinBox>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -26,12 +29,14 @@
 
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
+#include "PatchGeometry.hxx"
 #include "gui/Theme.hpp"
 #include "PointRegistry.hpp"
 #include "commands/Commands.hpp"
 #include "ViewportTypes.hpp"
 #include "cad_math/Helpers.hpp"
 #include "components/BezierC0Component.hpp"
+#include "components/PatchC0Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "cursor/GridPlanePlacementStrategy.hpp"
@@ -94,7 +99,25 @@ void OpenGlWidget::paintGL() {
         return;
     }
 
-    m_renderSystem.render(m_scene, view, projection, invVp);
+    m_renderSystem.render(
+        m_scene,
+        view,
+        projection,
+        invVp,
+        !(m_previewPatch && m_previewHideScene)
+    );
+
+    if (m_previewPatch) {
+        // the cursor may have been moved or rotated since the last rebuild;
+        // follow it
+        if (const auto [pos, rot] = activeCursorPlacement();
+            m_previewParams && (m_previewParams->origin != pos || m_previewParams->orientation != rot)) {
+            setPatchPreview(*m_previewParams);
+        }
+        m_previewRegistry->syncToGpu();
+        m_previewPatch->syncToGpu();
+        m_renderSystem.renderPreviewPatch(*m_previewPatch, *m_previewRegistry);
+    }
 
     if (const auto pivot = computePivot()) {
         m_renderSystem.renderPivotMarker(pivot.value());
@@ -518,8 +541,41 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
     case InputAction::setBoxSelectMode:
         m_boxSelectMode = true;
         break;
+    case InputAction::selectActiveCursor:
+        if (Entity *cursor = m_scene.getActiveCursor()) {
+            m_scene.clearSelection();
+            m_scene.setSelected(cursor, true);
+            m_scene.syncPointSelectionToRegistry();
+            emit viewportSelectionChanged();
+            update();
+        }
+        break;
+    case InputAction::resetRotation: {
+        std::vector<EntitySnapshot> before;
+        for (Entity *e : m_scene.getSelectedEntities()) {
+            if (const auto tc = e->getComponent<TransformComponent>();
+                !tc || tc.value()->getRotation() == cadm::Vec3{}) {
+                continue;
+            }
+            EntitySnapshot snap;
+            snap.fillFromEntity(m_scene.getPointRegistry(), e);
+            before.push_back(snap);
+        }
+        if (!before.empty()) {
+            auto after = before;
+            for (auto &snap : after) {
+                snap.origRotMat = cadm::Mat3::identity();
+            }
+            m_commandStack.push(
+                std::make_unique<TransformCommand>(m_scene, std::move(before), std::move(after))
+            );
+        }
+        break;
+    }
     case InputAction::createMenu: {
-        if (m_createMenuOpen) {
+        // a live patch preview means the creator dialog is open and the rest of
+        // the UI is modal-blocked; spawning entities from under it would bypass that
+        if (m_createMenuOpen || m_previewPatch) {
             break;
         }
         QMenu menu(this);
@@ -558,6 +614,13 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
             "New Interpolating C2",
             [this] {
                 emit createInterpC2Requested();
+            }
+        );
+        menu.addSeparator();
+        menu.addAction(
+            "New Bezier Patch C0",
+            [this] {
+                emit createPatchC0Requested();
             }
         );
         m_createMenuOpen = true;
@@ -636,6 +699,78 @@ void OpenGlWidget::deleteSelectedEntities() {
         emit viewportSelectionChanged();
         update();
     }
+}
+
+std::pair<cadm::Vec3, cadm::Vec3> OpenGlWidget::activeCursorPlacement() const {
+    if (Entity *cursor = m_scene.getActiveCursor()) {
+        if (const auto tc = cursor->getComponent<TransformComponent>()) {
+            return {tc.value()->getTranslation(), tc.value()->getRotation()};
+        }
+    }
+    return {};
+}
+
+void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
+    patchgen::PatchCreateParams placed = params;
+    std::tie(placed.origin, placed.orientation) = activeCursorPlacement();
+    m_previewParams = placed;
+    const auto [rows, cols, wrapU, patchCountX, patchCountY, positions] = patchgen::generate(placed);
+    if (m_previewPatch
+        && m_previewPatch->getRows() == rows
+        && m_previewPatch->getCols() == cols
+        && m_previewPatch->getWrapU() == wrapU
+        && m_previewPatch->getPatchCountX() == patchCountX
+        && m_previewPatch->getPatchCountY() == patchCountY) {
+        m_previewRegistry->setPositions(m_previewPatch->getControlPoints().front(), positions);
+        update();
+        return;
+    }
+
+    makeCurrent();
+
+    if (!m_previewRegistry) {
+        m_previewRegistry = std::make_unique<PointRegistry>();
+        m_previewRegistry->initialize();
+    }
+    else {
+        m_previewRegistry->clear();
+    }
+    const PointHandle first = m_previewRegistry->addPoints(positions);
+    std::vector<PointHandle> handles(positions.size());
+    std::ranges::iota(handles, first);
+    if (!m_previewPatch) {
+        m_previewPatch = std::make_unique<PatchC0Component>(m_previewRegistry.get());
+        m_previewPatch->setShowNet(m_previewShowNet);
+    }
+    m_previewPatch->setGrid(std::move(handles), rows, cols, wrapU, patchCountX, patchCountY);
+
+    doneCurrent();
+    update();
+}
+
+void OpenGlWidget::setPatchPreviewHideScene(const bool v) {
+    m_previewHideScene = v;
+    update();
+}
+
+void OpenGlWidget::setPatchPreviewShowNet(const bool v) {
+    m_previewShowNet = v;
+    if (m_previewPatch) {
+        m_previewPatch->setShowNet(v);
+        update();
+    }
+}
+
+void OpenGlWidget::clearPatchPreview() {
+    if (!m_previewPatch && !m_previewRegistry) {
+        return;
+    }
+    makeCurrent();
+    m_previewPatch.reset();
+    m_previewRegistry.reset();
+    m_previewParams.reset();
+    doneCurrent();
+    update();
 }
 
 PointHandle OpenGlWidget::pickPoint(const QPoint screenPos) const {

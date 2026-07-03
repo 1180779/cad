@@ -5,13 +5,17 @@
 #include "Commands.hpp"
 
 #include <algorithm>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
+#include "../GeometryFactory.hpp"
 #include "../Scene.hpp"
 #include "../components/BezierC0Component.hpp"
 #include "../components/BezierC2Component.hpp"
 #include "../components/InterpC2Component.hxx"
 #include "../components/INewPointsTargetComponent.hpp"
+#include "../components/PatchComponent.hxx"
 #include "../components/PointComponent.hpp"
 
 namespace {
@@ -30,6 +34,23 @@ namespace {
         }
         return {};
     }
+
+    /// @brief Add every control-point entity of a deleted patch to the deletion set
+    /// @return ids, extended in place with the patch's control points
+    std::vector<EntityId> expandWithPatchControlPoints(Scene &scene, const std::vector<EntityId> &ids);
+
+    /// @brief Map every point handle owned by a patch to that patch's entity id
+    std::unordered_map<PointHandle, EntityId> buildPointToPatchMap(const Scene &scene);
+
+    /// @brief Drop points that are locked to a patch not also being deleted
+    void removeLockedPatchPoints(Scene & scene, std::vector<EntityId> & ids);
+
+    /// @brief Capture specs for every deleted entity, and collect the point handles among them
+    /// @return {specs, deletedPointHandles}
+    std::pair<std::vector<EntitySpec>, std::unordered_set<PointHandle>> captureDeleted(
+        Scene &scene,
+        const std::vector<EntityId> &ids
+    );
 
     /// @brief Reset a curve's membership to exactly target, preserving order
     void resetMembership(Scene &scene, const EntityId curveId, const std::vector<PointHandle> &target) {
@@ -74,30 +95,55 @@ void CreateEntityCommand::undo() {
 }
 
 // ---------------------------------------------------------------------------
+// CreatePatchCommand
+// ---------------------------------------------------------------------------
+
+void CreatePatchCommand::execute() {
+    if (!m_specs.empty()) {
+        // redo: points first so the patch can re-reference live handles
+        for (const auto &s : m_specs) {
+            if (!s.has<PatchC0Data>()) {
+                rebuildEntity(m_scene, s);
+            }
+        }
+        for (const auto &s : m_specs) {
+            if (s.has<PatchC0Data>()) {
+                rebuildEntity(m_scene, s);
+            }
+        }
+        return;
+    }
+
+    for (const auto created = GeometryFactory(m_scene).createPatch(m_params);
+         Entity *e : created) {
+        if (EntitySpec spec;
+            captureEntity(m_scene, e, spec)) {
+            m_specs.push_back(std::move(spec));
+        }
+    }
+}
+
+void CreatePatchCommand::undo() {
+    for (const auto &s : m_specs) {
+        m_scene.removeEntity(s.id);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // DeleteEntityCommand
 // ---------------------------------------------------------------------------
 
 DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityId> &ids) : m_scene(scene) {
-    const std::unordered_set deleting(ids.begin(), ids.end());
-    std::unordered_set<PointHandle> deletedPoints;
+    std::vector<EntityId> expandedIds = expandWithPatchControlPoints(scene, ids);
+    removeLockedPatchPoints(scene, expandedIds);
 
-    for (const auto id : ids) {
-        const auto e = scene.getEntity(id);
-        if (!e) {
-            continue;
-        }
-        EntitySpec spec;
-        if (!captureEntity(scene, e.value(), spec)) {
-            continue;
-        }
-        if (const auto pc = e.value()->getComponent<PointComponent>()) {
-            deletedPoints.insert(pc.value()->m_handle);
-        }
-        m_specs.push_back(std::move(spec));
-    }
+    const std::unordered_set deleting(expandedIds.begin(), expandedIds.end());
+    auto [specs, deletedPoints] = captureDeleted(scene, expandedIds);
+    m_specs = std::move(specs);
 
-    // curves not being deleted that reference a deleted point lose membership via
-    // the registry remove-callback; snapshot them so undo can restore exact order
+    // curves not being deleted that reference a deleted point lose membership
+    // via the registry remove-callback; snapshot them so undo can restore exact
+    // order
     if (!deletedPoints.empty()) {
         for (const auto &e : scene.getEntities()) {
             if (deleting.contains(e->getId())) {
@@ -253,4 +299,83 @@ void RemoveControlPointCommand::execute() {
 
 void RemoveControlPointCommand::undo() {
     resetMembership(m_scene, m_curveId, m_before);
+}
+
+namespace {
+    std::vector<EntityId> expandWithPatchControlPoints(Scene &scene, const std::vector<EntityId> &ids) {
+        std::vector<EntityId> expandedIds = ids;
+        std::unordered_set seen(ids.begin(), ids.end());
+        for (const auto id : ids) {
+            const auto e = scene.getEntity(id);
+            if (!e) {
+                continue;
+            }
+            const auto patch = e.value()->getComponent<PatchComponent>();
+            if (!patch) {
+                continue;
+            }
+            for (const auto h : patch.value()->getControlPoints()) {
+                if (const auto pe = scene.getEntityByPointHandle(h);
+                    pe && seen.insert(pe.value()->getId()).second) {
+                    expandedIds.push_back(pe.value()->getId());
+                }
+            }
+        }
+        return expandedIds;
+    }
+
+    std::unordered_map<PointHandle, EntityId> buildPointToPatchMap(const Scene &scene) {
+        std::unordered_map<PointHandle, EntityId> pointToPatchMap;
+        for (const auto &e : scene.getEntities()) {
+            if (const auto patch = e->getComponent<PatchComponent>()) {
+                for (const auto h : patch.value()->getControlPoints()) {
+                    pointToPatchMap[h] = e->getId();
+                }
+            }
+        }
+        return pointToPatchMap;
+    }
+
+    void removeLockedPatchPoints(Scene &scene, std::vector<EntityId> &ids) {
+        const auto pointToPatchMap = buildPointToPatchMap(scene);
+        const std::unordered_set deletingNow(ids.begin(), ids.end());
+        std::erase_if(
+            ids,
+            [&](const EntityId id) {
+                const auto e = scene.getEntity(id);
+                if (!e) {
+                    return false;
+                }
+                const auto pc = e.value()->getComponent<PointComponent>();
+                if (!pc) {
+                    return false;
+                }
+                const auto owningPatch = pointToPatchMap.find(pc.value()->m_handle);
+                return owningPatch != pointToPatchMap.end() && !deletingNow.contains(owningPatch->second);
+            }
+        );
+    }
+
+    std::pair<std::vector<EntitySpec>, std::unordered_set<PointHandle>> captureDeleted(
+        Scene &scene,
+        const std::vector<EntityId> &ids
+    ) {
+        std::vector<EntitySpec> specs;
+        std::unordered_set<PointHandle> deletedPoints;
+        for (const auto id : ids) {
+            const auto e = scene.getEntity(id);
+            if (!e) {
+                continue;
+            }
+            EntitySpec spec;
+            if (!captureEntity(scene, e.value(), spec)) {
+                continue;
+            }
+            if (const auto pc = e.value()->getComponent<PointComponent>()) {
+                deletedPoints.insert(pc.value()->m_handle);
+            }
+            specs.push_back(std::move(spec));
+        }
+        return {std::move(specs), std::move(deletedPoints)};
+    }
 }

@@ -50,6 +50,8 @@ signals :
 
     void createInterpC2Requested();
 
+    void createPatchC0Requested();
+
     void setAsNewPointsTargetEntityRequested(Entity *e);
 
     void addSelectedPointsToNewPointsTargetEntityRequested(Entity *e);

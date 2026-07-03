@@ -1,4 +1,7 @@
+#include <tuple>
+
 #include <QFontDatabase>
+#include <QPainter>
 #include <QSplitter>
 #include <QStackedWidget>
 
@@ -14,6 +17,7 @@
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/BlenderCameraStrategy.hpp"
 #include "gui/CadMenuBar.hpp"
+#include "gui/PatchCreatorDialog.hxx"
 #include "gui/CadTitleBar.hpp"
 #include "gui/Theme.hpp"
 #include "gui/ScenePanelWidget.hpp"
@@ -366,6 +370,57 @@ namespace {
         );
     }
 
+    /// @brief Dims and input-blocks the whole window except the viewport,
+    /// making a creator dialog behave modally while the camera stays navigable
+    /// for the live preview
+    /// @note Also closes the (parentless) dialog when the main
+    /// window closes
+    class ViewportModalOverlay final : public QWidget {
+    public:
+        ViewportModalOverlay(QWidget *window, QWidget *viewport, QDialog *dialog) : QWidget(window),
+            m_viewport(viewport),
+            m_dialog(dialog) {
+            window->installEventFilter(this);
+            setGeometry(window->rect());
+            show();
+            raise();
+        }
+
+        bool eventFilter(QObject *watched, QEvent *event) override {
+            if (watched == parentWidget()) {
+                if (event->type() == QEvent::Resize) {
+                    setGeometry(parentWidget()->rect());
+                }
+                else if (event->type() == QEvent::Close) {
+                    m_dialog->close();
+                }
+            }
+            return QWidget::eventFilter(watched, event);
+        }
+
+    protected:
+        void paintEvent(QPaintEvent *) override {
+            QPainter p(this);
+            p.fillRect(
+                rect(),
+                theme::active().dark
+                    ? QColor(255, 255, 255, 36)
+                    : QColor(0, 0, 0, 70)
+            );
+        }
+
+        void resizeEvent(QResizeEvent *event) override {
+            QWidget::resizeEvent(event);
+            // cut the viewport out of the overlay
+            const QRect vp(m_viewport->mapTo(parentWidget(), QPoint(0, 0)), m_viewport->size());
+            setMask(QRegion(rect()) - QRegion(vp));
+        }
+
+    private:
+        QWidget *m_viewport;
+        QDialog *m_dialog;
+    };
+
     /// @brief Wires entity-creation requests (torus/cursor/point + Bezier C0/C2) from both the
     /// hierarchy and the viewport into undoable command pushes
     void wireEntityCreation(OpenGlWidget *glWidget, const SceneHierarchyWidget *hierarchyWidget) {
@@ -473,6 +528,60 @@ namespace {
             );
         };
 
+        // ReSharper disable once CppDFAUnreachableFunctionCall
+        auto spawnPatch = [glWidget](const bool c2) {
+            // one creator dialog at a time; re-request just raises the open one
+            static QPointer<PatchCreatorDialog> open;
+            if (open) {
+                open->raise();
+                open->activateWindow();
+                return;
+            }
+            const auto dialog = new PatchCreatorDialog(c2, nullptr);
+            open = dialog;
+            dialog->setWindowFlag(Qt::WindowStaysOnTopHint);
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
+            // ReSharper disable once CppDFAMemoryLeak
+            const auto overlay = new ViewportModalOverlay(glWidget->window(), glWidget, dialog);
+            QObject::connect(
+                dialog,
+                &PatchCreatorDialog::paramsChanged,
+                glWidget,
+                [glWidget](const patchgen::PatchCreateParams &p) {
+                    glWidget->setPatchPreview(p);
+                }
+            );
+            QObject::connect(
+                dialog,
+                &PatchCreatorDialog::showNetChanged,
+                glWidget,
+                &OpenGlWidget::setPatchPreviewShowNet
+            );
+            QObject::connect(
+                dialog,
+                &PatchCreatorDialog::hideSceneChanged,
+                glWidget,
+                &OpenGlWidget::setPatchPreviewHideScene
+            );
+            QObject::connect(
+                dialog,
+                &QDialog::finished,
+                glWidget,
+                [glWidget, dialog, overlay](const int result) {
+                    overlay->deleteLater();
+                    glWidget->clearPatchPreview();
+                    if (result == QDialog::Accepted) {
+                        auto params = dialog->params();
+                        std::tie(params.origin, params.orientation) = glWidget->activeCursorPlacement();
+                        glWidget->getCommandStack().push(
+                            std::make_unique<CreatePatchCommand>(glWidget->getScene(), params)
+                        );
+                    }
+                }
+            );
+            dialog->show();
+        };
+
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createTorusRequested, glWidget, spawnTorus);
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createCursorRequested, glWidget, spawnCursor);
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPointRequested, glWidget, spawnPoint);
@@ -517,13 +626,21 @@ namespace {
             }
         );
 
-        // Bezier C2 signals
+        // Bézier C2 signals
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createBezierC2Requested, glWidget, spawnBezierC2);
         QObject::connect(glWidget, &OpenGlWidget::createBezierC2Requested, glWidget, spawnBezierC2);
 
         // interpolating C2 signals
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createInterpC2Requested, glWidget, spawnInterpC2);
         QObject::connect(glWidget, &OpenGlWidget::createInterpC2Requested, glWidget, spawnInterpC2);
+
+        // Bézier patch signals
+        const auto spawnPatchLambda =
+            [spawnPatch] {
+            spawnPatch(false);
+        };
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPatchC0Requested, glWidget, spawnPatchLambda);
+        QObject::connect(glWidget, &OpenGlWidget::createPatchC0Requested, glWidget, spawnPatchLambda);
     }
 }
 
@@ -631,9 +748,9 @@ int main(int argc, char *argv[]) {
 
     wirePanelToggles(panelBar, panelStack, sceneAction, viewportAction, sceneBtn, viewportBtn);
 
-    // intelliJ inspired active-tab accent:
-    // the open tab paints accent color only while the tool panel holds focus,
-    // falling back to the hover color otherwise
+    // intelliJ inspired active-tab accent: the open tab paints accent color
+    // only while the tool panel holds focus, falling back to the hover color
+    // otherwise
     QObject::connect(
         qApp,
         &QApplication::focusChanged,

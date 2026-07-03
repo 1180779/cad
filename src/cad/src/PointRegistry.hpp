@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <limits>
+#include <span>
 #include <qopenglfunctions_4_5_core.h>
 #include <unordered_map>
 #include <unordered_set>
@@ -40,12 +41,28 @@ public:
 
     PointHandle addPoint(cadm::Vec3 position);
 
-    /// @brief Resurrect a previously removed point at a specific handle so existing references 
-    /// (e.g., Bézier control point lists) stay valid after undo.
-    /// The slot must currently be dead (freed) or beyond the current range
+    /// @brief Allocate positions.size() points in contiguous slots and return
+    /// the first handle; slot <code>i</code> holds <code>positions[i]</code>
+    /// @note Reuses a contiguous run of freed slots when one is large enough,
+    /// otherwise appends at the end
+    PointHandle addPoints(std::span<const cadm::Vec3> positions);
+
+    /// @brief Overwrite the positions of the contiguous alive range starting at
+    /// first (e.g., one allocated by @ref addPoints) with a single bulk copy
+    /// @note Position-change callbacks still fire per handle
+    /// @pre first + positions.size() <= current slot count; a violating call is
+    /// a no-op
+    void setPositions(PointHandle first, std::span<const cadm::Vec3> positions);
+
+    /// @brief Resurrect a previously removed point at a specific handle so
+    /// existing references (e.g., Bézier control point lists) stay valid after
+    /// undo. The slot must currently be dead (freed) or beyond the current
+    /// range
     void addPointAt(PointHandle handle, cadm::Vec3 position);
 
-    void removePoint(PointHandle handle);
+    /// @brief Remove a point. Returns false without effect if the handle is
+    /// dead or locked
+    bool removePoint(PointHandle handle);
 
     void setPosition(PointHandle handle, cadm::Vec3 position);
 
@@ -66,6 +83,23 @@ public:
     void setSelected(PointHandle handle, bool selected);
 
     void clearSelection();
+
+    /// @brief Take a lock on a point, refusing @ref removePoint while any lock
+    /// is held
+    /// @note Refcounted like a shared_ptr: nested/independent owners (e.g. two
+    /// patches sharing a point) each add their own lock and must each unlock
+    /// before removal is allowed. The registry doesn't know or care who holds a
+    /// lock or why
+    void lock(PointHandle handle);
+
+    /// @brief Release one lock taken by @ref lock
+    void unlock(PointHandle handle);
+
+    [[nodiscard]] bool isLocked(PointHandle handle) const;
+
+    /// @brief Drop all points
+    /// @note Keeps the GPU buffers/capacity allocated for reuse
+    void clear();
 
     using PositionChangedCallback = std::function<void(PointHandle)>;
 
@@ -133,6 +167,9 @@ private:
 
     std::unordered_set<PointHandle> m_dirtyPositions;
     std::unordered_set<PointHandle> m_dirtySelected;
+
+    /// @brief Lock refcount per handle; absent/0 means unlocked
+    std::unordered_map<PointHandle, int> m_lockCounts;
 
     CallbackId m_nextSubId = 0;
     std::unordered_map<CallbackId, PositionChangedCallback> m_positionCallbacks;

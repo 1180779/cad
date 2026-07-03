@@ -10,6 +10,8 @@
 #include <cad_math/Vec3.hpp>
 #include <vector>
 
+#include "PatchGeometry.hxx"
+
 class GeometryFactory final {
 public:
     explicit GeometryFactory(Scene &scene) : m_scene(scene) {}
@@ -53,6 +55,10 @@ public:
         const std::vector<PointHandle> &controlPoints = {},
         const std::string &name = "InterpC2"
     ) const;
+
+    /// @brief Create a joined Bézier patch: generates all control points and the patch entity
+    /// @return All created entities, control points first and the patch entity last
+    [[nodiscard]] std::vector<Entity*> createPatch(const patchgen::PatchCreateParams &params) const;
 
 private:
     Scene &m_scene;

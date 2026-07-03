@@ -13,6 +13,7 @@
 #include <cad_math/Vec3.hpp>
 
 #include "Command.hpp"
+#include "PatchGeometry.hxx"
 #include "../EntitySpec.hpp"
 #include "../PointRegistry.hpp"
 #include "../components/Entity.hpp"
@@ -38,6 +39,26 @@ private:
 
     /// @brief Spec of the created entity; empty until the first execute() captures it
     std::optional<EntitySpec> m_spec;
+};
+
+/// @brief Create a joined Bézier patch together with all its control points as
+/// one undoable unit. On first execute() the points and patch are generated and
+/// their specs captured; undo removes them all and redo rebuilds them
+class CreatePatchCommand final : public Command {
+public:
+    CreatePatchCommand(Scene &scene, const patchgen::PatchCreateParams &params) : m_scene(scene), m_params(params) {}
+
+    void execute() override;
+
+    void undo() override;
+
+private:
+    Scene &m_scene;
+    patchgen::PatchCreateParams m_params;
+
+    /// @brief Specs of every created entity (control points first, patch last);
+    /// empty until the first @ref execute captures them
+    std::vector<EntitySpec> m_specs;
 };
 
 /// @brief 

@@ -99,6 +99,12 @@ bool Scene::removeEntity(EntityId id) {
     if (toBeRemoved == m_entities.end()) {
         return false;
     }
+    if (const auto pc = (*toBeRemoved)->getComponent<PointComponent>()) {
+        if (!m_pointRegistry.removePoint(pc.value()->m_handle)) {
+            return false;
+        }
+        m_pointEntityMap.erase(pc.value()->m_handle);
+    }
     if (m_activeCursor == toBeRemoved->get()) {
         m_activeCursor = nullptr;
     }
@@ -106,10 +112,6 @@ bool Scene::removeEntity(EntityId id) {
         m_newPointsTargetEntity = nullptr;
     }
     m_selectedEntities.erase(toBeRemoved->get());
-    if (const auto pc = (*toBeRemoved)->getComponent<PointComponent>()) {
-        m_pointEntityMap.erase(pc.value()->m_handle);
-        m_pointRegistry.removePoint(pc.value()->m_handle);
-    }
     toBeRemoved->swap(m_entities.back());
     m_entities.pop_back();
     return true;

@@ -35,7 +35,7 @@ protected:
     }
 };
 
-class ModifierSpinBox : public QSpinBox {
+class ModifierSpinBox final : public QSpinBox {
     Q_OBJECT
 
 public:
