@@ -18,7 +18,10 @@
 #include <cad_math/Vec2.hpp>
 #include <cad_math/Vec3.hpp>
 #include <cmath>
+#include <vector>
 #include <concepts>
+
+#include "components/PatchComponent.hxx"
 
 namespace {
     /// @brief Structural interface shared by the C2 curves that render through the Bernstein
@@ -91,6 +94,28 @@ void RenderSystem::initialize() {
     );
 
     SHADER_ATTACHING_CHECK(
+        m_bezierSurfaceShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/bezierSurface/bezierSurfaceShader.vert")
+    );
+    SHADER_ATTACHING_CHECK(
+        m_bezierSurfaceShader->attachShaderFromFile(
+            GL_TESS_CONTROL_SHADER,
+            "shaders/bezierSurface/bezierSurfaceShader.tesc"
+        )
+    );
+    SHADER_ATTACHING_CHECK(
+        m_bezierSurfaceShader->attachShaderFromFile(
+            GL_TESS_EVALUATION_SHADER,
+            "shaders/bezierSurface/bezierSurfaceShader.tese"
+        )
+    );
+    SHADER_ATTACHING_CHECK(
+        m_bezierSurfaceShader->attachShaderFromFile(
+            GL_FRAGMENT_SHADER,
+            "shaders/bezierCurve/bezierCurveShader.frag"
+        )
+    );
+
+    SHADER_ATTACHING_CHECK(
         m_stereoCompositeShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/stereo/stereoComposite.vert")
     );
     SHADER_ATTACHING_CHECK(
@@ -104,6 +129,7 @@ void RenderSystem::initialize() {
     SHADER_COMPILATION_CHECK(m_selectionRectShader->compile());
     SHADER_COMPILATION_CHECK(m_pointShader->compile());
     SHADER_COMPILATION_CHECK(m_bezierCurveShader->compile());
+    SHADER_COMPILATION_CHECK(m_bezierSurfaceShader->compile());
     SHADER_COMPILATION_CHECK(m_stereoCompositeShader->compile());
 
     m_pivotAxes.m_length = 0.5f;
@@ -156,7 +182,8 @@ void RenderSystem::render(
     Scene &scene,
     const cadm::Mat4 &view,
     const cadm::Mat4 &projection,
-    const cadm::Mat4 &invVp
+    const cadm::Mat4 &invVp,
+    const bool sceneVisible
 ) const {
     const auto gl = getGl();
 
@@ -167,6 +194,12 @@ void RenderSystem::render(
     gl->glDepthFunc(GL_LEQUAL);
     renderInfiniteAxes();
     gl->glDepthFunc(GL_LESS);
+
+    if (!sceneVisible) {
+        // the active cursor stays visible
+        renderActiveCursorColors(scene);
+        return;
+    }
 
     m_wireframeShader->bind();
     const QColor &lc = theme::active().line;
@@ -190,6 +223,8 @@ void RenderSystem::render(
     renderTriangleGeometry(scene);
     GET_GL_ERRORS();
     renderBezierCurves(scene, view, projection);
+    GET_GL_ERRORS();
+    renderPatches(scene, view, projection);
     GET_GL_ERRORS();
     renderControlPoints(scene, gl);
     GET_GL_ERRORS();
@@ -330,6 +365,7 @@ void RenderSystem::shutdown() {
     UNIQUE_PTR_RELEASE_CHECK(m_selectionRectShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_pointShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_bezierCurveShader.release());
+    UNIQUE_PTR_RELEASE_CHECK(m_bezierSurfaceShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_stereoCompositeShader.release());
 
     if (m_selectionRectVAO != 0) {
@@ -738,6 +774,157 @@ void RenderSystem::renderBezierCurves(
 ) const {
     renderC0BezierCurves(scene, view, projection);
     renderC2BezierCurves(scene, view, projection);
+}
+
+void RenderSystem::drawPatchSurface(
+    const PatchComponent *patch,
+    const cadm::cadf entityHl,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+) const {
+    // assumes m_bezierSurfaceShader is bound and glPatchParameteri(16) is set
+    const auto gl = getGl();
+    const int patches = patch->getPatchCount();
+    if (patches <= 0) {
+        return;
+    }
+    const int lines = patch->getGridDivisions() + 1;
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uLines", lines));
+    SHADER_SET_UNIFORM_CHECK(
+        m_bezierSurfaceShader->setUniform2(
+            "uViewport",
+            static_cast<float>(m_viewportW),
+            static_cast<float>(m_viewportH)
+        )
+    );
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("u_highlightStrength", entityHl));
+
+    // per-quad slice counts from the screen extent of its 16 control points
+    // (0 = fully off-screen, skip)
+    const auto &indices = patch->getPatchIndices();
+    std::vector<int> subs(patches);
+    for (int q = 0; q < patches; ++q) {
+        cadm::Vec3 pts[16];
+        for (int k = 0; k < 16; ++k) {
+            pts[k] = patch->patchVertexPos(indices[static_cast<size_t>(q) * 16 + k]);
+        }
+        const auto extent = bezierUtils::screenExtent(pts, view, projection, m_viewportW, m_viewportH);
+        subs[q] = extent.has_value()
+                      ? std::max(1, static_cast<int>(std::ceil(static_cast<cadm::cadf>(*extent) / 64.0f)))
+                      : 0;
+    }
+
+    gl->glBindVertexArray(patch->getPatchVao());
+    for (int dir = 0; dir < 2; ++dir) {
+        SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uDir", dir));
+        for (int q = 0; q < patches; ++q) {
+            if (subs[q] == 0) {
+                continue;
+            }
+            SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uSub", subs[q]));
+            gl->glDrawElementsInstanced(
+                GL_PATCHES,
+                16,
+                GL_UNSIGNED_INT,
+                reinterpret_cast<const void*>(static_cast<uintptr_t>(q) * 16 * sizeof(uint32_t)),
+                lines * subs[q]
+            );
+        }
+    }
+    gl->glBindVertexArray(0);
+}
+
+void RenderSystem::drawPatchNet(const PatchComponent *patch, const cadm::cadf hl) const {
+    // assumes m_wireframeShader is bound with an identity model
+    if (!patch->getShowNet() || patch->getNetIndexCount() < 2) {
+        return;
+    }
+    const auto gl = getGl();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", hl));
+    SHADER_SET_UNIFORM_CHECK(
+        m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{0.9f, 0.6f, 0.1f, 1.0f})
+    );
+    gl->glBindVertexArray(patch->getNetVao());
+    gl->glDrawElements(GL_LINES, patch->getNetIndexCount(), GL_UNSIGNED_INT, nullptr);
+    gl->glBindVertexArray(0);
+}
+
+void RenderSystem::renderPatches(
+    const Scene &scene,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+) const {
+    const auto gl = getGl();
+
+    const auto highlight = [&](const Entity *e) {
+        return e->isSelected()
+                   ? s_selectionHS
+                   : s_noSelectionHS;
+    };
+
+    const auto forEachPatch = [&](const auto &doWork) {
+        for (const auto &e : scene.getEntities()) {
+            if (!e->isVisible()) {
+                continue;
+            }
+            if (const auto patch = e->getComponent<PatchComponent>()) {
+                doWork(e.get(), patch.value());
+            }
+        }
+    };
+
+    m_bezierSurfaceShader->bind();
+    gl->glPatchParameteri(GL_PATCH_VERTICES, 16);
+    forEachPatch(
+        [&](const Entity *e, const PatchComponent *patch) {
+            drawPatchSurface(patch, highlight(e), view, projection);
+        }
+    );
+    ShaderProgram::release();
+
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    forEachPatch(
+        [&](const Entity *e, const PatchComponent *patch) {
+            drawPatchNet(patch, highlight(e));
+        }
+    );
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    ShaderProgram::release();
+}
+
+void RenderSystem::renderPreviewPatch(
+    const PatchComponent &patch,
+    const PointRegistry &registry,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+) const {
+    const auto gl = getGl();
+
+    m_bezierSurfaceShader->bind();
+    gl->glPatchParameteri(GL_PATCH_VERTICES, 16);
+    drawPatchSurface(&patch, s_selectionHS, view, projection);
+    ShaderProgram::release();
+
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    drawPatchNet(&patch, s_selectionHS);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    ShaderProgram::release();
+
+    if (!registry.empty()) {
+        m_pointShader->bind();
+        gl->glBindVertexArray(registry.getVAO());
+        gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, registry.getEBO());
+        gl->glDrawElements(
+            GL_POINTS,
+            static_cast<GLsizei>(registry.aliveCount()),
+            GL_UNSIGNED_INT,
+            nullptr
+        );
+        gl->glBindVertexArray(0);
+        ShaderProgram::release();
+    }
 }
 
 void RenderSystem::uploadCameraUbo(

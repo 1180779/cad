@@ -23,7 +23,7 @@ add_test(NAME cad_math_tests COMMAND cad_math_tests)
 
 add_executable(cad_command_tests
         test_commands.cpp
-        ${CMAKE_SOURCE_DIR}/src/cad/src/commands/CommandStack.cpp
+        ${CMAKE_SOURCE_DIR}/src/cad/src/commands/CommandStack.hpp
 )
 
 target_include_directories(cad_command_tests PRIVATE

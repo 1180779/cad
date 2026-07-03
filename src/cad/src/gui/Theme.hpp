@@ -173,6 +173,30 @@ namespace theme {
         return src;
     }
 
+    /// @brief QSS for frameless card-style dialogs
+    inline QString dialogCardStyle(const ThemeColors &t) {
+        return QStringLiteral(
+                R"(
+                #dialogCard { background-color: palette(window); border: 1px solid %1; border-radius: %2px; }
+                DialogTitleBar {
+                    background-color: %3;
+                    border-top-left-radius: %2px;
+                    border-top-right-radius: %2px;
+                    border-bottom: 1px solid %1;
+                }
+                QPushButton#okButton:hover { background-color: rgba(46, 160, 67, 0.18); border-color: #2EA043; }
+                QPushButton#okButton:pressed { background-color: rgba(46, 160, 67, 0.32); border-color: #2EA043; }
+                QPushButton#cancelButton:hover { background-color: rgba(232, 17, 35, 0.15); border-color: #E81123; }
+                QPushButton#cancelButton:pressed { background-color: rgba(232, 17, 35, 0.28); border-color: #E81123; }
+            )"
+            )
+            .arg(
+                menuBorder(t).name(),
+                QString::number(gc_cardRadius),
+                menuHover(t).name()
+            );
+    }
+
     /// @brief IntelliJ inspired spin box QSS
     inline QString spinBoxStyle(const ThemeColors &t) {
         return QStringLiteral(

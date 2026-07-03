@@ -292,7 +292,7 @@ namespace cadm {
             Derived inv = Derived::identity();
 
             for (std::size_t i = 0; i < R; ++i) {
-                std::size_t pivot = temp.findPivotGEPP(i);
+                std::size_t pivot = temp.findPivotGepp(i);
 
                 // check if the matrix is singular
                 if (std::abs(temp(pivot, i)) < gc_eps) {

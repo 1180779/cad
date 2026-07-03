@@ -39,6 +39,8 @@ enum class InputAction {
 
     setObjectSelectMode,
     setBoxSelectMode,
+    selectActiveCursor,
+    resetRotation,
 
     // camera
 
@@ -149,6 +151,8 @@ inline InputMap::InputMap() {
 
     bind(InputAction::setObjectSelectMode, {Qt::Key_O, Qt::NoModifier});
     bind(InputAction::setBoxSelectMode, {Qt::Key_B, Qt::NoModifier});
+    bind(InputAction::selectActiveCursor, {Qt::Key_C, Qt::ShiftModifier});
+    bind(InputAction::resetRotation, {Qt::Key_R, Qt::AltModifier});
 
     bind(InputAction::cameraToggleProjection, {Qt::Key_5, Qt::NoModifier});
     bind(InputAction::cameraMoveUp, {Qt::Key_Up, Qt::NoModifier, true});

@@ -45,4 +45,15 @@ private:
 /// native system-resize, so a FramelessWindowHint window stays resizable
 void enableFramelessResize(QWidget *window, int margin = 6);
 
+/// @brief Drag-only title bar for a frameless popup
+class DialogTitleBar final : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit DialogTitleBar(const QString &title, QWidget *parent = nullptr);
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
+};
+
 #endif //CAD_CADTITLEBAR_HPP

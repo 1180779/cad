@@ -7,9 +7,11 @@
 #include "ProjectionCameraWidget.hpp"
 #include "TorusWidget.hpp"
 #include "TransformWidget.hpp"
+#include "PatchWidget.hxx"
 #include "../components/BezierC0Component.hpp"
 #include "../components/BezierC2Component.hpp"
 #include "../components/InterpC2Component.hxx"
+#include "../components/PatchC0Component.hxx"
 #include "../components/BlenderCameraComponent.hpp"
 #include "../components/CadCameraComponent.hpp"
 #include "../components/GeometryComponent.hpp"
@@ -114,6 +116,16 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
             this,
             &EntityPropertiesWidget::pointSelectionChanged
         );
+    }
+
+    if (const auto patch = m_entity->getComponent<PatchComponent>()) {
+        const QString title = m_entity->hasComponent<PatchC0Component>()
+                                  ? "Bézier Patch C0"
+                                  : "Bézier Patch C2";
+        const auto widget = new PatchWidget(patch.value(), title);
+        widget->setCommandContext(m_scene, m_commandStack, m_entity->getId());
+        m_layout->addWidget(widget);
+        connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }
 }
 

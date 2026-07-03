@@ -4,11 +4,14 @@
 
 #include "GeometryFactory.hpp"
 
+#include "PatchGeometry.hxx"
 #include "components/BezierC0Component.hpp"
 #include "components/BezierC2Component.hpp"
 #include "components/InterpC2Component.hxx"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
+#include "components/PatchC0Component.hxx"
+#include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 
 Entity* GeometryFactory::createTorus(
@@ -85,4 +88,29 @@ Entity* GeometryFactory::createInterpC2(
         curve->addControlPoint(h);
     }
     return entity;
+}
+
+std::vector<Entity*> GeometryFactory::createPatch(const patchgen::PatchCreateParams &params) const {
+    const auto [rows, cols, wrapU, patchCountX, patchCountY, positions] = patchgen::generate(params);
+
+    std::vector<Entity*> created;
+    created.reserve(positions.size() + 1);
+    std::vector<PointHandle> handles;
+    handles.reserve(positions.size());
+
+    for (const auto &pos : positions) {
+        Entity *pe = m_scene.createPoint(pos, "Patch Point");
+        created.push_back(pe);
+        handles.push_back(pe->getComponent<PointComponent>().value()->m_handle);
+    }
+
+    const auto entity = m_scene.createEntity(
+        params.type == patchgen::PatchCreateParams::Type::c2
+            ? "Patch C2"
+            : "Patch C0"
+    );
+    PatchComponent *patch = entity->addComponent<PatchC0Component>(&m_scene.getPointRegistry());
+    patch->setGrid(std::move(handles), rows, cols, wrapU, patchCountX, patchCountY);
+    created.push_back(entity);
+    return created;
 }

@@ -13,6 +13,8 @@
 #include <cad_math/Mat4.hpp>
 
 class Scene;
+class PatchComponent;
+class PointRegistry;
 
 class RenderSystem {
 public:
@@ -20,11 +22,14 @@ public:
 
     static void regenerateGeometry(const Scene &scene);
 
+    /// @param sceneVisible when false only the grid/axes backdrop is drawn,
+    /// hiding all scene entities (used while a creation preview is isolated)
     void render(
         Scene &scene,
         const cadm::Mat4 &view,
         const cadm::Mat4 &projection,
-        const cadm::Mat4 &invVp
+        const cadm::Mat4 &invVp,
+        bool sceneVisible = true
     ) const;
 
     void renderStereo(
@@ -54,6 +59,15 @@ public:
     ) const;
 
     void shutdown();
+
+    /// @brief Render a single standalone patch with its control points
+    /// @note (used for the creation live preview)
+    void renderPreviewPatch(
+        const PatchComponent &patch,
+        const PointRegistry &registry,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
     void setGridPlanes(const int planes) {
@@ -121,6 +135,24 @@ private:
         const cadm::Mat4 &projection
     ) const;
 
+    /// @brief Render joined Bézier patches: tessellated surface grid + optional
+    /// control net
+    void renderPatches(const Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection) const;
+
+    /// @brief Draw one patch's tessellated surface
+    /// @pre Assumes the surface shader is bound and glPatchParameteri(16) is
+    /// set
+    void drawPatchSurface(
+        const PatchComponent *patch,
+        cadm::cadf entityHl,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
+
+    /// @brief Draw one patch's control net 
+    /// @pre Assumes the wireframe shader is bound with identity model
+    void drawPatchNet(const PatchComponent *patch, cadm::cadf hl) const;
+
     /// @brief Upload shared view/projection/VP/invVP into the Camera UBO
     void uploadCameraUbo(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
 
@@ -136,6 +168,7 @@ private:
     std::unique_ptr<ShaderProgram> m_selectionRectShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_pointShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
+    std::unique_ptr<ShaderProgram> m_bezierSurfaceShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_stereoCompositeShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
 

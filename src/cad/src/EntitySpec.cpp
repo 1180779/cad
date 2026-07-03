@@ -5,21 +5,15 @@
 #include "EntitySpec.hpp"
 
 #include "Scene.hpp"
+#include "Tools.hxx"
 #include "components/BezierC0Component.hpp"
 #include "components/BezierC2Component.hpp"
 #include "components/InterpC2Component.hxx"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
+#include "components/PatchC0Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
-
-namespace {
-    /// @brief Helper for exhaustive std::visit
-    template <typename... Ts>
-    struct Overloaded : Ts... {
-        using Ts::operator()...;
-    };
-}
 
 bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
     out.id = entity->getId();
@@ -80,6 +74,20 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
             }
         );
     }
+    if (const auto pc = entity->getComponent<PatchComponent>()) {
+        const auto *p = pc.value();
+        const PatchGridData grid{
+            p->getControlPoints(),
+            p->getRows(),
+            p->getCols(),
+            p->getWrapU(),
+            p->getPatchCountX(),
+            p->getPatchCountY(),
+            p->getGridDivisions(),
+            p->getShowNet()
+        };
+        out.components.emplace_back(PatchC0Data{grid});
+    }
 
     return !out.components.empty();
 }
@@ -89,7 +97,7 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
 
     for (const auto &component : spec.components) {
         std::visit(
-            Overloaded{
+            tools::Overloaded{
                 [&](const TransformData &d) {
                     const auto t = e->addComponent<TransformComponent>();
                     t->setTranslation(d.translation);
@@ -136,6 +144,12 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                     curve->setShowControlPolyline(d.showPolyline);
                     curve->setShowBernsteinPolygon(d.showBernsteinPolygon);
                     curve->setShowBernsteinCps(d.showBernsteinCps);
+                },
+                [&](const PatchC0Data &d) {
+                    auto *patch = e->addComponent<PatchC0Component>(&scene.getPointRegistry());
+                    patch->setGrid(d.controlPoints, d.rows, d.cols, d.wrapU, d.patchCountX, d.patchCountY);
+                    patch->setGridDivisions(d.gridDivisions);
+                    patch->setShowNet(d.showNet);
                 },
             },
             component

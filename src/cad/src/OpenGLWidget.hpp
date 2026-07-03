@@ -5,10 +5,14 @@
 #ifndef CAD_RENDERINGWINDOW_H
 #define CAD_RENDERINGWINDOW_H
 
+#include <optional>
+#include <utility>
+
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
 #include <cad_math/Common.hpp>
 #include <cad_math/Vec3.hpp>
+#include "PatchGeometry.hxx"
 #include "PointRegistry.hpp"
 #include "RenderSystem.hpp"
 #include "Scene.hpp"
@@ -29,6 +33,8 @@ enum class DragMode {
     cursorPlace,
     pointDrag,
 };
+
+class PatchComponent;
 
 class OpenGlWidget final : public QOpenGLWidget {
     Q_OBJECT
@@ -53,6 +59,29 @@ public:
     [[nodiscard]] CommandStack& getCommandStack() {
         return m_commandStack;
     }
+
+    /// @brief Show/refresh a transient live preview of a patch about to be
+    /// created (no scene/undo side effects)
+    /// @note The preview follows the active cursor
+    /// @warning When the grid topology changes, the rebuild wraps GL work in
+    /// <code>makeCurrent()</code>/<code>doneCurrent()</code> and thus releases
+    /// the current GL context. Same-topology refreshes (placement/dimension
+    /// changes) are CPU-only and safe anywhere
+    void setPatchPreview(const patchgen::PatchCreateParams &params);
+
+    /// @brief Toggle the control-net wireframe of the live patch preview
+    void setPatchPreviewShowNet(bool v);
+
+    /// @brief Hide all scene entities except the active cursor (grid/axes stay)
+    /// while the live patch preview is active, isolating the preview
+    void setPatchPreviewHideScene(bool v);
+
+    /// @brief Active cursor {translation, Euler ZYX rotation}, or identity
+    /// placement without a cursor
+    [[nodiscard]] std::pair<cadm::Vec3, cadm::Vec3> activeCursorPlacement() const;
+
+    /// @brief Tear down the live patch preview
+    void clearPatchPreview();
 
     [[nodiscard]] const InputMap& getInputMap() const {
         return m_inputMap;
@@ -179,6 +208,8 @@ signals :
 
     void createInterpC2Requested();
 
+    void createPatchC0Requested();
+
 protected:
     void paintGL() override;
 
@@ -251,6 +282,14 @@ private:
     Scene m_scene;
     CommandStack m_commandStack;
     RenderSystem m_renderSystem;
+
+    /// @brief Live preview of a patch being configured in the creation dialog:
+    /// a self-contained point registry + patch component
+    std::unique_ptr<PointRegistry> m_previewRegistry;
+    std::unique_ptr<PatchComponent> m_previewPatch;
+    std::optional<patchgen::PatchCreateParams> m_previewParams;
+    bool m_previewShowNet{true};
+    bool m_previewHideScene{false};
 
     bool m_boxSelectMode{false};
 
