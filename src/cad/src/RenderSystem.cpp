@@ -18,6 +18,7 @@
 #include <cad_math/Vec2.hpp>
 #include <cad_math/Vec3.hpp>
 #include <cmath>
+#include <vector>
 #include <concepts>
 
 #include "components/PatchComponent.hxx"
@@ -223,7 +224,7 @@ void RenderSystem::render(
     GET_GL_ERRORS();
     renderBezierCurves(scene, view, projection);
     GET_GL_ERRORS();
-    renderPatches(scene);
+    renderPatches(scene, view, projection);
     GET_GL_ERRORS();
     renderControlPoints(scene, gl);
     GET_GL_ERRORS();
@@ -775,10 +776,13 @@ void RenderSystem::renderBezierCurves(
     renderC2BezierCurves(scene, view, projection);
 }
 
-void RenderSystem::drawPatchSurface(const PatchComponent *patch, const cadm::cadf entityHl) const {
-    // assumes m_bezierSurfaceShader is bound and glPatchParameteri(16) is set.
-    // each single patch is drawn as constant-parameter iso-lines, once per direction
-    // (uDir 0/1); one draw instance per iso-line
+void RenderSystem::drawPatchSurface(
+    const PatchComponent *patch,
+    const cadm::cadf entityHl,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+) const {
+    // assumes m_bezierSurfaceShader is bound and glPatchParameteri(16) is set
     const auto gl = getGl();
     const int patches = patch->getPatchCount();
     if (patches <= 0) {
@@ -786,17 +790,44 @@ void RenderSystem::drawPatchSurface(const PatchComponent *patch, const cadm::cad
     }
     const int lines = patch->getGridDivisions() + 1;
     SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uLines", lines));
+    SHADER_SET_UNIFORM_CHECK(
+        m_bezierSurfaceShader->setUniform2(
+            "uViewport",
+            static_cast<float>(m_viewportW),
+            static_cast<float>(m_viewportH)
+        )
+    );
     SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("u_highlightStrength", entityHl));
+
+    // per-quad slice counts from the screen extent of its 16 control points
+    // (0 = fully off-screen, skip)
+    const auto &indices = patch->getPatchIndices();
+    std::vector<int> subs(patches);
+    for (int q = 0; q < patches; ++q) {
+        cadm::Vec3 pts[16];
+        for (int k = 0; k < 16; ++k) {
+            pts[k] = patch->patchVertexPos(indices[static_cast<size_t>(q) * 16 + k]);
+        }
+        const auto extent = bezierUtils::screenExtent(pts, view, projection, m_viewportW, m_viewportH);
+        subs[q] = extent.has_value()
+                      ? std::max(1, static_cast<int>(std::ceil(static_cast<cadm::cadf>(*extent) / 64.0f)))
+                      : 0;
+    }
+
     gl->glBindVertexArray(patch->getPatchVao());
     for (int dir = 0; dir < 2; ++dir) {
         SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uDir", dir));
         for (int q = 0; q < patches; ++q) {
+            if (subs[q] == 0) {
+                continue;
+            }
+            SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uSub", subs[q]));
             gl->glDrawElementsInstanced(
                 GL_PATCHES,
                 16,
                 GL_UNSIGNED_INT,
                 reinterpret_cast<const void*>(static_cast<uintptr_t>(q) * 16 * sizeof(uint32_t)),
-                lines
+                lines * subs[q]
             );
         }
     }
@@ -818,7 +849,11 @@ void RenderSystem::drawPatchNet(const PatchComponent *patch, const cadm::cadf hl
     gl->glBindVertexArray(0);
 }
 
-void RenderSystem::renderPatches(const Scene &scene) const {
+void RenderSystem::renderPatches(
+    const Scene &scene,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+) const {
     const auto gl = getGl();
 
     const auto highlight = [&](const Entity *e) {
@@ -842,7 +877,7 @@ void RenderSystem::renderPatches(const Scene &scene) const {
     gl->glPatchParameteri(GL_PATCH_VERTICES, 16);
     forEachPatch(
         [&](const Entity *e, const PatchComponent *patch) {
-            drawPatchSurface(patch, highlight(e));
+            drawPatchSurface(patch, highlight(e), view, projection);
         }
     );
     ShaderProgram::release();
@@ -858,12 +893,17 @@ void RenderSystem::renderPatches(const Scene &scene) const {
     ShaderProgram::release();
 }
 
-void RenderSystem::renderPreviewPatch(const PatchComponent &patch, const PointRegistry &registry) const {
+void RenderSystem::renderPreviewPatch(
+    const PatchComponent &patch,
+    const PointRegistry &registry,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+) const {
     const auto gl = getGl();
 
     m_bezierSurfaceShader->bind();
     gl->glPatchParameteri(GL_PATCH_VERTICES, 16);
-    drawPatchSurface(&patch, s_selectionHS);
+    drawPatchSurface(&patch, s_selectionHS, view, projection);
     ShaderProgram::release();
 
     m_wireframeShader->bind();

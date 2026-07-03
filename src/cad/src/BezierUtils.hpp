@@ -10,13 +10,17 @@
 #include <cad_math/Helpers.hpp>
 #include <algorithm>
 #include <cmath>
+#include <optional>
+#include <span>
 
 namespace bezierUtils {
-    /// Compute the screen-space bounding box extent (in pixels) of 4 control points
+    /// Compute the screen-space bounding box extent (in pixels) of control
+    /// points
     /// @returns Optional int value representing the bigger of width and height
-    /// of the polygon span by the points or none if the polygon is not within the screen
+    /// of the polygon span by the points or none if the polygon is not within
+    /// the screen
     inline std::optional<int> screenExtent(
-        const cadm::Vec3 pts[4],
+        const std::span<const cadm::Vec3> pts,
         const cadm::Mat4 &view,
         const cadm::Mat4 &proj,
         const int vpW,
@@ -24,8 +28,8 @@ namespace bezierUtils {
     ) {
         int minX = vpW, maxX = 0, minY = vpH, maxY = 0;
         bool anyVisible = false;
-        for (int i = 0; i < 4; ++i) {
-            const auto sp = cadm::projectToScreenGl(pts[i], view, proj, vpW, vpH);
+        for (const auto &pt : pts) {
+            const auto sp = cadm::projectToScreenGl(pt, view, proj, vpW, vpH);
             if (!sp) {
                 continue;
             }

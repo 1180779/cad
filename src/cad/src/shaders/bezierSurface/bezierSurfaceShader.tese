@@ -2,9 +2,11 @@
 
 layout (isolines, equal_spacing) in;
 
-// number of constant-parameter lines drawn per direction (== instance count of the draw)
+// number of constant-parameter lines drawn per direction
 uniform int uLines;
-// 0: line of constant v varying u; 
+// slices per iso-line
+uniform int uSub;
+// 0: line of constant v varying u;
 // 1: line of constant u varying v
 uniform int uDir;
 
@@ -52,8 +54,10 @@ vec3 surfacePoint(float u, float v) {
 }
 
 void main() {
-    float fixedParam = uLines > 1 ? float(tcInstanceID[0]) / float(uLines - 1) : 0.0;
-    float vary = gl_TessCoord.x; // varying
+    int lineIdx = tcInstanceID[0] / uSub;
+    int slice = tcInstanceID[0] % uSub;
+    float fixedParam = uLines > 1 ? float(lineIdx) / float(uLines - 1) : 0.0;
+    float vary = (float(slice) + gl_TessCoord.x) / float(uSub); // varying
 
     vec3 pos = uDir == 0
     ? surfacePoint(vary, fixedParam)

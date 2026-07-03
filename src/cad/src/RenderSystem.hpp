@@ -62,7 +62,12 @@ public:
 
     /// @brief Render a single standalone patch with its control points
     /// @note (used for the creation live preview)
-    void renderPreviewPatch(const PatchComponent &patch, const PointRegistry &registry) const;
+    void renderPreviewPatch(
+        const PatchComponent &patch,
+        const PointRegistry &registry,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
     void setGridPlanes(const int planes) {
@@ -132,12 +137,17 @@ private:
 
     /// @brief Render joined Bézier patches: tessellated surface grid + optional
     /// control net
-    void renderPatches(const Scene &scene) const;
+    void renderPatches(const Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection) const;
 
-    /// @brief Draw one patch's tessellated surface 
+    /// @brief Draw one patch's tessellated surface
     /// @pre Assumes the surface shader is bound and glPatchParameteri(16) is
     /// set
-    void drawPatchSurface(const PatchComponent *patch, cadm::cadf entityHl) const;
+    void drawPatchSurface(
+        const PatchComponent *patch,
+        cadm::cadf entityHl,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
 
     /// @brief Draw one patch's control net 
     /// @pre Assumes the wireframe shader is bound with identity model

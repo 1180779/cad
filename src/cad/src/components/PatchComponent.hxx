@@ -91,6 +91,16 @@ public:
         return m_patchEbo.size();
     }
 
+    /// @brief CPU copy of the surface index buffer
+    [[nodiscard]] const std::vector<uint32_t>& getPatchIndices() const {
+        return m_patchEbo.data();
+    }
+
+    /// @brief CPU-side position of surface vertex @p index
+    [[nodiscard]] virtual cadm::Vec3 patchVertexPos(const uint32_t index) const {
+        return m_registry->getPosition(index);
+    }
+
     [[nodiscard]] GLuint getNetVao() const {
         return m_netVao.id();
     }

@@ -116,7 +116,7 @@ void OpenGlWidget::paintGL() {
         }
         m_previewRegistry->syncToGpu();
         m_previewPatch->syncToGpu();
-        m_renderSystem.renderPreviewPatch(*m_previewPatch, *m_previewRegistry);
+        m_renderSystem.renderPreviewPatch(*m_previewPatch, *m_previewRegistry, view, projection);
     }
 
     if (const auto pivot = computePivot()) {
