@@ -133,9 +133,7 @@ void RenderSystem::initialize() {
     SHADER_COMPILATION_CHECK(m_stereoCompositeShader->compile());
 
     m_pivotAxes.m_length = 0.5f;
-    m_pivotAxes.regenerateMesh();
-    m_pivotAxes.syncToGpu();
-
+    m_pivotAxes.updateIfNecessary();
     m_screenQuad = std::make_unique<Quad>();
 
     const auto gl = getGl();
@@ -169,12 +167,7 @@ void RenderSystem::regenerateGeometry(const Scene &scene) {
         if (!geometry) {
             continue;
         }
-        if (auto *geo = geometry.value();
-            geo->m_needsUpdate) {
-            geo->regenerateMesh();
-            geo->syncToGpu();
-            geo->m_needsUpdate = false;
-        }
+        geometry.value()->updateIfNecessary();
     }
 }
 

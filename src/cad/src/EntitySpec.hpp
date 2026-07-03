@@ -77,9 +77,11 @@ struct PatchGridData {
 
 struct PatchC0Data : PatchGridData {};
 
+struct PatchC2Data : PatchGridData {};
+
 using ComponentSpec =
 std::variant<TransformData, PointData, TorusData, AxesData, CursorData, BezierC0Data, BezierC2Data,
-             InterpC2Data, PatchC0Data>;
+             InterpC2Data, PatchC0Data, PatchC2Data>;
 
 /// @brief 
 /// Plain-data description of an entity: 

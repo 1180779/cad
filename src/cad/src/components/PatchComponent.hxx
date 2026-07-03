@@ -109,6 +109,8 @@ public:
         return m_netEbo.size();
     }
 
+    /// @brief Recompute the surface vertex positions after a control point
+    /// moved
     void regenerateMesh() override {}
 
     void syncToGpu() override;
@@ -116,6 +118,7 @@ public:
 protected:
     /// @brief Array index into @ref m_controlPoints for grid cell (row, col),
     /// wrapping the column when @ref m_wrapU is set
+    /// @pre @p row and @p col must be non-negative
     [[nodiscard]] int gridIndex(int row, int col) const;
 
     /// @brief Top-left grid cell of single patch (px, py) in (row, col) terms
@@ -139,10 +142,6 @@ protected:
     /// @brief Upload owned surface vertex data
     virtual void syncPatchVertices(QOpenGLFunctions_4_5_Core *gl) {}
 
-    /// @brief Recompute the surface vertex positions after a control point
-    /// moved
-    virtual void recomputeGeometry() {}
-
     void buildNetEbo();
 
     PointRegistry *m_registry;
@@ -162,9 +161,6 @@ protected:
     Vao m_netVao;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_patchEbo;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_netEbo;
-
-    /// @brief A control point moved: surface vertices need recompute
-    bool m_geometryDirty = false;
 };
 
 #endif //CAD_PATCHCOMPONENT_HXX

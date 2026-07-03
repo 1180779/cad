@@ -41,12 +41,11 @@ namespace patchgen {
 
         std::variant<PlaneExtents, CylinderDimensions> dimensions;
 
-        /// @brief World-space center the grid is generated around (e.g. the
-        /// active 3D cursor), so patches don't always spawn at the origin
+        /// @brief World-space center the grid is generated around
         cadm::Vec3 origin{};
 
         /// @brief Euler ZYX rotation (matching @ref TransformComponent) applied
-        /// to the grid around @ref origin, e.g. the active cursor's rotation
+        /// to the grid around @ref origin
         cadm::Vec3 orientation{};
     };
 

@@ -13,8 +13,7 @@ PatchComponent::PatchComponent(PointRegistry *registry) : m_registry(registry) {
         [this](const PointHandle h) {
             // any control point of this patch moving invalidates the surface geometry
             if (std::ranges::find(m_controlPoints, h) != m_controlPoints.end()) {
-                m_geometryDirty = true;
-                m_needsUpdate = true;
+                markForUpdate();
             }
         }
     );
@@ -52,7 +51,6 @@ void PatchComponent::setGrid(
     m_wrapU = wrapU;
     m_patchCountX = patchCountX;
     m_patchCountY = patchCountY;
-    m_geometryDirty = true;
     m_needsUpdate = true;
     buildNetEbo();
     rebuildPatchData();
@@ -60,7 +58,7 @@ void PatchComponent::setGrid(
 
 int PatchComponent::gridIndex(const int row, const int col) const {
     const int c = m_wrapU
-                      ? (col % m_cols + m_cols) % m_cols
+                      ? col % m_cols
                       : col;
     return row * m_cols + c;
 }
@@ -106,11 +104,6 @@ void PatchComponent::setShowNet(const bool v) {
 }
 
 void PatchComponent::syncToGpu() {
-    if (m_geometryDirty) {
-        recomputeGeometry();
-        m_geometryDirty = false;
-    }
-
     const auto gl = getGl();
     syncPatchVertices(gl);
     m_patchEbo.syncToGpu(gl);
@@ -122,6 +115,4 @@ void PatchComponent::syncToGpu() {
     if (!m_netVao.created() && !m_netEbo.empty()) {
         m_netVao.setup(gl, m_registry->getPositionVBO(), m_netEbo.vboId());
     }
-
-    m_needsUpdate = false;
 }

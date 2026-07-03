@@ -12,8 +12,13 @@
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/PatchC0Component.hxx"
+#include "components/PatchC2Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
+
+namespace {
+    void setPatch(PatchComponent*patch, const PatchGridData*d);
+}
 
 bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
     out.id = entity->getId();
@@ -86,7 +91,12 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
             p->getGridDivisions(),
             p->getShowNet()
         };
-        out.components.emplace_back(PatchC0Data{grid});
+        if (dynamic_cast<const PatchC2Component*>(p)) {
+            out.components.emplace_back(PatchC2Data{grid});
+        }
+        else if (dynamic_cast<const PatchC0Component*>(p)) {
+            out.components.emplace_back(PatchC0Data{grid});
+        }
     }
 
     return !out.components.empty();
@@ -147,9 +157,11 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                 },
                 [&](const PatchC0Data &d) {
                     auto *patch = e->addComponent<PatchC0Component>(&scene.getPointRegistry());
-                    patch->setGrid(d.controlPoints, d.rows, d.cols, d.wrapU, d.patchCountX, d.patchCountY);
-                    patch->setGridDivisions(d.gridDivisions);
-                    patch->setShowNet(d.showNet);
+                    setPatch(patch, &d);
+                },
+                [&](const PatchC2Data &d) {
+                    auto *patch = e->addComponent<PatchC2Component>(&scene.getPointRegistry());
+                    setPatch(patch, &d);
                 },
             },
             component
@@ -158,4 +170,12 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
 
     e->setVisible(spec.visible);
     return e;
+}
+
+namespace {
+    void setPatch(PatchComponent* const patch, const PatchGridData* const d) {
+        patch->setGrid(d->controlPoints, d->rows, d->cols, d->wrapU, d->patchCountX, d->patchCountY);
+        patch->setGridDivisions(d->gridDivisions);
+        patch->setShowNet(d->showNet);
+    }
 }

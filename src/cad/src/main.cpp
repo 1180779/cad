@@ -635,12 +635,16 @@ namespace {
         QObject::connect(glWidget, &OpenGlWidget::createInterpC2Requested, glWidget, spawnInterpC2);
 
         // Bézier patch signals
-        const auto spawnPatchLambda =
-            [spawnPatch] {
+        const auto spawnPatchC0 = [spawnPatch] {
             spawnPatch(false);
         };
-        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPatchC0Requested, glWidget, spawnPatchLambda);
-        QObject::connect(glWidget, &OpenGlWidget::createPatchC0Requested, glWidget, spawnPatchLambda);
+        const auto spawnPatchC2 = [spawnPatch] {
+            spawnPatch(true);
+        };
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPatchC0Requested, glWidget, spawnPatchC0);
+        QObject::connect(glWidget, &OpenGlWidget::createPatchC0Requested, glWidget, spawnPatchC0);
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPatchC2Requested, glWidget, spawnPatchC2);
+        QObject::connect(glWidget, &OpenGlWidget::createPatchC2Requested, glWidget, spawnPatchC2);
     }
 }
 

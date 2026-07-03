@@ -11,6 +11,7 @@
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
 #include "components/PatchC0Component.hxx"
+#include "components/PatchC2Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 
@@ -109,7 +110,11 @@ std::vector<Entity*> GeometryFactory::createPatch(const patchgen::PatchCreatePar
             ? "Patch C2"
             : "Patch C0"
     );
-    PatchComponent *patch = entity->addComponent<PatchC0Component>(&m_scene.getPointRegistry());
+    PatchComponent *patch = params.type == patchgen::PatchCreateParams::Type::c2
+                                ? static_cast<PatchComponent*>(
+                                    entity->addComponent<PatchC2Component>(&m_scene.getPointRegistry())
+                                )
+                                : entity->addComponent<PatchC0Component>(&m_scene.getPointRegistry());
     patch->setGrid(std::move(handles), rows, cols, wrapU, patchCountX, patchCountY);
     created.push_back(entity);
     return created;
