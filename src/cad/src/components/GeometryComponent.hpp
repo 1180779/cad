@@ -27,6 +27,19 @@ public:
 
     ~GeometryComponent() override;
 
+    void select() {
+        m_selected = true;
+    }
+
+    /// @brief Regenerate the mesh and sync it to GPU if marked for update
+    void updateIfNecessary();
+
+    /// @brief Mark for mesh regeneration and GPU sync
+    /// @note Sets @ref m_needsUpdate to true; the operations are done lazily
+    void markForUpdate() {
+        m_needsUpdate = true;
+    }
+
     std::vector<Vertex> m_vertices;
     std::vector<std::uint32_t> m_triangleIndices;
     std::vector<std::uint32_t> m_lineIndices;

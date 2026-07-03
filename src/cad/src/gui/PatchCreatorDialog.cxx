@@ -6,8 +6,6 @@
 
 #include <QDialogButtonBox>
 #include <QGraphicsDropShadowEffect>
-#include <QPushButton>
-#include <QVBoxLayout>
 
 #include "CadTitleBar.hpp"
 #include "Theme.hpp"

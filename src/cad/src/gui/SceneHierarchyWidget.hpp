@@ -52,6 +52,8 @@ signals :
 
     void createPatchC0Requested();
 
+    void createPatchC2Requested();
+
     void setAsNewPointsTargetEntityRequested(Entity *e);
 
     void addSelectedPointsToNewPointsTargetEntityRequested(Entity *e);

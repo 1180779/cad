@@ -43,7 +43,7 @@ namespace {
     std::unordered_map<PointHandle, EntityId> buildPointToPatchMap(const Scene &scene);
 
     /// @brief Drop points that are locked to a patch not also being deleted
-    void removeLockedPatchPoints(Scene & scene, std::vector<EntityId> & ids);
+    void removeLockedPatchPoints(Scene &scene, std::vector<EntityId> &ids);
 
     /// @brief Capture specs for every deleted entity, and collect the point handles among them
     /// @return {specs, deletedPointHandles}
@@ -101,13 +101,16 @@ void CreateEntityCommand::undo() {
 void CreatePatchCommand::execute() {
     if (!m_specs.empty()) {
         // redo: points first so the patch can re-reference live handles
+        const auto isPatch = [](const EntitySpec &s) {
+            return s.has<PatchC0Data>() || s.has<PatchC2Data>();
+        };
         for (const auto &s : m_specs) {
-            if (!s.has<PatchC0Data>()) {
+            if (!isPatch(s)) {
                 rebuildEntity(m_scene, s);
             }
         }
         for (const auto &s : m_specs) {
-            if (s.has<PatchC0Data>()) {
+            if (isPatch(s)) {
                 rebuildEntity(m_scene, s);
             }
         }
@@ -192,6 +195,14 @@ void DeleteEntityCommand::undo() {
 // TransformCommand
 // ---------------------------------------------------------------------------
 
+void TransformCommand::execute() {
+    restore(m_after);
+}
+
+void TransformCommand::undo() {
+    restore(m_before);
+}
+
 void TransformCommand::restore(const std::vector<EntitySnapshot> &snaps) const {
     auto &registry = m_scene.getPointRegistry();
     for (const auto &snap : snaps) {
@@ -199,14 +210,6 @@ void TransformCommand::restore(const std::vector<EntitySnapshot> &snaps) const {
             snap.restoreEntity(registry, e.value());
         }
     }
-}
-
-void TransformCommand::execute() {
-    restore(m_after);
-}
-
-void TransformCommand::undo() {
-    restore(m_before);
 }
 
 // ---------------------------------------------------------------------------

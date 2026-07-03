@@ -183,6 +183,8 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
         menu.addSeparator();
         const auto *createPatchC0Action = menu.addAction("New Bezier Patch C0");
         connect(createPatchC0Action, &QAction::triggered, this, &SceneHierarchyWidget::createPatchC0Requested);
+        const auto *createPatchC2Action = menu.addAction("New Bezier Patch C2");
+        connect(createPatchC2Action, &QAction::triggered, this, &SceneHierarchyWidget::createPatchC2Requested);
         menu.exec(m_listWidget->mapToGlobal(pos));
         return;
     }

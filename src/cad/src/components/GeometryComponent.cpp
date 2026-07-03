@@ -15,6 +15,15 @@ GeometryComponent::~GeometryComponent() {
     }
 }
 
+void GeometryComponent::updateIfNecessary() {
+    if (!m_needsUpdate) {
+        return;
+    }
+    regenerateMesh();
+    syncToGpu();
+    m_needsUpdate = false;
+}
+
 void GeometryComponent::syncToGpu() {
     const auto gl = getGl();
 

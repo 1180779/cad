@@ -210,6 +210,8 @@ signals :
 
     void createPatchC0Requested();
 
+    void createPatchC2Requested();
+
 protected:
     void paintGL() override;
 

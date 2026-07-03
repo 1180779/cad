@@ -37,6 +37,7 @@
 #include "cad_math/Helpers.hpp"
 #include "components/BezierC0Component.hpp"
 #include "components/PatchC0Component.hxx"
+#include "components/PatchC2Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "cursor/GridPlanePlacementStrategy.hpp"
@@ -115,7 +116,7 @@ void OpenGlWidget::paintGL() {
             setPatchPreview(*m_previewParams);
         }
         m_previewRegistry->syncToGpu();
-        m_previewPatch->syncToGpu();
+        m_previewPatch->updateIfNecessary();
         m_renderSystem.renderPreviewPatch(*m_previewPatch, *m_previewRegistry, view, projection);
     }
 
@@ -623,6 +624,12 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
                 emit createPatchC0Requested();
             }
         );
+        menu.addAction(
+            "New Bezier Patch C2",
+            [this] {
+                emit createPatchC2Requested();
+            }
+        );
         m_createMenuOpen = true;
         menu.exec(QCursor::pos());
         m_createMenuOpen = false;
@@ -713,15 +720,18 @@ std::pair<cadm::Vec3, cadm::Vec3> OpenGlWidget::activeCursorPlacement() const {
 void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
     patchgen::PatchCreateParams placed = params;
     std::tie(placed.origin, placed.orientation) = activeCursorPlacement();
+    const bool sameType = m_previewParams && m_previewParams->type == placed.type;
     m_previewParams = placed;
     const auto [rows, cols, wrapU, patchCountX, patchCountY, positions] = patchgen::generate(placed);
     if (m_previewPatch
+        && sameType
         && m_previewPatch->getRows() == rows
         && m_previewPatch->getCols() == cols
         && m_previewPatch->getWrapU() == wrapU
         && m_previewPatch->getPatchCountX() == patchCountX
         && m_previewPatch->getPatchCountY() == patchCountY) {
         m_previewRegistry->setPositions(m_previewPatch->getControlPoints().front(), positions);
+        m_previewPatch->markForUpdate();
         update();
         return;
     }
@@ -738,8 +748,13 @@ void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
     const PointHandle first = m_previewRegistry->addPoints(positions);
     std::vector<PointHandle> handles(positions.size());
     std::ranges::iota(handles, first);
-    if (!m_previewPatch) {
-        m_previewPatch = std::make_unique<PatchC0Component>(m_previewRegistry.get());
+    if (!m_previewPatch || !sameType) {
+        if (placed.type == patchgen::PatchCreateParams::Type::c2) {
+            m_previewPatch = std::make_unique<PatchC2Component>(m_previewRegistry.get());
+        }
+        else {
+            m_previewPatch = std::make_unique<PatchC0Component>(m_previewRegistry.get());
+        }
         m_previewPatch->setShowNet(m_previewShowNet);
     }
     m_previewPatch->setGrid(std::move(handles), rows, cols, wrapU, patchCountX, patchCountY);
