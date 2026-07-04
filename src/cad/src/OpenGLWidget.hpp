@@ -232,6 +232,19 @@ protected:
     void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
+    static void clearBuffers(QOpenGLFunctions_4_5_Core *gl);
+
+    void calculateStereoProjections(
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        std::span<cadm::Mat4, 2> views,
+        std::span<cadm::Mat4, 2> projs
+    ) const;
+
+    void renderTransformAxis() const;
+
+    void renderBoxSelectionRectangle() const;
+
     void performBoxSelect();
 
     void deleteSelectedEntities();

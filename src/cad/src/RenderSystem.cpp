@@ -227,11 +227,11 @@ void RenderSystem::render(
 
 void RenderSystem::renderStereo(
     Scene &scene,
-    const cadm::Mat4 &leftView,
-    const cadm::Mat4 &leftProjection,
-    const cadm::Mat4 &rightView,
-    const cadm::Mat4 &rightProjection,
-    const bool luminance
+    const std::span<cadm::Mat4, 2> views,
+    const std::span<cadm::Mat4, 2> projs,
+    const bool luminance,
+    const bool sceneVisible,
+    const std::function<void(const cadm::Mat4 & view, const cadm::Mat4 & projection)> &perEye
 ) {
     const auto gl = getGl();
     GLint prevFbo = 0;
@@ -239,16 +239,17 @@ void RenderSystem::renderStereo(
 
     ensureStereoTargets();
 
-    const cadm::Mat4 *views[2] = {&leftView, &rightView};
-    const cadm::Mat4 *projs[2] = {&leftProjection, &rightProjection};
     for (int i = 0; i < 2; ++i) {
         gl->glBindFramebuffer(GL_FRAMEBUFFER, m_stereoFbo[i]);
         gl->glViewport(0, 0, m_stereoW, m_stereoH);
         const auto &bg = theme::active().viewport;
         gl->glClearColor(bg.redF(), bg.greenF(), bg.blueF(), 1.0f);
         gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        const cadm::Mat4 invVp = views[i]->inversedView() * projs[i]->inversedFrustum();
-        render(scene, *views[i], *projs[i], invVp);
+        const cadm::Mat4 invVp = views[i].inversedView() * projs[i].inversedFrustum();
+        render(scene, views[i], projs[i], invVp, sceneVisible);
+        if (perEye) {
+            perEye(views[i], projs[i]);
+        }
     }
 
     gl->glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);
@@ -269,7 +270,7 @@ void RenderSystem::renderStereo(
     gl->glEnable(GL_DEPTH_TEST);
 }
 
-void RenderSystem::renderSelectionRect(
+void RenderSystem::renderBoxSelectionRect(
     const cadm::cadf x0Ndc,
     const cadm::cadf y0Ndc,
     const cadm::cadf x1Ndc,

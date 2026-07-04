@@ -8,6 +8,7 @@
 #include "ShaderProgram.hpp"
 #include "Quad.hpp"
 #include "components/GeometryComponent.hpp"
+#include <functional>
 #include <memory>
 #include <cad_math/Vec3.hpp>
 #include <cad_math/Mat4.hpp>
@@ -32,16 +33,17 @@ public:
         bool sceneVisible = true
     ) const;
 
+    /// @brief Render for both eyes (stereoscopy)
     void renderStereo(
         Scene &scene,
-        const cadm::Mat4 &leftView,
-        const cadm::Mat4 &leftProjection,
-        const cadm::Mat4 &rightView,
-        const cadm::Mat4 &rightProjection,
-        bool luminance
+        std::span<cadm::Mat4, 2> views,
+        std::span<cadm::Mat4, 2> projs,
+        bool luminance,
+        bool sceneVisible = true,
+        const std::function<void(const cadm::Mat4 & view, const cadm::Mat4 & projection)> &perEye = {}
     );
 
-    void renderSelectionRect(
+    void renderBoxSelectionRect(
         cadm::cadf x0Ndc,
         cadm::cadf y0Ndc,
         cadm::cadf x1Ndc,
