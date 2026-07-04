@@ -16,6 +16,14 @@ find_package(Qt6 COMPONENTS
 find_package(OpenGL REQUIRED)
 find_package(TBB REQUIRED)
 
+include(FetchContent)
+
+FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.5.4
+)
+
 add_subdirectory(src/cad_math)
 add_subdirectory(src/common)
 add_subdirectory(src/ellipse)
@@ -24,8 +32,6 @@ add_subdirectory(src/cad)
 enable_testing()
 add_subdirectory(tests)
 
-# comment-style check, runnable on demand from CLion (green hammer) or the CLI.
-# checks every tracked C/C++ source; the git pre-commit hook checks staged files only.
 find_program(LUA_EXECUTABLE NAMES lua5.4 lua)
 if (LUA_EXECUTABLE)
     add_custom_target(check_comments
