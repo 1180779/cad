@@ -5,6 +5,7 @@
 #ifndef CAD_QUATERNION_HXX
 #define CAD_QUATERNION_HXX
 
+#include <algorithm>
 #include <span>
 
 #include "VecBase.hpp"
@@ -284,12 +285,12 @@ namespace cadm {
         }
 
         /// @brief Quaternion to ZYX Euler angles (x=roll, y=pitch, z=yaw)
-        Vec<3, T> toEuler() const {
+        Vec<3, T> toEuler() const noexcept {
             return Quaternion::toEuler(*this);
         }
 
         /// @brief Quaternion to ZYX Euler angles (x=roll, y=pitch, z=yaw)
-        static Vec<3, T> toEuler(const Quaternion &q) {
+        static Vec<3, T> toEuler(const Quaternion &q) noexcept {
             const auto w = q[0],
                        x = q[1],
                        y = q[2],
@@ -299,10 +300,9 @@ namespace cadm {
             const auto cosr = 1 - 2 * (x * x + y * y);
             const auto roll = std::atan2(sinr, cosr);
 
-            const auto sinp = 2 * (w * y - z * x);
-            const auto pitch = std::abs(sinp) >= 1
-                                   ? std::copysign(std::numbers::pi_v<cadf> / 2, sinp)
-                                   : std::asin(sinp);
+            const auto sinp = std::clamp(2 * (w * y - x * z), T{-1}, T{1});
+            const auto pitch = -std::numbers::pi_v<cadf> / 2
+                + 2 * std::atan2(std::sqrt(1 + sinp), std::sqrt(1 - sinp));
 
             const auto siny = 2 * (w * z + x * y);
             const auto cosy = 1 - 2 * (y * y + z * z);
@@ -312,10 +312,11 @@ namespace cadm {
         }
 
         /// @brief Inverse of @ref Quaternion::toEuler
-        static Quaternion fromEuler(const Vec<3, T> &rotation) {
-            const auto cr = std::cos(rotation.x * 0.5f), sr = std::sin(rotation.x * 0.5f);
-            const auto cp = std::cos(rotation.y * 0.5f), sp = std::sin(rotation.y * 0.5f);
-            const auto cy = std::cos(rotation.z * 0.5f), sy = std::sin(rotation.z * 0.5f);
+        static Quaternion fromEuler(const Vec<3, T> &rotation) noexcept {
+            const auto rotationHalf = rotation * 0.5f;
+            const auto cr = std::cos(rotationHalf.x), sr = std::sin(rotationHalf.x);
+            const auto cp = std::cos(rotationHalf.y), sp = std::sin(rotationHalf.y);
+            const auto cy = std::cos(rotationHalf.z), sy = std::sin(rotationHalf.z);
             return Quaternion(
                 cr * cp * cy + sr * sp * sy,
                 sr * cp * cy - cr * sp * sy,
