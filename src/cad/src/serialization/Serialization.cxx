@@ -111,7 +111,6 @@ namespace {
         return out;
     }
 
-    // TODO: check this again
     QJsonArray controlPointsToJson(const std::vector<PointHandle> &cps, const PointHandleToIdMap &map) {
         QJsonArray arr;
         for (const auto h : cps) {
