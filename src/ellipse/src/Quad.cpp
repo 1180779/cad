@@ -30,7 +30,7 @@ Quad::Quad() : m_vao(0), m_vbo(0) {
         0.0f
     };
 
-    const auto gl = gl();
+    const auto gl = getGl();
     gl->glGenVertexArrays(1, &m_vao);
     gl->glGenBuffers(1, &m_vbo);
 
@@ -48,13 +48,13 @@ Quad::Quad() : m_vao(0), m_vbo(0) {
 }
 
 Quad::~Quad() {
-    const auto gl = gl();
+    const auto gl = getGl();
     gl->glDeleteVertexArrays(1, &m_vao);
     gl->glDeleteBuffers(1, &m_vbo);
 }
 
 void Quad::draw() const {
-    const auto gl = gl();
+    const auto gl = getGl();
     gl->glBindVertexArray(m_vao);
     gl->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     gl->glBindVertexArray(0);
