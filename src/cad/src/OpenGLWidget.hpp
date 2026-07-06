@@ -35,6 +35,11 @@ enum class DragMode {
 };
 
 class PatchComponent;
+class OpenGlWidget;
+
+namespace aliases {
+    using GlW = OpenGlWidget;
+}
 
 class OpenGlWidget final : public QOpenGLWidget {
     Q_OBJECT

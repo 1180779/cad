@@ -14,6 +14,12 @@
 #include "../components/TransformComponent.hpp"
 #include "../PointRegistry.hpp"
 
+class CameraController;
+
+namespace aliases {
+    using CamContr = CameraController;
+}
+
 /// @brief Manages the available ICameraStrategy and syncs them with scene entity changes
 class CameraController final : public QObject {
     Q_OBJECT

@@ -7,6 +7,12 @@
 #include "../camera/CameraController.hpp"
 
 class CommandStack;
+class SceneHierarchyWidget;
+
+namespace aliases {
+    // ReSharper disable once CppInconsistentNaming
+    using SceneHW = SceneHierarchyWidget;
+}
 
 /// @brief Widget displaying the list of the entities from the scene
 class SceneHierarchyWidget final : public QWidget {

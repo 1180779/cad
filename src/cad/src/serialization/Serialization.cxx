@@ -304,7 +304,7 @@ QJsonDocument serialization::toJson(Scene &scene) {
         };
 
         // skip the points this time
-        if (const auto pc = e->getComponent<PointComponent>()) {
+        if (e->getComponent<PointComponent>()) {
             continue;
         }
 

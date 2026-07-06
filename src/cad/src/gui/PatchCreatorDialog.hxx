@@ -13,6 +13,13 @@
 
 #include "PatchGeometry.hxx"
 
+class PatchCreatorDialog;
+
+namespace aliases {
+    // ReSharper disable once CppInconsistentNaming
+    using PCDialog = PatchCreatorDialog;
+}
+
 /// @brief Non-modal frameless dialog collecting parameters for a new joined
 /// Bézier patch; the viewport stays interactive for the live preview
 class PatchCreatorDialog final : public QDialog {
@@ -24,10 +31,9 @@ public:
     /// @brief Current parameters as configured in the dialog
     [[nodiscard]] patchgen::PatchCreateParams params() const;
 
-    signals  :
+signals :
     /// @brief Emitted whenever any field changes (and once on construction) so
     /// a caller can drive a live preview
-    
 
     void paramsChanged(patchgen::PatchCreateParams params);
 
