@@ -19,6 +19,16 @@ find_package(TBB REQUIRED)
 include(FetchContent)
 
 FetchContent_Declare(
+        valijson
+        GIT_REPOSITORY https://github.com/tristanpenman/valijson.git
+        GIT_TAG v1.0.6
+        GIT_SHALLOW TRUE
+        GIT_SUBMODULES ""
+)
+set(valijson_BUILD_TESTS OFF CACHE BOOL "Don't build valijson tests" FORCE)
+set(valijson_BUILD_EXAMPLES OFF CACHE BOOL "Don't build valijson examples" FORCE)
+
+FetchContent_Declare(
         Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
         GIT_TAG v3.5.4

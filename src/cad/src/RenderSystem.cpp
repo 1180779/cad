@@ -26,7 +26,7 @@
 namespace {
     /// @brief Structural interface shared by the C2 curves that render through the Bernstein
     /// patch tessellation path (BezierC2 and InterpC2)
-    template <class C>
+    template <typename C>
     concept bezierPatchCurve = requires(const C c) {
         { c.segmentCount() } -> std::convertible_to<int>;
         { c.getBernsteinPositions() } -> std::convertible_to<const std::vector<cadm::Vec3>&>;

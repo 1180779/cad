@@ -41,8 +41,7 @@ public:
 
     void setRotation(const cadm::Vec3 &rotation);
 
-    signals  :
-
+signals  :
     
 
     void translationXChanged(double value);
