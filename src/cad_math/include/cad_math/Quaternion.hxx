@@ -10,7 +10,7 @@
 #include "VecBase.hpp"
 
 namespace cadm {
-    template <typename T = cadf>
+    template <typename T>
     class Quaternion final {
         union {
             T data[4]{};
@@ -282,7 +282,50 @@ namespace cadm {
             }
             return res;
         }
+
+        /// @brief Quaternion to ZYX Euler angles (x=roll, y=pitch, z=yaw)
+        Vec<3, T> toEuler() const {
+            return Quaternion::toEuler(*this);
+        }
+
+        /// @brief Quaternion to ZYX Euler angles (x=roll, y=pitch, z=yaw)
+        static Vec<3, T> toEuler(const Quaternion &q) {
+            const auto w = q[0],
+                       x = q[1],
+                       y = q[2],
+                       z = q[3];
+
+            const auto sinr = 2 * (w * x + y * z);
+            const auto cosr = 1 - 2 * (x * x + y * y);
+            const auto roll = std::atan2(sinr, cosr);
+
+            const auto sinp = 2 * (w * y - z * x);
+            const auto pitch = std::abs(sinp) >= 1
+                                   ? std::copysign(std::numbers::pi_v<cadf> / 2, sinp)
+                                   : std::asin(sinp);
+
+            const auto siny = 2 * (w * z + x * y);
+            const auto cosy = 1 - 2 * (y * y + z * z);
+            const auto yaw = std::atan2(siny, cosy);
+
+            return {roll, pitch, yaw};
+        }
+
+        /// @brief Inverse of @ref Quaternion::toEuler
+        static Quaternion fromEuler(const Vec<3, T> &rotation) {
+            const auto cr = std::cos(rotation.x * 0.5f), sr = std::sin(rotation.x * 0.5f);
+            const auto cp = std::cos(rotation.y * 0.5f), sp = std::sin(rotation.y * 0.5f);
+            const auto cy = std::cos(rotation.z * 0.5f), sy = std::sin(rotation.z * 0.5f);
+            return Quaternion(
+                cr * cp * cy + sr * sp * sy,
+                sr * cp * cy - cr * sp * sy,
+                cr * sp * cy + sr * cp * sy,
+                cr * cp * sy - sr * sp * cy
+            );
+        }
     };
+
+    using Quat = Quaternion<cadf>;
 }
 
 #endif //CAD_QUATERNION_HXX
