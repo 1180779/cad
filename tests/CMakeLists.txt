@@ -1,7 +1,7 @@
 FetchContent_MakeAvailable(Catch2)
 
 add_executable(cad_math_tests
-        test_math.cpp
+        Math.cpp
 )
 
 target_link_libraries(cad_math_tests
@@ -15,19 +15,34 @@ target_compile_features(cad_math_tests PRIVATE cxx_std_23)
 add_test(NAME cad_math_tests COMMAND cad_math_tests)
 
 add_executable(cad_command_tests
-        test_commands.cpp
+        Commands.cpp
         ${CMAKE_SOURCE_DIR}/src/cad/src/commands/CommandStack.hpp
-)
-
-target_include_directories(cad_command_tests PRIVATE
-        ${CMAKE_SOURCE_DIR}/src/cad/src
 )
 
 target_link_libraries(cad_command_tests
         PRIVATE
+        cad_core
         Catch2::Catch2WithMain
 )
 
 target_compile_features(cad_command_tests PRIVATE cxx_std_23)
 
 add_test(NAME cad_command_tests COMMAND cad_command_tests)
+
+add_executable(cad_serialization_tests
+        Serialization.cpp
+)
+
+target_link_libraries(cad_serialization_tests
+        PRIVATE
+        cad_core
+        Catch2::Catch2WithMain
+)
+
+target_compile_definitions(cad_serialization_tests PRIVATE
+        CAD_FORMAT_DIR="${CMAKE_SOURCE_DIR}/src/cad/format"
+)
+
+target_compile_features(cad_serialization_tests PRIVATE cxx_std_23)
+
+add_test(NAME cad_serialization_tests COMMAND cad_serialization_tests)

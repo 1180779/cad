@@ -1,17 +1,20 @@
+FetchContent_MakeAvailable(valijson)
+
 file(GLOB_RECURSE CAD_SOURCES
         src/*.cpp
         src/*.hpp
         src/*.cxx
         src/*.hxx
 )
+list(REMOVE_ITEM CAD_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
 # AUTORCC compiles this; it must be listed as a target source (the GLOB above
 # only picks up .cpp/.hpp). Registers the vendored JetBrains icons + Mono font.
 set(CAD_RESOURCES resources/resources.qrc)
 
-add_executable(cad ${CAD_SOURCES} ${CAD_RESOURCES})
+add_library(cad_core ${CAD_SOURCES} ${CAD_RESOURCES})
 
-target_link_libraries(cad
+target_link_libraries(cad_core PUBLIC
         Qt::Core
         Qt::Gui
         Qt::Widgets
@@ -19,11 +22,16 @@ target_link_libraries(cad
         cad_math
         common
         TBB::tbb
+        ValiJSON::valijson
 )
 
-target_include_directories(cad PRIVATE
+target_include_directories(cad_core PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
+add_executable(cad src/main.cpp)
+
+target_link_libraries(cad PRIVATE cad_core)
 
 add_custom_target(CadCopyShaders
         COMMAND ${CMAKE_COMMAND} -E copy_directory
