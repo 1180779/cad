@@ -71,7 +71,8 @@ struct PatchGridData {
     bool wrapU{};
     int patchCountX{};
     int patchCountY{};
-    int gridDivisions{4};
+    int gridDivisionsU{4};
+    int gridDivisionsV{4};
     bool showNet{false};
 };
 

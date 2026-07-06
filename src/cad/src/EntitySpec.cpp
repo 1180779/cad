@@ -88,7 +88,8 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
             p->getWrapU(),
             p->getPatchCountX(),
             p->getPatchCountY(),
-            p->getGridDivisions(),
+            p->getGridDivisionsU(),
+            p->getGridDivisionsV(),
             p->getShowNet()
         };
         if (dynamic_cast<const PatchC2Component*>(p)) {
@@ -175,7 +176,8 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
 namespace {
     void setPatch(PatchComponent* const patch, const PatchGridData* const d) {
         patch->setGrid(d->controlPoints, d->rows, d->cols, d->wrapU, d->patchCountX, d->patchCountY);
-        patch->setGridDivisions(d->gridDivisions);
+        patch->setGridDivisionsU(d->gridDivisionsU);
+        patch->setGridDivisionsV(d->gridDivisionsV);
         patch->setShowNet(d->showNet);
     }
 }

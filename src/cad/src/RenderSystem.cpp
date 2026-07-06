@@ -231,7 +231,7 @@ void RenderSystem::renderStereo(
     const std::span<cadm::Mat4, 2> projs,
     const bool luminance,
     const bool sceneVisible,
-    const std::function<void(const cadm::Mat4 & view, const cadm::Mat4 & projection)> &perEye
+    const std::function<void(const cadm::Mat4 &view, const cadm::Mat4 &projection)> &perEye
 ) {
     const auto gl = getGl();
     GLint prevFbo = 0;
@@ -782,8 +782,6 @@ void RenderSystem::drawPatchSurface(
     if (patches <= 0) {
         return;
     }
-    const int lines = patch->getGridDivisions() + 1;
-    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uLines", lines));
     SHADER_SET_UNIFORM_CHECK(
         m_bezierSurfaceShader->setUniform2(
             "uViewport",
@@ -810,6 +808,10 @@ void RenderSystem::drawPatchSurface(
 
     gl->glBindVertexArray(patch->getPatchVao());
     for (int dir = 0; dir < 2; ++dir) {
+        const int lines = (dir == 0
+                               ? patch->getGridDivisionsV()
+                               : patch->getGridDivisionsU()) + 1;
+        SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uLines", lines));
         SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uDir", dir));
         for (int q = 0; q < patches; ++q) {
             if (subs[q] == 0) {
