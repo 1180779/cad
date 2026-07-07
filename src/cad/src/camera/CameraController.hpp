@@ -42,6 +42,11 @@ public:
     /// @note does not remove the strategy if it is the last one available
     void removeCamera(EntityId id);
 
+    /// @brief Removes every camera strategy; unlike @ref removeCamera, allowed
+    /// to go to zero
+    /// @note Use for resetting this class's state
+    void clear();
+
     /// @brief Get the active strategy
     /// @return the active strategy
     [[nodiscard]] ICameraStrategy* getActiveStrategy() const;
@@ -83,10 +88,7 @@ public:
         return m_cameras;
     }
 
-    signals  :
-
-    
-
+signals :
     void cameraChanged(const std::string &name);
 
 private:

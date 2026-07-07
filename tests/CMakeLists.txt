@@ -46,3 +46,17 @@ target_compile_definitions(cad_serialization_tests PRIVATE
 target_compile_features(cad_serialization_tests PRIVATE cxx_std_23)
 
 add_test(NAME cad_serialization_tests COMMAND cad_serialization_tests)
+
+add_executable(cad_scene_tests
+        SceneLifecycle.cpp
+)
+
+target_link_libraries(cad_scene_tests
+        PRIVATE
+        cad_core
+        Catch2::Catch2WithMain
+)
+
+target_compile_features(cad_scene_tests PRIVATE cxx_std_23)
+
+add_test(NAME cad_scene_tests COMMAND cad_scene_tests)

@@ -25,7 +25,10 @@ public:
         Entity *cameraEntity,
         std::function<int()> widthGetter,
         std::function<int()> heightGetter
-    ) : m_cameraEntity{cameraEntity}, m_widthGetter{std::move(widthGetter)}, m_heightGetter{std::move(heightGetter)} {}
+    )
+    : m_cameraEntity{cameraEntity},
+      m_widthGetter{std::move(widthGetter)},
+      m_heightGetter{std::move(heightGetter)} {}
 
     virtual cadm::Mat4 getView() = 0;
 

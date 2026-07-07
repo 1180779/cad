@@ -34,6 +34,11 @@ enum class InputAction {
     switchCamera,
     createMenu,
 
+    newFile,
+    save,
+    saveAs,
+    open,
+
     undo,
     redo,
 
@@ -144,6 +149,11 @@ inline InputMap::InputMap() {
     bind(InputAction::toggleCoordSpace, {Qt::Key_QuoteLeft, Qt::NoModifier});
     bind(InputAction::switchCamera, {Qt::Key_N, Qt::NoModifier});
     bind(InputAction::createMenu, {Qt::Key_C, Qt::NoModifier});
+
+    bind(InputAction::newFile, {Qt::Key_N, Qt::ControlModifier});
+    bind(InputAction::save, {Qt::Key_S, Qt::ControlModifier});
+    bind(InputAction::saveAs, {Qt::Key_S, Qt::ControlModifier | Qt::ShiftModifier});
+    bind(InputAction::open, {Qt::Key_O, Qt::ControlModifier});
 
     bind(InputAction::undo, {Qt::Key_Z, Qt::ControlModifier, true});
     bind(InputAction::redo, {Qt::Key_Y, Qt::ControlModifier, true});

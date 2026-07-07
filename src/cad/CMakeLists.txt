@@ -40,7 +40,14 @@ add_custom_target(CadCopyShaders
         COMMENT "Copying shaders to output directory"
 )
 
-add_dependencies(cad CadCopyShaders)
+add_custom_target(CadCopyFormat
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/format/schema.json
+        $<TARGET_FILE_DIR:cad>/format/schema.json
+        COMMENT "Copying scene JSON schema to output directory"
+)
+
+add_dependencies(cad CadCopyShaders CadCopyFormat)
 
 if (WIN32)
     get_target_property(QMAKE_EXECUTABLE Qt::qmake IMPORTED_LOCATION)

@@ -21,6 +21,50 @@
 
 /// @brief Builders for the common component-panel widgets
 namespace widgets {
+    inline void addTitle(QLayout *layout, const QString &text);
+
+    inline QCheckBox* addCheckbox(QLayout *layout, const QString &text, bool checked);
+
+    inline QListWidget* addPointList(
+        QLayout *layout,
+        const QString &label,
+        QAbstractItemView::SelectionMode mode = QAbstractItemView::ExtendedSelection
+    );
+
+    inline QPushButton* addButton(QVBoxLayout *layout, const QString &text);
+
+    inline QSpinBox* addSpinBox(
+        QLayout *layout,
+        const QString &label,
+        int min,
+        int max,
+        int value
+    );
+
+    inline QComboBox* addFormComboBox(QFormLayout *form, const QString &label, const QStringList &items);
+
+    inline QSpinBox* addFormSpinBox(QFormLayout *form, const QString &label, int min, int max, int value);
+
+    inline ModifierDoubleSpinBox* newDoubleSpinBox(double min, double max, double value);
+
+    inline ModifierDoubleSpinBox* addDoubleSpinBox(QLayout *layout, const QString &label, int min, int max, int value);
+
+    inline ModifierDoubleSpinBox* addFormDoubleSpinBox(
+        QFormLayout *form,
+        const QString &label,
+        double min,
+        double max,
+        double value
+    );
+
+    inline void addSeparator(QLayout *layout);
+
+    inline VirtualPointPropertiesWidget* addPointProps(QLayout *layout);
+}
+
+namespace widgets {
+    // implementation
+
     inline void addTitle(QLayout *layout, const QString &text) {
         // ReSharper disable once CppDFAMemoryLeak
         const auto title = new QLabel(text);
@@ -40,7 +84,7 @@ namespace widgets {
     inline QListWidget* addPointList(
         QLayout *layout,
         const QString &label,
-        const QAbstractItemView::SelectionMode mode = QAbstractItemView::ExtendedSelection
+        const QAbstractItemView::SelectionMode mode
     ) {
         layout->addWidget(new QLabel(label));
         const auto list = new QListWidget;
@@ -95,9 +139,7 @@ namespace widgets {
         return spin;
     }
 
-    inline ModifierDoubleSpinBox* addFormDoubleSpinBox(
-        QFormLayout *form,
-        const QString &label,
+    inline ModifierDoubleSpinBox* newDoubleSpinBox(
         const double min,
         const double max,
         const double value
@@ -106,7 +148,32 @@ namespace widgets {
         spin->setRange(min, max);
         spin->setValue(value);
         spin->setAlignment(Qt::AlignRight);
+        spin->setMinimumWidth(60);
         spin->setMaximumWidth(100);
+        return spin;
+    }
+
+    inline ModifierDoubleSpinBox* addDoubleSpinBox(
+        QLayout *layout,
+        const QString &label,
+        const int min,
+        const int max,
+        const int value
+    ) {
+        layout->addWidget(new QLabel(label));
+        const auto spin = newDoubleSpinBox(min, max, value);
+        layout->addWidget(spin);
+        return spin;
+    }
+
+    inline ModifierDoubleSpinBox* addFormDoubleSpinBox(
+        QFormLayout *form,
+        const QString &label,
+        const double min,
+        const double max,
+        const double value
+    ) {
+        const auto spin = newDoubleSpinBox(min, max, value);
         form->addRow(label, spin);
         return spin;
     }

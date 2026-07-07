@@ -1,6 +1,10 @@
 #include <tuple>
 
+#include <QFileDialog>
 #include <QFontDatabase>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QMessageBox>
 #include <QPainter>
 #include <QSplitter>
 #include <QStackedWidget>
@@ -12,6 +16,7 @@
 #include "GeometryFactory.hpp"
 #include "GlCommon.hpp"
 #include "OpenGLWidget.hpp"
+#include "PersistentEntities.hxx"
 #include "commands/Commands.hpp"
 #include "components/INewPointsTargetComponent.hpp"
 #include "camera/CadCameraStrategy.hpp"
@@ -24,11 +29,14 @@
 #include "gui/StatusBarWidget.hpp"
 #include "gui/ToolPanelBar.hpp"
 #include "gui/ViewportPanelWidget.hpp"
+#include "serialization/Serialization.hxx"
 
-/// @brief Width of the app-colored separator strips between viewport, tool window and status line
+/// @brief Width of the app-colored separator strips between viewport, tool
+/// window and status line
 constexpr int gc_separatorStripWidth = 5;
 
-/// @brief Border width around the frameless window reserved for native resize handling
+/// @brief Border width around the frameless window reserved for native resize
+/// handling
 constexpr int gc_resizeMargin = 6;
 
 namespace {
@@ -40,7 +48,8 @@ namespace {
         }
     }
 
-    /// @brief Wires the panel bar and Tools-menu toggles to the stacked tool windows
+    /// @brief Wires the panel bar and Tools-menu toggles to the stacked tool
+    /// windows
     void wirePanelToggles(
         const ToolPanelBar *panelBar,
         QStackedWidget *panelStack,
@@ -82,9 +91,156 @@ namespace {
         QObject::connect(viewportAction, &QAction::toggled, viewportBtn, syncViewportToolWindow);
     }
 
-    /// @brief Wires the Edit-menu Undo/Redo actions to the command stack and keeps their
-    /// enabled state in sync when the menu opens
-    void wireUndoRedo(CadMenuBar *menuBar, OpenGlWidget *glWidget) {
+    /// @brief Creates the default cursor + default cameras for the scene
+    void setupDefaultCamerasAndCursor(OpenGlWidget *glW) {
+        Scene &scene = glW->getScene();
+        const GeometryFactory geometryFactory(scene);
+        scene.setActiveCursor(geometryFactory.createCursor({0, 0, 0}, "Cursor"));
+
+        const auto widthOf = [glW] {
+            return glW->width();
+        };
+        const auto heightOf = [glW] {
+            return glW->height();
+        };
+
+        const CameraFactory cameraFactory(scene);
+        const auto blenderCamera = cameraFactory.createBlenderCamera(20, {});
+        auto blenderCameraStrategy = std::make_unique<BlenderCameraStrategy>(blenderCamera, widthOf, heightOf);
+        const auto cadCamera = cameraFactory.createCadCamera({0, 0, -10}, {}, cadm::Vec3::unitY());
+        auto cadCameraStrat = std::make_unique<CadCameraStrategy>(cadCamera, widthOf, heightOf);
+
+        glW->getCameraController().addCamera("Blender", std::move(blenderCameraStrategy));
+        glW->getCameraController().addCamera("Cad", std::move(cadCameraStrat));
+        glW->getCameraController().getActiveStrategy()->syncAspectRatio();
+    }
+
+    /// @brief Wires New/Save/Save As/Open to a native file dialog and JSON
+    /// (de)serialization. The current file path is process-lifetime state
+    void wireFileMenu(const CadMenuBar *menuBar, OpenGlWidget *glW) {
+        static QString currentFilePath;
+
+        const auto writeToPath = [glW](const QString &path) {
+            QFile file(path);
+            if (!file.open(QIODevice::WriteOnly)) {
+                QMessageBox::warning(glW, "Save Failed", "Could not open file for writing:\n" + path);
+                return false;
+            }
+            file.write(serialization::toJson(glW->getScene()).toJson());
+            return true;
+        };
+        const auto saveAs = [glW, writeToPath] {
+            static const QString jsonFilter = "Scene Files (*.json)";
+            QString selectedFilter = jsonFilter;
+            QString path = QFileDialog::getSaveFileName(
+                glW,
+                "Save Scene",
+                {},
+                jsonFilter + ";;All Files (*)",
+                &selectedFilter
+            );
+            if (path.isEmpty()) {
+                return;
+            }
+            if (selectedFilter == jsonFilter && !path.endsWith(".json", Qt::CaseInsensitive)) {
+                path += ".json";
+            }
+            if (writeToPath(path)) {
+                currentFilePath = path;
+            }
+        };
+
+        const auto save = [writeToPath, saveAs] {
+            if (currentFilePath.isEmpty()) {
+                saveAs();
+                return;
+            }
+            writeToPath(currentFilePath);
+        };
+
+        // TODO: add popup asking for confirmation
+        const auto newScene = [glW] {
+            Scene &scene = glW->getScene();
+            scene.clearSelection();
+            glW->getCameraController().clear();
+            if (!scene.tryReset()) {
+                QMessageBox::warning(
+                    glW,
+                    "New Scene",
+                    "Some entities could not be removed and were left in place."
+                );
+            }
+            setupDefaultCamerasAndCursor(glW);
+
+            glW->getCommandStack().clear();
+            currentFilePath.clear();
+
+            emit glW->sceneChanged();
+            glW->update();
+        };
+
+        const auto open = [glW] {
+            const QString path = QFileDialog::getOpenFileName(
+                glW,
+                "Open Scene",
+                {},
+                "Scene Files (*.json);;All Files (*)"
+            );
+            if (path.isEmpty()) {
+                return;
+            }
+            QFile file(path);
+            if (!file.open(QIODevice::ReadOnly)) {
+                QMessageBox::warning(glW, "Open Failed", "Could not open file:\n" + path);
+                return;
+            }
+            const auto doc = QJsonDocument::fromJson(file.readAll());
+
+            if (QFile schemaFile(QCoreApplication::applicationDirPath() + "/format/schema.json");
+                schemaFile.open(QIODevice::ReadOnly)) {
+                const auto schema = QJsonDocument::fromJson(schemaFile.readAll());
+                if (const auto errors = serialization::validateJson(schema, doc)) {
+                    QString message = "Scene does not match the schema:\n";
+                    for (const auto &[context, description] : *errors) {
+                        message += "- " + QString::fromStdString(description) + "\n";
+                    }
+                    QMessageBox::warning(glW, "Open Failed", message);
+                    return;
+                }
+            }
+
+            Scene &scene = glW->getScene();
+            scene.clearSelection();
+            PersistentEntities persistent;
+            persistent.detachFrom(scene);
+            if (!scene.tryReset()) {
+                QMessageBox::warning(
+                    glW,
+                    "Open Failed",
+                    "Some entities could not be removed; aborting to avoid a corrupted scene."
+                );
+                persistent.reattachTo(scene);
+                return;
+            }
+            serialization::fromJson(scene, doc);
+            persistent.reattachTo(scene);
+
+            glW->getCommandStack().clear();
+            currentFilePath = path;
+
+            emit glW->sceneChanged();
+            glW->update();
+        };
+
+        QObject::connect(menuBar, &CadMenuBar::newRequested, glW, newScene);
+        QObject::connect(menuBar, &CadMenuBar::saveRequested, glW, save);
+        QObject::connect(menuBar, &CadMenuBar::saveAsRequested, glW, saveAs);
+        QObject::connect(menuBar, &CadMenuBar::openRequested, glW, open);
+    }
+
+    /// @brief Wires the Edit-menu Undo/Redo actions to the command stack and
+    /// keeps their enabled state in sync when the menu opens
+    void wireEditMenu(CadMenuBar *menuBar, OpenGlWidget *glWidget) {
         const auto undo =
             [glWidget] {
             glWidget->getCommandStack().undo();
@@ -268,9 +424,10 @@ namespace {
     /// window closes
     class ViewportModalOverlay final : public QWidget {
     public:
-        ViewportModalOverlay(QWidget *window, QWidget *viewport, QDialog *dialog) : QWidget(window),
-            m_viewport(viewport),
-            m_dialog(dialog) {
+        ViewportModalOverlay(QWidget *window, QWidget *viewport, QDialog *dialog)
+        : QWidget(window),
+          m_viewport(viewport),
+          m_dialog(dialog) {
             window->installEventFilter(this);
             setGeometry(window->rect());
             show();
@@ -314,7 +471,7 @@ namespace {
 
     /// @brief Wires entity-creation requests (torus/cursor/point + Bezier C0/C2) from both the
     /// hierarchy and the viewport into undoable command pushes
-    void wireEntityCreation(OpenGlWidget *glW, const SceneHierarchyWidget *hierarchyWidget) {
+    void wireEntityCreation(OpenGlWidget *glW, const SceneHierarchyWidget *hierarchyWidget, const CadMenuBar *menuBar) {
         using namespace aliases;
 
         // ReSharper disable once CppDFAUnreachableFunctionCall
@@ -422,7 +579,7 @@ namespace {
         };
 
         // ReSharper disable once CppDFAUnreachableFunctionCall
-        auto spawnPatch = [glW](const bool c2) {
+        auto spawnPatch = [glW, menuBar](const bool c2) {
             // one creator dialog at a time; re-request just raises the open one
             static QPointer<PatchCreatorDialog> open;
             if (open) {
@@ -436,8 +593,10 @@ namespace {
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             // ReSharper disable once CppDFAMemoryLeak
             const auto overlay = new ViewportModalOverlay(glW->window(), glW, dialog);
-            const auto onAccept = [glW, dialog, overlay](const int result) {
+            menuBar->setFileActionsEnabled(false);
+            const auto onAccept = [glW, dialog, overlay, menuBar](const int result) {
                 overlay->deleteLater();
+                menuBar->setFileActionsEnabled(true);
                 glW->clearPatchPreview();
                 if (result == QDialog::Accepted) {
                     auto params = dialog->params();
@@ -634,36 +793,7 @@ int main(int argc, char *argv[]) {
     auto *hierarchyWidget = scenePanel->hierarchyWidget();
     auto *entityPropertiesWidget = scenePanel->entityPropertiesWidget();
 
-    // default scene entities
-    const GeometryFactory geometryFactory(glW->getScene());
-    // geometryFactory.createTorus(2.0f, 0.5f, 48, 24, cadm::Vec3(0, 0, 0), "Torus");
-    const auto cursor = geometryFactory.createCursor({0, 0, 0}, "Cursor");
-    glW->getScene().setActiveCursor(cursor);
-
-    const CameraFactory cameraFactory(glW->getScene());
-    const auto blenderCamera = cameraFactory.createBlenderCamera(20, {});
-    auto blenderCameraStrategy = std::make_unique<BlenderCameraStrategy>(
-        blenderCamera,
-        [&] {
-            return glW->width();
-        },
-        [&] {
-            return glW->height();
-        }
-    );
-    const auto cadCamera = cameraFactory.createCadCamera({0, 0, -10}, {}, cadm::Vec3::unitY());
-    auto cadCameraStrat = std::make_unique<CadCameraStrategy>(
-        cadCamera,
-        [&] {
-            return glW->width();
-        },
-        [&] {
-            return glW->height();
-        }
-    );
-
-    glW->getCameraController().addCamera("Blender", std::move(blenderCameraStrategy));
-    glW->getCameraController().addCamera("Cad", std::move(cadCameraStrat));
+    setupDefaultCamerasAndCursor(glW);
     statusBar->setCameraName(QString::fromStdString(glW->getCameraController().getActiveName()));
 
     hierarchyWidget->setScene(&glW->getScene());
@@ -691,12 +821,13 @@ int main(int argc, char *argv[]) {
     QObject::connect(glW, &GlW::stereoEyeSepChanged, menuBar, &CadMenuBar::setStereoEyeSep);
     QObject::connect(glW, &GlW::stereoConvergenceChanged, menuBar, &CadMenuBar::setStereoConvergence);
 
-    wireUndoRedo(menuBar, glW);
+    wireFileMenu(menuBar, glW);
+    wireEditMenu(menuBar, glW);
     wireSelectionSync(glW, hierarchyWidget, entityPropertiesWidget);
     wireStatusBar(glW, statusBar);
     wireViewportControls(glW, viewportPanel);
     wireHierarchyActions(glW, hierarchyWidget);
-    wireEntityCreation(glW, hierarchyWidget);
+    wireEntityCreation(glW, hierarchyWidget, menuBar);
 
     QApplication::instance()->installEventFilter(glW);
     enableFramelessResize(&window, gc_resizeMargin);

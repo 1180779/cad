@@ -43,6 +43,23 @@ public:
 
     bool removeEntity(EntityId id);
 
+    /// @brief Extracts an entity from the scene without destroying it. Returns
+    /// @c nullptr if not found
+    /// @pre entity must not have a @c PointComponent (point registry state
+    /// isn't touched)
+    std::unique_ptr<Entity> releaseEntity(EntityId id);
+
+    /// @brief Re-inserts a previously released entity, assigning it a fresh id
+    Entity* adoptEntity(std::unique_ptr<Entity> entity);
+
+    /// @brief tries to remove every entity; Resets id allocation counter if all
+    /// entities were removed
+    /// @note Retries in waves since removeEntity can fail order-dependently; on
+    /// failure, whatever was already removed stays removed (no rollback), and
+    /// any entity still stuck after a wave makes no progress is left in place
+    /// @return true if every entity was removed
+    bool tryReset();
+
     /// @brief Set the selection state on an entity and keep the selection set in sync
     void setSelected(Entity *e, bool selected);
 
@@ -89,7 +106,8 @@ private:
     std::vector<std::unique_ptr<Entity>> m_entities;
     std::unordered_map<EntityId, std::size_t> m_entityMap;
     std::unordered_map<PointHandle, EntityId> m_pointEntityMap;
-    EntityId m_nextEntityId = 1;
+    static constexpr EntityId firstEntityId = 1;
+    EntityId m_nextEntityId = firstEntityId;
     Entity *m_activeCursor = nullptr;
 
     Entity *m_newPointsTargetEntity = nullptr;
