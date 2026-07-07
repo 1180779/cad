@@ -7,6 +7,11 @@
 #include "../Scene.hpp"
 
 class CommandStack;
+class EntityPropertiesWidget;
+
+namespace aliases {
+    using EntPropsW = EntityPropertiesWidget;
+}
 
 class EntityPropertiesWidget final : public QWidget {
     Q_OBJECT

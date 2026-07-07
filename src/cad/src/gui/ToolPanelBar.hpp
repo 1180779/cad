@@ -37,6 +37,13 @@ private:
     bool m_panelFocused = false;
 };
 
+class ToolPanelBar;
+
+namespace aliases {
+    // ReSharper disable once CppInconsistentNaming
+    using ToolPB = ToolPanelBar;
+}
+
 /// @brief Thin vertical strip of checkable panel-tab buttons, IntelliJ-style
 ///
 /// Emits panelRequested(index) when a button is activated, and

@@ -70,11 +70,17 @@ public:
         return m_patchCountY;
     }
 
-    [[nodiscard]] int getGridDivisions() const {
-        return m_gridDivisions;
+    [[nodiscard]] int getGridDivisionsU() const {
+        return m_gridDivisionsU;
     }
 
-    void setGridDivisions(int divisions);
+    [[nodiscard]] int getGridDivisionsV() const {
+        return m_gridDivisionsV;
+    }
+
+    void setGridDivisionsU(int divisions);
+
+    void setGridDivisionsV(int divisions);
 
     [[nodiscard]] bool getShowNet() const {
         return m_showNet;
@@ -152,7 +158,8 @@ protected:
     int m_patchCountX = 0;
     int m_patchCountY = 0;
 
-    int m_gridDivisions = 4;
+    int m_gridDivisionsU = 4;
+    int m_gridDivisionsV = 4;
     bool m_showNet = false;
 
     CallbackId m_positionCallbackId = -1;

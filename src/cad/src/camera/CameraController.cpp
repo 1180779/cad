@@ -39,6 +39,11 @@ void CameraController::removeCamera(const EntityId id) {
     emit cameraChanged(m_cameras[m_activeIndex].name);
 }
 
+void CameraController::clear() {
+    m_cameras.clear();
+    m_activeIndex = 0;
+}
+
 ICameraStrategy* CameraController::getActiveStrategy() const {
     assert(!m_cameras.empty() && "getActiveStrategy called with no cameras registered");
     return m_cameras[m_activeIndex].strategy.get();

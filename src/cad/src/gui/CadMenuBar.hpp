@@ -25,6 +25,12 @@ public:
 
     void setRedoEnabled(bool enabled) const;
 
+    /// @brief Enables/disables File actions, including their keyboard
+    /// shortcuts. Used to block them while a modal-ish dialogs are open, (when
+    /// overlay only blocks mouse clicks on parts of the ui but not
+    /// application-wide shortcuts)
+    void setFileActionsEnabled(bool enabled) const;
+
     void setStereoEyeSep(double eyeSep) const;
 
     void setStereoConvergence(double convergence) const;
@@ -33,6 +39,14 @@ public:
     [[nodiscard]] QAction* addToolPanelAction(const QString &name) const;
 
 signals:
+    void newRequested();
+
+    void saveRequested();
+
+    void saveAsRequested();
+
+    void openRequested();
+
     void undoRequested();
 
     void redoRequested();
@@ -53,18 +67,35 @@ signals:
 
     void stereoSepRatioChanged(double ratio);
 
-    /// @brief Emitted just before the Edit menu opens so callers can refresh enabled state
+    /// @brief Emitted just before the Edit menu opens so callers can refresh
+    /// enabled state
     void editMenuAboutToShow();
 
 private:
-    QMenu *m_editMenu;
-    QMenu *m_toolsMenu;
-    QMenu *m_viewMenu;
-    QMenu *m_stereoMenu;
-    QAction *m_undoAction;
-    QAction *m_redoAction;
-    QDoubleSpinBox *m_stereoEyeSepSpinbox;
-    QDoubleSpinBox *m_stereoConvergenceSpinbox;
+    void isAboutToShow();
+
+    void updateSpinsEnabled(bool) const;
+
+    QMenu *const m_fileMenu;
+    QAction *const m_newAction;
+    QAction *const m_saveAction;
+    QAction *const m_saveAsAction;
+    QAction *const m_openAction;
+
+    QMenu *const m_editMenu;
+    QAction *const m_undoAction;
+    QAction *const m_redoAction;
+
+    QMenu *const m_toolsMenu;
+    QMenu *const m_viewMenu;
+
+    QMenu *const m_stereoMenu;
+    QDoubleSpinBox *const m_stereoEyeSepSpinbox;
+    QDoubleSpinBox *const m_stereoConvergenceSpinbox;
+    QDoubleSpinBox *const m_stereoSeparationRatioSpin;
+    QAction *const m_stereoAutoEyeSepToggle;
+    QAction *const m_stereoAutoTrackToggle;
+    QAction *const m_stereoLuminanceModeToggle;
 };
 
 #endif //CAD_CADMENUBAR_HPP

@@ -64,15 +64,92 @@ OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent),
 
 OpenGlWidget::~OpenGlWidget() = default;
 
-void OpenGlWidget::paintGL() {
-    const auto gl = getGl();
+void OpenGlWidget::renderBoxSelectionRectangle() const {
+    if (m_activeDrag == DragMode::boxSelect) {
+        const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
+        const auto w = static_cast<cadm::cadf>(width());
+        const auto h = static_cast<cadm::cadf>(height());
+        const auto x0 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.left()) / w - 1.0);
+        const auto x1 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.right()) / w - 1.0);
+        const auto y0 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.bottom()) / h);
+        const auto y1 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.top()) / h);
+        m_renderSystem.renderBoxSelectionRect(x0, y0, x1, y1);
+    }
+}
+
+void OpenGlWidget::calculateStereoProjections(
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    std::span<cadm::Mat4, 2> views,
+    std::span<cadm::Mat4, 2> projs
+) const {
+    const auto [left, right, bottom, top, near, far] = projection.toFrustum();
+    const cadm::cadf halfH = static_cast<cadm::cadf>(0.5) * (top - bottom);
+    const cadm::cadf halfW = static_cast<cadm::cadf>(0.5) * (right - left);
+    // frustum skew in near-plane units: a half-separation offset at the convergence
+    // plane rescales to the near plane by similar triangles (near / convergence)
+    const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (near / m_stereoConvergence);
+    const cadm::cadf halfSep = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation;
+
+    projs[0] = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, near, far);
+    projs[1] = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, near, far);
+    views[0] = cadm::Mat4::translation(halfSep, 0, 0) * view;
+    views[1] = cadm::Mat4::translation(-halfSep, 0, 0) * view;
+}
+
+void OpenGlWidget::renderTransformAxis() const {
+    if (const int axesMask = axisConstraint::fromEnum(m_axisConstraint);
+        axesMask != 0) {
+        cadm::Mat4 axisModel = cadm::Mat4::identity();
+        if (m_coordSpace == CoordSpace::local && !m_transformSnapshots.empty()) {
+            const auto &r = m_transformSnapshots[0].origRotMat;
+            axisModel = cadm::Mat4{
+                cadm::vec4(r.columns[0], 0),
+                cadm::vec4(r.columns[1], 0),
+                cadm::vec4(r.columns[2], 0),
+                cadm::vec4::unitW()
+            };
+        }
+        m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask);
+    }
+}
+
+void OpenGlWidget::clearBuffers(QOpenGLFunctions_4_5_Core *const gl) {
     const auto &vpColor = theme::active().viewport;
     gl->glClearColor(vpColor.redF(), vpColor.greenF(), vpColor.blueF(), 1.0f);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void OpenGlWidget::paintGL() {
+    const auto gl = getGl();
+    clearBuffers(gl);
 
     const auto view = m_cameraController.getActiveStrategy()->getView();
     const auto projection = m_cameraController.getActiveStrategy()->getProjection();
     const auto invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
+
+    if (m_previewPatch) {
+        if (const auto [pos, rot] = activeCursorPlacement();
+            m_previewParams && (m_previewParams->origin != pos || m_previewParams->orientation != rot)) {
+            setPatchPreview(*m_previewParams);
+        }
+        m_previewRegistry->syncToGpu();
+        m_previewPatch->updateIfNecessary();
+    }
+    const bool sceneVisible = !(m_previewPatch && m_previewHideScene);
+    const auto drawSceneOverlays = [this](const cadm::Mat4 &passView, const cadm::Mat4 &passProjection) {
+        if (m_previewPatch) {
+            m_renderSystem.renderPreviewPatch(*m_previewPatch, *m_previewRegistry, passView, passProjection);
+        }
+
+        if (const auto pivot = computePivot()) {
+            m_renderSystem.renderPivotMarker(pivot.value());
+        }
+
+        if (m_transformMode != TransformMode::none) {
+            renderTransformAxis();
+        }
+    };
 
     if (m_stereoEnabled && projection.isPerspective()) {
         if (m_stereoAuto) {
@@ -83,88 +160,16 @@ void OpenGlWidget::paintGL() {
             }
         }
 
-        const auto [left, right, bottom, top, near, far] = projection.toFrustum();
-        const cadm::cadf halfH = static_cast<cadm::cadf>(0.5) * (top - bottom);
-        const cadm::cadf halfW = static_cast<cadm::cadf>(0.5) * (right - left);
-        // frustum skew in near-plane units: a half-separation offset at the convergence
-        // plane rescales to the near plane by similar triangles (near / convergence)
-        const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (near / m_stereoConvergence);
-        const cadm::cadf halfSep = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation;
-
-        const auto leftProj = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, near, far);
-        const auto rightProj = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, near, far);
-        const auto leftView = cadm::Mat4::translation(halfSep, 0, 0) * view;
-        const auto rightView = cadm::Mat4::translation(-halfSep, 0, 0) * view;
-
-        m_renderSystem.renderStereo(m_scene, leftView, leftProj, rightView, rightProj, m_stereoLuminance);
+        cadm::Mat4 views[2], projs[2];
+        calculateStereoProjections(view, projection, views, projs);
+        m_renderSystem.renderStereo(m_scene, views, projs, m_stereoLuminance, sceneVisible, drawSceneOverlays);
+        renderBoxSelectionRectangle();
         return;
     }
 
-    m_renderSystem.render(
-        m_scene,
-        view,
-        projection,
-        invVp,
-        !(m_previewPatch && m_previewHideScene)
-    );
-
-    if (m_previewPatch) {
-        // the cursor may have been moved or rotated since the last rebuild;
-        // follow it
-        if (const auto [pos, rot] = activeCursorPlacement();
-            m_previewParams && (m_previewParams->origin != pos || m_previewParams->orientation != rot)) {
-            setPatchPreview(*m_previewParams);
-        }
-        m_previewRegistry->syncToGpu();
-        m_previewPatch->updateIfNecessary();
-        m_renderSystem.renderPreviewPatch(*m_previewPatch, *m_previewRegistry, view, projection);
-    }
-
-    if (const auto pivot = computePivot()) {
-        m_renderSystem.renderPivotMarker(pivot.value());
-    }
-
-    if (m_transformMode != TransformMode::none) {
-        int axesMask = 0;
-        switch (m_axisConstraint) {
-        case AxisConstraint::x:
-            axesMask |= 1;
-            break;
-        case AxisConstraint::y:
-            axesMask |= 2;
-            break;
-        case AxisConstraint::z:
-            axesMask |= 4;
-            break;
-        default:
-            break;
-        }
-
-        if (axesMask != 0) {
-            cadm::Mat4 axisModel = cadm::Mat4::identity();
-            if (m_coordSpace == CoordSpace::local && !m_transformSnapshots.empty()) {
-                const auto &r = m_transformSnapshots[0].origRotMat;
-                axisModel = cadm::Mat4{
-                    cadm::vec4(r.columns[0], 0),
-                    cadm::vec4(r.columns[1], 0),
-                    cadm::vec4(r.columns[2], 0),
-                    cadm::vec4::unitW()
-                };
-            }
-            m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask);
-        }
-    }
-
-    if (m_activeDrag == DragMode::boxSelect) {
-        const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
-        const auto w = static_cast<cadm::cadf>(width());
-        const auto h = static_cast<cadm::cadf>(height());
-        const auto x0 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.left()) / w - 1.0);
-        const auto x1 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.right()) / w - 1.0);
-        const auto y0 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.bottom()) / h);
-        const auto y1 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.top()) / h);
-        m_renderSystem.renderSelectionRect(x0, y0, x1, y1);
-    }
+    m_renderSystem.render(m_scene, view, projection, invVp, sceneVisible);
+    drawSceneOverlays(view, projection);
+    renderBoxSelectionRectangle();
 }
 
 void OpenGlWidget::resizeGL(const int width, const int height) {

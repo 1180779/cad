@@ -11,23 +11,23 @@
 #include <cad_math/Common.hpp>
 
 namespace cadm {
-    template <>
-    struct Vec<2, cadf> : VecBase<Vec<2, cadf>, 2, cadf> {
+    template <typename T>
+    struct Vec<2, T> : VecBase<Vec<2, T>, 2, T> {
         union {
             struct {
-                cadf x, y;
+                T x, y;
             };
 
             struct {
-                cadf r, g;
+                T r, g;
             };
 
-            std::array<cadf, 2> data;
+            std::array<T, 2> data;
         };
 
         constexpr Vec() : x(0), y(0) {}
 
-        constexpr Vec(const cadf x, const cadf y) : x(x), y(y) {}
+        constexpr Vec(const T x, const T y) : x(x), y(y) {}
 
         constexpr static Vec unitX() noexcept {
             return {1.0, 0.0};

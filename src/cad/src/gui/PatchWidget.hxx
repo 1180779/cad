@@ -19,14 +19,18 @@ public:
     explicit PatchWidget(PatchComponent *patch, const QString &title, QWidget *parent = nullptr);
 
 private:
-    void subdivisionChanged(int value);
+    void subdivisionUChanged(int value);
+
+    void subdivisionVChanged(int value);
 
     PatchComponent *m_patch;
     QCheckBox *m_showNetCheckbox{};
-    QSpinBox *m_divisionsSpin{};
+    QSpinBox *m_divisionsUSpin{};
+    QSpinBox *m_divisionsVSpin{};
 
-    /// @brief Last committed subdivision value, for building the undo revert
-    int m_lastDivisions;
+    /// @brief Last committed subdivision values, for building the undo revert
+    int m_lastDivisionsU;
+    int m_lastDivisionsV;
 };
 
 #endif //CAD_PATCHWIDGET_HXX

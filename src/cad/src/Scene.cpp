@@ -117,6 +117,60 @@ bool Scene::removeEntity(EntityId id) {
     return true;
 }
 
+std::unique_ptr<Entity> Scene::releaseEntity(const EntityId id) {
+    const auto found = std::ranges::find_if(
+        m_entities,
+        [id](const std::unique_ptr<Entity> &e) {
+            return e->getId() == id;
+        }
+    );
+    if (found == m_entities.end()) {
+        return nullptr;
+    }
+
+    assert(!(*found)->getComponent<PointComponent>() && "releaseEntity does not clean up point registry state");
+    if (m_activeCursor == found->get()) {
+        m_activeCursor = nullptr;
+    }
+    if (m_newPointsTargetEntity == found->get()) {
+        m_newPointsTargetEntity = nullptr;
+    }
+
+    m_selectedEntities.erase(found->get());
+    std::unique_ptr<Entity> released = std::move(*found);
+    found->swap(m_entities.back());
+    m_entities.pop_back();
+    return released;
+}
+
+Entity* Scene::adoptEntity(std::unique_ptr<Entity> entity) {
+    entity->setId(m_nextEntityId++, EntityIdKey{});
+    m_entities.push_back(std::move(entity));
+    return m_entities.back().get();
+}
+
+bool Scene::tryReset() {
+    bool madeProgress = true;
+    while (madeProgress && !m_entities.empty()) {
+        madeProgress = false;
+        const auto ids = m_entities
+            | std::views::transform(
+                [](const auto &e) {
+                    return e->getId();
+                }
+            )
+            | std::ranges::to<std::vector>();
+
+        for (const auto id : ids) {
+            madeProgress |= removeEntity(id);
+        }
+    }
+    if (m_entities.empty()) {
+        m_nextEntityId = firstEntityId;
+    }
+    return m_entities.empty();
+}
+
 auto Scene::getVisibleEntities() {
     return m_entities | std::views::filter(
         [](const std::unique_ptr<Entity> &e) {

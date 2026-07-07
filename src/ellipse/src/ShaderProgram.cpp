@@ -8,7 +8,7 @@
 #include "ShaderProgram.hpp"
 
 bool ShaderProgram::attachShader(const GLenum type, const std::string &source) {
-    const auto gl = gl();
+    const auto gl = getGl();
     const GLuint shader = gl->glCreateShader(type);
     const char *src = source.c_str();
     gl->glShaderSource(shader, 1, &src, nullptr);
@@ -50,7 +50,7 @@ bool ShaderProgram::attachShaderFromFile(GLenum type, std::string filename) {
 }
 
 bool ShaderProgram::compile() {
-    const auto gl = gl();
+    const auto gl = getGl();
     m_program = gl->glCreateProgram();
     for (auto &shader : m_shaders) {
         gl->glAttachShader(m_program, shader.second);
@@ -69,7 +69,7 @@ bool ShaderProgram::compile() {
 }
 
 void ShaderProgram::deleteShaders() {
-    const auto gl = gl();
+    const auto gl = getGl();
     for (auto &shader : m_shaders) {
         gl->glDeleteShader(shader.second);
     }
@@ -77,17 +77,17 @@ void ShaderProgram::deleteShaders() {
 }
 
 void ShaderProgram::bind() const {
-    const auto gl = gl();
+    const auto gl = getGl();
     gl->glUseProgram(m_program);
 }
 
 void ShaderProgram::release() const {
-    const auto gl = gl();
+    const auto gl = getGl();
     gl->glUseProgram(0);
 }
 
 void ShaderProgram::setUniform1i(const std::string &name, const int value) const {
-    const auto gl = gl();
+    const auto gl = getGl();
     const GLint location = gl->glGetUniformLocation(m_program, name.c_str());
     if (location != -1) {
         gl->glUniform1i(location, value);
@@ -97,7 +97,7 @@ void ShaderProgram::setUniform1i(const std::string &name, const int value) const
 ShaderProgram::ShaderProgram() : m_program(0) {}
 
 ShaderProgram::~ShaderProgram() {
-    const auto gl = gl();
+    const auto gl = getGl();
     gl->glDeleteProgram(m_program);
     deleteShaders();
 }

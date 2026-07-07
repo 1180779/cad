@@ -11,27 +11,27 @@
 #include "Vec3.hpp"
 
 namespace cadm {
-    template <>
-    struct Vec<4, cadf> : VecBase<Vec<4, cadf>, 4, cadf> {
+    template <typename T>
+    struct Vec<4, T> : VecBase<Vec<4, T>, 4, T> {
         union {
             struct {
-                cadf x, y, z, w;
+                T x, y, z, w;
             };
 
             struct {
-                cadf r, g, b, a;
+                T r, g, b, a;
             };
 
-            std::array<cadf, 4> data;
+            std::array<T, 4> data;
         };
 
         constexpr Vec() : x(0), y(0), z(0), w(0) {}
 
-        constexpr Vec(const cadf x, const cadf y, const cadf z, const cadf w) : x(x), y(y), z(z), w(w) {}
+        constexpr Vec(const T x, const T y, const T z, const T w) : x(x), y(y), z(z), w(w) {}
 
-        constexpr Vec(const Vec3 &v, const cadf w) : x(v.x), y(v.y), z(v.z), w(w) {}
+        constexpr Vec(const Vec3 &v, const T w) : x(v.x), y(v.y), z(v.z), w(w) {}
 
-        constexpr Vec(const cadf x, const Vec3 &v) : x(x), y(v.x), z(v.y), w(v.z) {}
+        constexpr Vec(const T x, const Vec3 &v) : x(x), y(v.x), z(v.y), w(v.z) {}
 
         [[nodiscard]] constexpr Vec cross(const Vec &other) const {
             return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};

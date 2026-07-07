@@ -8,6 +8,13 @@
 #include <QCheckBox>
 #include <QWidget>
 
+class GridSettingsWidget;
+
+namespace aliases {
+    // ReSharper disable once CppInconsistentNaming
+    using GridSW = GridSettingsWidget;
+}
+
 class GridSettingsWidget final : public QWidget {
     Q_OBJECT
 

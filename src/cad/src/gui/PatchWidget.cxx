@@ -19,7 +19,8 @@ namespace {
 
 PatchWidget::PatchWidget(PatchComponent *patch, const QString &title, QWidget *parent) : ComponentWidget(patch, parent),
     m_patch(patch),
-    m_lastDivisions(patch->getGridDivisions()) {
+    m_lastDivisionsU(patch->getGridDivisionsU()),
+    m_lastDivisionsV(patch->getGridDivisionsV()) {
     // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -28,7 +29,8 @@ PatchWidget::PatchWidget(PatchComponent *patch, const QString &title, QWidget *p
     layout->addWidget(new QLabel(summaryText(m_patch)));
 
     m_showNetCheckbox = addCheckbox(layout, "Show control net", m_patch->getShowNet());
-    m_divisionsSpin = addSpinBox(layout, "Surface subdivisions:", 1, 64, m_patch->getGridDivisions());
+    m_divisionsUSpin = addSpinBox(layout, "Surface subdivisions (U):", 1, 64, m_patch->getGridDivisionsU());
+    m_divisionsVSpin = addSpinBox(layout, "Surface subdivisions (V):", 1, 64, m_patch->getGridDivisionsV());
 
     connect(
         m_showNetCheckbox,
@@ -36,20 +38,37 @@ PatchWidget::PatchWidget(PatchComponent *patch, const QString &title, QWidget *p
         this,
         makeBoolToggle(m_patch, &PatchComponent::setShowNet, m_showNetCheckbox)
     );
-    connect(m_divisionsSpin, &QSpinBox::valueChanged, this, &PatchWidget::subdivisionChanged);
+    connect(m_divisionsUSpin, &QSpinBox::valueChanged, this, &PatchWidget::subdivisionUChanged);
+    connect(m_divisionsVSpin, &QSpinBox::valueChanged, this, &PatchWidget::subdivisionVChanged);
 }
 
-void PatchWidget::subdivisionChanged(const int value) {
-    const int previous = m_lastDivisions;
-    m_lastDivisions = value;
+void PatchWidget::subdivisionUChanged(const int value) {
+    const int previous = m_lastDivisionsU;
+    m_lastDivisionsU = value;
     pushEdit(
         [this, value] {
-            m_patch->setGridDivisions(value);
+            m_patch->setGridDivisionsU(value);
         },
         [this, previous] {
-            m_patch->setGridDivisions(previous);
+            m_patch->setGridDivisionsU(previous);
         },
-        m_divisionsSpin,
+        m_divisionsUSpin,
+        true
+    );
+    emit propertyChanged();
+}
+
+void PatchWidget::subdivisionVChanged(const int value) {
+    const int previous = m_lastDivisionsV;
+    m_lastDivisionsV = value;
+    pushEdit(
+        [this, value] {
+            m_patch->setGridDivisionsV(value);
+        },
+        [this, previous] {
+            m_patch->setGridDivisionsV(previous);
+        },
+        m_divisionsVSpin,
         true
     );
     emit propertyChanged();

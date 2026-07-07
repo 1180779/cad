@@ -95,8 +95,12 @@ void PatchComponent::buildNetEbo() {
     m_netEbo.assign(std::move(lines));
 }
 
-void PatchComponent::setGridDivisions(const int divisions) {
-    m_gridDivisions = std::max(1, divisions);
+void PatchComponent::setGridDivisionsU(const int divisions) {
+    m_gridDivisionsU = std::max(1, divisions);
+}
+
+void PatchComponent::setGridDivisionsV(const int divisions) {
+    m_gridDivisionsV = std::max(1, divisions);
 }
 
 void PatchComponent::setShowNet(const bool v) {
