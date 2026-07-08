@@ -14,8 +14,8 @@
 #include "input/InputMap.hpp"
 
 namespace {
-    /// @brief Builds a labelled @c QDoubleSpinBox embedded in a menu via
-    /// @c QWidgetAction
+    /// @brief Builds a labelled @c QDoubleSpinBox embedded in a menu via @c
+    /// QWidgetAction
     QDoubleSpinBox* addSpinBoxAction(
         QMenu *menu,
         const QString &label,
@@ -71,6 +71,19 @@ CadMenuBar::CadMenuBar(QWidget *parent)
   m_toolsMenu{addMenu("Tools")},
   m_viewMenu{addMenu("View")},
   m_stereoMenu{addMenu("Stereo")},
+
+  m_stereoEnableToggle{
+      addCheckableAction(m_stereoMenu, "Enable Stereoscopy")
+  },
+  m_stereoLuminanceModeToggle{
+      addCheckableAction(m_stereoMenu, "Luminance anaglyph", true)
+  },
+  m_stereoAutoTrackToggle{
+      addCheckableAction(m_stereoMenu, "Auto (track camera)", true)
+  },
+  m_stereoAutoEyeSepToggle{
+      addCheckableAction(m_stereoMenu, "Auto eye distance", true)
+  },
   m_stereoEyeSepSpinbox{
       addSpinBoxAction(m_stereoMenu, "Eye distance", 0.3, 0.0, 100.0, 0.05)
   },
@@ -86,15 +99,6 @@ CadMenuBar::CadMenuBar(QWidget *parent)
           100.0,
           0.5
       )
-  },
-  m_stereoAutoEyeSepToggle{
-      addCheckableAction(m_stereoMenu, "Auto eye distance", true)
-  },
-  m_stereoAutoTrackToggle{
-      addCheckableAction(m_stereoMenu, "Auto (track camera)", true)
-  },
-  m_stereoLuminanceModeToggle{
-      addCheckableAction(m_stereoMenu, "Luminance anaglyph", true)
   } {
     const std::array globalContextActions = {
         m_newAction,
@@ -111,11 +115,7 @@ CadMenuBar::CadMenuBar(QWidget *parent)
     connect(m_editMenu, &QMenu::aboutToShow, this, &CadMenuBar::isAboutToShow);
     const auto *darkThemeToggle = addCheckableAction(m_viewMenu, "Dark theme");
     connect(darkThemeToggle, &QAction::toggled, this, &CadMenuBar::darkThemeChanged);
-
-    const auto *stereoToggle = addCheckableAction(m_stereoMenu, "Enable Stereoscopy");
-    connect(stereoToggle, &QAction::toggled, this, &CadMenuBar::stereoEnabledChanged);
-    m_stereoMenu->addSeparator();
-
+    connect(m_stereoEnableToggle, &QAction::toggled, this, &CadMenuBar::stereoEnabledChanged);
     connect(m_stereoAutoTrackToggle, &QAction::toggled, this, &CadMenuBar::stereoAutoChanged);
     connect(m_stereoAutoEyeSepToggle, &QAction::toggled, this, &CadMenuBar::stereoAutoEyeSepChanged);
     connect(m_stereoLuminanceModeToggle, &QAction::toggled, this, &CadMenuBar::stereoLuminanceChanged);

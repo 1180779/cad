@@ -5,7 +5,7 @@
 #include "BlenderCameraStrategy.hpp"
 
 #include "../CheckMacros.hpp"
-#include "../components/BlenderCameraComponent.hpp"
+#include "../components/camera/BlenderCameraComponent.hpp"
 #include "../components/TransformComponent.hpp"
 
 BlenderCameraStrategy::BlenderCameraStrategy(

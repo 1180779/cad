@@ -27,7 +27,7 @@
 #undef QT_EMIT_DEFINED
 #endif
 
-#include "GeometryFactory.hpp"
+#include "factory/GeometryFactory.hpp"
 #include "GlCommon.hpp"
 #include "PatchGeometry.hxx"
 #include "gui/Theme.hpp"
@@ -35,9 +35,9 @@
 #include "commands/Commands.hpp"
 #include "ViewportTypes.hpp"
 #include "cad_math/Helpers.hpp"
-#include "components/BezierC0Component.hpp"
-#include "components/PatchC0Component.hxx"
-#include "components/PatchC2Component.hxx"
+#include "components/geometry/BezierC0Component.hpp"
+#include "components/geometry/PatchC0Component.hxx"
+#include "components/geometry/PatchC2Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "cursor/GridPlanePlacementStrategy.hpp"
@@ -104,10 +104,10 @@ void OpenGlWidget::renderTransformAxis() const {
         if (m_coordSpace == CoordSpace::local && !m_transformSnapshots.empty()) {
             const auto &r = m_transformSnapshots[0].origRotMat;
             axisModel = cadm::Mat4{
-                cadm::vec4(r.columns[0], 0),
-                cadm::vec4(r.columns[1], 0),
-                cadm::vec4(r.columns[2], 0),
-                cadm::vec4::unitW()
+                cadm::Vec4(r.columns[0], 0),
+                cadm::Vec4(r.columns[1], 0),
+                cadm::Vec4(r.columns[2], 0),
+                cadm::Vec4::unitW()
             };
         }
         m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask);
@@ -1042,7 +1042,7 @@ void OpenGlWidget::handleTransformTranslate(const QPoint currentMousePos, PointR
     const cadm::Mat4 vp = proj * view;
     const cadm::Mat4 invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
 
-    const cadm::vec4 pivotClip = vp * cadm::vec4(m_transformPivot, 1);
+    const cadm::Vec4 pivotClip = vp * cadm::Vec4(m_transformPivot, 1);
     const cadm::cadf pivotNdcZ = pivotClip.z / pivotClip.w;
     auto unprojectAt = [&](const QPoint &p) -> cadm::Vec3 {
         return cadm::unprojectPoint({p.x(), p.y()}, pivotNdcZ, invVp, width(), height());

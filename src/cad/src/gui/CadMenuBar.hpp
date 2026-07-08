@@ -90,12 +90,13 @@ private:
     QMenu *const m_viewMenu;
 
     QMenu *const m_stereoMenu;
+    QAction *const m_stereoEnableToggle;
+    QAction *const m_stereoLuminanceModeToggle;
+    QAction *const m_stereoAutoTrackToggle;
+    QAction *const m_stereoAutoEyeSepToggle;
     QDoubleSpinBox *const m_stereoEyeSepSpinbox;
     QDoubleSpinBox *const m_stereoConvergenceSpinbox;
     QDoubleSpinBox *const m_stereoSeparationRatioSpin;
-    QAction *const m_stereoAutoEyeSepToggle;
-    QAction *const m_stereoAutoTrackToggle;
-    QAction *const m_stereoLuminanceModeToggle;
 };
 
 #endif //CAD_CADMENUBAR_HPP

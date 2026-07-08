@@ -38,7 +38,7 @@ public:
 
     [[nodiscard]] bool setUniform2(const std::string &name, float x, float y) const;
 
-    [[nodiscard]] bool setUniform2(const std::string &name, cadm::vec2 vec2) const;
+    [[nodiscard]] bool setUniform2(const std::string &name, cadm::Vec2 vec2) const;
 
     [[nodiscard]] bool setUniform3(const std::string &name, float x, float y, float z) const;
 
@@ -46,7 +46,7 @@ public:
 
     [[nodiscard]] bool setUniform4(const std::string &name, float x, float y, float z, float w) const;
 
-    [[nodiscard]] bool setUniform4(const std::string &name, const cadm::vec4 &vec4) const;
+    [[nodiscard]] bool setUniform4(const std::string &name, const cadm::Vec4 &vec4) const;
 
     [[nodiscard]] bool setUniformMat4(const std::string &name, const cadm::Mat4 &mat4) const;
 

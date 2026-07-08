@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "CameraFactory.hpp"
-#include "GeometryFactory.hpp"
+#include "../src/cad/src/factory/CameraFactory.hpp"
+#include "../src/cad/src/factory/GeometryFactory.hpp"
 #include "PersistentEntities.hxx"
 #include "Scene.hpp"
-#include "components/PatchC0Component.hxx"
+#include "../src/cad/src/components/geometry/PatchC0Component.hxx"
 #include "components/PointComponent.hpp"
 
 namespace {

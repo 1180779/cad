@@ -152,11 +152,11 @@ namespace theme {
                        ? d
                        : QString();
         }();
-        const QString src = QStringLiteral(":/icons/%1.svg").arg(name);
+        QString src = QStringLiteral(":/icons/%1.svg").arg(name);
         if (cacheDir.isEmpty()) {
             return src;
         }
-        const QString out = QStringLiteral("%1/%2-%3.svg").arg(cacheDir, name, color.name().mid(1));
+        QString out = QStringLiteral("%1/%2-%3.svg").arg(cacheDir, name, color.name().mid(1));
         if (QFileInfo::exists(out)) {
             return out;
         }
@@ -401,11 +401,30 @@ namespace theme {
             );
     }
 
+    /// @brief Dock-slot close button
+    inline QString panelCloseButtonStyle(const ThemeColors &t) {
+        return QStringLiteral(
+                R"(
+                QToolButton#panelCloseButton {
+                    border: none;
+                    border-radius: %1px;
+                    background-color: transparent;
+                    padding: 2px;
+                }
+                QToolButton#panelCloseButton:hover { background-color: %2; }
+            )"
+            )
+            .arg(
+                QString::number(gc_itemRadius),
+                menuHover(t).name()
+            );
+    }
+
     /// @brief Full stylesheet for a theme
     inline QString appStyleSheet(const ThemeColors &t) {
         return spinBoxStyle(t) + comboBoxStyle(t) + pushButtonStyle(t) + checkBoxStyle(t) + menuStyle(t) +
             toolPanelStyle()
-            + statusBarStyle() + splitterStyle() + windowButtonStyle(t);
+            + statusBarStyle() + splitterStyle() + windowButtonStyle(t) + panelCloseButtonStyle(t);
     }
 
     /// @brief Overlays the theme's colors onto the standard roles of a fresh standard palette

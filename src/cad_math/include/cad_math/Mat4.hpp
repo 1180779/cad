@@ -11,14 +11,14 @@
 #include "Mat3.hpp"
 
 namespace cadm {
-    template <std::size_t R, std::size_t C, typename T>
+    template <typename T, std::size_t R, std::size_t C>
     struct Mat;
 
     template <>
-    struct Mat<4, 4, cadf> : MatBase<Mat, Mat<4, 4, cadf>, vec4, vec4, 4, 4, cadf> {
+    struct Mat<cadf, 4, 4> : MatBase<cadf, 4, 4, Vec4, Vec4, Mat, Mat<cadf, 4, 4>> {
         union {
             cadf data[16]{};
-            vec4 columns[4];
+            Vec4 columns[4];
         };
 
         constexpr Mat() {
@@ -45,13 +45,13 @@ namespace cadm {
             const cadf w2,
             const cadf w3
         ) {
-            columns[0] = vec4(x0, x1, x2, x3);
-            columns[1] = vec4(y0, y1, y2, y3);
-            columns[2] = vec4(z0, z1, z2, z3);
-            columns[3] = vec4(w0, w1, w2, w3);
+            columns[0] = Vec4(x0, x1, x2, x3);
+            columns[1] = Vec4(y0, y1, y2, y3);
+            columns[2] = Vec4(z0, z1, z2, z3);
+            columns[3] = Vec4(w0, w1, w2, w3);
         }
 
-        constexpr Mat(const vec4 &c0, const vec4 &c1, const vec4 &c2, const vec4 &c3) {
+        constexpr Mat(const Vec4 &c0, const Vec4 &c1, const Vec4 &c2, const Vec4 &c3) {
             columns[0] = c0;
             columns[1] = c1;
             columns[2] = c2;
@@ -60,10 +60,10 @@ namespace cadm {
 
         constexpr static Mat identity() {
             return Mat{
-                vec4::unitX(),
-                vec4::unitY(),
-                vec4::unitZ(),
-                vec4::unitW()
+                Vec4::unitX(),
+                Vec4::unitY(),
+                Vec4::unitZ(),
+                Vec4::unitW()
             };
         }
 
@@ -77,10 +77,10 @@ namespace cadm {
             const Vec3 yAxis = zAxis.cross(xAxis); // up
 
             return {
-                vec4(xAxis.x, yAxis.x, zAxis.x, 0.0),
-                vec4(xAxis.y, yAxis.y, zAxis.y, 0.0),
-                vec4(xAxis.z, yAxis.z, zAxis.z, 0.0),
-                vec4(-xAxis.dot(eye), -yAxis.dot(eye), -zAxis.dot(eye), 1.0),
+                Vec4(xAxis.x, yAxis.x, zAxis.x, 0.0),
+                Vec4(xAxis.y, yAxis.y, zAxis.y, 0.0),
+                Vec4(xAxis.z, yAxis.z, zAxis.z, 0.0),
+                Vec4(-xAxis.dot(eye), -yAxis.dot(eye), -zAxis.dot(eye), 1.0),
             };
         }
 
@@ -93,10 +93,10 @@ namespace cadm {
             const cadf far
         ) {
             return {
-                vec4(static_cast<cadf>(2.0 / (right - left)), 0.0, 0.0, 0.0),
-                vec4(0.0, static_cast<cadf>(2.0 / (top - bottom)), 0.0, 0.0),
-                vec4(0.0, 0.0, static_cast<cadf>(-2.0 / (far - near)), 0.0),
-                vec4(
+                Vec4(static_cast<cadf>(2.0 / (right - left)), 0.0, 0.0, 0.0),
+                Vec4(0.0, static_cast<cadf>(2.0 / (top - bottom)), 0.0, 0.0),
+                Vec4(0.0, 0.0, static_cast<cadf>(-2.0 / (far - near)), 0.0),
+                Vec4(
                     -(right + left) / (right - left),
                     -(top + bottom) / (top - bottom),
                     -(far + near) / (far - near),
@@ -114,10 +114,10 @@ namespace cadm {
         static Mat perspective(const cadf aspect, const cadf fov, const cadf near, const cadf far) {
             const cadf ctg = std::cos(fov / 2) / std::sin(fov / 2);
             return {
-                vec4(ctg / aspect, 0, 0, 0),
-                vec4(0, ctg, 0, 0),
-                vec4(0, 0, -(far + near) / (far - near), -1),
-                vec4(0, 0, -2 * far * near / (far - near), 0),
+                Vec4(ctg / aspect, 0, 0, 0),
+                Vec4(0, ctg, 0, 0),
+                Vec4(0, 0, -(far + near) / (far - near), -1),
+                Vec4(0, 0, -2 * far * near / (far - near), 0),
             };
         }
 
@@ -131,15 +131,15 @@ namespace cadm {
             const cadf far
         ) {
             return {
-                vec4(2 * near / (right - left), 0, 0, 0),
-                vec4(0, 2 * near / (top - bottom), 0, 0),
-                vec4(
+                Vec4(2 * near / (right - left), 0, 0, 0),
+                Vec4(0, 2 * near / (top - bottom), 0, 0),
+                Vec4(
                     (right + left) / (right - left),
                     (top + bottom) / (top - bottom),
                     -(far + near) / (far - near),
                     -1
                 ),
-                vec4(0, 0, -2 * far * near / (far - near), 0),
+                Vec4(0, 0, -2 * far * near / (far - near), 0),
             };
         }
 
@@ -203,10 +203,10 @@ namespace cadm {
 
         constexpr static Mat translation(const cadf tx, const cadf ty, const cadf tz) {
             return {
-                vec4::unitX(),
-                vec4::unitY(),
-                vec4::unitZ(),
-                vec4(tx, ty, tz, 1.0),
+                Vec4::unitX(),
+                Vec4::unitY(),
+                Vec4::unitZ(),
+                Vec4(tx, ty, tz, 1.0),
             };
         }
 
@@ -215,10 +215,10 @@ namespace cadm {
             const cadf s = std::sin(alpha);
 
             return {
-                vec4::unitX(),
-                vec4(0, c, s, 0),
-                vec4(0, -s, c, 0),
-                vec4::unitW()
+                Vec4::unitX(),
+                Vec4(0, c, s, 0),
+                Vec4(0, -s, c, 0),
+                Vec4::unitW()
             };
         }
 
@@ -227,10 +227,10 @@ namespace cadm {
             const cadf s = std::sin(alpha);
 
             return {
-                vec4(c, 0, -s, 0),
-                vec4::unitY(),
-                vec4(s, 0, c, 0),
-                vec4::unitW()
+                Vec4(c, 0, -s, 0),
+                Vec4::unitY(),
+                Vec4(s, 0, c, 0),
+                Vec4::unitW()
             };
         }
 
@@ -239,10 +239,10 @@ namespace cadm {
             const cadf s = std::sin(alpha);
 
             return {
-                vec4(c, s, 0, 0),
-                vec4(-s, c, 0, 0),
-                vec4::unitZ(),
-                vec4::unitW()
+                Vec4(c, s, 0, 0),
+                Vec4(-s, c, 0, 0),
+                Vec4::unitZ(),
+                Vec4::unitW()
             };
         }
 
@@ -263,25 +263,25 @@ namespace cadm {
             const auto cos = std::cos(phi);
             const auto oneMinusCos = 1 - cos;
             return {
-                vec4{
+                Vec4{
                     u.x * u.x * oneMinusCos + cos,
                     u.x * u.y * oneMinusCos + u.z * sin,
                     u.x * u.z * oneMinusCos - u.y * sin,
                     0
                 },
-                vec4{
+                Vec4{
                     u.x * u.y * oneMinusCos - u.z * sin,
                     u.y * u.y * oneMinusCos + cos,
                     u.y * u.z * oneMinusCos + u.x * sin,
                     0
                 },
-                vec4{
+                Vec4{
                     u.x * u.z * oneMinusCos + u.y * sin,
                     u.y * u.z * oneMinusCos - u.x * sin,
                     u.z * u.z * oneMinusCos + cos,
                     0
                 },
-                vec4{0, 0, 0, 1}
+                Vec4{0, 0, 0, 1}
             };
         }
 
@@ -430,7 +430,7 @@ namespace cadm {
         }
     };
 
-    using Mat4 = Mat<4, 4, cadf>;
+    using Mat4 = Mat<cadf, 4, 4>;
 }
 
 #endif //CAD_MAT4_H

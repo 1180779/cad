@@ -17,11 +17,11 @@
 
 #include <common/ModifierSpinBox.hpp>
 
-#include "VirtualPointPropertiesWidget.hpp"
+#include "components/geometry/VirtualPointPropertiesWidget.hpp"
 
 /// @brief Builders for the common component-panel widgets
 namespace widgets {
-    inline void addTitle(QLayout *layout, const QString &text);
+    inline QLabel* addTitle(QLayout *layout, const QString &text);
 
     inline QCheckBox* addCheckbox(QLayout *layout, const QString &text, bool checked);
 
@@ -65,13 +65,14 @@ namespace widgets {
 namespace widgets {
     // implementation
 
-    inline void addTitle(QLayout *layout, const QString &text) {
+    inline QLabel* addTitle(QLayout *layout, const QString &text) {
         // ReSharper disable once CppDFAMemoryLeak
         const auto title = new QLabel(text);
         QFont f = title->font();
         f.setBold(true);
         title->setFont(f);
         layout->addWidget(title);
+        return title;
     }
 
     inline QCheckBox* addCheckbox(QLayout *layout, const QString &text, const bool checked) {

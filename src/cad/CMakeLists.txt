@@ -8,8 +8,8 @@ file(GLOB_RECURSE CAD_SOURCES
 )
 list(REMOVE_ITEM CAD_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
-# AUTORCC compiles this; it must be listed as a target source (the GLOB above
-# only picks up .cpp/.hpp). Registers the vendored JetBrains icons + Mono font.
+# AUTORCC compiles this; it must be listed as a target source. 
+# Registers the vendored JetBrains icons + Mono font
 set(CAD_RESOURCES resources/resources.qrc)
 
 add_library(cad_core ${CAD_SOURCES} ${CAD_RESOURCES})

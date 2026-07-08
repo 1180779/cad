@@ -100,11 +100,11 @@ namespace {
         "vec4 basic operations",
         "[math][vec4]"
     ) {
-        vec4 v1(1.0f, 2.0f, 3.0f, 4.0f);
-        vec4 v2(5.0f, 6.0f, 7.0f, 8.0f);
+        Vec4 v1(1.0f, 2.0f, 3.0f, 4.0f);
+        Vec4 v2(5.0f, 6.0f, 7.0f, 8.0f);
 
         SECTION("Addition") {
-            vec4 res = v1 + v2;
+            Vec4 res = v1 + v2;
             REQUIRE_THAT(res.x, Catch::Matchers::WithinRel(6.0f));
             REQUIRE_THAT(res.y, Catch::Matchers::WithinRel(8.0f));
             REQUIRE_THAT(res.z, Catch::Matchers::WithinRel(10.0f));
@@ -118,10 +118,10 @@ namespace {
     ) {
         Mat4 m1 = Mat4::identity();
         Mat4 m2(
-            vec4(1, 5, 9, 13),
-            vec4(2, 6, 10, 14),
-            vec4(3, 7, 11, 15),
-            vec4(4, 8, 12, 16)
+            Vec4(1, 5, 9, 13),
+            Vec4(2, 6, 10, 14),
+            Vec4(3, 7, 11, 15),
+            Vec4(4, 8, 12, 16)
         );
 
         SECTION("Identity Multiplication") {
@@ -130,8 +130,8 @@ namespace {
         }
 
         SECTION("Matrix-Vector Multiplication") {
-            vec4 v(1.0f, 1.0f, 1.0f, 1.0f);
-            vec4 res = m2 * v;
+            Vec4 v(1.0f, 1.0f, 1.0f, 1.0f);
+            Vec4 res = m2 * v;
 
             REQUIRE_THAT(res.x, Catch::Matchers::WithinRel(10.0f));
             REQUIRE_THAT(res.y, Catch::Matchers::WithinRel(26.0f));
@@ -222,7 +222,7 @@ namespace {
 
             // test operator+=
             auto row0 = m.makeRowRef(0);
-            vec4 v(1.0f, 2.0f, 3.0f, 4.0f);
+            Vec4 v(1.0f, 2.0f, 3.0f, 4.0f);
             row0 += v;
             REQUIRE_THAT(m(0, 0), Catch::Matchers::WithinRel(2.0f));
             REQUIRE_THAT(m(0, 1), Catch::Matchers::WithinRel(2.0f));
@@ -262,10 +262,10 @@ namespace {
                 REQUIRE_THAT(m(0, 3), Catch::Matchers::WithinRel(0.0f));
             };
 
-            vec4 v(1.0f, 1.0f, 1.0f, 1.0f);
+            Vec4 v(1.0f, 1.0f, 1.0f, 1.0f);
 
             // operator+ returns vector, doesn't modify row
-            vec4 result = row0 + v;
+            Vec4 result = row0 + v;
             REQUIRE_THAT(result.x, Catch::Matchers::WithinRel(2.0f));
             REQUIRE_THAT(result.y, Catch::Matchers::WithinRel(1.0f));
             REQUIRE_THAT(result.z, Catch::Matchers::WithinRel(1.0f));
@@ -304,7 +304,7 @@ namespace {
 
             auto row1 = m.makeRowRef(1);
 
-            vec4 v(5.0f, 6.0f, 7.0f, 8.0f);
+            Vec4 v(5.0f, 6.0f, 7.0f, 8.0f);
             // ReSharper disable once CppDFAUnusedValue
             row1 = v;
 
@@ -322,7 +322,7 @@ namespace {
             m(2, 3) = 40.0f;
 
             auto row2 = m.makeRowRef(2);
-            auto v = static_cast<vec4>(row2);
+            auto v = static_cast<Vec4>(row2);
 
             REQUIRE_THAT(v.x, Catch::Matchers::WithinRel(10.0f));
             REQUIRE_THAT(v.y, Catch::Matchers::WithinRel(20.0f));

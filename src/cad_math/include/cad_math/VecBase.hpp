@@ -11,10 +11,10 @@
 #include "Common.hpp"
 
 namespace cadm {
-    template <std::size_t N, typename T>
+    template <typename T, std::size_t N>
     struct Vec;
 
-    template <typename Derived, std::size_t N, typename T>
+    template <typename T, std::size_t N, typename Derived>
     struct VecBase {
         using Vt = T;
 

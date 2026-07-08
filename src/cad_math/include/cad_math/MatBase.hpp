@@ -12,12 +12,14 @@
 #include "Common.hpp"
 
 namespace cadm {
-    template <typename Derived, typename RowType, std::size_t C, typename T>
+    template <typename T, std::size_t C, typename RowType, typename Derived>
     struct MatRowRef {
         Derived &matrix;
         std::size_t rowIdx;
 
-        constexpr MatRowRef(Derived &mat, const std::size_t idx) noexcept : matrix(mat), rowIdx(idx) {}
+        constexpr MatRowRef(Derived &mat, const std::size_t idx) noexcept
+        : matrix(mat),
+          rowIdx(idx) {}
 
         constexpr T& operator[](std::size_t col) noexcept {
             return matrix(rowIdx, col);
@@ -147,8 +149,11 @@ namespace cadm {
         }
     };
 
-    template <template <std::size_t, std::size_t, typename> class MatrixT, typename Derived, typename ColType, typename
-              RowType, std::size_t R, std::size_t C, typename T>
+    template <typename T, std::size_t R, std::size_t C,
+              typename RowType,
+              typename ColType,
+              template <typename, std::size_t, std::size_t> class MatrixT,
+              typename Derived>
     struct MatBase {
         using ValueType = T;
 
@@ -207,8 +212,8 @@ namespace cadm {
         }
 
         template <typename OtherDerived, typename OtherCol, typename OtherRow, std::size_t OtherC>
-        constexpr auto operator*(const MatBase<MatrixT, OtherDerived, OtherCol, OtherRow, C, OtherC, T> &rhs) const {
-            using ResultType = MatrixT<R, OtherC, T>;
+        constexpr auto operator*(const MatBase<T, C, OtherC, OtherCol, OtherRow, MatrixT, OtherDerived> &rhs) const {
+            using ResultType = MatrixT<T, R, OtherC>;
             ResultType m{};
 
             for (std::size_t i = 0; i < R; ++i) {
@@ -237,7 +242,7 @@ namespace cadm {
         }
 
         [[nodiscard]] constexpr auto transposed() const {
-            using ResultType = MatrixT<C, R, T>;
+            using ResultType = MatrixT<T, C, R>;
             ResultType result{};
             for (std::size_t i = 0; i < R; ++i) {
                 result.col(i) = this->row(i);
@@ -251,6 +256,7 @@ namespace cadm {
             Derived v = *static_cast<const Derived*>(this);
             for (std::size_t j = 0; j < C; ++j) {
                 const auto qj = v.col(j).normalized();
+                v.col(j) = qj;
                 for (std::size_t k = j + 1; k < C; ++k) {
                     v.col(k) -= qj.dot(v.col(k)) * qj;
                 }
@@ -267,7 +273,7 @@ namespace cadm {
         }
 
         constexpr auto makeRowRef(std::size_t rowIdx) noexcept {
-            return MatRowRef<Derived, RowType, C, T>(static_cast<Derived&>(*this), rowIdx);
+            return MatRowRef<T, C, RowType, Derived>(static_cast<Derived&>(*this), rowIdx);
         }
 
         [[nodiscard]] std::size_t findPivotGepp(const std::size_t i) const {

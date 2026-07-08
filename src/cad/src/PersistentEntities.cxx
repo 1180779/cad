@@ -4,8 +4,8 @@
 
 #include "PersistentEntities.hxx"
 
-#include "components/BlenderCameraComponent.hpp"
-#include "components/CadCameraComponent.hpp"
+#include "components/camera/BlenderCameraComponent.hpp"
+#include "components/camera/CadCameraComponent.hpp"
 #include "components/CursorComponent.hpp"
 #include "Scene.hpp"
 

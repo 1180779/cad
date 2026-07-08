@@ -11,15 +11,15 @@
 #include "PointComponent.hpp"
 
 #include "CameraComponent.hpp"
-#include "CadCameraComponent.hpp"
-#include "BlenderCameraComponent.hpp"
+#include "camera/CadCameraComponent.hpp"
+#include "camera/BlenderCameraComponent.hpp"
 
 #include "GeometryComponent.hpp"
-#include "BezierC0Component.hpp"
-#include "BezierC2Component.hpp"
-#include "InterpC2Component.hxx"
-#include "PatchComponent.hxx"
-#include "PatchC0Component.hxx"
-#include "PatchC2Component.hxx"
+#include "geometry/BezierC0Component.hpp"
+#include "geometry/BezierC2Component.hpp"
+#include "geometry/InterpC2Component.hxx"
+#include "geometry/PatchComponent.hxx"
+#include "geometry/PatchC0Component.hxx"
+#include "geometry/PatchC2Component.hxx"
 
 #endif //CAD_ALLCOMPONENTS_HXX

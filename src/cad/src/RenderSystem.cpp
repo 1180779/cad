@@ -7,10 +7,10 @@
 #include "CheckMacros.hpp"
 #include "GlCommon.hpp"
 #include "Scene.hpp"
-#include "BezierUtils.hpp"
-#include "components/BezierC0Component.hpp"
-#include "components/BezierC2Component.hpp"
-#include "components/InterpC2Component.hxx"
+#include "utils/BezierUtils.hpp"
+#include "components/geometry/BezierC0Component.hpp"
+#include "components/geometry/BezierC2Component.hpp"
+#include "components/geometry/InterpC2Component.hxx"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "gui/Theme.hpp"
@@ -21,7 +21,7 @@
 #include <vector>
 #include <concepts>
 
-#include "components/PatchComponent.hxx"
+#include "components/geometry/PatchComponent.hxx"
 
 namespace {
     /// @brief Structural interface shared by the C2 curves that render through the Bernstein
@@ -199,8 +199,8 @@ void RenderSystem::render(
     SHADER_SET_UNIFORM_CHECK(
         m_wireframeShader->setUniform4(
             "u_overrideColor",
-            cadm::vec4{
-            lc.redF(),
+            cadm::Vec4{
+                lc.redF(),
             lc.greenF(),
             lc.blueF(),
             1.0f
@@ -316,7 +316,7 @@ void RenderSystem::renderPivotMarker(
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", model));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
 
     gl->glBindVertexArray(m_pivotAxes.m_VAO);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pivotAxes.m_EBO_Lines);
@@ -341,7 +341,7 @@ void RenderSystem::renderTransformAxis(
     SHADER_SET_UNIFORM_CHECK(
         m_axesShader->setUniform2(
             "u_viewport",
-            cadm::vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
+            cadm::Vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
         )
     );
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
@@ -401,7 +401,7 @@ void RenderSystem::renderInfiniteAxes() const {
     SHADER_SET_UNIFORM_CHECK(
         m_axesShader->setUniform2(
             "u_viewport",
-            cadm::vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
+            cadm::Vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
         )
     );
     SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
@@ -452,7 +452,7 @@ void RenderSystem::renderActiveCursorColors(const Scene &scene) const {
     const auto gl = getGl();
     const auto *pGeo = geometry.value();
     m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
     gl->glBindVertexArray(pGeo->m_VAO);
@@ -609,7 +609,7 @@ void RenderSystem::renderC0BezierCurves(
                     : s_noSelectionHS
                 )
             );
-            static constexpr cadm::vec4 polygonColor{0.3f, 0.6f, 1.0f, 1.0f};
+            static constexpr cadm::Vec4 polygonColor{0.3f, 0.6f, 1.0f, 1.0f};
             SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", polygonColor));
             gl->glBindVertexArray(pBezier->getPolygonVao());
             gl->glDrawElements(
@@ -634,7 +634,7 @@ void RenderSystem::renderC0BezierCurves(
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
     forEachBezier(renderControlPolygon);
     gl->glBindVertexArray(0);
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
     ShaderProgram::release();
 
     // tessellated curves
@@ -714,7 +714,7 @@ void RenderSystem::renderC2BezierCurves(
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
     const auto drawWire = [&](
-        const cadm::vec4 &color,
+        const cadm::Vec4 &color,
         const GLuint vao,
         const GLenum mode,
         const int count
@@ -757,7 +757,7 @@ void RenderSystem::renderC2BezierCurves(
         }
     );
     gl->glBindVertexArray(0);
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
     ShaderProgram::release();
 }
 
@@ -789,8 +789,6 @@ void RenderSystem::drawPatchSurface(
             static_cast<float>(m_viewportH)
         )
     );
-    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("u_highlightStrength", entityHl));
-
     // per-quad slice counts from the screen extent of its 16 control points
     // (0 = fully off-screen, skip)
     const auto &indices = patch->getPatchIndices();
@@ -817,6 +815,14 @@ void RenderSystem::drawPatchSurface(
             if (subs[q] == 0) {
                 continue;
             }
+            SHADER_SET_UNIFORM_CHECK(
+                m_bezierSurfaceShader->setUniform1(
+                    "u_highlightStrength",
+                    patch->isPatchSelected(q)
+                        ? s_singlePatchSelectionHS
+                        : entityHl
+                )
+            );
             SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uSub", subs[q]));
             gl->glDrawElementsInstanced(
                 GL_PATCHES,
@@ -838,7 +844,7 @@ void RenderSystem::drawPatchNet(const PatchComponent *patch, const cadm::cadf hl
     const auto gl = getGl();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", hl));
     SHADER_SET_UNIFORM_CHECK(
-        m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{0.9f, 0.6f, 0.1f, 1.0f})
+        m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{0.9f, 0.6f, 0.1f, 1.0f})
     );
     gl->glBindVertexArray(patch->getNetVao());
     gl->glDrawElements(GL_LINES, patch->getNetIndexCount(), GL_UNSIGNED_INT, nullptr);
@@ -885,7 +891,7 @@ void RenderSystem::renderPatches(
             drawPatchNet(patch, highlight(e));
         }
     );
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
     ShaderProgram::release();
 }
 
@@ -905,7 +911,7 @@ void RenderSystem::renderPreviewPatch(
     m_wireframeShader->bind();
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
     drawPatchNet(&patch, s_selectionHS);
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::vec4{}));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
     ShaderProgram::release();
 
     if (!registry.empty()) {
