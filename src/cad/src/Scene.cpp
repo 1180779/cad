@@ -195,22 +195,32 @@ Entity* Scene::adoptEntity(std::unique_ptr<Entity> entity) {
     return m_entities.back().get();
 }
 
-bool Scene::tryReset() {
+bool Scene::removeEntities(std::vector<EntityId> ids) {
     bool madeProgress = true;
-    while (madeProgress && !m_entities.empty()) {
+    while (madeProgress && !ids.empty()) {
         madeProgress = false;
-        const auto ids = m_entities
-            | std::views::transform(
-                [](const auto &e) {
-                    return e->getId();
-                }
-            )
-            | std::ranges::to<std::vector>();
-
-        for (const auto id : ids) {
-            madeProgress |= removeEntity(id);
-        }
+        std::erase_if(
+            ids,
+            [&](const EntityId id) {
+                const bool removed = removeEntity(id);
+                madeProgress |= removed;
+                return removed;
+            }
+        );
     }
+    return ids.empty();
+}
+
+bool Scene::tryReset() {
+    removeEntities(
+        m_entities
+        | std::views::transform(
+            [](const auto &e) {
+                return e->getId();
+            }
+        )
+        | std::ranges::to<std::vector>()
+    );
     if (m_entities.empty()) {
         m_nextEntityId = firstEntityId;
     }

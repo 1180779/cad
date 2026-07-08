@@ -65,6 +65,11 @@ public:
 
     bool removeEntity(EntityId id);
 
+    /// @brief Remove entities in retry waves until no wave makes progress, so
+    /// the removal order doesn't matter
+    /// @return true if every listed entity was removed
+    bool removeEntities(std::vector<EntityId> ids);
+
     /// @brief Extracts an entity from the scene without destroying it. Returns
     /// @c nullptr if not found
     /// @pre entity must not have a @c PointComponent (point registry state

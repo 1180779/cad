@@ -53,6 +53,15 @@ namespace {
         const std::vector<EntityId> &ids
     );
 
+    /// @brief The ids of every captured entity spec
+    std::vector<EntityId> specIds(const std::vector<EntitySpec> &specs) {
+        return specs | std::views::transform(
+            [](const auto &s) {
+                return s.id;
+            }
+        ) | std::ranges::to<std::vector>();
+    }
+
     /// @brief Reset a curve's membership to exactly target, preserving order
     void resetMembership(Scene &scene, const EntityId curveId, const std::vector<PointHandle> &target) {
         const auto entity = scene.getEntity(curveId);
@@ -128,9 +137,7 @@ void CreatePatchCommand::execute() {
 }
 
 void CreatePatchCommand::undo() {
-    for (const auto &s : m_specs) {
-        m_scene.removeEntity(s.id);
-    }
+    m_scene.removeEntities(specIds(m_specs));
 }
 
 // ---------------------------------------------------------------------------
@@ -171,9 +178,7 @@ DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityI
 }
 
 void DeleteEntityCommand::execute() {
-    for (const auto &spec : m_specs) {
-        m_scene.removeEntity(spec.id);
-    }
+    m_scene.removeEntities(specIds(m_specs));
 }
 
 void DeleteEntityCommand::undo() {
