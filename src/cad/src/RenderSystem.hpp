@@ -206,8 +206,9 @@ private:
     static constexpr cadm::Vec4 s_selectionRectOutlineColor{1.0, 1.0, 1.0, 0.86};
 
 public:
-    static constexpr cadm::cadf s_selectionHS{0.7f}; // highlight strength
+    static constexpr cadm::cadf s_selectionHS{0.4f}; // highlight strength
     static constexpr cadm::cadf s_noSelectionHS{0.0f};
+    static constexpr cadm::cadf s_singlePatchSelectionHS{1.0f};
 };
 
 #endif //CAD_RENDERSYSTEM_H

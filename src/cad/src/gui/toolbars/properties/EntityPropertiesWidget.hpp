@@ -35,22 +35,28 @@ signals :
 public
 slots :
     /// @brief Mirror the scene's entity selection onto the Bezier point lists
-    void syncBezierSelection() const;
+    void syncBezierSelection();
 
     /// @brief Re-sync the component editors after a structural change (points added/
     /// removed/reordered): reconciles the Bezier point lists and refreshes editor values
-    void refreshComponents() const;
+    void refreshComponents();
 
     /// @brief Re-sync the component editors after a position-only change: refreshes the
     /// editor values but leaves the (position-independent) lists untouched
-    void refreshComponentGeometry() const;
+    void refreshComponentGeometry();
 
 private:
     void clearLayout() const;
 
+    /// @brief Clear the panel if the shown entity no longer exists in the
+    /// scene, so the editors never touch a dangling entity
+    /// @return true if the shown entity is still alive
+    bool validateEntity();
+
     Scene *m_scene = nullptr;
     CommandStack *m_commandStack = nullptr;
     Entity *m_entity = nullptr;
+    EntityId m_entityId = 0;
     QVBoxLayout *m_layout;
     class PointPropertiesWidget *m_pointWidget = nullptr;
     class BezierC0Widget *m_bezierC0Widget = nullptr;

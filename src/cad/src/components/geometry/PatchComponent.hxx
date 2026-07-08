@@ -6,11 +6,13 @@
 #define CAD_PATCHCOMPONENT_HXX
 
 #include <array>
+#include <set>
 #include <vector>
 
 #include "../GeometryComponent.hpp"
 #include "GpuBuffer.hpp"
 #include "PointRegistry.hpp"
+#include "SinglePatchView.hxx"
 #include "Vao.hxx"
 
 /// @brief Shared base for bicubic joined Bézier patches
@@ -68,6 +70,24 @@ public:
 
     [[nodiscard]] int getPatchCountY() const {
         return m_patchCountY;
+    }
+
+    /// @brief View of a single patch (px, py)
+    [[nodiscard]] SinglePatchView singlePatch(int px, int py) const;
+
+    /// @brief Single-patch selection, keyed by @p index
+    [[nodiscard]] bool isPatchSelected(const int index) const {
+        return m_selectedPatches.contains(index);
+    }
+
+    void setPatchSelected(int index, bool selected);
+
+    [[nodiscard]] const std::set<int>& getSelectedPatches() const {
+        return m_selectedPatches;
+    }
+
+    void clearPatchSelection() {
+        m_selectedPatches.clear();
     }
 
     [[nodiscard]] int getGridDivisionsU() const {
@@ -157,6 +177,8 @@ protected:
     bool m_wrapU = false;
     int m_patchCountX = 0;
     int m_patchCountY = 0;
+
+    std::set<int> m_selectedPatches;
 
     int m_gridDivisionsU = 4;
     int m_gridDivisionsV = 4;

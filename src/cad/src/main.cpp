@@ -118,7 +118,7 @@ namespace {
 
     /// @brief Wires New/Save/Save As/Open to a native file dialog and JSON
     /// (de)serialization. The current file path is process-lifetime state
-    void wireFileMenu(const CadMenuBar *menuBar, OpenGlWidget *glW) {
+    void wireFileMenu(const CadMenuBar *menuBar, OpenGlWidget *glW, EntityPropertiesWidget *entityPropsWidget) {
         static QString currentFilePath;
 
         const auto writeToPath = [glW](const QString &path) {
@@ -160,8 +160,9 @@ namespace {
         };
 
         // TODO: add popup asking for confirmation
-        const auto newScene = [glW] {
+        const auto newScene = [glW, entityPropsWidget] {
             Scene &scene = glW->getScene();
+            entityPropsWidget->setEntity(nullptr);
             scene.clearSelection();
             glW->getCameraController().clear();
             if (!scene.tryReset()) {
@@ -180,7 +181,7 @@ namespace {
             glW->update();
         };
 
-        const auto open = [glW] {
+        const auto open = [glW, entityPropsWidget] {
             const QString path = QFileDialog::getOpenFileName(
                 glW,
                 "Open Scene",
@@ -211,6 +212,7 @@ namespace {
             }
 
             Scene &scene = glW->getScene();
+            entityPropsWidget->setEntity(nullptr);
             scene.clearSelection();
             PersistentEntities persistent;
             persistent.detachFrom(scene);
@@ -838,7 +840,7 @@ int main(int argc, char *argv[]) {
     QObject::connect(glW, &GlW::stereoEyeSepChanged, menuBar, &CadMenuBar::setStereoEyeSep);
     QObject::connect(glW, &GlW::stereoConvergenceChanged, menuBar, &CadMenuBar::setStereoConvergence);
 
-    wireFileMenu(menuBar, glW);
+    wireFileMenu(menuBar, glW, entityPropertiesWidget);
     wireEditMenu(menuBar, glW);
     wireSelectionSync(glW, hierarchyWidget, entityPropertiesWidget);
     wireStatusBar(glW, statusBar);

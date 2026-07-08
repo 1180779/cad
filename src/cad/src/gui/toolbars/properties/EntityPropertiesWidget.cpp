@@ -35,6 +35,9 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
 
     clearLayout();
     m_entity = entity;
+    m_entityId = entity
+                     ? entity->getId()
+                     : 0;
     m_pointWidget = nullptr;
     m_bezierC0Widget = nullptr;
     m_bezierC2Widget = nullptr;
@@ -129,7 +132,24 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
     }
 }
 
-void EntityPropertiesWidget::syncBezierSelection() const {
+bool EntityPropertiesWidget::validateEntity() {
+    if (!m_entity) {
+        return false;
+    }
+    if (m_scene) {
+        if (const auto e = m_scene->getEntity(m_entityId);
+            !e || e.value() != m_entity) {
+            setEntity(nullptr);
+            return false;
+        }
+    }
+    return true;
+}
+
+void EntityPropertiesWidget::syncBezierSelection() {
+    if (!validateEntity()) {
+        return;
+    }
     if (m_bezierC0Widget) {
         m_bezierC0Widget->syncSelection();
     }
@@ -141,7 +161,10 @@ void EntityPropertiesWidget::syncBezierSelection() const {
     }
 }
 
-void EntityPropertiesWidget::refreshComponents() const {
+void EntityPropertiesWidget::refreshComponents() {
+    if (!validateEntity()) {
+        return;
+    }
     if (m_pointWidget) {
         m_pointWidget->refresh();
     }
@@ -153,7 +176,10 @@ void EntityPropertiesWidget::refreshComponents() const {
     }
 }
 
-void EntityPropertiesWidget::refreshComponentGeometry() const {
+void EntityPropertiesWidget::refreshComponentGeometry() {
+    if (!validateEntity()) {
+        return;
+    }
     if (m_pointWidget) {
         m_pointWidget->refresh();
     }

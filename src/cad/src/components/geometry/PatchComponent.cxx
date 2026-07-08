@@ -51,6 +51,7 @@ void PatchComponent::setGrid(
     m_wrapU = wrapU;
     m_patchCountX = patchCountX;
     m_patchCountY = patchCountY;
+    m_selectedPatches.clear();
     m_needsUpdate = true;
     buildNetEbo();
     rebuildPatchData();
@@ -70,6 +71,25 @@ void PatchComponent::gatherPatch(const int px, const int py, std::array<int, 16>
         for (int j = 0; j < 4; ++j) {
             out[i * 4 + j] = gridIndex(rBase + i, cBase + j);
         }
+    }
+}
+
+SinglePatchView PatchComponent::singlePatch(const int px, const int py) const {
+    std::array<int, 16> grid{};
+    gatherPatch(px, py, grid);
+    std::array<PointHandle, 16> handles{};
+    for (int k = 0; k < 16; ++k) {
+        handles[k] = m_controlPoints[grid[k]];
+    }
+    return handles;
+}
+
+void PatchComponent::setPatchSelected(const int index, const bool selected) {
+    if (selected) {
+        m_selectedPatches.insert(index);
+    }
+    else {
+        m_selectedPatches.erase(index);
     }
 }
 

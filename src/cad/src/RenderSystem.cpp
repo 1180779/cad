@@ -789,8 +789,6 @@ void RenderSystem::drawPatchSurface(
             static_cast<float>(m_viewportH)
         )
     );
-    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("u_highlightStrength", entityHl));
-
     // per-quad slice counts from the screen extent of its 16 control points
     // (0 = fully off-screen, skip)
     const auto &indices = patch->getPatchIndices();
@@ -817,6 +815,14 @@ void RenderSystem::drawPatchSurface(
             if (subs[q] == 0) {
                 continue;
             }
+            SHADER_SET_UNIFORM_CHECK(
+                m_bezierSurfaceShader->setUniform1(
+                    "u_highlightStrength",
+                    patch->isPatchSelected(q)
+                        ? s_singlePatchSelectionHS
+                        : entityHl
+                )
+            );
             SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uSub", subs[q]));
             gl->glDrawElementsInstanced(
                 GL_PATCHES,

@@ -6,7 +6,9 @@
 #define CAD_PATCHWIDGET_HXX
 
 #include <QCheckBox>
+#include <QPushButton>
 #include <QSpinBox>
+#include <QVBoxLayout>
 
 #include "../ComponentWidget.hpp"
 #include "../../../components/geometry/PatchComponent.hxx"
@@ -19,11 +21,17 @@ public:
     explicit PatchWidget(PatchComponent *patch, const QString &title, QWidget *parent = nullptr);
 
 private:
+    void addPatchSelectionGrid(QVBoxLayout *layout);
+
+    /// @brief Select the point entities of all checked single patches
+    void selectPatchPoints();
+
     void subdivisionUChanged(int value);
 
     void subdivisionVChanged(int value);
 
     PatchComponent *m_patch;
+    QList<QPushButton*> m_patchButtons;
     QCheckBox *m_showNetCheckbox{};
     QSpinBox *m_divisionsUSpin{};
     QSpinBox *m_divisionsVSpin{};
