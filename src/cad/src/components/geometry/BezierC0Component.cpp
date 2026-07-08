@@ -5,7 +5,8 @@
 #include "BezierC0Component.hpp"
 #include "GlCommon.hpp"
 
-BezierC0Component::BezierC0Component(PointRegistry *registry) : m_registry(registry) {}
+BezierC0Component::BezierC0Component(PointRegistry *registry)
+: m_registry(registry) {}
 
 BezierC0Component::~BezierC0Component() {
     const auto gl = getGl();
@@ -165,6 +166,33 @@ void BezierC0Component::removeControlPoint(const PointHandle h) {
 
     if (!isLast) {
         removeMidPointPartial(index);
+    }
+}
+
+void BezierC0Component::replaceControlPoint(const PointHandle from, const PointHandle to) {
+    if (std::ranges::find(m_controlPoints, from) == m_controlPoints.end()) {
+        return;
+    }
+    std::ranges::replace(m_controlPoints, from, to);
+    removeAssociatedCallback(from);
+    if (!m_removeControlPointCallbacks.contains(to)) {
+        m_removeControlPointCallbacks[to] = m_registry->subscribeToRemove(
+            [this](const PointHandle h) {
+                removeControlPoint(h);
+            }
+        );
+    }
+    rebuildPatchIndices();
+    rebuildPolygonLines();
+    m_needsUpdate = true;
+}
+
+void BezierC0Component::setControlPointHandles(const std::vector<PointHandle> &handles) {
+    for (const PointHandle h : std::vector(m_controlPoints)) {
+        removeControlPoint(h);
+    }
+    for (const PointHandle h : handles) {
+        addControlPoint(h);
     }
 }
 

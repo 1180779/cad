@@ -30,6 +30,7 @@ enum class InputAction {
     // viewport
 
     deleteSelected,
+    collapseSelectedPoints,
     toggleCoordSpace,
     switchCamera,
     createMenu,
@@ -146,6 +147,7 @@ inline InputMap::InputMap() {
     bind(InputAction::confirmTransform, {Qt::Key_Return, Qt::NoModifier});
     bind(InputAction::cancelTransform, {Qt::Key_Escape, Qt::NoModifier});
     bind(InputAction::deleteSelected, {Qt::Key_Delete, Qt::NoModifier});
+    bind(InputAction::collapseSelectedPoints, {Qt::Key_M, Qt::NoModifier});
     bind(InputAction::toggleCoordSpace, {Qt::Key_QuoteLeft, Qt::NoModifier});
     bind(InputAction::switchCamera, {Qt::Key_N, Qt::NoModifier});
     bind(InputAction::createMenu, {Qt::Key_C, Qt::NoModifier});

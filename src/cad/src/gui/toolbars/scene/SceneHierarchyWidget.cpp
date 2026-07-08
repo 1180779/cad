@@ -7,11 +7,12 @@
 #include "../../../components/geometry/BezierC2Component.hpp"
 #include "../../../components/CursorComponent.hpp"
 #include "../../../components/CameraComponent.hpp"
-//#include "../components/PointComponent.hpp"
+#include "../../../components/PointComponent.hpp"
 #include "../../../commands/CommandStack.hpp"
 #include "../../../commands/Commands.hpp"
 
-SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent) : QWidget(parent) {
+SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
+: QWidget(parent) {
     // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
     m_listWidget = new QListWidget(this);
@@ -194,6 +195,14 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
         return;
     }
 
+    const auto selectedPointCount = [this] {
+        int n = 0;
+        for (const Entity *sel : m_scene->getSelectedEntities()) {
+            n += sel->hasComponent<PointComponent>();
+        }
+        return n;
+    };
+
     const bool isCursor = e->hasComponent<CursorComponent>();
     const bool isCamera = e->hasComponent<CameraComponent>();
     // const bool isPoint = e->hasComponent<PointComponent>();
@@ -250,28 +259,27 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
         );
     }
 
+    if (m_scene && e->hasComponent<PointComponent>()) {
+        auto *collapseAction = menu.addAction("Collapse selected points");
+        collapseAction->setEnabled(selectedPointCount() == 2);
+        connect(collapseAction, &QAction::triggered, this, &SceneHierarchyWidget::collapseSelectedPointsRequested);
+    }
+
     if (!isCamera) {
+        const auto focusCameraSlot = [this, e] {
+            emit focusCameraRequested(e);
+        };
+
         const auto *focusAction = menu.addAction("Focus camera");
-        connect(
-            focusAction,
-            &QAction::triggered,
-            this,
-            [this, e] {
-                emit focusCameraRequested(e);
-            }
-        );
+        connect(focusAction, &QAction::triggered, this, focusCameraSlot);
     }
 
     if (!isCursor && !isCamera) {
+        const auto deleteEntitySlot = [this, e] {
+            emit deleteEntityRequested(e);
+        };
         const auto *deleteAction = menu.addAction("Delete");
-        connect(
-            deleteAction,
-            &QAction::triggered,
-            this,
-            [this, e] {
-                emit deleteEntityRequested(e);
-            }
-        );
+        connect(deleteAction, &QAction::triggered, this, deleteEntitySlot);
     }
 
     menu.exec(m_listWidget->mapToGlobal(pos));

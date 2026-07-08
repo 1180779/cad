@@ -15,6 +15,7 @@
 #include <cad_math/Vec3.hpp>
 
 #include "../INewPointsTargetComponent.hpp"
+#include "../IPointReferrer.hpp"
 #include "Vao.hxx"
 
 /// @brief Multi-segment cubic Bézier curve with C2 continuity between segments
@@ -27,7 +28,8 @@
 /// for n de Boor points (n >= 4) there are n-3 cubic segments.
 /// Segment i uses de Boor points d_i...d_{i+3}
 class BezierC2Component final : public GeometryComponent,
-                                public INewPointsTargetComponent<BezierC2Component> {
+                                public INewPointsTargetComponent<BezierC2Component>,
+                                public IPointReferrer {
 public:
     explicit BezierC2Component(PointRegistry *registry);
 
@@ -44,6 +46,14 @@ public:
     /// @brief Remove de Boor point from the curve
     /// @param handle handle of the point to be removed
     void removeControlPoint(PointHandle handle) override;
+
+    void replaceControlPoint(PointHandle from, PointHandle to) override;
+
+    [[nodiscard]] std::vector<PointHandle> controlPointHandles() const override {
+        return m_deBoorPoints;
+    }
+
+    void setControlPointHandles(const std::vector<PointHandle> &handles) override;
 
     [[nodiscard]] const std::vector<PointHandle>& getDeBoorPoints() const {
         return m_deBoorPoints;

@@ -11,7 +11,8 @@
 #include "../../utils/InterpC2Solver.hxx"
 #include "GlCommon.hpp"
 
-InterpC2Component::InterpC2Component(PointRegistry *registry) : m_registry{registry} {
+InterpC2Component::InterpC2Component(PointRegistry *registry)
+: m_registry{registry} {
     m_positionCallbackId = registry->subscribeToPositionChanges(
         [this](const PointHandle h) {
             if (std::ranges::find(m_points, h) != m_points.end()) {
@@ -70,6 +71,33 @@ void InterpC2Component::removeControlPoint(const PointHandle handle) {
     removeAssociatedCallback(handle);
     m_points.erase(it);
     markDirty();
+}
+
+void InterpC2Component::replaceControlPoint(const PointHandle from, const PointHandle to) {
+    if (std::ranges::find(m_points, from) == m_points.end()) {
+        return;
+    }
+    std::ranges::replace(m_points, from, to);
+    removeAssociatedCallback(from);
+    if (!m_removeControlPointCallbacks.contains(to)) {
+        m_removeControlPointCallbacks[to] = m_registry->subscribeToRemove(
+            [this, to](const PointHandle removed) {
+                if (removed == to) {
+                    removeControlPoint(to);
+                }
+            }
+        );
+    }
+    markDirty();
+}
+
+void InterpC2Component::setControlPointHandles(const std::vector<PointHandle> &handles) {
+    for (const PointHandle h : std::vector(m_points)) {
+        removeControlPoint(h);
+    }
+    for (const PointHandle h : handles) {
+        addControlPoint(h);
+    }
 }
 
 void InterpC2Component::setShowControlPolyline(const bool v) {

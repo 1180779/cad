@@ -33,6 +33,28 @@ public:
     /// @note: not an exclusive surface
     void setPointPosition(PointHandle handle, cadm::Vec3 position);
 
+    /// @brief The entities and handles of a valid point collapse
+    /// @see <tt>validateCollapse</tt>
+    struct CollapseCandidates {
+        Entity *keep{};
+        Entity *remove{};
+        PointHandle keepHandle{InvalidPointHandle};
+        PointHandle removeHandle{InvalidPointHandle};
+    };
+
+    /// @brief Check whether @p keepId and @p removeId name two distinct point
+    /// entities that can be collapsed
+    /// @returns The resolved candidates, or <tt>std::nullopt</tt> if the
+    /// collapse is not allowed
+    std::optional<CollapseCandidates> validateCollapse(EntityId keepId, EntityId removeId);
+
+    /// @brief Collapse two (point) entities into one: the kept point moves to
+    /// the average position, every referrer is repointed to it and the other
+    /// point entity is removed
+    /// @returns The kept entity, or <tt>nullptr</tt> if
+    /// <tt>validateCollapse</tt> refuses
+    Entity* collapsePoints(EntityId keepId, EntityId removeId);
+
     void setEntityName(EntityId id, const std::string &name);
 
     std::optional<Entity*> getEntity(EntityId id);

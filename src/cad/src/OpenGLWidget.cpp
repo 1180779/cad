@@ -4,6 +4,7 @@
 
 #include "OpenGLWidget.hpp"
 
+#include <algorithm>
 #include <numeric>
 #include <tuple>
 
@@ -539,6 +540,9 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
     case InputAction::deleteSelected:
         deleteSelectedEntities();
         break;
+    case InputAction::collapseSelectedPoints:
+        collapseSelectedPoints();
+        break;
     // undo/redo are handled by the Edit-menu actions, which own these shortcuts;
     // the menu shortcut consumes the key before it reaches here
     case InputAction::undo:
@@ -690,6 +694,26 @@ void OpenGlWidget::keyReleaseEvent(QKeyEvent *event) {
     default:
         QOpenGLWidget::keyReleaseEvent(event);
     }
+}
+
+void OpenGlWidget::collapseSelectedPoints() {
+    std::vector<EntityId> pts;
+    for (const Entity *e : m_scene.getSelectedEntities()) {
+        if (e->hasComponent<PointComponent>()) {
+            pts.push_back(e->getId());
+        }
+    }
+    if (pts.size() != 2) {
+        return;
+    }
+    m_commandStack.push(
+        std::make_unique<CollapsePointsCommand>(
+            m_scene,
+            std::min(pts[0], pts[1]),
+            std::max(pts[0], pts[1])
+        )
+    );
+    update();
 }
 
 void OpenGlWidget::deleteSelectedEntities() {

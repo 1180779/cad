@@ -6,6 +6,7 @@
 
 #include <ranges>
 #include <algorithm>
+#include "components/IPointReferrer.hpp"
 #include "components/PointComponent.hpp"
 
 Entity* Scene::createEntity(const std::string &name) {
@@ -86,6 +87,51 @@ void Scene::syncPointSelectionToRegistry() {
             m_pointRegistry.setSelected(pc.value()->m_handle, e->isSelected());
         }
     }
+}
+
+std::optional<Scene::CollapseCandidates> Scene::validateCollapse(const EntityId keepId, const EntityId removeId) {
+    const auto keepE = getEntity(keepId);
+    const auto removeE = getEntity(removeId);
+    if (!keepE || !removeE || keepId == removeId) {
+        return std::nullopt;
+    }
+    if (removeE.value()->componentCount() > 2) {
+        // contains more than a single component; abort
+        return std::nullopt;
+    }
+
+    const auto keepPc = keepE.value()->getComponent<PointComponent>();
+    const auto removePc = removeE.value()->getComponent<PointComponent>();
+    if (!keepPc || !removePc) {
+        return std::nullopt;
+    }
+    return CollapseCandidates{
+        keepE.value(),
+        removeE.value(),
+        keepPc.value()->m_handle,
+        removePc.value()->m_handle,
+    };
+}
+
+Entity* Scene::collapsePoints(const EntityId keepId, const EntityId removeId) {
+    const auto candidates = validateCollapse(keepId, removeId);
+    if (!candidates) {
+        return nullptr;
+    }
+    const PointHandle keep = candidates->keepHandle;
+    const PointHandle gone = candidates->removeHandle;
+
+    m_pointRegistry.setPosition(
+        keep,
+        (m_pointRegistry.getPosition(keep) + m_pointRegistry.getPosition(gone)) * 0.5f
+    );
+    for (const auto &e : m_entities) {
+        if (const auto r = e->getComponent<IPointReferrer>()) {
+            r.value()->replaceControlPoint(gone, keep);
+        }
+    }
+    removeEntity(removeId);
+    return candidates->keep;
 }
 
 bool Scene::removeEntity(EntityId id) {
