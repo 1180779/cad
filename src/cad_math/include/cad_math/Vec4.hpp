@@ -12,7 +12,7 @@
 
 namespace cadm {
     template <typename T>
-    struct Vec<4, T> : VecBase<Vec<4, T>, 4, T> {
+    struct Vec<T, 4> : VecBase<T, 4, Vec<T, 4>> {
         union {
             struct {
                 T x, y, z, w;
@@ -25,7 +25,11 @@ namespace cadm {
             std::array<T, 4> data;
         };
 
-        constexpr Vec() : x(0), y(0), z(0), w(0) {}
+        constexpr Vec()
+        : x(T{0}),
+          y(T{0}),
+          z(T{0}),
+          w(T{0}) {}
 
         constexpr Vec(const T x, const T y, const T z, const T w) : x(x), y(y), z(z), w(w) {}
 
@@ -42,19 +46,19 @@ namespace cadm {
         }
 
         constexpr static Vec unitX() noexcept {
-            return {1.0, 0.0, 0.0, 0.0};
+            return {T{1}, T{0}, T{0}, T{0}};
         }
 
         constexpr static Vec unitY() noexcept {
-            return {0.0, 1.0, 0.0, 0.0};
+            return {T{0}, T{1}, T{0}, T{0}};
         }
 
         constexpr static Vec unitZ() noexcept {
-            return {0.0, 0.0, 1.0, 0.0};
+            return {T{0}, T{0}, T{1}, T{0}};
         }
 
         constexpr static Vec unitW() noexcept {
-            return {0.0, 0.0, 0.0, 1.0};
+            return {T{0}, T{0}, T{0}, T{1}};
         }
 
         /// @brief Component indices for operator[] access
@@ -73,7 +77,8 @@ namespace cadm {
         };
     };
 
-    using vec4 = Vec<4, cadf>;
+    using Vec4 = Vec<cadf, 4>;
+    using Vec4I = Vec<int, 4>;
 }
 
 #endif //CAD_VEC4_H

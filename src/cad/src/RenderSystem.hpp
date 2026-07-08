@@ -202,8 +202,8 @@ private:
     // 2D selection rectangle
     uint32_t m_selectionRectVAO = 0;
     uint32_t m_selectionRectVBO = 0;
-    static constexpr cadm::vec4 s_selectionRectColor{0.39, 0.63, 1.0, 0.16};
-    static constexpr cadm::vec4 s_selectionRectOutlineColor{1.0, 1.0, 1.0, 0.86};
+    static constexpr cadm::Vec4 s_selectionRectColor{0.39, 0.63, 1.0, 0.16};
+    static constexpr cadm::Vec4 s_selectionRectOutlineColor{1.0, 1.0, 1.0, 0.86};
 
 public:
     static constexpr cadm::cadf s_selectionHS{0.7f}; // highlight strength

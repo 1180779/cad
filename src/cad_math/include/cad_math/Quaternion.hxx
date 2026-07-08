@@ -33,7 +33,7 @@ namespace cadm {
             this->e3 = e3;
         }
 
-        explicit Quaternion(T e0, const Vec<3, T> &n) {
+        explicit Quaternion(T e0, const Vec<T, 3> &n) {
             this->e0 = e0;
             this->e1 = n[0];
             this->e2 = n[1];
@@ -44,15 +44,15 @@ namespace cadm {
             return e0;
         }
 
-        constexpr Vec<3, T> vectorPart() noexcept {
+        constexpr Vec<T, 3> vectorPart() noexcept {
             return {e1, e2, e3};
         }
 
-        constexpr Vec<3, T> vectorPart() const noexcept {
+        constexpr Vec<T, 3> vectorPart() const noexcept {
             return {e1, e2, e3};
         }
 
-        constexpr void setVectorPart(const Vec<3, T> &v) noexcept {
+        constexpr void setVectorPart(const Vec<T, 3> &v) noexcept {
             e1 = v[0];
             e2 = v[1];
             e3 = v[2];
@@ -85,13 +85,13 @@ namespace cadm {
 
         // ===== quaternion-quaternion operators =====
 
-        friend constexpr Vec<3, T> rotateVec(const Quaternion &q, const Vec<3, T> &v) {
+        friend constexpr Vec<T, 3> rotateVec(const Quaternion &q, const Vec<T, 3> &v) {
             // const Quaternion qv{0, v};
             // const Quaternion conj = q.conjugate();
             // const Quaternion qRot = q * qv * conj;
             // return qRot.vectorPart();
             const T q0 = q.scalarPart();
-            const Vec<3, T> qv = q.vectorPart();
+            const Vec<T, 3> qv = q.vectorPart();
             return 2 * qv.dot(v) * qv + (q0 * q0 - qv.lengthSquared()) * v + 2 * q0 * qv.cross(v);
         }
 
@@ -109,7 +109,7 @@ namespace cadm {
             return !(lhs == rhs);
         }
 
-        constexpr static Quaternion fromRotation(T alpha, Vec<3, T> n) {
+        constexpr static Quaternion fromRotation(T alpha, Vec<T, 3> n) {
             const auto alphaO2 = alpha * 0.5;
             const auto s = std::sin(alphaO2);
             const auto c = std::cos(alphaO2);
@@ -285,12 +285,12 @@ namespace cadm {
         }
 
         /// @brief Quaternion to ZYX Euler angles (x=roll, y=pitch, z=yaw)
-        Vec<3, T> toEuler() const noexcept {
+        Vec<T, 3> toEuler() const noexcept {
             return Quaternion::toEuler(*this);
         }
 
         /// @brief Quaternion to ZYX Euler angles (x=roll, y=pitch, z=yaw)
-        static Vec<3, T> toEuler(const Quaternion &q) noexcept {
+        static Vec<T, 3> toEuler(const Quaternion &q) noexcept {
             const auto w = q[0],
                        x = q[1],
                        y = q[2],
@@ -312,7 +312,7 @@ namespace cadm {
         }
 
         /// @brief Inverse of @ref Quaternion::toEuler
-        static Quaternion fromEuler(const Vec<3, T> &rotation) noexcept {
+        static Quaternion fromEuler(const Vec<T, 3> &rotation) noexcept {
             const auto rotationHalf = rotation * 0.5f;
             const auto cr = std::cos(rotationHalf.x), sr = std::sin(rotationHalf.x);
             const auto cp = std::cos(rotationHalf.y), sp = std::sin(rotationHalf.y);

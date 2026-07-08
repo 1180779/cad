@@ -16,7 +16,7 @@
 struct Vertex {
     cadm::Vec3 position;
     cadm::Vec3 normal;
-    cadm::vec4 color;
+    cadm::Vec4 color;
 };
 
 class GeometryComponent : public Component {
@@ -117,9 +117,9 @@ class AxesGeometry final : public GeometryComponent {
 public:
     cadm::cadf m_length = 5.0f;
     float m_lineWidth = 1.0f;
-    static constexpr cadm::vec4 xColor{1, 0, 0, 1};
-    static constexpr cadm::vec4 yColor{0, 1, 0, 1};
-    static constexpr cadm::vec4 zColor{0, 0, 1, 1};
+    static constexpr cadm::Vec4 xColor{1, 0, 0, 1};
+    static constexpr cadm::Vec4 yColor{0, 1, 0, 1};
+    static constexpr cadm::Vec4 zColor{0, 0, 1, 1};
 
     void regenerateMesh() override;
 };

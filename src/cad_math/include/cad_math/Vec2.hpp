@@ -12,7 +12,7 @@
 
 namespace cadm {
     template <typename T>
-    struct Vec<2, T> : VecBase<Vec<2, T>, 2, T> {
+    struct Vec<T, 2> : VecBase<T, 2, Vec<T, 2>> {
         union {
             struct {
                 T x, y;
@@ -25,16 +25,18 @@ namespace cadm {
             std::array<T, 2> data;
         };
 
-        constexpr Vec() : x(0), y(0) {}
+        constexpr Vec()
+        : x(T{0}),
+          y({0}) {}
 
         constexpr Vec(const T x, const T y) : x(x), y(y) {}
 
         constexpr static Vec unitX() noexcept {
-            return {1.0, 0.0};
+            return {T{1}, T{0}};
         }
 
         constexpr static Vec unitY() noexcept {
-            return {0.0, 1.0};
+            return {T{0}, T{1}};
         }
 
         /// @brief Component indices for operator[] access
@@ -47,6 +49,7 @@ namespace cadm {
         };
     };
 
-    using vec2 = Vec<2, cadf>;
+    using Vec2 = Vec<cadf, 2>;
+    using Vec2I = Vec<int, 2>;
 }
 #endif //CAD_VEC2_H

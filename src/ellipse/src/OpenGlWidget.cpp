@@ -295,20 +295,20 @@ void OpenGlWidget::performRaycasting(
                     rgb = cadm::vec3i();
                 }
                 else {
-                    cadm::vec4 intersectionPoint = rayWorld.origin + rayWorld.direction * t.value();
-                    cadm::vec4 pWorld(intersectionPoint.x, intersectionPoint.y, intersectionPoint.z, 1.0);
-                    cadm::vec4 pObject = state.Minv * pWorld;
-                    cadm::vec4 nObject(
+                    cadm::Vec4 intersectionPoint = rayWorld.origin + rayWorld.direction * t.value();
+                    cadm::Vec4 pWorld(intersectionPoint.x, intersectionPoint.y, intersectionPoint.z, 1.0);
+                    cadm::Vec4 pObject = state.Minv * pWorld;
+                    cadm::Vec4 nObject(
                         2.0 * pObject.x / (state.a * state.a),
                         2.0 * pObject.y / (state.b * state.b),
                         2.0 * pObject.z / (state.c * state.c),
                         0.0
                     );
-                    cadm::vec4 nWorld4 = state.MinvT * nObject;
+                    cadm::Vec4 nWorld4 = state.MinvT * nObject;
                     cadm::Vec3 n(nWorld4.x, nWorld4.y, nWorld4.z);
                     n.normalize();
 
-                    cadm::vec4 viewDir4 = -rayWorld.direction;
+                    cadm::Vec4 viewDir4 = -rayWorld.direction;
                     cadm::Vec3 viewDir(viewDir4.x, viewDir4.y, viewDir4.z);
                     viewDir.normalize();
 

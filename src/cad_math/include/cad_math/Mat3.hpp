@@ -10,11 +10,11 @@
 #include "Vec3.hpp"
 
 namespace cadm {
-    template <std::size_t R, std::size_t C, typename T>
+    template <typename T, std::size_t R, std::size_t C>
     struct Mat;
 
     template <>
-    struct Mat<3, 3, cadf> : MatBase<Mat, Mat<3, 3, cadf>, Vec3, Vec3, 3, 3, cadf> {
+    struct Mat<cadf, 3, 3> : MatBase<cadf, 3, 3, Vec3, Vec3, Mat, Mat<cadf, 3, 3>> {
         union {
             cadf data[9]{};
             Vec3 columns[3];
@@ -62,7 +62,7 @@ namespace cadm {
             };
         }
 
-        constexpr static Mat scale(const vec2 &s) {
+        constexpr static Mat scale(const Vec2 &s) {
             return scale(s.x, s.y);
         }
 
@@ -84,7 +84,7 @@ namespace cadm {
             };
         }
 
-        constexpr static Mat translation(const vec2 &t) {
+        constexpr static Mat translation(const Vec2 &t) {
             return translation(t.x, t.y);
         }
 
@@ -162,6 +162,6 @@ namespace cadm {
         }
     };
 
-    using Mat3 = Mat<3, 3, cadf>;
+    using Mat3 = Mat<cadf, 3, 3>;
 }
 #endif //CAD_MAT3_H
