@@ -50,7 +50,8 @@ public:
     static constexpr cadm::cadf s_orthoHeightMin = 0.01;
     static constexpr cadm::cadf s_orthoHeightMax = 1000.0;
 
-    explicit BlenderCameraComponent(QObject *parent = nullptr) : QObject(parent) {}
+    explicit BlenderCameraComponent(QObject *parent = nullptr)
+    : QObject(parent) {}
 
     [[nodiscard]] cadm::Vec3 forward() const;
 
@@ -129,7 +130,11 @@ public:
 private:
     cadm::cadf m_radius{5.0};
     /// @brief Position = target + orbitRot*(0,0,radius)
-    cadm::Mat3 m_orbitRot = cadm::Mat3::identity();
+    cadm::Mat3 m_orbitRot = [] {
+        const cadm::Vec3 back = cadm::Vec3{1, 1, 1}.normalized();
+        const cadm::Vec3 right = cadm::Vec3{0, 1, 0}.cross(back).normalized();
+        return cadm::Mat3{right, back.cross(right), back};
+    }();
 
     cadm::Vec3 m_target{};
     cadm::cadf m_nearPlane{0.1f};
@@ -140,9 +145,7 @@ private:
     bool m_isOrtho = false;
     cadm::cadf m_orthoHeight = 5.0;
 
-    signals  :
-    
-
+signals :
     void radiusChanged(double radius);
 
     void fovChanged(double fov);

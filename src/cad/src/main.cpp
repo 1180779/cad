@@ -1,13 +1,11 @@
 #include <tuple>
+#include <vector>
 
 #include <QFileDialog>
 #include <QFontDatabase>
-#include <QJsonArray>
-#include <QJsonObject>
 #include <QMessageBox>
 #include <QPainter>
 #include <QSplitter>
-#include <QStackedWidget>
 
 #include "CameraFactory.hpp"
 #include "components/BezierC0Component.hpp"
@@ -25,8 +23,10 @@
 #include "gui/PatchCreatorDialog.hxx"
 #include "gui/CadTitleBar.hpp"
 #include "gui/Theme.hpp"
+#include "gui/PropertiesPanelWidget.hxx"
 #include "gui/ScenePanelWidget.hpp"
 #include "gui/StatusBarWidget.hpp"
+#include "gui/SubdividedPanelBar.hxx"
 #include "gui/ToolPanelBar.hpp"
 #include "gui/ViewportPanelWidget.hpp"
 #include "serialization/Serialization.hxx"
@@ -48,47 +48,48 @@ namespace {
         }
     }
 
-    /// @brief Wires the panel bar and Tools-menu toggles to the stacked tool
-    /// windows
+    /// @brief One Tools-menu entry <-> tab-bar-button <-> dock-panel-index
+    /// triple
+    struct ToolPanelToggle {
+        const QAction *action;
+        QToolButton *button;
+        int index;
+    };
+
+    /// @brief Wires the panel bar and Tools-menu toggles to the dockable panel
+    /// stack
     void wirePanelToggles(
-        const ToolPanelBar *panelBar,
-        QStackedWidget *panelStack,
-        const QAction *sceneAction,
-        const QAction *viewportAction,
-        QToolButton *sceneBtn,
-        QToolButton *viewportBtn
+        ToolPanelBar *panelBar,
+        SubdividedPanelBar *panelStack,
+        const std::vector<ToolPanelToggle> &toggles
     ) {
-        const auto toolPSSetFocus = [panelStack](const int index) {
-            panelStack->setCurrentIndex(index);
-            panelStack->show();
-            panelStack->currentWidget()->setFocus(Qt::OtherFocusReason);
-        };
-        const auto toolPSHide = [panelStack] {
-            panelStack->hide();
-        };
-        const auto syncSceneToolWindow = [sceneBtn, panelStack](const bool visible) {
-            if (!visible && sceneBtn->isChecked()) {
-                sceneBtn->setChecked(false);
-                panelStack->hide();
-            }
-        };
-        const auto syncViewportToolWindow = [viewportBtn, panelStack](const bool visible) {
-            if (!visible && viewportBtn->isChecked()) {
-                viewportBtn->setChecked(false);
-                panelStack->hide();
-            }
-        };
-
         using namespace aliases;
-        // panel bar -> show/hide stack
-        QObject::connect(panelBar, &ToolPB::panelRequested, panelStack, toolPSSetFocus);
-        QObject::connect(panelBar, &ToolPB::panelClosed, panelStack, toolPSHide);
+        auto showPanel = [panelBar, panelStack](const int index) {
+            panelStack->showPanel(index, panelBar->groupOf(index));
+        };
+        // ReSharper disable once CppDFAUnreachableFunctionCall
+        auto uncheckButton = [panelBar](const int index) {
+            if (auto *btn = panelBar->buttonAt(index)) {
+                btn->setChecked(false);
+            }
+        };
+        auto closeOnHide = [uncheckButton, panelStack](const int index) {
+            return [uncheckButton, panelStack, index](const bool visible) {
+                if (!visible) {
+                    uncheckButton(index);
+                    panelStack->hidePanel(index);
+                }
+            };
+        };
 
-        // tools menu <-> panel buttons
-        QObject::connect(sceneAction, &QAction::toggled, sceneBtn, &QToolButton::setVisible);
-        QObject::connect(viewportAction, &QAction::toggled, viewportBtn, &QToolButton::setVisible);
-        QObject::connect(sceneAction, &QAction::toggled, sceneBtn, syncSceneToolWindow);
-        QObject::connect(viewportAction, &QAction::toggled, viewportBtn, syncViewportToolWindow);
+        QObject::connect(panelBar, &ToolPB::panelRequested, panelStack, showPanel);
+        QObject::connect(panelBar, &ToolPB::panelClosed, panelStack, &SubdividedPanelBar::hidePanel);
+        QObject::connect(panelStack, &SubdividedPanelBar::panelClosedByUser, panelBar, uncheckButton);
+
+        for (const auto &[action, button, index] : toggles) {
+            QObject::connect(action, &QAction::toggled, button, &QToolButton::setVisible);
+            QObject::connect(action, &QAction::toggled, button, closeOnHide(index));
+        }
     }
 
     /// @brief Creates the default cursor + default cameras for the scene
@@ -675,6 +676,8 @@ namespace {
 int main(int argc, char *argv[]) {
     using namespace aliases;
 
+    Q_INIT_RESOURCE(resources);
+
     glSetDefaults();
     [[maybe_unused]] QApplication a(argc, argv);
 
@@ -737,17 +740,20 @@ int main(int argc, char *argv[]) {
 
     const auto scenePanel = new ScenePanelWidget;
     const auto viewportPanel = new ViewportPanelWidget;
+    const auto propertiesPanel = new PropertiesPanelWidget;
 
     scenePanel->setFocusPolicy(Qt::ClickFocus);
     viewportPanel->setFocusPolicy(Qt::ClickFocus);
+    propertiesPanel->setFocusPolicy(Qt::ClickFocus);
 
     // ReSharper disable once CppDFAMemoryLeak
-    const auto panelStack = new QStackedWidget;
-    panelStack->addWidget(scenePanel);
-    panelStack->addWidget(viewportPanel);
+    const auto panelStack = new SubdividedPanelBar;
+    panelStack->registerPanel(0, scenePanel);
+    panelStack->registerPanel(1, viewportPanel);
+    panelStack->registerPanel(2, propertiesPanel);
     panelStack->setMinimumWidth(200);
 
-    prepareToolPanels({scenePanel, viewportPanel});
+    prepareToolPanels({scenePanel, viewportPanel, propertiesPanel});
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto splitter = new QSplitter(Qt::Horizontal);
@@ -760,38 +766,49 @@ int main(int argc, char *argv[]) {
     splitter->setSizes({10000, 450});
     rootLayout->addWidget(splitter, 1);
 
-    const auto panelBar = new ToolPanelBar;
-    rootLayout->addWidget(panelBar, 0);
+    const auto toolsPanelBar = new ToolPanelBar;
+    rootLayout->addWidget(toolsPanelBar, 0);
 
     outerLayout->addWidget(statusBar);
 
     const auto *sceneAction = menuBar->addToolPanelAction("Scene");
     const auto *viewportAction = menuBar->addToolPanelAction("Viewport");
+    const auto *propertiesAction = menuBar->addToolPanelAction("Properties");
 
-    auto *sceneBtn = panelBar->addPanel("Scene");
-    auto *viewportBtn = panelBar->addPanel("Viewport");
+    auto *sceneBtn = toolsPanelBar->addPanel("Scene");
+    auto *viewportBtn = toolsPanelBar->addPanel("Viewport");
+    auto *propertiesBtn = toolsPanelBar->addPanel("Properties", false);
 
-    // open Scene panel by default
-    panelBar->openPanel(0);
-    panelStack->setCurrentIndex(0);
-    panelStack->show();
+    wirePanelToggles(
+        toolsPanelBar,
+        panelStack,
+        {
+            {sceneAction, sceneBtn, 0},
+            {viewportAction, viewportBtn, 1},
+            {propertiesAction, propertiesBtn, 2},
+        }
+    );
 
-    wirePanelToggles(panelBar, panelStack, sceneAction, viewportAction, sceneBtn, viewportBtn);
+    toolsPanelBar->openPanel(2);
+    toolsPanelBar->openPanel(0);
 
     // intelliJ inspired active-tab accent: the open tab paints accent color
-    // only while the tool panel holds focus, falling back to the hover color
-    // otherwise
-    const auto syncActiveTabHighlight = [panelBar, panelStack](QWidget *, const QWidget *now) {
-        const bool insideStack = now != nullptr && panelStack->isAncestorOf(now);
+    // only while its tool panel holds focus, falling back to the hover color
+    // otherwise; several tabs can be open at once but at most one is focused
+    const auto syncActiveTabHighlight = [toolsPanelBar, panelStack](QWidget *, const QWidget *now) {
         const QWidget *popup = QApplication::activePopupWidget();
-        const bool popupInStack = popup != nullptr && popup->parentWidget() != nullptr &&
-            panelStack->isAncestorOf(popup->parentWidget());
-        panelBar->setPanelFocused(insideStack || popupInStack);
+        const QWidget *effective = popup != nullptr && popup->parentWidget() != nullptr
+                                       ? popup->parentWidget()
+                                       : now;
+        const auto focused = panelStack->focusedPanelIndex(effective).value_or(-1);
+        for (int i = 0; i < toolsPanelBar->count(); ++i) {
+            toolsPanelBar->setPanelFocused(i, i == focused);
+        }
     };
-    QObject::connect(qApp, &QApplication::focusChanged, panelBar, syncActiveTabHighlight);
+    QObject::connect(qApp, &QApplication::focusChanged, toolsPanelBar, syncActiveTabHighlight);
 
     auto *hierarchyWidget = scenePanel->hierarchyWidget();
-    auto *entityPropertiesWidget = scenePanel->entityPropertiesWidget();
+    auto *entityPropertiesWidget = propertiesPanel->entityPropertiesWidget();
 
     setupDefaultCamerasAndCursor(glW);
     statusBar->setCameraName(QString::fromStdString(glW->getCameraController().getActiveName()));

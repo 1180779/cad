@@ -5,7 +5,6 @@
 #ifndef CAD_SCENEPANELWIDGET_HPP
 #define CAD_SCENEPANELWIDGET_HPP
 
-#include "EntityPropertiesWidget.hpp"
 #include "SceneHierarchyWidget.hpp"
 #include "ToolPanelWidget.hpp"
 
@@ -17,11 +16,8 @@ public:
 
     [[nodiscard]] SceneHierarchyWidget* hierarchyWidget() const;
 
-    [[nodiscard]] EntityPropertiesWidget* entityPropertiesWidget() const;
-
 private:
     SceneHierarchyWidget *m_hierarchy;
-    EntityPropertiesWidget *m_entityProperties;
 };
 
 #endif //CAD_SCENEPANELWIDGET_HPP

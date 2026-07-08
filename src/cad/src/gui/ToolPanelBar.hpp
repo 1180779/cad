@@ -5,37 +5,11 @@
 #ifndef CAD_TOOLPANELBAR_HPP
 #define CAD_TOOLPANELBAR_HPP
 
-#include <QToolButton>
-#include <QVBoxLayout>
-#include <QWidget>
+#include "ToolPanelButton.hxx"
 
-/// @brief A rotated-text QToolButton used as a side-panel tab
-class PanelTabButton final : public QToolButton {
-    Q_OBJECT
-
-public:
-    explicit PanelTabButton(const QString &text, QWidget *parent = nullptr);
-
-    [[nodiscard]] QSize sizeHint() const override;
-
-    [[nodiscard]] QSize minimumSizeHint() const override;
-
-    /// @brief Whether the open panel currently holds focus; only a focused active tab
-    /// paints with the accent color, otherwise it falls back to the hover color
-    void setPanelFocused(bool focused);
-
-protected:
-    void paintEvent(QPaintEvent *event) override;
-
-    /// @brief No-op so the button never auto-toggles; ToolPanelBar owns the checked state
-    void nextCheckState() override;
-
-private:
-    /// @brief Cached focus state pushed in via setPanelFocused. paintEvent can't reach the
-    /// panel stack or focus widget to compute this itself, so the fact is forwarded down 
-    /// and stored here for the painter to read
-    bool m_panelFocused = false;
-};
+/// @brief MIME type used to drag a panel index out of <tt>ToolPanelBar</tt>
+/// into a <tt>SubdividedPanelBar</tt>
+inline const auto g_panelIndexMimeType = QStringLiteral("application/x-cad-panel-index");
 
 class ToolPanelBar;
 
@@ -44,49 +18,115 @@ namespace aliases {
     using ToolPB = ToolPanelBar;
 }
 
-/// @brief Thin vertical strip of checkable panel-tab buttons, IntelliJ-style
-///
-/// Emits panelRequested(index) when a button is activated, and
-/// panelClosed() when the active button is unchecked (clicking the open panel's tab)
+/// @brief Thin vertical strip of checkable panel-tab buttons. Two tabs can be
+/// checked (open) independently at once
+/// 
+/// @note Buttons never auto-toggle (see
+/// <tt>PanelTabButton::nextCheckState</tt>). The bar owns and flips the checked
+/// state explicitly
 class ToolPanelBar final : public QWidget {
     Q_OBJECT
 
 public:
     explicit ToolPanelBar(QWidget *parent = nullptr);
 
-    /// @brief Add a panel entry; returns the button so callers can connect it to a QAction
-    PanelTabButton* addPanel(const QString &name);
+    /// @brief Add a panel entry 
+    /// @returns Associated panel button so callers can connect it to a
+    /// <tt>QAction</tt>
+    PanelTabButton* addPanel(const QString &name, bool topLayout = true);
 
-    /// @brief Return the button at index (nullptr if out of range)
+    /// @brief Return the button at index (<tt>nullptr</tt> if out of range)
     [[nodiscard]] PanelTabButton* buttonAt(int index) const;
 
     /// @brief Number of registered panels
     [[nodiscard]] int count() const;
 
-    /// @brief Programmatically open a panel without emitting panelRequested
+    /// @brief Mark a panel's tab open (checked) without emitting
+    /// <tt>panelRequested</tt>
     void openPanel(int index);
 
-    /// @brief Reflect whether the open tool panel holds keyboard focus, so the active
-    /// tab shows the blue accent only while focused and the hover gray otherwise
-    void setPanelFocused(bool focused) const;
+    /// @brief Reflect whether panel index's tool panel holds keyboard focus, so
+    /// its tab shows the accent color only while focused and the hover color
+    /// otherwise. Several tabs can be open (checked) at once, but at most one
+    /// is focused
+    void setPanelFocused(int index, bool focused) const;
+
+    /// @brief Which dock slot (0 = top, 1 = bottom) clicking this tab opens
+    /// into
+    [[nodiscard]] int groupOf(int index) const;
+
+    /// @brief Move a tab into the top (0) or bottom (1) group and re-layout
+    void setGroup(int index, int group);
+
+    /// @brief Watches the tab buttons for external show/hide (Tools menu) to
+    /// keep the divider visibility in sync
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 signals:
+    /// @brief A tab was clicked to open its panel
     void panelRequested(int index);
 
-    void panelClosed();
+    /// @brief A tab was clicked to close its (already open) panel
+    void panelClosed(int index);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
 
+    void dragEnterEvent(QDragEnterEvent *event) override;
+
+    void dragMoveEvent(QDragMoveEvent *event) override;
+
+    void dragLeaveEvent(QDragLeaveEvent *event) override;
+
+    void dropEvent(QDropEvent *event) override;
+
 private:
-    QVBoxLayout *m_layout;
-    QList<PanelTabButton*> m_buttons;
-    int m_activeIndex = -1;
-
-    /// @brief Set the active panel and derive all button checked states from it
-    void setActiveIndex(int index);
-
     void onButtonClicked(int index);
+
+    /// @brief Show the divider only while both groups have visible content
+    /// (tabs or the drag placeholder)
+    void updateDivider() const;
+
+    /// @brief Dashed accent-outlined block used as drop marker during drags; @p
+    /// filled adds the translucent accent wash
+    [[nodiscard]] QWidget* makeDropMarker(const QSize &size, bool filled);
+
+    /// @brief Build the MIME payload and run the QDrag for panel @p index;
+    /// invoked via PanelTabButton::dragRequested
+    void startDrag(int index) const;
+
+    /// @brief Layout position in @p layout that a drop at bar-relative @p y
+    /// maps to (first visible tab whose midpoint lies below y)
+    [[nodiscard]] int dropIndexIn(const QVBoxLayout *layout, int y) const;
+
+    /// @brief Hide panelIndex's real tab and show the placeholder at the
+    /// position @p y implies, so the bar visibly previews the drop before it
+    /// happens
+    void showDragPreview(int panelIndex, int y);
+
+    /// @brief Remove the placeholder, restore the dragged tab, and re-layout
+    void clearDragPreview();
+
+    QVBoxLayout *m_topLayout;
+    QVBoxLayout *m_bottomLayout;
+    QWidget *m_divider;
+
+    /// @brief Stable by panel index, mirrors registration order; never
+    /// reordered. Visual order lives in <tt>m_topLayout</tt> /
+    /// <tt>m_bottomLayout</tt> directly
+    QList<PanelTabButton*> m_buttons;
+
+    /// @brief Panel index currently being dragged (its own button is hidden and
+    /// a placeholder block stands in for it), or -1 when no drag is in progress
+    int m_draggingIndex = -1;
+
+    /// @brief Dashed accent marker showing where a drag would land; created on
+    /// first dragMoveEvent, destroyed once the drag ends
+    QWidget *m_dragPlaceholder = nullptr;
+
+    /// @brief Same marker shown in a group that has no visible tabs during a
+    /// drag, so an empty group stays a visible drop target (IntelliJ-style)
+    QWidget *m_emptyGroupHint = nullptr;
 };
 
 #endif //CAD_TOOLPANELBAR_HPP

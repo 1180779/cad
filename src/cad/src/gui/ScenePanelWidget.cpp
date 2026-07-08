@@ -6,24 +6,15 @@
 
 #include <QVBoxLayout>
 
-#include "EntityPropertiesWidget.hpp"
 #include "SceneHierarchyWidget.hpp"
 
-ScenePanelWidget::ScenePanelWidget(QWidget *parent) : ToolPanelWidget("Scene", parent),
-                                                      m_hierarchy(new SceneHierarchyWidget(this)),
-                                                      m_entityProperties(new EntityPropertiesWidget(this)) {
-    // ReSharper disable once CppDFAMemoryLeak
-    const auto layout = new QVBoxLayout(this);
-    layout->setContentsMargins(6, 6, 6, 6);
-    layout->setAlignment(Qt::AlignTop);
+ScenePanelWidget::ScenePanelWidget(QWidget *parent)
+: ToolPanelWidget("Scene", parent),
+  m_hierarchy(new SceneHierarchyWidget(this)) {
+    const auto layout = createLayout();
     layout->addWidget(m_hierarchy);
-    layout->addWidget(m_entityProperties);
 }
 
 SceneHierarchyWidget* ScenePanelWidget::hierarchyWidget() const {
     return m_hierarchy;
-}
-
-EntityPropertiesWidget* ScenePanelWidget::entityPropertiesWidget() const {
-    return m_entityProperties;
 }
