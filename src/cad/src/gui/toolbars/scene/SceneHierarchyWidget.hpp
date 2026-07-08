@@ -64,6 +64,9 @@ signals :
 
     void addSelectedPointsToNewPointsTargetEntityRequested(Entity *e);
 
+    /// @brief Collapse the two currently selected (point) entities into one
+    void collapseSelectedPointsRequested();
+
 public
 slots :
     /// @brief Update the m_listWidget to be in sync with the m_scene entities

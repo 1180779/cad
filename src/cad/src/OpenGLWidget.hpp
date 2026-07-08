@@ -55,6 +55,10 @@ public:
 
     bool removeEntity(EntityId id);
 
+    /// @brief Collapse the two selected point entities into one (undoable);
+    /// no-op unless exactly two points are selected
+    void collapseSelectedPoints();
+
     bool eventFilter(QObject *obj, QEvent *event) override;
 
     [[nodiscard]] Scene& getScene() {

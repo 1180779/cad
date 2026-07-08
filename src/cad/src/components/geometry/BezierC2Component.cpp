@@ -13,7 +13,8 @@
 #include "../../utils/BSplineToBezierConverter.hpp"
 #include "GlCommon.hpp"
 
-BezierC2Component::BezierC2Component(PointRegistry *registry) : m_registry{registry} {
+BezierC2Component::BezierC2Component(PointRegistry *registry)
+: m_registry{registry} {
     m_positionCallbackId = registry->subscribeToPositionChanges(
         [this](const PointHandle h) {
             if (const auto it = std::ranges::find(m_deBoorPoints, h);
@@ -75,6 +76,33 @@ void BezierC2Component::removeControlPoint(const PointHandle handle) {
     removeAssociatedCallback(handle);
     m_deBoorPoints.erase(it);
     markStructureDirty();
+}
+
+void BezierC2Component::replaceControlPoint(const PointHandle from, const PointHandle to) {
+    if (std::ranges::find(m_deBoorPoints, from) == m_deBoorPoints.end()) {
+        return;
+    }
+    std::ranges::replace(m_deBoorPoints, from, to);
+    removeAssociatedCallback(from);
+    if (!m_removeControlPointCallbacks.contains(to)) {
+        m_removeControlPointCallbacks[to] = m_registry->subscribeToRemove(
+            [this, to](const PointHandle removed) {
+                if (removed == to) {
+                    removeControlPoint(to);
+                }
+            }
+        );
+    }
+    markStructureDirty();
+}
+
+void BezierC2Component::setControlPointHandles(const std::vector<PointHandle> &handles) {
+    for (const PointHandle h : std::vector(m_deBoorPoints)) {
+        removeControlPoint(h);
+    }
+    for (const PointHandle h : handles) {
+        addControlPoint(h);
+    }
 }
 
 void BezierC2Component::setShowDeBoorPolygon(const bool v) {
@@ -267,4 +295,3 @@ void BezierC2Component::syncToGpu() {
 
     m_needsUpdate = false;
 }
-

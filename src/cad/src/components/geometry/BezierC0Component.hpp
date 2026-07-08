@@ -12,11 +12,13 @@
 #include "GpuBuffer.hpp"
 #include "Vao.hxx"
 #include "../INewPointsTargetComponent.hpp"
+#include "../IPointReferrer.hpp"
 
 /// @brief Multi-segment cubic Bézier curve with C0 continuity between segments.
 /// Control points are shared point entities referenced by PointHandle
 class BezierC0Component final : public GeometryComponent,
-                                public INewPointsTargetComponent<BezierC0Component> {
+                                public INewPointsTargetComponent<BezierC0Component>,
+                                public IPointReferrer {
 public:
     explicit BezierC0Component(PointRegistry *registry);
 
@@ -27,6 +29,14 @@ public:
     void removeControlPointAt(int index);
 
     void removeControlPoint(PointHandle h) override;
+
+    void replaceControlPoint(PointHandle from, PointHandle to) override;
+
+    [[nodiscard]] std::vector<PointHandle> controlPointHandles() const override {
+        return m_controlPoints;
+    }
+
+    void setControlPointHandles(const std::vector<PointHandle> &handles) override;
 
     [[nodiscard]] const std::vector<PointHandle>& getControlPoints() const {
         return m_controlPoints;

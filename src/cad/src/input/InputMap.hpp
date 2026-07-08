@@ -30,6 +30,7 @@ enum class InputAction {
     // viewport
 
     deleteSelected,
+    collapseSelectedPoints,
     toggleCoordSpace,
     switchCamera,
     createMenu,
@@ -61,6 +62,7 @@ enum class InputAction {
     // viewport actions
 
     select,
+    selectAdditive,
     cursorPlace,
     rightClick,
 
@@ -146,6 +148,7 @@ inline InputMap::InputMap() {
     bind(InputAction::confirmTransform, {Qt::Key_Return, Qt::NoModifier});
     bind(InputAction::cancelTransform, {Qt::Key_Escape, Qt::NoModifier});
     bind(InputAction::deleteSelected, {Qt::Key_Delete, Qt::NoModifier});
+    bind(InputAction::collapseSelectedPoints, {Qt::Key_M, Qt::NoModifier});
     bind(InputAction::toggleCoordSpace, {Qt::Key_QuoteLeft, Qt::NoModifier});
     bind(InputAction::switchCamera, {Qt::Key_N, Qt::NoModifier});
     bind(InputAction::createMenu, {Qt::Key_C, Qt::NoModifier});
@@ -175,6 +178,7 @@ inline InputMap::InputMap() {
     bind(InputAction::cameraZoomDrag, {Qt::MiddleButton, Qt::ControlModifier});
     bind(InputAction::toggleClickToAdd, {Qt::Key_P, Qt::NoModifier});
     bind(InputAction::select, {Qt::LeftButton, Qt::NoModifier});
+    bind(InputAction::selectAdditive, {Qt::LeftButton, Qt::ControlModifier});
     bind(InputAction::cursorPlace, {Qt::LeftButton, Qt::ShiftModifier});
     bind(InputAction::rightClick, {Qt::RightButton, Qt::NoModifier});
 }

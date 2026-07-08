@@ -15,6 +15,7 @@
 #include <cad_math/Vec3.hpp>
 
 #include "../INewPointsTargetComponent.hpp"
+#include "../IPointReferrer.hpp"
 
 /// @brief C2 cubic spline interpolating a sequence of control points
 ///
@@ -27,7 +28,8 @@
 /// @note Unlike other curves, moving one point perturbs the whole spline, so every change triggers a
 /// full re-solve
 class InterpC2Component final : public GeometryComponent,
-                                public INewPointsTargetComponent<InterpC2Component> {
+                                public INewPointsTargetComponent<InterpC2Component>,
+                                public IPointReferrer {
 public:
     explicit InterpC2Component(PointRegistry *registry);
 
@@ -38,6 +40,14 @@ public:
     void removeControlPointAt(int index);
 
     void removeControlPoint(PointHandle handle) override;
+
+    void replaceControlPoint(PointHandle from, PointHandle to) override;
+
+    [[nodiscard]] std::vector<PointHandle> controlPointHandles() const override {
+        return m_points;
+    }
+
+    void setControlPointHandles(const std::vector<PointHandle> &handles) override;
 
     [[nodiscard]] const std::vector<PointHandle>& getControlPoints() const {
         return m_points;

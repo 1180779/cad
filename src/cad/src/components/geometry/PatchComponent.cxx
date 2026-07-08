@@ -8,7 +8,8 @@
 
 #include "GlCommon.hpp"
 
-PatchComponent::PatchComponent(PointRegistry *registry) : m_registry(registry) {
+PatchComponent::PatchComponent(PointRegistry *registry)
+: m_registry(registry) {
     m_positionCallbackId = registry->subscribeToPositionChanges(
         [this](const PointHandle h) {
             // any control point of this patch moving invalidates the surface geometry
@@ -82,6 +83,41 @@ SinglePatchView PatchComponent::singlePatch(const int px, const int py) const {
         handles[k] = m_controlPoints[grid[k]];
     }
     return handles;
+}
+
+void PatchComponent::replaceControlPoint(const PointHandle from, const PointHandle to) {
+    bool found = false;
+    for (PointHandle &h : m_controlPoints) {
+        if (h != from) {
+            continue;
+        }
+        m_registry->unlock(from);
+        m_registry->lock(to);
+        h = to;
+        found = true;
+    }
+    if (!found) {
+        return;
+    }
+    m_needsUpdate = true;
+    buildNetEbo();
+    rebuildPatchData();
+}
+
+void PatchComponent::setControlPointHandles(const std::vector<PointHandle> &handles) {
+    if (handles.size() != m_controlPoints.size()) {
+        return;
+    }
+    for (const PointHandle h : m_controlPoints) {
+        m_registry->unlock(h);
+    }
+    for (const PointHandle h : handles) {
+        m_registry->lock(h);
+    }
+    m_controlPoints = handles;
+    m_needsUpdate = true;
+    buildNetEbo();
+    rebuildPatchData();
 }
 
 void PatchComponent::setPatchSelected(const int index, const bool selected) {

@@ -4,6 +4,7 @@
 
 #include "OpenGLWidget.hpp"
 
+#include <algorithm>
 #include <numeric>
 #include <tuple>
 
@@ -211,6 +212,7 @@ void OpenGlWidget::mousePressEvent(QMouseEvent *event) {
         m_activeDrag = DragMode::cameraZoomDrag;
         return;
     case InputAction::select:
+    case InputAction::selectAdditive:
         if (m_transformMode != TransformMode::none) {
             return;
         }
@@ -365,7 +367,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
             dist2 <= s_clickRadiusPx * s_clickRadiusPx) {
             // treat as a selection click on the point
             const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-                InputAction::cursorPlace;
+                InputAction::selectAdditive;
             selectPoint(m_draggedPoint, additive);
         }
         else {
@@ -395,7 +397,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
         }
 
         const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-            InputAction::cursorPlace;
+            InputAction::selectAdditive;
 
         if (const PointHandle hit = pickPoint(event->pos());
             hit != InvalidPointHandle) {
@@ -538,6 +540,9 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
         break;
     case InputAction::deleteSelected:
         deleteSelectedEntities();
+        break;
+    case InputAction::collapseSelectedPoints:
+        collapseSelectedPoints();
         break;
     // undo/redo are handled by the Edit-menu actions, which own these shortcuts;
     // the menu shortcut consumes the key before it reaches here
@@ -690,6 +695,26 @@ void OpenGlWidget::keyReleaseEvent(QKeyEvent *event) {
     default:
         QOpenGLWidget::keyReleaseEvent(event);
     }
+}
+
+void OpenGlWidget::collapseSelectedPoints() {
+    std::vector<EntityId> pts;
+    for (const Entity *e : m_scene.getSelectedEntities()) {
+        if (e->hasComponent<PointComponent>()) {
+            pts.push_back(e->getId());
+        }
+    }
+    if (pts.size() != 2) {
+        return;
+    }
+    m_commandStack.push(
+        std::make_unique<CollapsePointsCommand>(
+            m_scene,
+            std::min(pts[0], pts[1]),
+            std::max(pts[0], pts[1])
+        )
+    );
+    update();
 }
 
 void OpenGlWidget::deleteSelectedEntities() {

@@ -393,6 +393,13 @@ namespace {
 
         QObject::connect(
             hierarchyWidget,
+            &SceneHierarchyWidget::collapseSelectedPointsRequested,
+            glWidget,
+            &OpenGlWidget::collapseSelectedPoints
+        );
+
+        QObject::connect(
+            hierarchyWidget,
             &SceneHierarchyWidget::setAsCursorRequested,
             glWidget,
             [glWidget](Entity *e) {

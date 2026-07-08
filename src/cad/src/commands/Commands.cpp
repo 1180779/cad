@@ -15,6 +15,7 @@
 #include "../components/geometry/BezierC2Component.hpp"
 #include "../components/geometry/InterpC2Component.hxx"
 #include "../components/INewPointsTargetComponent.hpp"
+#include "../components/IPointReferrer.hpp"
 #include "../components/geometry/PatchComponent.hxx"
 #include "../components/PointComponent.hpp"
 
@@ -51,6 +52,15 @@ namespace {
         Scene &scene,
         const std::vector<EntityId> &ids
     );
+
+    /// @brief The ids of every captured entity spec
+    std::vector<EntityId> specIds(const std::vector<EntitySpec> &specs) {
+        return specs | std::views::transform(
+            [](const auto &s) {
+                return s.id;
+            }
+        ) | std::ranges::to<std::vector>();
+    }
 
     /// @brief Reset a curve's membership to exactly target, preserving order
     void resetMembership(Scene &scene, const EntityId curveId, const std::vector<PointHandle> &target) {
@@ -127,16 +137,15 @@ void CreatePatchCommand::execute() {
 }
 
 void CreatePatchCommand::undo() {
-    for (const auto &s : m_specs) {
-        m_scene.removeEntity(s.id);
-    }
+    m_scene.removeEntities(specIds(m_specs));
 }
 
 // ---------------------------------------------------------------------------
 // DeleteEntityCommand
 // ---------------------------------------------------------------------------
 
-DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityId> &ids) : m_scene(scene) {
+DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityId> &ids)
+: m_scene(scene) {
     std::vector<EntityId> expandedIds = expandWithPatchControlPoints(scene, ids);
     removeLockedPatchPoints(scene, expandedIds);
 
@@ -169,9 +178,7 @@ DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityI
 }
 
 void DeleteEntityCommand::execute() {
-    for (const auto &spec : m_specs) {
-        m_scene.removeEntity(spec.id);
-    }
+    m_scene.removeEntities(specIds(m_specs));
 }
 
 void DeleteEntityCommand::undo() {
@@ -259,6 +266,61 @@ bool SetPropertyCommand::tryMerge(const Command &next) {
 }
 
 // ---------------------------------------------------------------------------
+// CollapsePointsCommand
+// ---------------------------------------------------------------------------
+
+CollapsePointsCommand::CollapsePointsCommand(
+    Scene &scene,
+    const EntityId keepId,
+    const EntityId removeId
+)
+: m_scene(scene),
+  m_keepId(keepId),
+  m_removeId(removeId) {
+    const auto candidates = scene.validateCollapse(keepId, removeId);
+    if (!candidates) {
+        return;
+    }
+    if (!captureEntity(scene, candidates->remove, m_removedSpec)) {
+        return;
+    }
+
+    m_keepHandle = candidates->keepHandle;
+    m_keepPosBefore = scene.getPointRegistry().getPosition(m_keepHandle);
+
+    const PointHandle gone = candidates->removeHandle;
+    for (const auto &e : scene.getEntities()) {
+        if (const auto r = e->getComponent<IPointReferrer>()) {
+            if (const auto cps = r.value()->controlPointHandles();
+                std::ranges::find(cps, gone) != cps.end()) {
+                m_referrers.push_back({e->getId(), cps});
+            }
+        }
+    }
+    m_valid = true;
+}
+
+void CollapsePointsCommand::execute() {
+    m_valid = m_valid && m_scene.collapsePoints(m_keepId, m_removeId) != nullptr;
+}
+
+void CollapsePointsCommand::undo() {
+    if (!m_valid) {
+        return;
+    }
+    // point first so referrers can re-lock / re-reference a live handle
+    rebuildEntity(m_scene, m_removedSpec);
+    m_scene.setPointPosition(m_keepHandle, m_keepPosBefore);
+    for (const auto &[entityId, controlPoints] : m_referrers) {
+        if (const auto e = m_scene.getEntity(entityId)) {
+            if (const auto r = e.value()->getComponent<IPointReferrer>()) {
+                r.value()->setControlPointHandles(controlPoints);
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // AddControlPointCommand
 // ---------------------------------------------------------------------------
 
@@ -286,7 +348,10 @@ RemoveControlPointCommand::RemoveControlPointCommand(
     Scene &scene,
     const EntityId curveId,
     const PointHandle handle
-) : m_scene(scene), m_curveId(curveId), m_handle(handle) {
+)
+: m_scene(scene),
+  m_curveId(curveId),
+  m_handle(handle) {
     if (const auto e = scene.getEntity(curveId)) {
         m_before = currentControlPoints(e.value());
     }

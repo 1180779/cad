@@ -43,7 +43,9 @@ public:
 
 class Entity {
 public:
-    explicit Entity(const EntityId id, std::string name = "Entity") : m_id(id), m_name(std::move(name)) {}
+    explicit Entity(const EntityId id, std::string name = "Entity")
+    : m_id(id),
+      m_name(std::move(name)) {}
 
     ~Entity() = default;
 
@@ -73,6 +75,10 @@ public:
 
     void setSelected(const bool selected, SelectionKey) {
         m_selected = selected;
+    }
+
+    std::size_t componentCount() const {
+        return m_components.size();
     }
 
     /// @brief Reassigns the entity's id

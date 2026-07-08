@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "../GeometryComponent.hpp"
+#include "../IPointReferrer.hpp"
 #include "GpuBuffer.hpp"
 #include "PointRegistry.hpp"
 #include "SinglePatchView.hxx"
@@ -24,7 +25,7 @@
 ///
 /// Control points cannot be added/removed; the whole patch is created and
 /// deleted as a unit together with its points
-class PatchComponent : public GeometryComponent {
+class PatchComponent : public GeometryComponent, public IPointReferrer {
 public:
     explicit PatchComponent(PointRegistry *registry);
 
@@ -71,6 +72,14 @@ public:
     [[nodiscard]] int getPatchCountY() const {
         return m_patchCountY;
     }
+
+    void replaceControlPoint(PointHandle from, PointHandle to) override;
+
+    [[nodiscard]] std::vector<PointHandle> controlPointHandles() const override {
+        return m_controlPoints;
+    }
+
+    void setControlPointHandles(const std::vector<PointHandle> &handles) override;
 
     /// @brief View of a single patch (px, py)
     [[nodiscard]] SinglePatchView singlePatch(int px, int py) const;

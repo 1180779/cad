@@ -187,6 +187,40 @@ private:
     const void *m_mergeKey;
 };
 
+/// @brief Collapse two point entities into one averaged point, repointing every
+/// referrer
+class CollapsePointsCommand final : public Command {
+public:
+    CollapsePointsCommand(Scene &scene, EntityId keepId, EntityId removeId);
+
+    void execute() override;
+
+    void undo() override;
+
+private:
+    struct ReferrerSnapshot {
+        EntityId entityId{};
+        std::vector<PointHandle> controlPoints;
+    };
+
+    Scene &m_scene;
+    EntityId m_keepId;
+    EntityId m_removeId;
+
+    /// @brief Spec of the removed point entity, for resurrecting on undo
+    EntitySpec m_removedSpec;
+
+    PointHandle m_keepHandle{InvalidPointHandle};
+    cadm::Vec3 m_keepPosBefore{};
+
+    /// @brief Pre-collapse membership of every referrer of the removed point
+    std::vector<ReferrerSnapshot> m_referrers;
+
+    /// @brief False when operation wasn't valid; execute/undo are no-ops in
+    /// that case
+    bool m_valid = false;
+};
+
 /// @brief Add a control point to a curve entity
 class AddControlPointCommand final : public Command {
 public:
