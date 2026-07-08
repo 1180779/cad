@@ -212,6 +212,7 @@ void OpenGlWidget::mousePressEvent(QMouseEvent *event) {
         m_activeDrag = DragMode::cameraZoomDrag;
         return;
     case InputAction::select:
+    case InputAction::selectAdditive:
         if (m_transformMode != TransformMode::none) {
             return;
         }
@@ -366,7 +367,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
             dist2 <= s_clickRadiusPx * s_clickRadiusPx) {
             // treat as a selection click on the point
             const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-                InputAction::cursorPlace;
+                InputAction::selectAdditive;
             selectPoint(m_draggedPoint, additive);
         }
         else {
@@ -396,7 +397,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
         }
 
         const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-            InputAction::cursorPlace;
+            InputAction::selectAdditive;
 
         if (const PointHandle hit = pickPoint(event->pos());
             hit != InvalidPointHandle) {

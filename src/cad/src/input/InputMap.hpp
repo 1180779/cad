@@ -62,6 +62,7 @@ enum class InputAction {
     // viewport actions
 
     select,
+    selectAdditive,
     cursorPlace,
     rightClick,
 
@@ -177,6 +178,7 @@ inline InputMap::InputMap() {
     bind(InputAction::cameraZoomDrag, {Qt::MiddleButton, Qt::ControlModifier});
     bind(InputAction::toggleClickToAdd, {Qt::Key_P, Qt::NoModifier});
     bind(InputAction::select, {Qt::LeftButton, Qt::NoModifier});
+    bind(InputAction::selectAdditive, {Qt::LeftButton, Qt::ControlModifier});
     bind(InputAction::cursorPlace, {Qt::LeftButton, Qt::ShiftModifier});
     bind(InputAction::rightClick, {Qt::RightButton, Qt::NoModifier});
 }
