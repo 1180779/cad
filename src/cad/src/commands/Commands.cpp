@@ -9,13 +9,13 @@
 #include <unordered_set>
 #include <utility>
 
-#include "../GeometryFactory.hpp"
+#include "../factory/GeometryFactory.hpp"
 #include "../Scene.hpp"
-#include "../components/BezierC0Component.hpp"
-#include "../components/BezierC2Component.hpp"
-#include "../components/InterpC2Component.hxx"
+#include "../components/geometry/BezierC0Component.hpp"
+#include "../components/geometry/BezierC2Component.hpp"
+#include "../components/geometry/InterpC2Component.hxx"
 #include "../components/INewPointsTargetComponent.hpp"
-#include "../components/PatchComponent.hxx"
+#include "../components/geometry/PatchComponent.hxx"
 #include "../components/PointComponent.hpp"
 
 namespace {

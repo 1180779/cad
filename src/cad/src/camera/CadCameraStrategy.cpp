@@ -5,8 +5,8 @@
 #include "CadCameraStrategy.hpp"
 
 #include "../CheckMacros.hpp"
-#include "../components/CadCameraComponent.hpp"
-#include "../components/BlenderCameraComponent.hpp"
+#include "../components/camera/CadCameraComponent.hpp"
+#include "../components/camera/BlenderCameraComponent.hpp"
 #include "../components/TransformComponent.hpp"
 
 CadCameraStrategy::CadCameraStrategy(

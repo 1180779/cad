@@ -27,7 +27,7 @@
 #undef QT_EMIT_DEFINED
 #endif
 
-#include "GeometryFactory.hpp"
+#include "factory/GeometryFactory.hpp"
 #include "GlCommon.hpp"
 #include "PatchGeometry.hxx"
 #include "gui/Theme.hpp"
@@ -35,9 +35,9 @@
 #include "commands/Commands.hpp"
 #include "ViewportTypes.hpp"
 #include "cad_math/Helpers.hpp"
-#include "components/BezierC0Component.hpp"
-#include "components/PatchC0Component.hxx"
-#include "components/PatchC2Component.hxx"
+#include "components/geometry/BezierC0Component.hpp"
+#include "components/geometry/PatchC0Component.hxx"
+#include "components/geometry/PatchC2Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "cursor/GridPlanePlacementStrategy.hpp"

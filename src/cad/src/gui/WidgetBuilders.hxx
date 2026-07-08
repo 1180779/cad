@@ -17,7 +17,7 @@
 
 #include <common/ModifierSpinBox.hpp>
 
-#include "VirtualPointPropertiesWidget.hpp"
+#include "components/geometry/VirtualPointPropertiesWidget.hpp"
 
 /// @brief Builders for the common component-panel widgets
 namespace widgets {

@@ -7,11 +7,11 @@
 #include <QPainter>
 #include <QSplitter>
 
-#include "CameraFactory.hpp"
-#include "components/BezierC0Component.hpp"
+#include "factory/CameraFactory.hpp"
+#include "components/geometry/BezierC0Component.hpp"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
-#include "GeometryFactory.hpp"
+#include "factory/GeometryFactory.hpp"
 #include "GlCommon.hpp"
 #include "OpenGLWidget.hpp"
 #include "PersistentEntities.hxx"
@@ -20,15 +20,15 @@
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/BlenderCameraStrategy.hpp"
 #include "gui/CadMenuBar.hpp"
-#include "gui/PatchCreatorDialog.hxx"
+#include "gui/components/geometry/PatchCreatorDialog.hxx"
 #include "gui/CadTitleBar.hpp"
 #include "gui/Theme.hpp"
-#include "gui/PropertiesPanelWidget.hxx"
-#include "gui/ScenePanelWidget.hpp"
+#include "gui/toolbars/properties/PropertiesPanelWidget.hxx"
+#include "gui/toolbars/scene/ScenePanelWidget.hpp"
 #include "gui/StatusBarWidget.hpp"
-#include "gui/SubdividedPanelBar.hxx"
-#include "gui/ToolPanelBar.hpp"
-#include "gui/ViewportPanelWidget.hpp"
+#include "gui/toolbars/SubdividedPanelBar.hxx"
+#include "gui/toolbars/ToolPanelBar.hpp"
+#include "gui/toolbars/viewport/ViewportPanelWidget.hpp"
 #include "serialization/Serialization.hxx"
 
 /// @brief Width of the app-colored separator strips between viewport, tool

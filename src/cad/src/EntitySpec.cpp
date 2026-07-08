@@ -6,13 +6,13 @@
 
 #include "Scene.hpp"
 #include "Tools.hxx"
-#include "components/BezierC0Component.hpp"
-#include "components/BezierC2Component.hpp"
-#include "components/InterpC2Component.hxx"
+#include "components/geometry/BezierC0Component.hpp"
+#include "components/geometry/BezierC2Component.hpp"
+#include "components/geometry/InterpC2Component.hxx"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
-#include "components/PatchC0Component.hxx"
-#include "components/PatchC2Component.hxx"
+#include "components/geometry/PatchC0Component.hxx"
+#include "components/geometry/PatchC2Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 

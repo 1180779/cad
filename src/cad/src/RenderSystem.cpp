@@ -7,10 +7,10 @@
 #include "CheckMacros.hpp"
 #include "GlCommon.hpp"
 #include "Scene.hpp"
-#include "BezierUtils.hpp"
-#include "components/BezierC0Component.hpp"
-#include "components/BezierC2Component.hpp"
-#include "components/InterpC2Component.hxx"
+#include "utils/BezierUtils.hpp"
+#include "components/geometry/BezierC0Component.hpp"
+#include "components/geometry/BezierC2Component.hpp"
+#include "components/geometry/InterpC2Component.hxx"
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "gui/Theme.hpp"
@@ -21,7 +21,7 @@
 #include <vector>
 #include <concepts>
 
-#include "components/PatchComponent.hxx"
+#include "components/geometry/PatchComponent.hxx"
 
 namespace {
     /// @brief Structural interface shared by the C2 curves that render through the Bernstein
