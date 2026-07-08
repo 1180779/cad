@@ -25,17 +25,46 @@ namespace cadm {
             std::array<T, 4> data;
         };
 
+        constexpr Vec(const std::initializer_list<T> values)
+        : data{} {
+            std::size_t i = 0;
+            for (const T v : values) {
+                if (i == 4) {
+                    break;
+                }
+                data[i++] = v;
+            }
+        }
+
+        explicit constexpr Vec(T v)
+        : x{v},
+          y{v},
+          z{v},
+          w{v} {}
+
         constexpr Vec()
         : x(T{0}),
           y(T{0}),
           z(T{0}),
           w(T{0}) {}
 
-        constexpr Vec(const T x, const T y, const T z, const T w) : x(x), y(y), z(z), w(w) {}
+        constexpr Vec(const T x, const T y, const T z, const T w)
+        : x(x),
+          y(y),
+          z(z),
+          w(w) {}
 
-        constexpr Vec(const Vec3 &v, const T w) : x(v.x), y(v.y), z(v.z), w(w) {}
+        constexpr Vec(const Vec3 &v, const T w)
+        : x(v.x),
+          y(v.y),
+          z(v.z),
+          w(w) {}
 
-        constexpr Vec(const T x, const Vec3 &v) : x(x), y(v.x), z(v.y), w(v.z) {}
+        constexpr Vec(const T x, const Vec3 &v)
+        : x(x),
+          y(v.x),
+          z(v.y),
+          w(v.z) {}
 
         [[nodiscard]] constexpr Vec cross(const Vec &other) const {
             return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};

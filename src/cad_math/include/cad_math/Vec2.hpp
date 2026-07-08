@@ -25,11 +25,28 @@ namespace cadm {
             std::array<T, 2> data;
         };
 
+        constexpr Vec(const std::initializer_list<T> values)
+        : data{} {
+            std::size_t i = 0;
+            for (const T v : values) {
+                if (i == 2) {
+                    break;
+                }
+                data[i++] = v;
+            }
+        }
+
+        explicit constexpr Vec(T v)
+        : x(v),
+          y(v) {}
+
         constexpr Vec()
         : x(T{0}),
           y({0}) {}
 
-        constexpr Vec(const T x, const T y) : x(x), y(y) {}
+        constexpr Vec(const T x, const T y)
+        : x(x),
+          y(y) {}
 
         constexpr static Vec unitX() noexcept {
             return {T{1}, T{0}};
