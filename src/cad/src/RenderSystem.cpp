@@ -14,6 +14,7 @@
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "gui/Theme.hpp"
+#include <algorithm>
 #include <array>
 #include <cad_math/Vec2.hpp>
 #include <cad_math/Vec3.hpp>
@@ -21,6 +22,7 @@
 #include <vector>
 #include <concepts>
 
+#include "components/geometry/GregoryComponent.hxx"
 #include "components/geometry/PatchComponent.hxx"
 
 namespace {
@@ -116,6 +118,31 @@ void RenderSystem::initialize() {
     );
 
     SHADER_ATTACHING_CHECK(
+        m_gregorySurfaceShader->attachShaderFromFile(
+            GL_VERTEX_SHADER,
+            "shaders/bezierSurface/bezierSurfaceShader.vert"
+        )
+    );
+    SHADER_ATTACHING_CHECK(
+        m_gregorySurfaceShader->attachShaderFromFile(
+            GL_TESS_CONTROL_SHADER,
+            "shaders/gregorySurface/gregorySurfaceShader.tesc"
+        )
+    );
+    SHADER_ATTACHING_CHECK(
+        m_gregorySurfaceShader->attachShaderFromFile(
+            GL_TESS_EVALUATION_SHADER,
+            "shaders/gregorySurface/gregorySurfaceShader.tese"
+        )
+    );
+    SHADER_ATTACHING_CHECK(
+        m_gregorySurfaceShader->attachShaderFromFile(
+            GL_FRAGMENT_SHADER,
+            "shaders/bezierCurve/bezierCurveShader.frag"
+        )
+    );
+
+    SHADER_ATTACHING_CHECK(
         m_stereoCompositeShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/stereo/stereoComposite.vert")
     );
     SHADER_ATTACHING_CHECK(
@@ -130,6 +157,7 @@ void RenderSystem::initialize() {
     SHADER_COMPILATION_CHECK(m_pointShader->compile());
     SHADER_COMPILATION_CHECK(m_bezierCurveShader->compile());
     SHADER_COMPILATION_CHECK(m_bezierSurfaceShader->compile());
+    SHADER_COMPILATION_CHECK(m_gregorySurfaceShader->compile());
     SHADER_COMPILATION_CHECK(m_stereoCompositeShader->compile());
 
     m_pivotAxes.m_length = 0.5f;
@@ -200,7 +228,7 @@ void RenderSystem::render(
         m_wireframeShader->setUniform4(
             "u_overrideColor",
             cadm::Vec4{
-                lc.redF(),
+            lc.redF(),
             lc.greenF(),
             lc.blueF(),
             1.0f
@@ -218,6 +246,8 @@ void RenderSystem::render(
     renderBezierCurves(scene, view, projection);
     GET_GL_ERRORS();
     renderPatches(scene, view, projection);
+    GET_GL_ERRORS();
+    renderGregory(scene, view, projection);
     GET_GL_ERRORS();
     renderControlPoints(scene, gl);
     GET_GL_ERRORS();
@@ -360,6 +390,7 @@ void RenderSystem::shutdown() {
     UNIQUE_PTR_RELEASE_CHECK(m_pointShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_bezierCurveShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_bezierSurfaceShader.release());
+    UNIQUE_PTR_RELEASE_CHECK(m_gregorySurfaceShader.release());
     UNIQUE_PTR_RELEASE_CHECK(m_stereoCompositeShader.release());
 
     if (m_selectionRectVAO != 0) {
@@ -819,8 +850,8 @@ void RenderSystem::drawPatchSurface(
                 m_bezierSurfaceShader->setUniform1(
                     "u_highlightStrength",
                     patch->isPatchSelected(q)
-                        ? s_singlePatchSelectionHS
-                        : entityHl
+                    ? s_singlePatchSelectionHS
+                    : entityHl
                 )
             );
             SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uSub", subs[q]));
@@ -889,6 +920,115 @@ void RenderSystem::renderPatches(
     forEachPatch(
         [&](const Entity *e, const PatchComponent *patch) {
             drawPatchNet(patch, highlight(e));
+        }
+    );
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
+    ShaderProgram::release();
+}
+
+void RenderSystem::drawGregorySurface(
+    const GregoryComponent *gregory,
+    const cadm::cadf entityHl,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+) const {
+    // assumes m_gregorySurfaceShader is bound and glPatchParameteri(20) is set
+    const auto gl = getGl();
+    const int nets = gregory->netCount();
+    constexpr int netPts = gregory::Net::pointCount;
+    if (nets <= 0) {
+        return;
+    }
+    SHADER_SET_UNIFORM_CHECK(
+        m_gregorySurfaceShader->setUniform2(
+            "uViewport",
+            static_cast<float>(m_viewportW),
+            static_cast<float>(m_viewportH)
+        )
+    );
+    std::vector<int> subs(nets);
+    for (int q = 0; q < nets; ++q) {
+        cadm::Vec3 pts[netPts];
+        for (int k = 0; k < netPts; ++k) {
+            pts[k] = gregory->patchVertexPos(q * netPts + k);
+        }
+        const auto extent = bezierUtils::screenExtent(pts, view, projection, m_viewportW, m_viewportH);
+        subs[q] = extent.has_value()
+                      ? std::max(1, static_cast<int>(std::ceil(static_cast<cadm::cadf>(*extent) / 64.0f)))
+                      : 0;
+    }
+
+    SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("u_highlightStrength", entityHl));
+    gl->glBindVertexArray(gregory->getPatchVao());
+    for (int dir = 0; dir < 2; ++dir) {
+        SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uDir", dir));
+        for (int net = 0; net < nets; ++net) {
+            if (subs[net] == 0) {
+                continue;
+            }
+            const int lines = (dir == 0
+                                   ? gregory->getGridDivisionsV(net)
+                                   : gregory->getGridDivisionsU(net)) + 1;
+            SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uLines", lines));
+            SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uSub", subs[net]));
+            gl->glDrawElementsInstanced(
+                GL_PATCHES,
+                netPts,
+                GL_UNSIGNED_INT,
+                reinterpret_cast<const void*>(static_cast<uintptr_t>(net) * netPts * sizeof(uint32_t)),
+                lines * subs[net]
+            );
+        }
+    }
+    gl->glBindVertexArray(0);
+}
+
+void RenderSystem::renderGregory(
+    const Scene &scene,
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+) const {
+    const auto gl = getGl();
+
+    m_gregorySurfaceShader->bind();
+    gl->glPatchParameteri(GL_PATCH_VERTICES, 20);
+    const auto forEachGregory = [&](const auto &doWork) {
+        for (const auto &e : scene.getEntities()) {
+            if (!e->isVisible()) {
+                continue;
+            }
+            if (const auto gregory = e->getComponent<GregoryComponent>()) {
+                doWork(
+                    gregory.value(),
+                    e->isSelected()
+                        ? s_selectionHS
+                        : s_noSelectionHS
+                );
+            }
+        }
+    };
+
+    forEachGregory(
+        [&](const GregoryComponent *gregory, const cadm::cadf hl) {
+            drawGregorySurface(gregory, hl, view, projection);
+        }
+    );
+    ShaderProgram::release();
+
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    SHADER_SET_UNIFORM_CHECK(
+        m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{0.2f, 0.75f, 0.9f, 1.0f})
+    );
+    forEachGregory(
+        [&](const GregoryComponent *gregory, const cadm::cadf hl) {
+            if (!gregory->getShowVectors() || gregory->getVectorsIndexCount() < 2) {
+                return;
+            }
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", hl));
+            gl->glBindVertexArray(gregory->getVectorsVao());
+            gl->glDrawElements(GL_LINES, gregory->getVectorsIndexCount(), GL_UNSIGNED_INT, nullptr);
+            gl->glBindVertexArray(0);
         }
     );
     SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));

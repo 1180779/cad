@@ -14,7 +14,8 @@
 
 class GeometryFactory final {
 public:
-    explicit GeometryFactory(Scene &scene) : m_scene(scene) {}
+    explicit GeometryFactory(Scene &scene)
+    : m_scene(scene) {}
 
     Entity* createTorus(
         float majorRadius,
@@ -54,6 +55,16 @@ public:
     Entity* createInterpC2(
         const std::vector<PointHandle> &controlPoints = {},
         const std::string &name = "InterpC2"
+    ) const;
+
+    /// @brief Create a Gregory hole fill referencing existing control points
+    /// @param holeHandles flat list,
+    /// <tt>GregoryComponent::s_handlesPerEdge</tt> per hole edge (boundary row
+    /// then inner row, both oriented along the hole cycle);
+    /// @param name Entity name
+    Entity* createGregory(
+        const std::vector<PointHandle> &holeHandles,
+        const std::string &name = "Gregory"
     ) const;
 
     /// @brief Create a joined Bézier patch: generates all control points and the patch entity

@@ -14,6 +14,7 @@
 #include <cad_math/Mat4.hpp>
 
 class Scene;
+class GregoryComponent;
 class PatchComponent;
 class PointRegistry;
 
@@ -155,6 +156,19 @@ private:
     /// @pre Assumes the wireframe shader is bound with identity model
     void drawPatchNet(const PatchComponent *patch, cadm::cadf hl) const;
 
+    /// @brief Render Gregory hole fills: tessellated constant-parameter mesh
+    void renderGregory(const Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection) const;
+
+    /// @brief Draw one Gregory component's tessellated nets
+    /// @pre Assumes the Gregory surface shader is bound and
+    /// glPatchParameteri(20) is set
+    void drawGregorySurface(
+        const GregoryComponent *gregory,
+        cadm::cadf entityHl,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
+
     /// @brief Upload shared view/projection/VP/invVP into the Camera UBO
     void uploadCameraUbo(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
 
@@ -171,6 +185,7 @@ private:
     std::unique_ptr<ShaderProgram> m_pointShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_bezierSurfaceShader = std::make_unique<ShaderProgram>();
+    std::unique_ptr<ShaderProgram> m_gregorySurfaceShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_stereoCompositeShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
 

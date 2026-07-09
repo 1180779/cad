@@ -80,9 +80,19 @@ struct PatchC0Data : PatchGridData {};
 
 struct PatchC2Data : PatchGridData {};
 
+struct GregoryData {
+    /// @brief Flat hole handles, <tt>GregoryComponent::s_handlesPerEdge</tt>
+    /// per edge
+    std::vector<PointHandle> controlPoints;
+    /// @brief Per-net subdivisions
+    std::vector<int> gridDivisionsU;
+    std::vector<int> gridDivisionsV;
+    bool showVectors{false};
+};
+
 using ComponentSpec =
 std::variant<TransformData, PointData, TorusData, AxesData, CursorData, BezierC0Data, BezierC2Data,
-             InterpC2Data, PatchC0Data, PatchC2Data>;
+             InterpC2Data, PatchC0Data, PatchC2Data, GregoryData>;
 
 /// @brief 
 /// Plain-data description of an entity: 

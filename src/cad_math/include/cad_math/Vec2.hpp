@@ -6,6 +6,7 @@
 #define CAD_VEC2_H
 
 #include <array>
+#include <span>
 
 #include <cad_math/VecBase.hpp>
 #include <cad_math/Common.hpp>
@@ -54,6 +55,10 @@ namespace cadm {
 
         constexpr static Vec unitY() noexcept {
             return {T{0}, T{1}};
+        }
+
+        [[nodiscard]] constexpr std::span<T, 2> flatView() const {
+            return data;
         }
 
         /// @brief Component indices for operator[] access

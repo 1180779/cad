@@ -33,6 +33,8 @@ namespace widgets {
 
     inline QPushButton* addButton(QVBoxLayout *layout, const QString &text);
 
+    inline QSpinBox* newSpinBox(int min, int max, int value);
+
     inline QSpinBox* addSpinBox(
         QLayout *layout,
         const QString &label,
@@ -101,6 +103,13 @@ namespace widgets {
         return button;
     }
 
+    inline QSpinBox* newSpinBox(const int min, const int max, const int value) {
+        const auto spin = new QSpinBox;
+        spin->setRange(min, max);
+        spin->setValue(value);
+        return spin;
+    }
+
     inline QSpinBox* addSpinBox(
         QLayout *layout,
         const QString &label,
@@ -109,9 +118,7 @@ namespace widgets {
         const int value
     ) {
         layout->addWidget(new QLabel(label));
-        const auto spin = new QSpinBox;
-        spin->setRange(min, max);
-        spin->setValue(value);
+        const auto spin = newSpinBox(min, max, value);
         layout->addWidget(spin);
         return spin;
     }

@@ -7,6 +7,7 @@
 #include "../PatchGeometry.hxx"
 #include "../components/geometry/BezierC0Component.hpp"
 #include "../components/geometry/BezierC2Component.hpp"
+#include "../components/geometry/GregoryComponent.hxx"
 #include "../components/geometry/InterpC2Component.hxx"
 #include "../components/CursorComponent.hpp"
 #include "../components/GeometryComponent.hpp"
@@ -88,6 +89,16 @@ Entity* GeometryFactory::createInterpC2(
     for (const auto h : controlPoints) {
         curve->addControlPoint(h);
     }
+    return entity;
+}
+
+Entity* GeometryFactory::createGregory(
+    const std::vector<PointHandle> &holeHandles,
+    const std::string &name
+) const {
+    const auto entity = m_scene.createEntity(name);
+    auto *gregory = entity->addComponent<GregoryComponent>(&m_scene.getPointRegistry());
+    gregory->setHole(holeHandles);
     return entity;
 }
 

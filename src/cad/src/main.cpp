@@ -5,10 +5,11 @@
 #include <QFontDatabase>
 #include <QMessageBox>
 #include <QPainter>
+#include <QPushButton>
 #include <QSplitter>
+#include <QTextStream>
 
 #include "factory/CameraFactory.hpp"
-#include "components/geometry/BezierC0Component.hpp"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "factory/GeometryFactory.hpp"
@@ -30,6 +31,7 @@
 #include "gui/toolbars/ToolPanelBar.hpp"
 #include "gui/toolbars/viewport/ViewportPanelWidget.hpp"
 #include "serialization/Serialization.hxx"
+#include "utils/HoleFinder.hxx"
 
 /// @brief Width of the app-colored separator strips between viewport, tool
 /// window and status line
@@ -202,11 +204,52 @@ namespace {
                 schemaFile.open(QIODevice::ReadOnly)) {
                 const auto schema = QJsonDocument::fromJson(schemaFile.readAll());
                 if (const auto errors = serialization::validateJson(schema, doc)) {
+                    constexpr int maxShown = 20;
+                    const auto total = static_cast<qsizetype>(errors->numErrors());
                     QString message = "Scene does not match the schema:\n";
+                    int shown = 0;
                     for (const auto &[context, description] : *errors) {
+                        if (shown++ == maxShown) {
+                            break;
+                        }
                         message += "- " + QString::fromStdString(description) + "\n";
                     }
-                    QMessageBox::warning(glW, "Open Failed", message);
+                    if (total > maxShown) {
+                        message += QString("... and %1 more errors\n").arg(total - maxShown);
+                    }
+                    QMessageBox box(QMessageBox::Warning, "Open Failed", message, QMessageBox::Ok, glW);
+                    const QAbstractButton *saveButton =
+                        total > maxShown
+                            ? box.addButton("Save All to Log...", QMessageBox::ActionRole)
+                            : nullptr;
+                    box.exec();
+                    if (saveButton != nullptr && box.clickedButton() == saveButton) {
+                        if (const QString logPath = QFileDialog::getSaveFileName(
+                                glW,
+                                "Save Validation Log",
+                                path + ".validation.log",
+                                "Log files (*.log)"
+                            );
+                            !logPath.isEmpty()) {
+                            if (QFile logFile(logPath);
+                                logFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                                QTextStream out(&logFile);
+                                for (const auto &[context, description] : *errors) {
+                                    for (const auto &part : context) {
+                                        out << QString::fromStdString(part);
+                                    }
+                                    out << ": " << QString::fromStdString(description) << "\n";
+                                }
+                            }
+                            else {
+                                QMessageBox::warning(
+                                    glW,
+                                    "Save Failed",
+                                    "Could not open file for writing:\n" + logPath
+                                );
+                            }
+                        }
+                    }
                     return;
                 }
             }
@@ -679,6 +722,31 @@ namespace {
         QObject::connect(glW, &OpenGlWidget::createPatchC0Requested, glW, spawnPatchC0);
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createPatchC2Requested, glW, spawnPatchC2);
         QObject::connect(glW, &OpenGlWidget::createPatchC2Requested, glW, spawnPatchC2);
+
+        const auto spawnGregory = [glW] {
+            Scene &sc = glW->getScene();
+            const auto holes = holeFinder::findHoles(sc, 3);
+            if (holes.empty()) {
+                QMessageBox::information(
+                    glW->window(),
+                    "Fill Hole (Gregory)",
+                    "No closed 3-edge hole found among the selected C0 surfaces."
+                );
+                return;
+            }
+            for (const auto &hole : holes) {
+                glW->getCommandStack().push(
+                    std::make_unique<CreateEntityCommand>(
+                        sc,
+                        [handles = holeFinder::flatHandles(hole)](Scene &s) {
+                            return GeometryFactory(s).createGregory(handles);
+                        }
+                    )
+                );
+            }
+        };
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createGregoryRequested, glW, spawnGregory);
+        QObject::connect(glW, &OpenGlWidget::createGregoryRequested, glW, spawnGregory);
     }
 }
 

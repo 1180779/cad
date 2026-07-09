@@ -2,12 +2,15 @@
 // Created on 6/19/26.
 //
 
+#include <algorithm>
+
 #include "EntitySpec.hpp"
 
 #include "Scene.hpp"
 #include "Tools.hxx"
 #include "components/geometry/BezierC0Component.hpp"
 #include "components/geometry/BezierC2Component.hpp"
+#include "components/geometry/GregoryComponent.hxx"
 #include "components/geometry/InterpC2Component.hxx"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
@@ -76,6 +79,16 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
                 ic.value()->getShowControlPolyline(),
                 ic.value()->getShowBernsteinPolygon(),
                 ic.value()->getShowBernsteinCps()
+            }
+        );
+    }
+    if (const auto gc = entity->getComponent<GregoryComponent>()) {
+        out.components.emplace_back(
+            GregoryData{
+                gc.value()->controlPointHandles(),
+                gc.value()->gridDivisionsU(),
+                gc.value()->gridDivisionsV(),
+                gc.value()->getShowVectors()
             }
         );
     }
@@ -163,6 +176,19 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                 [&](const PatchC2Data &d) {
                     auto *patch = e->addComponent<PatchC2Component>(&scene.getPointRegistry());
                     setPatch(patch, &d);
+                },
+                [&](const GregoryData &d) {
+                    auto *gregory = e->addComponent<GregoryComponent>(&scene.getPointRegistry());
+                    gregory->setHole(d.controlPoints);
+                    const int nets = std::min(
+                        gregory->netCount(),
+                        static_cast<int>(std::min(d.gridDivisionsU.size(), d.gridDivisionsV.size()))
+                    );
+                    for (int net = 0; net < nets; ++net) {
+                        gregory->setGridDivisionsU(net, d.gridDivisionsU[net]);
+                        gregory->setGridDivisionsV(net, d.gridDivisionsV[net]);
+                    }
+                    gregory->setShowVectors(d.showVectors);
                 },
             },
             component

@@ -6,6 +6,7 @@
 #define CAD_VEC4_H
 
 #include <array>
+#include <span>
 
 #include "VecBase.hpp"
 #include "Vec3.hpp"
@@ -68,6 +69,10 @@ namespace cadm {
 
         [[nodiscard]] constexpr Vec cross(const Vec &other) const {
             return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
+        }
+
+        [[nodiscard]] constexpr std::span<const T, 4> flatView() const {
+            return data;
         }
 
         [[nodiscard]] constexpr Vec3 xyz() const {

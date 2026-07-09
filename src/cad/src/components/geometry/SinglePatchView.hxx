@@ -10,16 +10,12 @@
 
 #include <cad_math/Vec4.hpp>
 #include "PointRegistry.hpp"
+#include "utils/BezierUtils.hpp"
 
 /// @brief View into a single bicubic patch
 class SinglePatchView final {
 public:
-    using Vec4H = cadm::Vec<PointHandle, 4>;
-    using Vec4P = cadm::Vec<cadm::Vec3, 4>;
-    using VecVec4H = cadm::Vec<Vec4H, 4>;
-    using VecVec4P = cadm::Vec<Vec4P, 4>;
-
-    explicit SinglePatchView(const VecVec4H &rowsOfColumns)
+    explicit SinglePatchView(const bezierUtils::HandleGrid4x4 &rowsOfColumns)
     : m_rowsOfColumns(rowsOfColumns) {}
 
     /// @brief Implicit inverse of <tt>handles()</tt>: 16 control points,
@@ -27,7 +23,7 @@ public:
     SinglePatchView(const std::array<PointHandle, 16> &handles);
 
     /// @brief All 16 control points, row-major
-    [[nodiscard]] const VecVec4H& grid() const {
+    [[nodiscard]] const bezierUtils::HandleGrid4x4& grid() const {
         return m_rowsOfColumns;
     }
 
@@ -35,22 +31,26 @@ public:
     [[nodiscard]] std::array<PointHandle, 16> handles() const;
 
     /// @brief The four corners: top: left, top right, bottom right, bottom left
-    [[nodiscard]] Vec4H corners() const;
+    [[nodiscard]] bezierUtils::HandleCurve4 corners() const;
 
-    [[nodiscard]] Vec4P cornersPos(const PointRegistry *registry) const;
+    [[nodiscard]] bezierUtils::Curve4 cornersPos(const PointRegistry *registry) const;
 
     /// @brief The four boundary edges: left, top, right, bottom
-    [[nodiscard]] VecVec4H edges() const;
+    [[nodiscard]] bezierUtils::HandleGrid4x4 edges() const;
 
-    [[nodiscard]] VecVec4P edgesPos(const PointRegistry *registry) const;
+    [[nodiscard]] bezierUtils::Grid4x4 edgesPos(const PointRegistry *registry) const;
+
+    /// @brief The rows adjacent to the four boundary edges, in the same order
+    /// as <tt>edges()</tt> (left, top, right, bottom)
+    [[nodiscard]] bezierUtils::HandleGrid4x4 innerEdges() const;
 
 private:
-    Vec4P static hToP(Vec4H h, const PointRegistry *registry);
+    static bezierUtils::Curve4 hToP(bezierUtils::HandleCurve4 h, const PointRegistry *registry);
 
-    VecVec4H m_rowsOfColumns{};
+    bezierUtils::HandleGrid4x4 m_rowsOfColumns{};
 };
 
-inline SinglePatchView::Vec4P SinglePatchView::hToP(const Vec4H h, const PointRegistry *registry) {
+inline bezierUtils::Curve4 SinglePatchView::hToP(const bezierUtils::HandleCurve4 h, const PointRegistry *registry) {
     return {
         registry->getPosition(h[0]),
         registry->getPosition(h[1]),
@@ -77,25 +77,68 @@ inline std::array<PointHandle, 16> SinglePatchView::handles() const {
     return out;
 }
 
-inline SinglePatchView::Vec4H SinglePatchView::corners() const {
+inline bezierUtils::HandleCurve4 SinglePatchView::corners() const {
     const auto firstRow = m_rowsOfColumns[0];
     const auto lastRow = m_rowsOfColumns[3];
     return {firstRow[0], firstRow[3], lastRow[3], lastRow[0]};
 }
 
-inline SinglePatchView::Vec4P SinglePatchView::cornersPos(const PointRegistry *registry) const {
+inline bezierUtils::Curve4 SinglePatchView::cornersPos(const PointRegistry *registry) const {
     return hToP(corners(), registry);
 }
 
-inline SinglePatchView::VecVec4H SinglePatchView::edges() const {
-    const Vec4H left{m_rowsOfColumns[0][0], m_rowsOfColumns[1][0], m_rowsOfColumns[2][0], m_rowsOfColumns[3][0]};
-    const Vec4H top{m_rowsOfColumns[0][0], m_rowsOfColumns[0][1], m_rowsOfColumns[0][2], m_rowsOfColumns[0][3]};
-    const Vec4H right{m_rowsOfColumns[0][3], m_rowsOfColumns[1][3], m_rowsOfColumns[2][3], m_rowsOfColumns[3][3]};
-    const Vec4H bottom{m_rowsOfColumns[3][0], m_rowsOfColumns[3][1], m_rowsOfColumns[3][2], m_rowsOfColumns[3][3]};
+inline bezierUtils::HandleGrid4x4 SinglePatchView::edges() const {
+    const bezierUtils::HandleCurve4 left{
+        m_rowsOfColumns[0][0],
+        m_rowsOfColumns[1][0],
+        m_rowsOfColumns[2][0],
+        m_rowsOfColumns[3][0]
+    };
+    const bezierUtils::HandleCurve4 top{
+        m_rowsOfColumns[0][0],
+        m_rowsOfColumns[0][1],
+        m_rowsOfColumns[0][2],
+        m_rowsOfColumns[0][3]
+    };
+    const bezierUtils::HandleCurve4 right{
+        m_rowsOfColumns[0][3],
+        m_rowsOfColumns[1][3],
+        m_rowsOfColumns[2][3],
+        m_rowsOfColumns[3][3]
+    };
+    const bezierUtils::HandleCurve4 bottom{
+        m_rowsOfColumns[3][0],
+        m_rowsOfColumns[3][1],
+        m_rowsOfColumns[3][2],
+        m_rowsOfColumns[3][3]
+    };
     return {left, top, right, bottom};
 }
 
-inline SinglePatchView::VecVec4P SinglePatchView::edgesPos(const PointRegistry *registry) const {
+inline bezierUtils::HandleGrid4x4 SinglePatchView::innerEdges() const {
+    const bezierUtils::HandleCurve4 left{
+        m_rowsOfColumns[0][1],
+        m_rowsOfColumns[1][1],
+        m_rowsOfColumns[2][1],
+        m_rowsOfColumns[3][1]
+    };
+    const bezierUtils::HandleCurve4 top{
+        m_rowsOfColumns[1][0],
+        m_rowsOfColumns[1][1],
+        m_rowsOfColumns[1][2],
+        m_rowsOfColumns[1][3]
+    };
+    const bezierUtils::HandleCurve4 right{
+        m_rowsOfColumns[0][2],
+        m_rowsOfColumns[1][2],
+        m_rowsOfColumns[2][2],
+        m_rowsOfColumns[3][2]
+    };
+    const bezierUtils::HandleCurve4 bottom{m_rowsOfColumns[2][0], m_rowsOfColumns[2][1], m_rowsOfColumns[2][2], m_rowsOfColumns[2][3]};
+    return {left, top, right, bottom};
+}
+
+inline bezierUtils::Grid4x4 SinglePatchView::edgesPos(const PointRegistry *registry) const {
     const auto e = edges();
     return {
         hToP(e[0], registry),
