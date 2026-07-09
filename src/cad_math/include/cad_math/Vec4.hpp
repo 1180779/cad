@@ -70,6 +70,10 @@ namespace cadm {
             return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
         }
 
+        [[nodiscard]] constexpr std::span<const T, 4> flatView() const {
+            return data;
+        }
+
         [[nodiscard]] constexpr Vec3 xyz() const {
             return {x, y, z};
         }

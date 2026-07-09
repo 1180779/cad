@@ -56,6 +56,10 @@ namespace cadm {
             return {T{0}, T{1}};
         }
 
+        [[nodiscard]] constexpr std::span<T, 2> flatView() const {
+            return data;
+        }
+
         /// @brief Component indices for operator[] access
         struct Index {
             /// @brief X component

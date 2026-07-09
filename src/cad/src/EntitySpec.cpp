@@ -8,6 +8,7 @@
 #include "Tools.hxx"
 #include "components/geometry/BezierC0Component.hpp"
 #include "components/geometry/BezierC2Component.hpp"
+#include "components/geometry/GregoryComponent.hxx"
 #include "components/geometry/InterpC2Component.hxx"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
@@ -76,6 +77,15 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
                 ic.value()->getShowControlPolyline(),
                 ic.value()->getShowBernsteinPolygon(),
                 ic.value()->getShowBernsteinCps()
+            }
+        );
+    }
+    if (const auto gc = entity->getComponent<GregoryComponent>()) {
+        out.components.emplace_back(
+            GregoryData{
+                gc.value()->controlPointHandles(),
+                gc.value()->getGridDivisionsU(),
+                gc.value()->getGridDivisionsV()
             }
         );
     }
@@ -163,6 +173,12 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                 [&](const PatchC2Data &d) {
                     auto *patch = e->addComponent<PatchC2Component>(&scene.getPointRegistry());
                     setPatch(patch, &d);
+                },
+                [&](const GregoryData &d) {
+                    auto *gregory = e->addComponent<GregoryComponent>(&scene.getPointRegistry());
+                    gregory->setHole(d.controlPoints);
+                    gregory->setGridDivisionsU(d.gridDivisionsU);
+                    gregory->setGridDivisionsV(d.gridDivisionsV);
                 },
             },
             component

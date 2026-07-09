@@ -18,7 +18,7 @@
 
 #include "Callbacks.hpp"
 #include "GpuBuffer.hpp"
-#include "PointHandle.hxx"
+#include "PointHandle.hpp"
 
 /// Scene-level registry of all control points.
 ///

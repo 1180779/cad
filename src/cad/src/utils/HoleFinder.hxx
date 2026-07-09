@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <array>
+#include <span>
 #include <vector>
 
 #include "components/geometry/SinglePatchView.hxx"
@@ -36,6 +37,20 @@ namespace holeFinder {
     };
 
     using AnySizeHole = std::vector<HoleEdge>;
+
+    /// @brief Flatten a hole into <tt>GregoryComponent</tt>'s handle layout: 8
+    /// handles per edge, boundary row then inner row, edges in cycle order
+    inline std::vector<PointHandle> flatHandles(const std::span<const HoleEdge> edges) {
+        std::vector<PointHandle> out;
+        out.reserve(edges.size() * 8);
+        for (const auto &[entity, boundary, inner] : edges) {
+            const auto b = boundary.flatView();
+            const auto in = inner.flatView();
+            out.insert(out.end(), b.begin(), b.end());
+            out.insert(out.end(), in.begin(), in.end());
+        }
+        return out;
+    }
 
     /// @brief Find every closed @p cycleLength edge boundary among the
     /// currently selected C0 surfaces

@@ -66,6 +66,10 @@ namespace cadm {
             return {y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x};
         }
 
+        [[nodiscard]] constexpr std::span<T, 3> flatView() const {
+            return data;
+        }
+
         /// @brief Component indices for operator[] access
         struct Index {
             /// @brief X component

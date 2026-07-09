@@ -71,7 +71,9 @@ namespace gregory {
             d = 3
         };
 
-        std::array<cadm::Vec3, 20> pts{};
+        static constexpr int pointCount = 20;
+
+        std::array<cadm::Vec3, pointCount> pts{};
 
         void fillEdges(const Curve4 &b, const Curve4 &bP1, const Curve4 &inP1, const Curve4 &in);
 

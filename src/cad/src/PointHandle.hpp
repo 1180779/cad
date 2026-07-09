@@ -5,6 +5,7 @@
 #ifndef CAD_POINTHANDLE_HXX
 #define CAD_POINTHANDLE_HXX
 
+#include <cstdint>
 #include <limits>
 
 /// @brief Stable index into PointRegistry's slot array. Remains valid even
