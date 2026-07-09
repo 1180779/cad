@@ -14,23 +14,22 @@
 #include "components/geometry/PatchC0Component.hxx"
 
 namespace holeFinder {namespace {
-        using Vec4H = SinglePatchView::Vec4H;
-
         /// @brief Endpoint pair identifying an edge
         using EdgeKey = std::pair<PointHandle, PointHandle>;
+        using namespace bezierUtils;
 
         struct EdgeRecord {
             Entity *entity{};
-            Vec4H boundary{};
-            Vec4H inner{};
+            HandleCurve4 boundary{};
+            HandleCurve4 inner{};
             int useCount{};
         };
 
-        EdgeKey keyOf(const Vec4H &boundary) {
+        EdgeKey keyOf(const HandleCurve4 &boundary) {
             return std::minmax(boundary[0], boundary[3]);
         }
 
-        Vec4H reversed(const Vec4H &v) {
+        HandleCurve4 reversed(const HandleCurve4 &v) {
             return {v[3], v[2], v[1], v[0]};
         }
 

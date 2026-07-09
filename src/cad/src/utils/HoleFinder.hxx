@@ -22,10 +22,10 @@ namespace holeFinder {
         Entity *entity{};
 
         /// @brief Boundary row, oriented along the hole cycle
-        SinglePatchView::Vec4H boundary{};
+        bezierUtils::HandleCurve4 boundary{};
 
         /// @brief Adjacent inner row, same orientation
-        SinglePatchView::Vec4H inner{};
+        bezierUtils::HandleCurve4 inner{};
     };
 
     /// @brief A closed @p N sided hole between patches. Edges chain:
