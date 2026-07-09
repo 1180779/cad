@@ -6,6 +6,7 @@
 #define CAD_VEC2_H
 
 #include <array>
+#include <span>
 
 #include <cad_math/VecBase.hpp>
 #include <cad_math/Common.hpp>

@@ -6,6 +6,7 @@
 #define CAD_VEC4_H
 
 #include <array>
+#include <span>
 
 #include "VecBase.hpp"
 #include "Vec3.hpp"
