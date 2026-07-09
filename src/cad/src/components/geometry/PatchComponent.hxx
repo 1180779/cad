@@ -6,6 +6,7 @@
 #define CAD_PATCHCOMPONENT_HXX
 
 #include <array>
+#include <ranges>
 #include <set>
 #include <vector>
 
@@ -83,6 +84,15 @@ public:
 
     /// @brief View of a single patch (px, py)
     [[nodiscard]] SinglePatchView singlePatch(int px, int py) const;
+
+    /// @brief All single-patch coordinates, row-major: <tt>for (const auto [py,
+    /// px] : patchCoords())</tt>
+    [[nodiscard]] auto patchCoords() const {
+        return std::views::cartesian_product(
+            std::views::iota(0, m_patchCountY),
+            std::views::iota(0, m_patchCountX)
+        );
+    }
 
     /// @brief Single-patch selection, keyed by @p index
     [[nodiscard]] bool isPatchSelected(const int index) const {

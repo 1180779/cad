@@ -99,6 +99,14 @@ public:
         return m_entities;
     }
 
+    auto getEntitiesPointersView() const {
+        return m_entities | std::views::as_const | std::views::transform(
+            [](const std::unique_ptr<Entity> &p) {
+                return p.get();
+            }
+        );
+    }
+
     [[nodiscard]] const std::unordered_set<Entity*>& getSelectedEntities() const {
         return m_selectedEntities;
     }

@@ -44,6 +44,10 @@ public:
 
     [[nodiscard]] VecVec4P edgesPos(const PointRegistry *registry) const;
 
+    /// @brief The rows adjacent to the four boundary edges, in the same order
+    /// as <tt>edges()</tt> (left, top, right, bottom)
+    [[nodiscard]] VecVec4H innerEdges() const;
+
 private:
     Vec4P static hToP(Vec4H h, const PointRegistry *registry);
 
@@ -92,6 +96,14 @@ inline SinglePatchView::VecVec4H SinglePatchView::edges() const {
     const Vec4H top{m_rowsOfColumns[0][0], m_rowsOfColumns[0][1], m_rowsOfColumns[0][2], m_rowsOfColumns[0][3]};
     const Vec4H right{m_rowsOfColumns[0][3], m_rowsOfColumns[1][3], m_rowsOfColumns[2][3], m_rowsOfColumns[3][3]};
     const Vec4H bottom{m_rowsOfColumns[3][0], m_rowsOfColumns[3][1], m_rowsOfColumns[3][2], m_rowsOfColumns[3][3]};
+    return {left, top, right, bottom};
+}
+
+inline SinglePatchView::VecVec4H SinglePatchView::innerEdges() const {
+    const Vec4H left{m_rowsOfColumns[0][1], m_rowsOfColumns[1][1], m_rowsOfColumns[2][1], m_rowsOfColumns[3][1]};
+    const Vec4H top{m_rowsOfColumns[1][0], m_rowsOfColumns[1][1], m_rowsOfColumns[1][2], m_rowsOfColumns[1][3]};
+    const Vec4H right{m_rowsOfColumns[0][2], m_rowsOfColumns[1][2], m_rowsOfColumns[2][2], m_rowsOfColumns[3][2]};
+    const Vec4H bottom{m_rowsOfColumns[2][0], m_rowsOfColumns[2][1], m_rowsOfColumns[2][2], m_rowsOfColumns[2][3]};
     return {left, top, right, bottom};
 }
 
