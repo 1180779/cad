@@ -221,6 +221,8 @@ signals :
 
     void createPatchC2Requested();
 
+    void createGregoryRequested();
+
 protected:
     void paintGL() override;
 

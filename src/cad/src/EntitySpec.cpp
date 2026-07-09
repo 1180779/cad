@@ -2,6 +2,8 @@
 // Created on 6/19/26.
 //
 
+#include <algorithm>
+
 #include "EntitySpec.hpp"
 
 #include "Scene.hpp"
@@ -84,8 +86,9 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
         out.components.emplace_back(
             GregoryData{
                 gc.value()->controlPointHandles(),
-                gc.value()->getGridDivisionsU(),
-                gc.value()->getGridDivisionsV()
+                gc.value()->gridDivisionsU(),
+                gc.value()->gridDivisionsV(),
+                gc.value()->getShowVectors()
             }
         );
     }
@@ -177,8 +180,15 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                 [&](const GregoryData &d) {
                     auto *gregory = e->addComponent<GregoryComponent>(&scene.getPointRegistry());
                     gregory->setHole(d.controlPoints);
-                    gregory->setGridDivisionsU(d.gridDivisionsU);
-                    gregory->setGridDivisionsV(d.gridDivisionsV);
+                    const int nets = std::min(
+                        gregory->netCount(),
+                        static_cast<int>(std::min(d.gridDivisionsU.size(), d.gridDivisionsV.size()))
+                    );
+                    for (int net = 0; net < nets; ++net) {
+                        gregory->setGridDivisionsU(net, d.gridDivisionsU[net]);
+                        gregory->setGridDivisionsV(net, d.gridDivisionsV[net]);
+                    }
+                    gregory->setShowVectors(d.showVectors);
                 },
             },
             component

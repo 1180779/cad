@@ -7,6 +7,7 @@
 #include "../../components/camera/ProjectionCameraWidget.hpp"
 #include "../../components/geometry/TorusWidget.hpp"
 #include "../../components/TransformWidget.hpp"
+#include "../../components/geometry/GregoryWidget.hxx"
 #include "../../components/geometry/PatchWidget.hxx"
 #include "../../../components/geometry/BezierC0Component.hpp"
 #include "../../../components/geometry/BezierC2Component.hpp"
@@ -126,6 +127,13 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
                                   ? "Bézier Patch C0"
                                   : "Bézier Patch C2";
         const auto widget = new PatchWidget(patch.value(), title);
+        widget->setCommandContext(m_scene, m_commandStack, m_entity->getId());
+        m_layout->addWidget(widget);
+        connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+    }
+
+    if (const auto gregory = m_entity->getComponent<GregoryComponent>()) {
+        const auto widget = new GregoryWidget(gregory.value());
         widget->setCommandContext(m_scene, m_commandStack, m_entity->getId());
         m_layout->addWidget(widget);
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);

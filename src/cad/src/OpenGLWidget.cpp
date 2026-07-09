@@ -640,6 +640,13 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
                 emit createPatchC2Requested();
             }
         );
+        menu.addSeparator();
+        menu.addAction(
+            "Fill Holes (Gregory)",
+            [this] {
+                emit createGregoryRequested();
+            }
+        );
         m_createMenuOpen = true;
         menu.exec(QCursor::pos());
         m_createMenuOpen = false;

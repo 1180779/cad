@@ -60,6 +60,8 @@ signals :
 
     void createPatchC2Requested();
 
+    void createGregoryRequested();
+
     void setAsNewPointsTargetEntityRequested(Entity *e);
 
     void addSelectedPointsToNewPointsTargetEntityRequested(Entity *e);

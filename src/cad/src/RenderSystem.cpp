@@ -14,6 +14,7 @@
 #include "components/GeometryComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "gui/Theme.hpp"
+#include <algorithm>
 #include <array>
 #include <cad_math/Vec2.hpp>
 #include <cad_math/Vec3.hpp>
@@ -960,22 +961,22 @@ void RenderSystem::drawGregorySurface(
     SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("u_highlightStrength", entityHl));
     gl->glBindVertexArray(gregory->getPatchVao());
     for (int dir = 0; dir < 2; ++dir) {
-        const int lines = (dir == 0
-                               ? gregory->getGridDivisionsV()
-                               : gregory->getGridDivisionsU()) + 1;
-        SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uLines", lines));
         SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uDir", dir));
-        for (int q = 0; q < nets; ++q) {
-            if (subs[q] == 0) {
+        for (int net = 0; net < nets; ++net) {
+            if (subs[net] == 0) {
                 continue;
             }
-            SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uSub", subs[q]));
+            const int lines = (dir == 0
+                                   ? gregory->getGridDivisionsV(net)
+                                   : gregory->getGridDivisionsU(net)) + 1;
+            SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uLines", lines));
+            SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uSub", subs[net]));
             gl->glDrawElementsInstanced(
                 GL_PATCHES,
                 netPts,
                 GL_UNSIGNED_INT,
-                reinterpret_cast<const void*>(static_cast<uintptr_t>(q) * netPts * sizeof(uint32_t)),
-                lines * subs[q]
+                reinterpret_cast<const void*>(static_cast<uintptr_t>(net) * netPts * sizeof(uint32_t)),
+                lines * subs[net]
             );
         }
     }
@@ -991,21 +992,46 @@ void RenderSystem::renderGregory(
 
     m_gregorySurfaceShader->bind();
     gl->glPatchParameteri(GL_PATCH_VERTICES, 20);
-    for (const auto &e : scene.getEntities()) {
-        if (!e->isVisible()) {
-            continue;
+    const auto forEachGregory = [&](const auto &doWork) {
+        for (const auto &e : scene.getEntities()) {
+            if (!e->isVisible()) {
+                continue;
+            }
+            if (const auto gregory = e->getComponent<GregoryComponent>()) {
+                doWork(
+                    gregory.value(),
+                    e->isSelected()
+                        ? s_selectionHS
+                        : s_noSelectionHS
+                );
+            }
         }
-        if (const auto gregory = e->getComponent<GregoryComponent>()) {
-            drawGregorySurface(
-                gregory.value(),
-                e->isSelected()
-                    ? s_selectionHS
-                    : s_noSelectionHS,
-                view,
-                projection
-            );
+    };
+
+    forEachGregory(
+        [&](const GregoryComponent *gregory, const cadm::cadf hl) {
+            drawGregorySurface(gregory, hl, view, projection);
         }
-    }
+    );
+    ShaderProgram::release();
+
+    m_wireframeShader->bind();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    SHADER_SET_UNIFORM_CHECK(
+        m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{0.2f, 0.75f, 0.9f, 1.0f})
+    );
+    forEachGregory(
+        [&](const GregoryComponent *gregory, const cadm::cadf hl) {
+            if (!gregory->getShowVectors() || gregory->getVectorsIndexCount() < 2) {
+                return;
+            }
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", hl));
+            gl->glBindVertexArray(gregory->getVectorsVao());
+            gl->glDrawElements(GL_LINES, gregory->getVectorsIndexCount(), GL_UNSIGNED_INT, nullptr);
+            gl->glBindVertexArray(0);
+        }
+    );
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
     ShaderProgram::release();
 }
 

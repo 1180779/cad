@@ -99,7 +99,7 @@ namespace holeFinder {namespace {
         std::vector<const EdgeRecord*> pathEdges;
         std::vector<PointHandle> pathCorners;
 
-        const auto constructHole = [pathEdges, otherEnd](const PointHandle start) {
+        const auto constructHole = [&](const PointHandle start) {
             AnySizeHole hole;
             PointHandle from = start;
             for (const EdgeRecord *e : pathEdges) {

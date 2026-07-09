@@ -45,17 +45,43 @@ public:
 
     void setControlPointHandles(const std::vector<PointHandle> &handles) override;
 
-    [[nodiscard]] int getGridDivisionsU() const {
+    /// @brief Subdivisions of net @p net along U
+    [[nodiscard]] int getGridDivisionsU(const int net) const {
+        return m_gridDivisionsU[net];
+    }
+
+    /// @brief Subdivisions of net @p net along V
+    [[nodiscard]] int getGridDivisionsV(const int net) const {
+        return m_gridDivisionsV[net];
+    }
+
+    [[nodiscard]] const std::vector<int>& gridDivisionsU() const {
         return m_gridDivisionsU;
     }
 
-    [[nodiscard]] int getGridDivisionsV() const {
+    [[nodiscard]] const std::vector<int>& gridDivisionsV() const {
         return m_gridDivisionsV;
     }
 
-    void setGridDivisionsU(int divisions);
+    void setGridDivisionsU(int net, int divisions);
 
-    void setGridDivisionsV(int divisions);
+    void setGridDivisionsV(int net, int divisions);
+
+    [[nodiscard]] bool getShowVectors() const {
+        return m_showVectors;
+    }
+
+    void setShowVectors(const bool v) {
+        m_showVectors = v;
+    }
+
+    [[nodiscard]] GLuint getVectorsVao() const {
+        return m_vectorsVao.id();
+    }
+
+    [[nodiscard]] int getVectorsIndexCount() const {
+        return m_vectorsEbo.size();
+    }
 
     [[nodiscard]] GLuint getPatchVao() const {
         return m_patchVao.id();
@@ -85,14 +111,21 @@ private:
     /// @brief Flat hole handles, @ref s_handlesPerEdge per edge
     std::vector<PointHandle> m_handles;
 
-    int m_gridDivisionsU = 4;
-    int m_gridDivisionsV = 4;
+    /// @brief Per-net subdivisions
+    std::vector<int> m_gridDivisionsU;
+    std::vector<int> m_gridDivisionsV;
+    bool m_showVectors = false;
 
     CallbackId m_positionCallbackId = -1;
 
     Vao m_patchVao;
+    Vao m_vectorsVao;
     GpuBuffer<cadm::Vec3, GL_ARRAY_BUFFER> m_vbo;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_ebo;
+
+    /// @brief Line list over <tt>m_vbo</tt>: net ring + the cross-tangent
+    /// (continuity) vectors
+    GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_vectorsEbo;
 };
 
 #endif //CAD_GREGORYCOMPONENT_HXX

@@ -81,10 +81,13 @@ struct PatchC0Data : PatchGridData {};
 struct PatchC2Data : PatchGridData {};
 
 struct GregoryData {
-    /// @brief Flat hole handles, GregoryComponent::s_handlesPerEdge per edge
+    /// @brief Flat hole handles, <tt>GregoryComponent::s_handlesPerEdge</tt>
+    /// per edge
     std::vector<PointHandle> controlPoints;
-    int gridDivisionsU{4};
-    int gridDivisionsV{4};
+    /// @brief Per-net subdivisions
+    std::vector<int> gridDivisionsU;
+    std::vector<int> gridDivisionsV;
+    bool showVectors{false};
 };
 
 using ComponentSpec =
