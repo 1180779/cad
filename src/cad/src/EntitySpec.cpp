@@ -2,22 +2,25 @@
 // Created on 6/19/26.
 //
 
+#include <algorithm>
+
 #include "EntitySpec.hpp"
 
 #include "Scene.hpp"
-#include "components/BezierC0Component.hpp"
-#include "components/BezierC2Component.hpp"
+#include "Tools.hxx"
+#include "components/geometry/BezierC0Component.hpp"
+#include "components/geometry/BezierC2Component.hpp"
+#include "components/geometry/GregoryComponent.hxx"
+#include "components/geometry/InterpC2Component.hxx"
 #include "components/CursorComponent.hpp"
 #include "components/GeometryComponent.hpp"
+#include "components/geometry/PatchC0Component.hxx"
+#include "components/geometry/PatchC2Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 
 namespace {
-    /// @brief Helper for exhaustive std::visit
-    template <typename... Ts>
-    struct Overloaded : Ts... {
-        using Ts::operator()...;
-    };
+    void setPatch(PatchComponent*patch, const PatchGridData*d);
 }
 
 bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
@@ -41,7 +44,7 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
         const PointHandle h = pc.value()->m_handle;
         out.components.emplace_back(PointData{h, scene.getPointRegistry().getPosition(h)});
     }
-    if (const auto tg = entity->getComponent<TorusGeometry>()) {
+    if (const auto tg = entity->getComponent<TorusComponent>()) {
         out.components.emplace_back(
             TorusData{
                 tg.value()->getMajorRadius(),
@@ -51,7 +54,7 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
             }
         );
     }
-    if (const auto axes = entity->getComponent<AxesGeometry>()) {
+    if (const auto axes = entity->getComponent<AxesComponent>()) {
         out.components.emplace_back(AxesData{axes.value()->m_length});
     }
     if (entity->hasComponent<CursorComponent>()) {
@@ -69,6 +72,46 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
             }
         );
     }
+    if (const auto ic = entity->getComponent<InterpC2Component>()) {
+        out.components.emplace_back(
+            InterpC2Data{
+                ic.value()->getControlPoints(),
+                ic.value()->getShowControlPolyline(),
+                ic.value()->getShowBernsteinPolygon(),
+                ic.value()->getShowBernsteinCps()
+            }
+        );
+    }
+    if (const auto gc = entity->getComponent<GregoryComponent>()) {
+        out.components.emplace_back(
+            GregoryData{
+                gc.value()->controlPointHandles(),
+                gc.value()->gridDivisionsU(),
+                gc.value()->gridDivisionsV(),
+                gc.value()->getShowVectors()
+            }
+        );
+    }
+    if (const auto pc = entity->getComponent<PatchComponent>()) {
+        const auto *p = pc.value();
+        const PatchGridData grid{
+            p->getControlPoints(),
+            p->getRows(),
+            p->getCols(),
+            p->getWrapU(),
+            p->getPatchCountX(),
+            p->getPatchCountY(),
+            p->getGridDivisionsU(),
+            p->getGridDivisionsV(),
+            p->getShowNet()
+        };
+        if (dynamic_cast<const PatchC2Component*>(p)) {
+            out.components.emplace_back(PatchC2Data{grid});
+        }
+        else if (dynamic_cast<const PatchC0Component*>(p)) {
+            out.components.emplace_back(PatchC0Data{grid});
+        }
+    }
 
     return !out.components.empty();
 }
@@ -78,7 +121,7 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
 
     for (const auto &component : spec.components) {
         std::visit(
-            Overloaded{
+            tools::Overloaded{
                 [&](const TransformData &d) {
                     const auto t = e->addComponent<TransformComponent>();
                     t->setTranslation(d.translation);
@@ -89,14 +132,14 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                     scene.attachPointComponent(e, d.handle, d.position);
                 },
                 [&](const TorusData &d) {
-                    const auto torus = e->addComponent<TorusGeometry>();
+                    const auto torus = e->addComponent<TorusComponent>();
                     torus->setMajorRadius(d.majorRadius);
                     torus->setMinorRadius(d.minorRadius);
                     torus->setMajorSegments(d.majorSegments);
                     torus->setMinorSegments(d.minorSegments);
                 },
                 [&](const AxesData &d) {
-                    e->addComponent<AxesGeometry>()->m_length = d.length;
+                    e->addComponent<AxesComponent>()->m_length = d.length;
                 },
                 [&](const CursorData &) {
                     e->addComponent<CursorComponent>();
@@ -117,6 +160,36 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                     bezier->setShowBernsteinPolygon(d.showBernsteinPolygon);
                     bezier->setShowBernsteinCps(d.showBernsteinCps);
                 },
+                [&](const InterpC2Data &d) {
+                    const auto curve = e->addComponent<InterpC2Component>(&scene.getPointRegistry());
+                    for (const auto h : d.controlPoints) {
+                        curve->addControlPoint(h);
+                    }
+                    curve->setShowControlPolyline(d.showPolyline);
+                    curve->setShowBernsteinPolygon(d.showBernsteinPolygon);
+                    curve->setShowBernsteinCps(d.showBernsteinCps);
+                },
+                [&](const PatchC0Data &d) {
+                    auto *patch = e->addComponent<PatchC0Component>(&scene.getPointRegistry());
+                    setPatch(patch, &d);
+                },
+                [&](const PatchC2Data &d) {
+                    auto *patch = e->addComponent<PatchC2Component>(&scene.getPointRegistry());
+                    setPatch(patch, &d);
+                },
+                [&](const GregoryData &d) {
+                    auto *gregory = e->addComponent<GregoryComponent>(&scene.getPointRegistry());
+                    gregory->setHole(d.controlPoints);
+                    const int nets = std::min(
+                        gregory->netCount(),
+                        static_cast<int>(std::min(d.gridDivisionsU.size(), d.gridDivisionsV.size()))
+                    );
+                    for (int net = 0; net < nets; ++net) {
+                        gregory->setGridDivisionsU(net, d.gridDivisionsU[net]);
+                        gregory->setGridDivisionsV(net, d.gridDivisionsV[net]);
+                    }
+                    gregory->setShowVectors(d.showVectors);
+                },
             },
             component
         );
@@ -124,4 +197,13 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
 
     e->setVisible(spec.visible);
     return e;
+}
+
+namespace {
+    void setPatch(PatchComponent* const patch, const PatchGridData* const d) {
+        patch->setGrid(d->controlPoints, d->rows, d->cols, d->wrapU, d->patchCountX, d->patchCountY);
+        patch->setGridDivisionsU(d->gridDivisionsU);
+        patch->setGridDivisionsV(d->gridDivisionsV);
+        patch->setShowNet(d->showNet);
+    }
 }

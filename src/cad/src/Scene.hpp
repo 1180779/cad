@@ -33,6 +33,28 @@ public:
     /// @note: not an exclusive surface
     void setPointPosition(PointHandle handle, cadm::Vec3 position);
 
+    /// @brief The entities and handles of a valid point collapse
+    /// @see <tt>validateCollapse</tt>
+    struct CollapseCandidates {
+        Entity *keep{};
+        Entity *remove{};
+        PointHandle keepHandle{InvalidPointHandle};
+        PointHandle removeHandle{InvalidPointHandle};
+    };
+
+    /// @brief Check whether @p keepId and @p removeId name two distinct point
+    /// entities that can be collapsed
+    /// @returns The resolved candidates, or <tt>std::nullopt</tt> if the
+    /// collapse is not allowed
+    std::optional<CollapseCandidates> validateCollapse(EntityId keepId, EntityId removeId);
+
+    /// @brief Collapse two (point) entities into one: the kept point moves to
+    /// the average position, every referrer is repointed to it and the other
+    /// point entity is removed
+    /// @returns The kept entity, or <tt>nullptr</tt> if
+    /// <tt>validateCollapse</tt> refuses
+    Entity* collapsePoints(EntityId keepId, EntityId removeId);
+
     void setEntityName(EntityId id, const std::string &name);
 
     std::optional<Entity*> getEntity(EntityId id);
@@ -42,6 +64,28 @@ public:
     std::optional<Entity*> getEntityByPointHandle(PointHandle handle);
 
     bool removeEntity(EntityId id);
+
+    /// @brief Remove entities in retry waves until no wave makes progress, so
+    /// the removal order doesn't matter
+    /// @return true if every listed entity was removed
+    bool removeEntities(std::vector<EntityId> ids);
+
+    /// @brief Extracts an entity from the scene without destroying it. Returns
+    /// @c nullptr if not found
+    /// @pre entity must not have a @c PointComponent (point registry state
+    /// isn't touched)
+    std::unique_ptr<Entity> releaseEntity(EntityId id);
+
+    /// @brief Re-inserts a previously released entity, assigning it a fresh id
+    Entity* adoptEntity(std::unique_ptr<Entity> entity);
+
+    /// @brief tries to remove every entity; Resets id allocation counter if all
+    /// entities were removed
+    /// @note Retries in waves since removeEntity can fail order-dependently; on
+    /// failure, whatever was already removed stays removed (no rollback), and
+    /// any entity still stuck after a wave makes no progress is left in place
+    /// @return true if every entity was removed
+    bool tryReset();
 
     /// @brief Set the selection state on an entity and keep the selection set in sync
     void setSelected(Entity *e, bool selected);
@@ -53,6 +97,14 @@ public:
 
     const std::vector<std::unique_ptr<Entity>>& getEntities() const {
         return m_entities;
+    }
+
+    auto getEntitiesPointersView() const {
+        return m_entities | std::views::as_const | std::views::transform(
+            [](const std::unique_ptr<Entity> &p) {
+                return p.get();
+            }
+        );
     }
 
     [[nodiscard]] const std::unordered_set<Entity*>& getSelectedEntities() const {
@@ -89,7 +141,8 @@ private:
     std::vector<std::unique_ptr<Entity>> m_entities;
     std::unordered_map<EntityId, std::size_t> m_entityMap;
     std::unordered_map<PointHandle, EntityId> m_pointEntityMap;
-    EntityId m_nextEntityId = 1;
+    static constexpr EntityId firstEntityId = 1;
+    EntityId m_nextEntityId = firstEntityId;
     Entity *m_activeCursor = nullptr;
 
     Entity *m_newPointsTargetEntity = nullptr;

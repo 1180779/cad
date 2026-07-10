@@ -11,7 +11,6 @@
 #include "Mat4.hpp"
 #include "Ray4.hpp"
 #include "Vec2.hpp"
-#include "Vec2i.hpp"
 #include "Vec3.hpp"
 #include "Vec4.hpp"
 
@@ -27,7 +26,7 @@ namespace cadm {
         const int width,
         const int height
     ) {
-        const auto clip = projection * view * vec4(worldPos.x, worldPos.y, worldPos.z, 1.0f);
+        const auto clip = projection * view * Vec4(worldPos.x, worldPos.y, worldPos.z, 1.0f);
         if (clip.w <= 0.0f) {
             return std::nullopt;
         }
@@ -55,7 +54,7 @@ namespace cadm {
         const cadf ndcX = (static_cast<cadf>(point.x) - halfWidth) / halfWidth;
         const cadf ndcY = (halfHeight - static_cast<cadf>(point.y)) / halfHeight;
 
-        vec4 world = invVp * vec4(ndcX, ndcY, ndcZ, 1.0);
+        Vec4 world = invVp * Vec4(ndcX, ndcY, ndcZ, 1.0);
         world /= world.w;
         return {world.x, world.y, world.z};
     }
@@ -73,20 +72,20 @@ namespace cadm {
         const cadf halfWidth = static_cast<cadf>(width / 2.0);
         const cadf halfHeight = static_cast<cadf>(height / 2.0);
 
-        const vec2 ndcPoint(
+        const Vec2 ndcPoint(
             (static_cast<cadf>(point.x) - halfWidth) / halfWidth,
             (halfHeight - static_cast<cadf>(point.y)) / halfHeight
         );
 
-        vec4 unprojectedNearPoint(ndcPoint.x, ndcPoint.y, zNear, 1.0);
+        Vec4 unprojectedNearPoint(ndcPoint.x, ndcPoint.y, zNear, 1.0);
         unprojectedNearPoint = invWorldPV * unprojectedNearPoint;
         unprojectedNearPoint /= unprojectedNearPoint.w;
 
-        vec4 unprojectedFarPoint(ndcPoint.x, ndcPoint.y, 1.0, 1.0);
+        Vec4 unprojectedFarPoint(ndcPoint.x, ndcPoint.y, 1.0, 1.0);
         unprojectedFarPoint = invWorldPV * unprojectedFarPoint;
         unprojectedFarPoint /= unprojectedFarPoint.w;
 
-        vec4 rayDir = (unprojectedFarPoint - unprojectedNearPoint).normalized();
+        Vec4 rayDir = (unprojectedFarPoint - unprojectedNearPoint).normalized();
         return {unprojectedNearPoint, rayDir};
     }
 

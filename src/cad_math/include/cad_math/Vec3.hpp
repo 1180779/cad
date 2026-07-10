@@ -6,42 +6,69 @@
 #define CAD_VEC3_H
 
 #include <array>
+#include <span>
 
 #include "VecBase.hpp"
 
 namespace cadm {
-    template <>
-    struct Vec<3, cadf> : VecBase<Vec<3, cadf>, 3, cadf> {
+    template <typename T>
+    struct Vec<T, 3> : VecBase<T, 3, Vec<T, 3>> {
         union {
             struct {
-                cadf x, y, z;
+                T x, y, z;
             };
 
             struct {
-                cadf r, g, b;
+                T r, g, b;
             };
 
-            std::array<cadf, 3> data;
+            std::array<T, 3> data;
         };
 
-        constexpr Vec() : x(0), y(0), z(0) {}
+        constexpr Vec(const std::initializer_list<T> values)
+        : data{} {
+            std::size_t i = 0;
+            for (const T v : values) {
+                if (i == 3) {
+                    break;
+                }
+                data[i++] = v;
+            }
+        }
 
-        constexpr Vec(const cadf x, const cadf y, const cadf z) : x(x), y(y), z(z) {}
+        explicit constexpr Vec(T v)
+        : x{v},
+          y{v},
+          z{v} {}
+
+        constexpr Vec()
+        : x(T{0}),
+          y(T{0}),
+          z(T{0}) {}
+
+        constexpr Vec(const T x, const T y, const T z)
+        : x(x),
+          y(y),
+          z(z) {}
 
         constexpr static Vec unitX() noexcept {
-            return {1.0, 0.0, 0.0};
+            return {T{1}, T{0}, T{0}};
         }
 
         constexpr static Vec unitY() noexcept {
-            return {0.0, 1.0, 0.0};
+            return {T{0}, T{1}, T{0}};
         }
 
         constexpr static Vec unitZ() noexcept {
-            return {0.0, 0.0, 1.0};
+            return {T{0}, T{0}, T{1}};
         }
 
         [[nodiscard]] constexpr Vec cross(const Vec &other) const {
             return {y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x};
+        }
+
+        [[nodiscard]] constexpr std::span<T, 3> flatView() const {
+            return data;
         }
 
         /// @brief Component indices for operator[] access
@@ -57,7 +84,8 @@ namespace cadm {
         };
     };
 
-    using Vec3 = Vec<3, cadf>;
+    using Vec3 = Vec<cadf, 3>;
+    using Vec3I = Vec<int, 3>;
 }
 
 #endif //CAD_VEC3_H

@@ -10,6 +10,12 @@
 
 #include "ViewportTypes.hpp"
 
+class StatusBarWidget;
+
+namespace aliases {
+    using StBarW = StatusBarWidget;
+}
+
 /// @brief Vim-like status bar widget with the most relevant information available at a glance
 class StatusBarWidget final : public QWidget {
     Q_OBJECT

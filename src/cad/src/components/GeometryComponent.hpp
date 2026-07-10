@@ -16,7 +16,7 @@
 struct Vertex {
     cadm::Vec3 position;
     cadm::Vec3 normal;
-    cadm::vec4 color;
+    cadm::Vec4 color;
 };
 
 class GeometryComponent : public Component {
@@ -26,6 +26,19 @@ public:
     virtual void syncToGpu();
 
     ~GeometryComponent() override;
+
+    void select() {
+        m_selected = true;
+    }
+
+    /// @brief Regenerate the mesh and sync it to GPU if marked for update
+    void updateIfNecessary();
+
+    /// @brief Mark for mesh regeneration and GPU sync
+    /// @note Sets @ref m_needsUpdate to true; the operations are done lazily
+    void markForUpdate() {
+        m_needsUpdate = true;
+    }
 
     std::vector<Vertex> m_vertices;
     std::vector<std::uint32_t> m_triangleIndices;
@@ -42,7 +55,7 @@ public:
     bool m_needsUpdate = true;
 };
 
-class TorusGeometry final : public QObject, public GeometryComponent {
+class TorusComponent final : public QObject, public GeometryComponent {
     Q_OBJECT Q_PROPERTY(double majorRadius READ getMajorRadius WRITE setMajorRadius NOTIFY majorRadiusChanged)
 
     Q_PROPERTY(double minorRadius READ getMinorRadius WRITE setMinorRadius NOTIFY minorRadiusChanged)
@@ -52,7 +65,7 @@ class TorusGeometry final : public QObject, public GeometryComponent {
     Q_PROPERTY(int minorSegments READ getMinorSegments WRITE setMinorSegments NOTIFY minorSegmentsChanged)
 
 public:
-    TorusGeometry();
+    TorusComponent();
 
     [[nodiscard]] cadm::cadf getMajorRadius() const {
         return m_majorRadius;
@@ -100,13 +113,13 @@ signals :
     void minorSegmentsChanged(int segments);
 };
 
-class AxesGeometry final : public GeometryComponent {
+class AxesComponent final : public GeometryComponent {
 public:
     cadm::cadf m_length = 5.0f;
     float m_lineWidth = 1.0f;
-    static constexpr cadm::vec4 xColor{1, 0, 0, 1};
-    static constexpr cadm::vec4 yColor{0, 1, 0, 1};
-    static constexpr cadm::vec4 zColor{0, 0, 1, 1};
+    static constexpr cadm::Vec4 xColor{1, 0, 0, 1};
+    static constexpr cadm::Vec4 yColor{0, 1, 0, 1};
+    static constexpr cadm::Vec4 zColor{0, 0, 1, 1};
 
     void regenerateMesh() override;
 };

@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <ranges>
+#include <span>
 #include <unordered_set>
 #include <vector>
 #include <QOpenGLFunctions_4_5_Core>
@@ -25,6 +27,11 @@ public:
     /// Append one element
     /// @note marks dirty (or structurally dirty if over capacity)
     void append(T item);
+
+    /// @brief Append a contiguous block of elements
+    /// @note marks the new slots dirty, or structurally dirty when growing past
+    /// capacity
+    void appendRange(std::span<const T> items);
 
     /// Overwrite an element at idx
     /// @note marks slot dirty
@@ -118,6 +125,21 @@ void GpuBuffer<T, Target, DefaultUsage>::append(T item) {
     else {
         m_structuralDirty = true;
     }
+}
+
+template <typename T, GLenum Target, GLenum DefaultUsage>
+void GpuBuffer<T, Target, DefaultUsage>::appendRange(const std::span<const T> items) {
+    const int first = static_cast<int>(m_data.size());
+    m_data.insert(m_data.end(), items.begin(), items.end());
+    if (static_cast<int>(m_data.size()) > m_capacity) {
+        m_structuralDirty = true;
+    }
+    if (m_structuralDirty) {
+        return;
+    }
+    const auto newSlots = std::views::iota(first, static_cast<int>(m_data.size()));
+    m_dirtySlots.reserve(m_dirtySlots.size() + newSlots.size());
+    m_dirtySlots.insert(newSlots.begin(), newSlots.end());
 }
 
 template <typename T, GLenum Target, GLenum DefaultUsage>

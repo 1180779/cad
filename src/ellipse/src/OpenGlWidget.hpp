@@ -14,7 +14,6 @@
 #include "ShaderProgram.hpp"
 #include "Quad.hpp"
 #include "cad_math/Vec3.hpp"
-#include "cad_math/Vec3i.hpp"
 #include "Camera.hpp"
 
 struct RenderState {
@@ -26,7 +25,7 @@ struct RenderState {
     cadm::Mat4 Dprim;
     cadm::Vec3 cameraPos;
     cadm::Vec3 specularColor;
-    cadm::vec3i ambient;
+    cadm::Vec3I ambient;
     cadm::cadf m;
     cadm::cadf a, b, c;
     unsigned char adaptationSize;

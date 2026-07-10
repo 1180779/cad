@@ -5,12 +5,18 @@
 #include "Commands.hpp"
 
 #include <algorithm>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
+#include "../factory/GeometryFactory.hpp"
 #include "../Scene.hpp"
-#include "../components/BezierC0Component.hpp"
-#include "../components/BezierC2Component.hpp"
+#include "../components/geometry/BezierC0Component.hpp"
+#include "../components/geometry/BezierC2Component.hpp"
+#include "../components/geometry/InterpC2Component.hxx"
 #include "../components/INewPointsTargetComponent.hpp"
+#include "../components/IPointReferrer.hpp"
+#include "../components/geometry/PatchComponent.hxx"
 #include "../components/PointComponent.hpp"
 
 namespace {
@@ -24,7 +30,36 @@ namespace {
         if (const auto bc = e->getComponent<BezierC2Component>()) {
             return bc.value()->getDeBoorPoints();
         }
+        if (const auto ic = e->getComponent<InterpC2Component>()) {
+            return ic.value()->getControlPoints();
+        }
         return {};
+    }
+
+    /// @brief Add every control-point entity of a deleted patch to the deletion set
+    /// @return ids, extended in place with the patch's control points
+    std::vector<EntityId> expandWithPatchControlPoints(Scene &scene, const std::vector<EntityId> &ids);
+
+    /// @brief Map every point handle owned by a patch to that patch's entity id
+    std::unordered_map<PointHandle, EntityId> buildPointToPatchMap(const Scene &scene);
+
+    /// @brief Drop points that are locked to a patch not also being deleted
+    void removeLockedPatchPoints(Scene &scene, std::vector<EntityId> &ids);
+
+    /// @brief Capture specs for every deleted entity, and collect the point handles among them
+    /// @return {specs, deletedPointHandles}
+    std::pair<std::vector<EntitySpec>, std::unordered_set<PointHandle>> captureDeleted(
+        Scene &scene,
+        const std::vector<EntityId> &ids
+    );
+
+    /// @brief The ids of every captured entity spec
+    std::vector<EntityId> specIds(const std::vector<EntitySpec> &specs) {
+        return specs | std::views::transform(
+            [](const auto &s) {
+                return s.id;
+            }
+        ) | std::ranges::to<std::vector>();
     }
 
     /// @brief Reset a curve's membership to exactly target, preserving order
@@ -70,30 +105,57 @@ void CreateEntityCommand::undo() {
 }
 
 // ---------------------------------------------------------------------------
+// CreatePatchCommand
+// ---------------------------------------------------------------------------
+
+void CreatePatchCommand::execute() {
+    if (!m_specs.empty()) {
+        // redo: points first so the patch can re-reference live handles
+        const auto isPatch = [](const EntitySpec &s) {
+            return s.has<PatchC0Data>() || s.has<PatchC2Data>();
+        };
+        for (const auto &s : m_specs) {
+            if (!isPatch(s)) {
+                rebuildEntity(m_scene, s);
+            }
+        }
+        for (const auto &s : m_specs) {
+            if (isPatch(s)) {
+                rebuildEntity(m_scene, s);
+            }
+        }
+        return;
+    }
+
+    for (const auto created = GeometryFactory(m_scene).createPatch(m_params);
+         Entity *e : created) {
+        if (EntitySpec spec;
+            captureEntity(m_scene, e, spec)) {
+            m_specs.push_back(std::move(spec));
+        }
+    }
+}
+
+void CreatePatchCommand::undo() {
+    m_scene.removeEntities(specIds(m_specs));
+}
+
+// ---------------------------------------------------------------------------
 // DeleteEntityCommand
 // ---------------------------------------------------------------------------
 
-DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityId> &ids) : m_scene(scene) {
-    const std::unordered_set deleting(ids.begin(), ids.end());
-    std::unordered_set<PointHandle> deletedPoints;
+DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityId> &ids)
+: m_scene(scene) {
+    std::vector<EntityId> expandedIds = expandWithPatchControlPoints(scene, ids);
+    removeLockedPatchPoints(scene, expandedIds);
 
-    for (const auto id : ids) {
-        const auto e = scene.getEntity(id);
-        if (!e) {
-            continue;
-        }
-        EntitySpec spec;
-        if (!captureEntity(scene, e.value(), spec)) {
-            continue;
-        }
-        if (const auto pc = e.value()->getComponent<PointComponent>()) {
-            deletedPoints.insert(pc.value()->m_handle);
-        }
-        m_specs.push_back(std::move(spec));
-    }
+    const std::unordered_set deleting(expandedIds.begin(), expandedIds.end());
+    auto [specs, deletedPoints] = captureDeleted(scene, expandedIds);
+    m_specs = std::move(specs);
 
-    // curves not being deleted that reference a deleted point lose membership via
-    // the registry remove-callback; snapshot them so undo can restore exact order
+    // curves not being deleted that reference a deleted point lose membership
+    // via the registry remove-callback; snapshot them so undo can restore exact
+    // order
     if (!deletedPoints.empty()) {
         for (const auto &e : scene.getEntities()) {
             if (deleting.contains(e->getId())) {
@@ -116,9 +178,7 @@ DeleteEntityCommand::DeleteEntityCommand(Scene &scene, const std::vector<EntityI
 }
 
 void DeleteEntityCommand::execute() {
-    for (const auto &spec : m_specs) {
-        m_scene.removeEntity(spec.id);
-    }
+    m_scene.removeEntities(specIds(m_specs));
 }
 
 void DeleteEntityCommand::undo() {
@@ -142,6 +202,14 @@ void DeleteEntityCommand::undo() {
 // TransformCommand
 // ---------------------------------------------------------------------------
 
+void TransformCommand::execute() {
+    restore(m_after);
+}
+
+void TransformCommand::undo() {
+    restore(m_before);
+}
+
 void TransformCommand::restore(const std::vector<EntitySnapshot> &snaps) const {
     auto &registry = m_scene.getPointRegistry();
     for (const auto &snap : snaps) {
@@ -149,14 +217,6 @@ void TransformCommand::restore(const std::vector<EntitySnapshot> &snaps) const {
             snap.restoreEntity(registry, e.value());
         }
     }
-}
-
-void TransformCommand::execute() {
-    restore(m_after);
-}
-
-void TransformCommand::undo() {
-    restore(m_before);
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +266,61 @@ bool SetPropertyCommand::tryMerge(const Command &next) {
 }
 
 // ---------------------------------------------------------------------------
+// CollapsePointsCommand
+// ---------------------------------------------------------------------------
+
+CollapsePointsCommand::CollapsePointsCommand(
+    Scene &scene,
+    const EntityId keepId,
+    const EntityId removeId
+)
+: m_scene(scene),
+  m_keepId(keepId),
+  m_removeId(removeId) {
+    const auto candidates = scene.validateCollapse(keepId, removeId);
+    if (!candidates) {
+        return;
+    }
+    if (!captureEntity(scene, candidates->remove, m_removedSpec)) {
+        return;
+    }
+
+    m_keepHandle = candidates->keepHandle;
+    m_keepPosBefore = scene.getPointRegistry().getPosition(m_keepHandle);
+
+    const PointHandle gone = candidates->removeHandle;
+    for (const auto &e : scene.getEntities()) {
+        if (const auto r = e->getComponent<IPointReferrer>()) {
+            if (const auto cps = r.value()->controlPointHandles();
+                std::ranges::find(cps, gone) != cps.end()) {
+                m_referrers.push_back({e->getId(), cps});
+            }
+        }
+    }
+    m_valid = true;
+}
+
+void CollapsePointsCommand::execute() {
+    m_valid = m_valid && m_scene.collapsePoints(m_keepId, m_removeId) != nullptr;
+}
+
+void CollapsePointsCommand::undo() {
+    if (!m_valid) {
+        return;
+    }
+    // point first so referrers can re-lock / re-reference a live handle
+    rebuildEntity(m_scene, m_removedSpec);
+    m_scene.setPointPosition(m_keepHandle, m_keepPosBefore);
+    for (const auto &[entityId, controlPoints] : m_referrers) {
+        if (const auto e = m_scene.getEntity(entityId)) {
+            if (const auto r = e.value()->getComponent<IPointReferrer>()) {
+                r.value()->setControlPointHandles(controlPoints);
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // AddControlPointCommand
 // ---------------------------------------------------------------------------
 
@@ -233,7 +348,10 @@ RemoveControlPointCommand::RemoveControlPointCommand(
     Scene &scene,
     const EntityId curveId,
     const PointHandle handle
-) : m_scene(scene), m_curveId(curveId), m_handle(handle) {
+)
+: m_scene(scene),
+  m_curveId(curveId),
+  m_handle(handle) {
     if (const auto e = scene.getEntity(curveId)) {
         m_before = currentControlPoints(e.value());
     }
@@ -249,4 +367,83 @@ void RemoveControlPointCommand::execute() {
 
 void RemoveControlPointCommand::undo() {
     resetMembership(m_scene, m_curveId, m_before);
+}
+
+namespace {
+    std::vector<EntityId> expandWithPatchControlPoints(Scene &scene, const std::vector<EntityId> &ids) {
+        std::vector<EntityId> expandedIds = ids;
+        std::unordered_set seen(ids.begin(), ids.end());
+        for (const auto id : ids) {
+            const auto e = scene.getEntity(id);
+            if (!e) {
+                continue;
+            }
+            const auto patch = e.value()->getComponent<PatchComponent>();
+            if (!patch) {
+                continue;
+            }
+            for (const auto h : patch.value()->getControlPoints()) {
+                if (const auto pe = scene.getEntityByPointHandle(h);
+                    pe && seen.insert(pe.value()->getId()).second) {
+                    expandedIds.push_back(pe.value()->getId());
+                }
+            }
+        }
+        return expandedIds;
+    }
+
+    std::unordered_map<PointHandle, EntityId> buildPointToPatchMap(const Scene &scene) {
+        std::unordered_map<PointHandle, EntityId> pointToPatchMap;
+        for (const auto &e : scene.getEntities()) {
+            if (const auto patch = e->getComponent<PatchComponent>()) {
+                for (const auto h : patch.value()->getControlPoints()) {
+                    pointToPatchMap[h] = e->getId();
+                }
+            }
+        }
+        return pointToPatchMap;
+    }
+
+    void removeLockedPatchPoints(Scene &scene, std::vector<EntityId> &ids) {
+        const auto pointToPatchMap = buildPointToPatchMap(scene);
+        const std::unordered_set deletingNow(ids.begin(), ids.end());
+        std::erase_if(
+            ids,
+            [&](const EntityId id) {
+                const auto e = scene.getEntity(id);
+                if (!e) {
+                    return false;
+                }
+                const auto pc = e.value()->getComponent<PointComponent>();
+                if (!pc) {
+                    return false;
+                }
+                const auto owningPatch = pointToPatchMap.find(pc.value()->m_handle);
+                return owningPatch != pointToPatchMap.end() && !deletingNow.contains(owningPatch->second);
+            }
+        );
+    }
+
+    std::pair<std::vector<EntitySpec>, std::unordered_set<PointHandle>> captureDeleted(
+        Scene &scene,
+        const std::vector<EntityId> &ids
+    ) {
+        std::vector<EntitySpec> specs;
+        std::unordered_set<PointHandle> deletedPoints;
+        for (const auto id : ids) {
+            const auto e = scene.getEntity(id);
+            if (!e) {
+                continue;
+            }
+            EntitySpec spec;
+            if (!captureEntity(scene, e.value(), spec)) {
+                continue;
+            }
+            if (const auto pc = e.value()->getComponent<PointComponent>()) {
+                deletedPoints.insert(pc.value()->m_handle);
+            }
+            specs.push_back(std::move(spec));
+        }
+        return {std::move(specs), std::move(deletedPoints)};
+    }
 }

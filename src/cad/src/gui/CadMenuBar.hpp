@@ -5,6 +5,7 @@
 #ifndef CAD_CADMENUBAR_HPP
 #define CAD_CADMENUBAR_HPP
 
+#include <QDoubleSpinBox>
 #include <QMenuBar>
 
 #include "input/InputMap.hpp"
@@ -24,22 +25,78 @@ public:
 
     void setRedoEnabled(bool enabled) const;
 
+    /// @brief Enables/disables File actions, including their keyboard
+    /// shortcuts. Used to block them while a modal-ish dialogs are open, (when
+    /// overlay only blocks mouse clicks on parts of the ui but not
+    /// application-wide shortcuts)
+    void setFileActionsEnabled(bool enabled) const;
+
+    void setStereoEyeSep(double eyeSep) const;
+
+    void setStereoConvergence(double convergence) const;
+
     /// @brief Register a toggleable panel entry under the Tools menu; returns the action
     [[nodiscard]] QAction* addToolPanelAction(const QString &name) const;
 
 signals:
+    void newRequested();
+
+    void saveRequested();
+
+    void saveAsRequested();
+
+    void openRequested();
+
     void undoRequested();
 
     void redoRequested();
 
-    /// @brief Emitted just before the Edit menu opens so callers can refresh enabled state
+    void darkThemeChanged(bool enabled);
+
+    void stereoEnabledChanged(bool enabled);
+
+    void stereoAutoChanged(bool enabled);
+
+    void stereoLuminanceChanged(bool enabled);
+
+    void stereoAutoEyeSepChanged(bool enabled);
+
+    void stereoEyeSeparationChanged(double sep);
+
+    void stereoConvergenceChanged(double dist);
+
+    void stereoSepRatioChanged(double ratio);
+
+    /// @brief Emitted just before the Edit menu opens so callers can refresh
+    /// enabled state
     void editMenuAboutToShow();
 
 private:
-    QMenu *m_editMenu;
-    QMenu *m_toolsMenu;
-    QAction *m_undoAction;
-    QAction *m_redoAction;
+    void isAboutToShow();
+
+    void updateSpinsEnabled(bool) const;
+
+    QMenu *const m_fileMenu;
+    QAction *const m_newAction;
+    QAction *const m_saveAction;
+    QAction *const m_saveAsAction;
+    QAction *const m_openAction;
+
+    QMenu *const m_editMenu;
+    QAction *const m_undoAction;
+    QAction *const m_redoAction;
+
+    QMenu *const m_toolsMenu;
+    QMenu *const m_viewMenu;
+
+    QMenu *const m_stereoMenu;
+    QAction *const m_stereoEnableToggle;
+    QAction *const m_stereoLuminanceModeToggle;
+    QAction *const m_stereoAutoTrackToggle;
+    QAction *const m_stereoAutoEyeSepToggle;
+    QDoubleSpinBox *const m_stereoEyeSepSpinbox;
+    QDoubleSpinBox *const m_stereoConvergenceSpinbox;
+    QDoubleSpinBox *const m_stereoSeparationRatioSpin;
 };
 
 #endif //CAD_CADMENUBAR_HPP

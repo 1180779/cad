@@ -11,14 +11,14 @@
 #include "Mat3.hpp"
 
 namespace cadm {
-    template <std::size_t R, std::size_t C, typename T>
+    template <typename T, std::size_t R, std::size_t C>
     struct Mat;
 
     template <>
-    struct Mat<4, 4, cadf> : MatBase<Mat, Mat<4, 4, cadf>, vec4, vec4, 4, 4, cadf> {
+    struct Mat<cadf, 4, 4> : MatBase<cadf, 4, 4, Vec4, Vec4, Mat, Mat<cadf, 4, 4>> {
         union {
             cadf data[16]{};
-            vec4 columns[4];
+            Vec4 columns[4];
         };
 
         constexpr Mat() {
@@ -45,13 +45,13 @@ namespace cadm {
             const cadf w2,
             const cadf w3
         ) {
-            columns[0] = vec4(x0, x1, x2, x3);
-            columns[1] = vec4(y0, y1, y2, y3);
-            columns[2] = vec4(z0, z1, z2, z3);
-            columns[3] = vec4(w0, w1, w2, w3);
+            columns[0] = Vec4(x0, x1, x2, x3);
+            columns[1] = Vec4(y0, y1, y2, y3);
+            columns[2] = Vec4(z0, z1, z2, z3);
+            columns[3] = Vec4(w0, w1, w2, w3);
         }
 
-        constexpr Mat(const vec4 &c0, const vec4 &c1, const vec4 &c2, const vec4 &c3) {
+        constexpr Mat(const Vec4 &c0, const Vec4 &c1, const Vec4 &c2, const Vec4 &c3) {
             columns[0] = c0;
             columns[1] = c1;
             columns[2] = c2;
@@ -60,10 +60,10 @@ namespace cadm {
 
         constexpr static Mat identity() {
             return Mat{
-                vec4::unitX(),
-                vec4::unitY(),
-                vec4::unitZ(),
-                vec4::unitW()
+                Vec4::unitX(),
+                Vec4::unitY(),
+                Vec4::unitZ(),
+                Vec4::unitW()
             };
         }
 
@@ -77,10 +77,10 @@ namespace cadm {
             const Vec3 yAxis = zAxis.cross(xAxis); // up
 
             return {
-                vec4(xAxis.x, yAxis.x, zAxis.x, 0.0),
-                vec4(xAxis.y, yAxis.y, zAxis.y, 0.0),
-                vec4(xAxis.z, yAxis.z, zAxis.z, 0.0),
-                vec4(-xAxis.dot(eye), -yAxis.dot(eye), -zAxis.dot(eye), 1.0),
+                Vec4(xAxis.x, yAxis.x, zAxis.x, 0.0),
+                Vec4(xAxis.y, yAxis.y, zAxis.y, 0.0),
+                Vec4(xAxis.z, yAxis.z, zAxis.z, 0.0),
+                Vec4(-xAxis.dot(eye), -yAxis.dot(eye), -zAxis.dot(eye), 1.0),
             };
         }
 
@@ -93,10 +93,10 @@ namespace cadm {
             const cadf far
         ) {
             return {
-                vec4(static_cast<cadf>(2.0 / (right - left)), 0.0, 0.0, 0.0),
-                vec4(0.0, static_cast<cadf>(2.0 / (top - bottom)), 0.0, 0.0),
-                vec4(0.0, 0.0, static_cast<cadf>(-2.0 / (far - near)), 0.0),
-                vec4(
+                Vec4(static_cast<cadf>(2.0 / (right - left)), 0.0, 0.0, 0.0),
+                Vec4(0.0, static_cast<cadf>(2.0 / (top - bottom)), 0.0, 0.0),
+                Vec4(0.0, 0.0, static_cast<cadf>(-2.0 / (far - near)), 0.0),
+                Vec4(
                     -(right + left) / (right - left),
                     -(top + bottom) / (top - bottom),
                     -(far + near) / (far - near),
@@ -110,14 +110,73 @@ namespace cadm {
 
         // TODO: check if constexpr is allowed here in MSVC
 
-        // projection minus one to one
-        static Mat projectionMo(const cadf aspect, const cadf fov, const cadf near, const cadf far) {
+        /// @brief Symmetric perspective frustum. NDC z in [-1, 1]
+        static Mat perspective(const cadf aspect, const cadf fov, const cadf near, const cadf far) {
             const cadf ctg = std::cos(fov / 2) / std::sin(fov / 2);
             return {
-                vec4(ctg / aspect, 0, 0, 0),
-                vec4(0, ctg, 0, 0),
-                vec4(0, 0, -(far + near) / (far - near), -1),
-                vec4(0, 0, -2 * far * near / (far - near), 0),
+                Vec4(ctg / aspect, 0, 0, 0),
+                Vec4(0, ctg, 0, 0),
+                Vec4(0, 0, -(far + near) / (far - near), -1),
+                Vec4(0, 0, -2 * far * near / (far - near), 0),
+            };
+        }
+
+        /// @brief Off-axis (asymmetric) perspective frustum. NDC z in [-1, 1]
+        static Mat frustum(
+            const cadf left,
+            const cadf right,
+            const cadf bottom,
+            const cadf top,
+            const cadf near,
+            const cadf far
+        ) {
+            return {
+                Vec4(2 * near / (right - left), 0, 0, 0),
+                Vec4(0, 2 * near / (top - bottom), 0, 0),
+                Vec4(
+                    (right + left) / (right - left),
+                    (top + bottom) / (top - bottom),
+                    -(far + near) / (far - near),
+                    -1
+                ),
+                Vec4(0, 0, -2 * far * near / (far - near), 0),
+            };
+        }
+
+        /// @brief Frustum edges recovered from a perspective matrix
+        struct Frustum {
+            cadf left, right, bottom, top, near, far;
+        };
+
+        /// @brief True if this is a perspective projection, not orthographic
+        [[nodiscard]] bool isPerspective() const {
+            return std::abs(col(2)[3] + static_cast<cadf>(1)) < gc_eps;
+        }
+
+        /// @brief Decomposes a frustum()/perspective() matrix back into its frustum edges
+        [[nodiscard]] Frustum toFrustum() const {
+            const auto a = col(0)[0]; // 2n/(r - l)
+            const auto b = col(1)[1]; // 2n/(t - b)
+            const auto c = col(2)[0]; // (r + l)/(r - l)
+            const auto d = col(2)[1]; // (t + b)/(t - b)
+            const auto e = col(2)[2]; // -(f + n)/(f - n)
+            const auto g = col(3)[2]; // -2fn/(f - n)
+            // e - 1 = -(f + n - f + n)/(f - n) = -2n/(f - n)
+            // e + 1 = -(f + n + f - n)/(f - n) = -2f/(f - n)
+            // c - 1 = (r + l - r + l)/(r - l) = 2l/(r - l)
+            // c + 1 = (r + l + r - l)/(r - l) = 2r/(r - l)
+            // d - 1 = (t + b - t + b)/(t - b) = 2b/(t - b)
+            // d + 1 = (t + b + t - b)/(t - b) = 2t/(t - b)
+
+            const cadf near = g / (e - 1);
+            const cadf far = g / (e + 1);
+            return {
+                .left = near * (c - 1) / a,
+                .right = near * (c + 1) / a,
+                .bottom = near * (d - 1) / b,
+                .top = near * (d + 1) / b,
+                .near = near,
+                .far = far,
             };
         }
 
@@ -144,10 +203,10 @@ namespace cadm {
 
         constexpr static Mat translation(const cadf tx, const cadf ty, const cadf tz) {
             return {
-                vec4::unitX(),
-                vec4::unitY(),
-                vec4::unitZ(),
-                vec4(tx, ty, tz, 1.0),
+                Vec4::unitX(),
+                Vec4::unitY(),
+                Vec4::unitZ(),
+                Vec4(tx, ty, tz, 1.0),
             };
         }
 
@@ -156,10 +215,10 @@ namespace cadm {
             const cadf s = std::sin(alpha);
 
             return {
-                vec4::unitX(),
-                vec4(0, c, s, 0),
-                vec4(0, -s, c, 0),
-                vec4::unitW()
+                Vec4::unitX(),
+                Vec4(0, c, s, 0),
+                Vec4(0, -s, c, 0),
+                Vec4::unitW()
             };
         }
 
@@ -168,10 +227,10 @@ namespace cadm {
             const cadf s = std::sin(alpha);
 
             return {
-                vec4(c, 0, -s, 0),
-                vec4::unitY(),
-                vec4(s, 0, c, 0),
-                vec4::unitW()
+                Vec4(c, 0, -s, 0),
+                Vec4::unitY(),
+                Vec4(s, 0, c, 0),
+                Vec4::unitW()
             };
         }
 
@@ -180,10 +239,10 @@ namespace cadm {
             const cadf s = std::sin(alpha);
 
             return {
-                vec4(c, s, 0, 0),
-                vec4(-s, c, 0, 0),
-                vec4::unitZ(),
-                vec4::unitW()
+                Vec4(c, s, 0, 0),
+                Vec4(-s, c, 0, 0),
+                Vec4::unitZ(),
+                Vec4::unitW()
             };
         }
 
@@ -195,34 +254,34 @@ namespace cadm {
             return rotZ(z) * rotY(y) * rotX(x);
         }
 
-        /// @brief Rodrigues rotation matrix around axis `u` by angle `phi` (radians)
+        /// @brief Rodrigues rotation matrix around axis @p u by angle @p phi (in radians)
         ///
-        /// @pre u must be a unit vector
+        /// @pre @p u must be a unit vector
         static Mat rotAxis(const cadf phi, const Vec3 &u) {
             assert(std::abs(u.lengthSquared() - cadf{1}) < gc_eps && "rotAxis: axis must be a unit vector");
             const auto sin = std::sin(phi);
             const auto cos = std::cos(phi);
             const auto oneMinusCos = 1 - cos;
             return {
-                vec4{
+                Vec4{
                     u.x * u.x * oneMinusCos + cos,
                     u.x * u.y * oneMinusCos + u.z * sin,
                     u.x * u.z * oneMinusCos - u.y * sin,
                     0
                 },
-                vec4{
+                Vec4{
                     u.x * u.y * oneMinusCos - u.z * sin,
                     u.y * u.y * oneMinusCos + cos,
                     u.y * u.z * oneMinusCos + u.x * sin,
                     0
                 },
-                vec4{
+                Vec4{
                     u.x * u.z * oneMinusCos + u.y * sin,
                     u.y * u.z * oneMinusCos - u.x * sin,
                     u.z * u.z * oneMinusCos + cos,
                     0
                 },
-                vec4{0, 0, 0, 1}
+                Vec4{0, 0, 0, 1}
             };
         }
 
@@ -234,18 +293,21 @@ namespace cadm {
             };
         }
 
+        /// @brief Analytic inverse of translation matrix
         constexpr void inverseTranslation() {
             (*this)(0, 3) = -(*this)(0, 3);
             (*this)(1, 3) = -(*this)(1, 3);
             (*this)(2, 3) = -(*this)(2, 3);
         }
 
+        /// @brief Analytic inverse of translation matrix
         [[nodiscard]] constexpr Mat inversedTranslation() const {
             auto copy = *this;
             copy.inverseTranslation();
             return copy;
         }
 
+        /// @brief Analytic inverse of scale matrix
         constexpr void inverseScale() {
             if ((*this)(0, 0) != 0.0) {
                 (*this)(0, 0) = static_cast<cadf>(1.0 / (*this)(0, 0));
@@ -258,24 +320,29 @@ namespace cadm {
             }
         }
 
+        /// @brief Analytic inverse of scale matrix
         [[nodiscard]] constexpr Mat inversedScale() const {
             auto copy = *this;
             copy.inverseScale();
             return copy;
         }
 
+        /// @brief Analytic inverse of rotation matrix
         constexpr void inverseRotation() {
             transpose();
         }
 
+        /// @brief Analytic inverse of rotation matrix
         [[nodiscard]] constexpr Mat inversedRotation() const {
             return transposed();
         }
 
+        /// @brief Analytic inverse of view matrix
         void inverseView() {
             *this = inversedView();
         }
 
+        /// @brief Analytic inverse of view matrix
         [[nodiscard]] constexpr Mat inversedView() const {
             const auto col0 = col(0).xyz();
             const auto col1 = col(1).xyz();
@@ -294,11 +361,13 @@ namespace cadm {
             };
         }
 
-        void inverseProjectionMO() {
-            *this = inversedProjectionMo();
+        /// @brief Analytic inverse of a symmetric perspective matrix
+        void inversePerspective() {
+            *this = inversedPerspective();
         }
 
-        [[nodiscard]] Mat inversedProjectionMo() const {
+        /// @brief Analytic inverse of a symmetric perspective matrix
+        [[nodiscard]] Mat inversedPerspective() const {
             const auto a = col(0)[0];
             const auto b = col(1)[1];
             const auto c = col(2)[2];
@@ -312,10 +381,34 @@ namespace cadm {
             };
         }
 
+        /// @brief Analytic inverse of an asymmetric perspective matrix
+        void inverseFrustum() {
+            *this = inversedFrustum();
+        }
+
+        /// @brief Analytic inverse of an asymmetric perspective matrix
+        [[nodiscard]] Mat inversedFrustum() const {
+            const auto a = col(0)[0]; // 2n/(r-l)
+            const auto b = col(1)[1]; // 2n/(t-b)
+            const auto c = col(2)[0]; // (r+l)/(r-l)
+            const auto d = col(2)[1]; // (t+b)/(t-b)
+            const auto e = col(2)[2]; // -(f+n)/(f-n)
+            const auto f = col(3)[2]; // -2fn/(f-n)
+
+            return {
+                {static_cast<cadf>(1.0 / a), 0, 0, 0},
+                {0, static_cast<cadf>(1.0 / b), 0, 0},
+                {0, 0, 0, static_cast<cadf>(1.0 / f)},
+                {c / a, d / b, -1, e / f},
+            };
+        }
+
+        /// @brief Analytic inverse of orthogonal projection matrix
         void inverseOrtho() {
             *this = inversedOrtho();
         }
 
+        /// @brief Analytic inverse of orthogonal projection matrix
         [[nodiscard]] constexpr Mat inversedOrtho() const {
             const auto a = col(0)[0];
             const auto b = col(1)[1];
@@ -337,7 +430,7 @@ namespace cadm {
         }
     };
 
-    using Mat4 = Mat<4, 4, cadf>;
+    using Mat4 = Mat<cadf, 4, 4>;
 }
 
 #endif //CAD_MAT4_H

@@ -4,15 +4,15 @@
 
 #include "CadTitleBar.hpp"
 
-#include <QHBoxLayout>
 #include <QMenuBar>
-#include <QMouseEvent>
-#include <QStyle>
 #include <QToolButton>
 #include <QWindow>
 
+#include "WidgetBuilders.hxx"
+
 namespace {
     constexpr int gc_titleBarHeight = 30;
+    constexpr int gc_dialogTitleBarMargins = 10;
 
     QToolButton* makeWindowButton(QWidget *parent, const QStyle::StandardPixmap icon, const bool isClose = false) {
         auto *btn = new QToolButton(parent);
@@ -136,8 +136,9 @@ CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent) : QWidget(parent) {
     menuBar->setCursor(Qt::ArrowCursor);
     layout->addWidget(menuBar);
 
-    // a filler widget that carries its own arrow cursor,
-    // so the empty drag region between the menu and the buttons doesn't inherit the window's resize cursor
+    // a filler widget that carries its own arrow cursor, so the empty drag
+    // region between the menu and the buttons doesn't inherit the window's
+    // resize cursor
     // ReSharper disable once CppDFAMemoryLeak
     auto *filler = new QWidget(this);
     filler->setCursor(Qt::ArrowCursor);
@@ -179,8 +180,8 @@ CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent) : QWidget(parent) {
 
 void CadTitleBar::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
-        // take over the press only if the platform actually began the window move;
-        // otherwise fall through to the base handler
+        // take over the press only if the platform actually began the window
+        // move; otherwise fall through to the base handler
         if (QWindow *handle = window()->windowHandle();
             handle && handle->startSystemMove()) {
             return;
@@ -226,4 +227,28 @@ void CadTitleBar::updateMaximizeButton() const {
 void enableFramelessResize(QWidget *window, const int margin) {
     window->setMouseTracking(true);
     window->installEventFilter(new FramelessResizeFilter(window, margin));
+}
+
+DialogTitleBar::DialogTitleBar(const QString &title, QWidget *parent) : QWidget(parent) {
+    setFixedHeight(gc_titleBarHeight);
+    setAutoFillBackground(true);
+
+    // ReSharper disable once CppDFAMemoryLeak
+    auto *layout = new QHBoxLayout(this);
+    layout->setContentsMargins(gc_dialogTitleBarMargins, 0, gc_dialogTitleBarMargins, 0);
+
+    widgets::addTitle(layout, title);
+    layout->addStretch(1);
+}
+
+void DialogTitleBar::mousePressEvent(QMouseEvent *event) {
+    if (event->button() == Qt::LeftButton) {
+        // take over the press only if the platform actually began the window
+        // move; otherwise fall through to the base handler
+        if (QWindow *handle = window()->windowHandle();
+            handle && handle->startSystemMove()) {
+            return;
+        }
+    }
+    QWidget::mousePressEvent(event);
 }

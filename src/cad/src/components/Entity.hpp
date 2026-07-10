@@ -26,6 +26,14 @@ class SelectionKey final {
     friend class Scene;
 };
 
+/// @brief Opaque token that only Scene can construct, used to restrict
+/// Entity::setId to Scene::adoptEntity callers
+class EntityIdKey final {
+    EntityIdKey() = default;
+
+    friend class Scene;
+};
+
 class Component {
 public:
     virtual ~Component() = default;
@@ -35,7 +43,9 @@ public:
 
 class Entity {
 public:
-    explicit Entity(const EntityId id, std::string name = "Entity") : m_id(id), m_name(std::move(name)) {}
+    explicit Entity(const EntityId id, std::string name = "Entity")
+    : m_id(id),
+      m_name(std::move(name)) {}
 
     ~Entity() = default;
 
@@ -65,6 +75,17 @@ public:
 
     void setSelected(const bool selected, SelectionKey) {
         m_selected = selected;
+    }
+
+    std::size_t componentCount() const {
+        return m_components.size();
+    }
+
+    /// @brief Reassigns the entity's id
+    /// @note Used to give a released/re-adopted entity a fresh, non-colliding
+    /// id; @see Scene::adoptEntity
+    void setId(const EntityId id, EntityIdKey) {
+        m_id = id;
     }
 
     template <typename T, typename... Args>

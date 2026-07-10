@@ -8,11 +8,15 @@
 #include "ShaderProgram.hpp"
 #include "Quad.hpp"
 #include "components/GeometryComponent.hpp"
+#include <functional>
 #include <memory>
 #include <cad_math/Vec3.hpp>
 #include <cad_math/Mat4.hpp>
 
 class Scene;
+class GregoryComponent;
+class PatchComponent;
+class PointRegistry;
 
 class RenderSystem {
 public:
@@ -20,9 +24,27 @@ public:
 
     static void regenerateGeometry(const Scene &scene);
 
-    void render(Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+    /// @param sceneVisible when false only the grid/axes backdrop is drawn,
+    /// hiding all scene entities (used while a creation preview is isolated)
+    void render(
+        Scene &scene,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection,
+        const cadm::Mat4 &invVp,
+        bool sceneVisible = true
+    ) const;
 
-    void renderSelectionRect(
+    /// @brief Render for both eyes (stereoscopy)
+    void renderStereo(
+        Scene &scene,
+        std::span<cadm::Mat4, 2> views,
+        std::span<cadm::Mat4, 2> projs,
+        bool luminance,
+        bool sceneVisible = true,
+        const std::function<void(const cadm::Mat4 & view, const cadm::Mat4 & projection)> &perEye = {}
+    );
+
+    void renderBoxSelectionRect(
         cadm::cadf x0Ndc,
         cadm::cadf y0Ndc,
         cadm::cadf x1Ndc,
@@ -30,21 +52,25 @@ public:
     ) const;
 
     void renderPivotMarker(
-        const cadm::Vec3 &pos,
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection
+        const cadm::Vec3 &pos
     ) const;
 
     void renderTransformAxis(
         const cadm::Vec3 &pivot,
         const cadm::Mat4 &axisModel,
-        int axesMask,
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &invVp
+        int axesMask
     ) const;
 
     void shutdown();
+
+    /// @brief Render a single standalone patch with its control points
+    /// @note (used for the creation live preview)
+    void renderPreviewPatch(
+        const PatchComponent &patch,
+        const PointRegistry &registry,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
 
     // bitmask: bit 0 = XY (z=0), bit 1 = XZ (y=0), bit 2 = YZ (x=0)
     void setGridPlanes(const int planes) {
@@ -55,43 +81,55 @@ public:
         return m_gridPlanes;
     }
 
+    // bitmask: bit 0 = X, bit 1 = Y, bit 2 = Z
+    void setInfiniteAxesMask(const int mask) {
+        m_infiniteAxesMask = mask;
+    }
+
+    [[nodiscard]] int getInfiniteAxesMask() const {
+        return m_infiniteAxesMask;
+    }
+
+    /// @brief Toggle the distance LOD fade applied to both grid and axes
+    void setGridLodFade(const bool enabled) {
+        m_gridLodFade = enabled;
+    }
+
     void setViewport(const int w, const int h) {
         m_viewportW = w;
         m_viewportH = h;
     }
 
 private:
-    void renderInfiniteGrid(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+    void renderInfiniteGrid(const cadm::Mat4 &view) const;
 
     void renderInfiniteAxes(
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &invVp
     ) const;
 
-    void renderLineGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+    void renderLineGeometry(const Scene &scene) const;
 
-    void renderTriangleGeometry(const Scene &scene, QOpenGLFunctions_4_5_Core *gl) const;
+    /// @brief Redraw the active cursor with its baked RGB axis colors
+    /// @note It is necessary to redraw the cursor after the rendering passes
+    /// since theme color overrides the color in the vertices by default
+    void renderActiveCursorColors(const Scene &scene) const;
+
+    void renderTriangleGeometry(const Scene &scene) const;
 
     void renderControlPoints(
         Scene &scene,
-        const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
         QOpenGLFunctions_4_5_Core *gl
     ) const;
 
     void renderC0BezierCurves(
         Scene &scene,
         const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &vp
+        const cadm::Mat4 &projection
     ) const;
 
     void renderC2BezierCurves(
         const Scene &scene,
         const cadm::Mat4 &view,
-        const cadm::Mat4 &projection,
-        const cadm::Mat4 &vp
+        const cadm::Mat4 &projection
     ) const;
 
     void renderBezierCurves(
@@ -100,7 +138,44 @@ private:
         const cadm::Mat4 &projection
     ) const;
 
-    AxesGeometry m_pivotAxes;
+    /// @brief Render joined Bézier patches: tessellated surface grid + optional
+    /// control net
+    void renderPatches(const Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection) const;
+
+    /// @brief Draw one patch's tessellated surface
+    /// @pre Assumes the surface shader is bound and glPatchParameteri(16) is
+    /// set
+    void drawPatchSurface(
+        const PatchComponent *patch,
+        cadm::cadf entityHl,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
+
+    /// @brief Draw one patch's control net 
+    /// @pre Assumes the wireframe shader is bound with identity model
+    void drawPatchNet(const PatchComponent *patch, cadm::cadf hl) const;
+
+    /// @brief Render Gregory hole fills: tessellated constant-parameter mesh
+    void renderGregory(const Scene &scene, const cadm::Mat4 &view, const cadm::Mat4 &projection) const;
+
+    /// @brief Draw one Gregory component's tessellated nets
+    /// @pre Assumes the Gregory surface shader is bound and
+    /// glPatchParameteri(20) is set
+    void drawGregorySurface(
+        const GregoryComponent *gregory,
+        cadm::cadf entityHl,
+        const cadm::Mat4 &view,
+        const cadm::Mat4 &projection
+    ) const;
+
+    /// @brief Upload shared view/projection/VP/invVP into the Camera UBO
+    void uploadCameraUbo(const cadm::Mat4 &view, const cadm::Mat4 &projection, const cadm::Mat4 &invVp) const;
+
+    /// @brief Upload the active theme's geometry colors into the Palette UBO
+    void uploadPaletteUbo() const;
+
+    AxesComponent m_pivotAxes;
 
     std::unique_ptr<ShaderProgram> m_basicShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_wireframeShader = std::make_unique<ShaderProgram>();
@@ -109,23 +184,46 @@ private:
     std::unique_ptr<ShaderProgram> m_selectionRectShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_pointShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
+    std::unique_ptr<ShaderProgram> m_bezierSurfaceShader = std::make_unique<ShaderProgram>();
+    std::unique_ptr<ShaderProgram> m_gregorySurfaceShader = std::make_unique<ShaderProgram>();
+    std::unique_ptr<ShaderProgram> m_stereoCompositeShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<Quad> m_screenQuad;
 
-    /// @note Should be set from the widget at program start
-    /// (or widget set based on this value)
+    /// @brief UBO with view/projection/VP/invVP
+    /// @note binding 0
+    uint32_t m_cameraUbo{};
+
+    /// @brief UBO with theme geometry colors
+    /// @note binding 1
+    uint32_t m_paletteUbo{};
+
+    /// @brief Lazily (re)create the per-eye offscreen color+depth targets when the viewport size changes
+    void ensureStereoTargets();
+
+    // per-eye offscreen targets (index 0 = left, 1 = right)
+
+    uint32_t m_stereoFbo[2]{};
+    uint32_t m_stereoColor[2]{};
+    uint32_t m_stereoDepth[2]{};
+    int m_stereoW{0};
+    int m_stereoH{0};
+
     int m_gridPlanes{0};
+    int m_infiniteAxesMask{0};
+    bool m_gridLodFade{true};
     int m_viewportW{1};
     int m_viewportH{1};
 
     // 2D selection rectangle
     uint32_t m_selectionRectVAO = 0;
     uint32_t m_selectionRectVBO = 0;
-    static constexpr cadm::vec4 s_selectionRectColor{0.39, 0.63, 1.0, 0.16};
-    static constexpr cadm::vec4 s_selectionRectOutlineColor{1.0, 1.0, 1.0, 0.86};
+    static constexpr cadm::Vec4 s_selectionRectColor{0.39, 0.63, 1.0, 0.16};
+    static constexpr cadm::Vec4 s_selectionRectOutlineColor{1.0, 1.0, 1.0, 0.86};
 
 public:
-    static constexpr cadm::cadf s_selectionHS{0.7f}; // highlight strength
+    static constexpr cadm::cadf s_selectionHS{0.4f}; // highlight strength
     static constexpr cadm::cadf s_noSelectionHS{0.0f};
+    static constexpr cadm::cadf s_singlePatchSelectionHS{1.0f};
 };
 
 #endif //CAD_RENDERSYSTEM_H

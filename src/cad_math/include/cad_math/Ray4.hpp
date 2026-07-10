@@ -10,10 +10,12 @@
 
 namespace cadm {
     struct Ray4 {
-        vec4 origin;
-        vec4 direction;
+        Vec4 origin;
+        Vec4 direction;
 
-        constexpr Ray4(const vec4 &point, const vec4 &direction) : origin(point), direction(direction) {}
+        constexpr Ray4(const Vec4 &point, const Vec4 &direction)
+        : origin(point),
+          direction(direction) {}
 
         friend constexpr bool operator==(const Ray4 &a, const Ray4 &b) {
             return a.direction == b.direction && a.origin == b.origin;

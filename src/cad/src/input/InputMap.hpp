@@ -30,15 +30,23 @@ enum class InputAction {
     // viewport
 
     deleteSelected,
+    collapseSelectedPoints,
     toggleCoordSpace,
     switchCamera,
     createMenu,
+
+    newFile,
+    save,
+    saveAs,
+    open,
 
     undo,
     redo,
 
     setObjectSelectMode,
     setBoxSelectMode,
+    selectActiveCursor,
+    resetRotation,
 
     // camera
 
@@ -54,6 +62,7 @@ enum class InputAction {
     // viewport actions
 
     select,
+    selectAdditive,
     cursorPlace,
     rightClick,
 
@@ -139,9 +148,15 @@ inline InputMap::InputMap() {
     bind(InputAction::confirmTransform, {Qt::Key_Return, Qt::NoModifier});
     bind(InputAction::cancelTransform, {Qt::Key_Escape, Qt::NoModifier});
     bind(InputAction::deleteSelected, {Qt::Key_Delete, Qt::NoModifier});
+    bind(InputAction::collapseSelectedPoints, {Qt::Key_M, Qt::NoModifier});
     bind(InputAction::toggleCoordSpace, {Qt::Key_QuoteLeft, Qt::NoModifier});
     bind(InputAction::switchCamera, {Qt::Key_N, Qt::NoModifier});
     bind(InputAction::createMenu, {Qt::Key_C, Qt::NoModifier});
+
+    bind(InputAction::newFile, {Qt::Key_N, Qt::ControlModifier});
+    bind(InputAction::save, {Qt::Key_S, Qt::ControlModifier});
+    bind(InputAction::saveAs, {Qt::Key_S, Qt::ControlModifier | Qt::ShiftModifier});
+    bind(InputAction::open, {Qt::Key_O, Qt::ControlModifier});
 
     bind(InputAction::undo, {Qt::Key_Z, Qt::ControlModifier, true});
     bind(InputAction::redo, {Qt::Key_Y, Qt::ControlModifier, true});
@@ -149,6 +164,8 @@ inline InputMap::InputMap() {
 
     bind(InputAction::setObjectSelectMode, {Qt::Key_O, Qt::NoModifier});
     bind(InputAction::setBoxSelectMode, {Qt::Key_B, Qt::NoModifier});
+    bind(InputAction::selectActiveCursor, {Qt::Key_C, Qt::ShiftModifier});
+    bind(InputAction::resetRotation, {Qt::Key_R, Qt::AltModifier});
 
     bind(InputAction::cameraToggleProjection, {Qt::Key_5, Qt::NoModifier});
     bind(InputAction::cameraMoveUp, {Qt::Key_Up, Qt::NoModifier, true});
@@ -161,6 +178,7 @@ inline InputMap::InputMap() {
     bind(InputAction::cameraZoomDrag, {Qt::MiddleButton, Qt::ControlModifier});
     bind(InputAction::toggleClickToAdd, {Qt::Key_P, Qt::NoModifier});
     bind(InputAction::select, {Qt::LeftButton, Qt::NoModifier});
+    bind(InputAction::selectAdditive, {Qt::LeftButton, Qt::ControlModifier});
     bind(InputAction::cursorPlace, {Qt::LeftButton, Qt::ShiftModifier});
     bind(InputAction::rightClick, {Qt::RightButton, Qt::NoModifier});
 }

@@ -57,8 +57,42 @@ struct BezierC2Data {
     bool showBernsteinCps{true};
 };
 
+struct InterpC2Data {
+    std::vector<PointHandle> controlPoints;
+    bool showPolyline{true};
+    bool showBernsteinPolygon{false};
+    bool showBernsteinCps{true};
+};
+
+struct PatchGridData {
+    std::vector<PointHandle> controlPoints;
+    int rows{};
+    int cols{};
+    bool wrapU{};
+    int patchCountX{};
+    int patchCountY{};
+    int gridDivisionsU{4};
+    int gridDivisionsV{4};
+    bool showNet{false};
+};
+
+struct PatchC0Data : PatchGridData {};
+
+struct PatchC2Data : PatchGridData {};
+
+struct GregoryData {
+    /// @brief Flat hole handles, <tt>GregoryComponent::s_handlesPerEdge</tt>
+    /// per edge
+    std::vector<PointHandle> controlPoints;
+    /// @brief Per-net subdivisions
+    std::vector<int> gridDivisionsU;
+    std::vector<int> gridDivisionsV;
+    bool showVectors{false};
+};
+
 using ComponentSpec =
-std::variant<TransformData, PointData, TorusData, AxesData, CursorData, BezierC0Data, BezierC2Data>;
+std::variant<TransformData, PointData, TorusData, AxesData, CursorData, BezierC0Data, BezierC2Data,
+             InterpC2Data, PatchC0Data, PatchC2Data, GregoryData>;
 
 /// @brief 
 /// Plain-data description of an entity: 
@@ -70,13 +104,18 @@ struct EntitySpec {
     bool visible{true};
     std::vector<ComponentSpec> components;
 
-    [[nodiscard]] bool isPoint() const {
+    template <typename T>
+    [[nodiscard]] bool has() const {
         return std::ranges::any_of(
             components,
             [](const ComponentSpec &c) {
-                return std::holds_alternative<PointData>(c);
+                return std::holds_alternative<T>(c);
             }
         );
+    }
+
+    [[nodiscard]] bool isPoint() const {
+        return has<PointData>();
     }
 };
 

@@ -5,8 +5,8 @@
 #include "CadCameraStrategy.hpp"
 
 #include "../CheckMacros.hpp"
-#include "../components/CadCameraComponent.hpp"
-#include "../components/BlenderCameraComponent.hpp"
+#include "../components/camera/CadCameraComponent.hpp"
+#include "../components/camera/BlenderCameraComponent.hpp"
 #include "../components/TransformComponent.hpp"
 
 CadCameraStrategy::CadCameraStrategy(
@@ -62,6 +62,16 @@ void CadCameraStrategy::setLookTarget(const cadm::Vec3 target) {
     if (const auto transform = m_cameraEntity->getComponent<TransformComponent>()) {
         transform.value()->setTranslation(newPosition);
     }
+}
+
+cadm::cadf CadCameraStrategy::distanceToTarget() {
+    const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
+    if (!camera) {
+        EXPECTED_COMPONENT_MISSING();
+        return 1.0;
+    }
+    const auto pCamera = camera.value();
+    return (pCamera->getPosition() - pCamera->getTarget()).length();
 }
 
 void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent *const pCamera) const {

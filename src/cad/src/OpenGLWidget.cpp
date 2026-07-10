@@ -4,8 +4,11 @@
 
 #include "OpenGLWidget.hpp"
 
+#include <algorithm>
+#include <numeric>
+#include <tuple>
+
 #include <QAbstractSpinBox>
-#include <QApplication>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QMenu>
@@ -25,13 +28,17 @@
 #undef QT_EMIT_DEFINED
 #endif
 
-#include "GeometryFactory.hpp"
+#include "factory/GeometryFactory.hpp"
 #include "GlCommon.hpp"
+#include "PatchGeometry.hxx"
+#include "gui/Theme.hpp"
 #include "PointRegistry.hpp"
 #include "commands/Commands.hpp"
 #include "ViewportTypes.hpp"
 #include "cad_math/Helpers.hpp"
-#include "components/BezierC0Component.hpp"
+#include "components/geometry/BezierC0Component.hpp"
+#include "components/geometry/PatchC0Component.hxx"
+#include "components/geometry/PatchC2Component.hxx"
 #include "components/PointComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "cursor/GridPlanePlacementStrategy.hpp"
@@ -58,50 +65,7 @@ OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent),
 
 OpenGlWidget::~OpenGlWidget() = default;
 
-void OpenGlWidget::paintGL() {
-    const auto gl = getGl();
-    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    const auto view = m_cameraController.getActiveStrategy()->getView();
-    const auto projection = m_cameraController.getActiveStrategy()->getProjection();
-    const auto invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
-    m_renderSystem.render(m_scene, view, projection, invVp);
-
-    if (const auto pivot = computePivot()) {
-        m_renderSystem.renderPivotMarker(pivot.value(), view, projection);
-    }
-
-    if (m_transformMode != TransformMode::none) {
-        int axesMask = 0;
-        switch (m_axisConstraint) {
-        case AxisConstraint::x:
-            axesMask |= 1;
-            break;
-        case AxisConstraint::y:
-            axesMask |= 2;
-            break;
-        case AxisConstraint::z:
-            axesMask |= 4;
-            break;
-        default:
-            break;
-        }
-
-        if (axesMask != 0) {
-            cadm::Mat4 axisModel = cadm::Mat4::identity();
-            if (m_coordSpace == CoordSpace::local && !m_transformSnapshots.empty()) {
-                const auto &r = m_transformSnapshots[0].origRotMat;
-                axisModel = cadm::Mat4{
-                    cadm::vec4(r.columns[0], 0),
-                    cadm::vec4(r.columns[1], 0),
-                    cadm::vec4(r.columns[2], 0),
-                    cadm::vec4::unitW()
-                };
-            }
-            m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask, view, projection, invVp);
-        }
-    }
-
+void OpenGlWidget::renderBoxSelectionRectangle() const {
     if (m_activeDrag == DragMode::boxSelect) {
         const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
         const auto w = static_cast<cadm::cadf>(width());
@@ -110,8 +74,103 @@ void OpenGlWidget::paintGL() {
         const auto x1 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.right()) / w - 1.0);
         const auto y0 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.bottom()) / h);
         const auto y1 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.top()) / h);
-        m_renderSystem.renderSelectionRect(x0, y0, x1, y1);
+        m_renderSystem.renderBoxSelectionRect(x0, y0, x1, y1);
     }
+}
+
+void OpenGlWidget::calculateStereoProjections(
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    std::span<cadm::Mat4, 2> views,
+    std::span<cadm::Mat4, 2> projs
+) const {
+    const auto [left, right, bottom, top, near, far] = projection.toFrustum();
+    const cadm::cadf halfH = static_cast<cadm::cadf>(0.5) * (top - bottom);
+    const cadm::cadf halfW = static_cast<cadm::cadf>(0.5) * (right - left);
+    // frustum skew in near-plane units: a half-separation offset at the convergence
+    // plane rescales to the near plane by similar triangles (near / convergence)
+    const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (near / m_stereoConvergence);
+    const cadm::cadf halfSep = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation;
+
+    projs[0] = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, near, far);
+    projs[1] = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, near, far);
+    views[0] = cadm::Mat4::translation(halfSep, 0, 0) * view;
+    views[1] = cadm::Mat4::translation(-halfSep, 0, 0) * view;
+}
+
+void OpenGlWidget::renderTransformAxis() const {
+    if (const int axesMask = axisConstraint::fromEnum(m_axisConstraint);
+        axesMask != 0) {
+        cadm::Mat4 axisModel = cadm::Mat4::identity();
+        if (m_coordSpace == CoordSpace::local && !m_transformSnapshots.empty()) {
+            const auto &r = m_transformSnapshots[0].origRotMat;
+            axisModel = cadm::Mat4{
+                cadm::Vec4(r.columns[0], 0),
+                cadm::Vec4(r.columns[1], 0),
+                cadm::Vec4(r.columns[2], 0),
+                cadm::Vec4::unitW()
+            };
+        }
+        m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask);
+    }
+}
+
+void OpenGlWidget::clearBuffers(QOpenGLFunctions_4_5_Core *const gl) {
+    const auto &vpColor = theme::active().viewport;
+    gl->glClearColor(vpColor.redF(), vpColor.greenF(), vpColor.blueF(), 1.0f);
+    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void OpenGlWidget::paintGL() {
+    const auto gl = getGl();
+    clearBuffers(gl);
+
+    const auto view = m_cameraController.getActiveStrategy()->getView();
+    const auto projection = m_cameraController.getActiveStrategy()->getProjection();
+    const auto invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
+
+    if (m_previewPatch) {
+        if (const auto [pos, rot] = activeCursorPlacement();
+            m_previewParams && (m_previewParams->origin != pos || m_previewParams->orientation != rot)) {
+            setPatchPreview(*m_previewParams);
+        }
+        m_previewRegistry->syncToGpu();
+        m_previewPatch->updateIfNecessary();
+    }
+    const bool sceneVisible = !(m_previewPatch && m_previewHideScene);
+    const auto drawSceneOverlays = [this](const cadm::Mat4 &passView, const cadm::Mat4 &passProjection) {
+        if (m_previewPatch) {
+            m_renderSystem.renderPreviewPatch(*m_previewPatch, *m_previewRegistry, passView, passProjection);
+        }
+
+        if (const auto pivot = computePivot()) {
+            m_renderSystem.renderPivotMarker(pivot.value());
+        }
+
+        if (m_transformMode != TransformMode::none) {
+            renderTransformAxis();
+        }
+    };
+
+    if (m_stereoEnabled && projection.isPerspective()) {
+        if (m_stereoAuto) {
+            const auto convergence = m_cameraController.getActiveStrategy()->distanceToTarget();
+            setStereoConvergence(convergence);
+            if (m_stereoAutoEyeSep) {
+                setStereoEyeSeparation(convergence * m_stereoSeparationRatio);
+            }
+        }
+
+        cadm::Mat4 views[2], projs[2];
+        calculateStereoProjections(view, projection, views, projs);
+        m_renderSystem.renderStereo(m_scene, views, projs, m_stereoLuminance, sceneVisible, drawSceneOverlays);
+        renderBoxSelectionRectangle();
+        return;
+    }
+
+    m_renderSystem.render(m_scene, view, projection, invVp, sceneVisible);
+    drawSceneOverlays(view, projection);
+    renderBoxSelectionRectangle();
 }
 
 void OpenGlWidget::resizeGL(const int width, const int height) {
@@ -153,6 +212,7 @@ void OpenGlWidget::mousePressEvent(QMouseEvent *event) {
         m_activeDrag = DragMode::cameraZoomDrag;
         return;
     case InputAction::select:
+    case InputAction::selectAdditive:
         if (m_transformMode != TransformMode::none) {
             return;
         }
@@ -307,7 +367,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
             dist2 <= s_clickRadiusPx * s_clickRadiusPx) {
             // treat as a selection click on the point
             const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-                InputAction::cursorPlace;
+                InputAction::selectAdditive;
             selectPoint(m_draggedPoint, additive);
         }
         else {
@@ -337,7 +397,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
         }
 
         const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-            InputAction::cursorPlace;
+            InputAction::selectAdditive;
 
         if (const PointHandle hit = pickPoint(event->pos());
             hit != InvalidPointHandle) {
@@ -481,6 +541,9 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
     case InputAction::deleteSelected:
         deleteSelectedEntities();
         break;
+    case InputAction::collapseSelectedPoints:
+        collapseSelectedPoints();
+        break;
     // undo/redo are handled by the Edit-menu actions, which own these shortcuts;
     // the menu shortcut consumes the key before it reaches here
     case InputAction::undo:
@@ -489,8 +552,41 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
     case InputAction::setBoxSelectMode:
         m_boxSelectMode = true;
         break;
+    case InputAction::selectActiveCursor:
+        if (Entity *cursor = m_scene.getActiveCursor()) {
+            m_scene.clearSelection();
+            m_scene.setSelected(cursor, true);
+            m_scene.syncPointSelectionToRegistry();
+            emit viewportSelectionChanged();
+            update();
+        }
+        break;
+    case InputAction::resetRotation: {
+        std::vector<EntitySnapshot> before;
+        for (Entity *e : m_scene.getSelectedEntities()) {
+            if (const auto tc = e->getComponent<TransformComponent>();
+                !tc || tc.value()->getRotation() == cadm::Vec3{}) {
+                continue;
+            }
+            EntitySnapshot snap;
+            snap.fillFromEntity(m_scene.getPointRegistry(), e);
+            before.push_back(snap);
+        }
+        if (!before.empty()) {
+            auto after = before;
+            for (auto &snap : after) {
+                snap.origRotMat = cadm::Mat3::identity();
+            }
+            m_commandStack.push(
+                std::make_unique<TransformCommand>(m_scene, std::move(before), std::move(after))
+            );
+        }
+        break;
+    }
     case InputAction::createMenu: {
-        if (m_createMenuOpen) {
+        // a live patch preview means the creator dialog is open and the rest of
+        // the UI is modal-blocked; spawning entities from under it would bypass that
+        if (m_createMenuOpen || m_previewPatch) {
             break;
         }
         QMenu menu(this);
@@ -523,6 +619,32 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
             "New Bezier C2",
             [this] {
                 emit createBezierC2Requested();
+            }
+        );
+        menu.addAction(
+            "New Interpolating C2",
+            [this] {
+                emit createInterpC2Requested();
+            }
+        );
+        menu.addSeparator();
+        menu.addAction(
+            "New Bezier Patch C0",
+            [this] {
+                emit createPatchC0Requested();
+            }
+        );
+        menu.addAction(
+            "New Bezier Patch C2",
+            [this] {
+                emit createPatchC2Requested();
+            }
+        );
+        menu.addSeparator();
+        menu.addAction(
+            "Fill Holes (Gregory)",
+            [this] {
+                emit createGregoryRequested();
             }
         );
         m_createMenuOpen = true;
@@ -582,6 +704,26 @@ void OpenGlWidget::keyReleaseEvent(QKeyEvent *event) {
     }
 }
 
+void OpenGlWidget::collapseSelectedPoints() {
+    std::vector<EntityId> pts;
+    for (const Entity *e : m_scene.getSelectedEntities()) {
+        if (e->hasComponent<PointComponent>()) {
+            pts.push_back(e->getId());
+        }
+    }
+    if (pts.size() != 2) {
+        return;
+    }
+    m_commandStack.push(
+        std::make_unique<CollapsePointsCommand>(
+            m_scene,
+            std::min(pts[0], pts[1]),
+            std::max(pts[0], pts[1])
+        )
+    );
+    update();
+}
+
 void OpenGlWidget::deleteSelectedEntities() {
     const Entity *activeCursor = m_scene.getActiveCursor();
     std::vector<EntityId> toDelete;
@@ -601,6 +743,86 @@ void OpenGlWidget::deleteSelectedEntities() {
         emit viewportSelectionChanged();
         update();
     }
+}
+
+std::pair<cadm::Vec3, cadm::Vec3> OpenGlWidget::activeCursorPlacement() const {
+    if (Entity *cursor = m_scene.getActiveCursor()) {
+        if (const auto tc = cursor->getComponent<TransformComponent>()) {
+            return {tc.value()->getTranslation(), tc.value()->getRotation()};
+        }
+    }
+    return {};
+}
+
+void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
+    patchgen::PatchCreateParams placed = params;
+    std::tie(placed.origin, placed.orientation) = activeCursorPlacement();
+    const bool sameType = m_previewParams && m_previewParams->type == placed.type;
+    m_previewParams = placed;
+    const auto [rows, cols, wrapU, patchCountX, patchCountY, positions] = patchgen::generate(placed);
+    if (m_previewPatch
+        && sameType
+        && m_previewPatch->getRows() == rows
+        && m_previewPatch->getCols() == cols
+        && m_previewPatch->getWrapU() == wrapU
+        && m_previewPatch->getPatchCountX() == patchCountX
+        && m_previewPatch->getPatchCountY() == patchCountY) {
+        m_previewRegistry->setPositions(m_previewPatch->getControlPoints().front(), positions);
+        m_previewPatch->markForUpdate();
+        update();
+        return;
+    }
+
+    makeCurrent();
+
+    if (!m_previewRegistry) {
+        m_previewRegistry = std::make_unique<PointRegistry>();
+        m_previewRegistry->initialize();
+    }
+    else {
+        m_previewRegistry->clear();
+    }
+    const PointHandle first = m_previewRegistry->addPoints(positions);
+    std::vector<PointHandle> handles(positions.size());
+    std::ranges::iota(handles, first);
+    if (!m_previewPatch || !sameType) {
+        if (placed.type == patchgen::PatchCreateParams::Type::c2) {
+            m_previewPatch = std::make_unique<PatchC2Component>(m_previewRegistry.get());
+        }
+        else {
+            m_previewPatch = std::make_unique<PatchC0Component>(m_previewRegistry.get());
+        }
+        m_previewPatch->setShowNet(m_previewShowNet);
+    }
+    m_previewPatch->setGrid(std::move(handles), rows, cols, wrapU, patchCountX, patchCountY);
+
+    doneCurrent();
+    update();
+}
+
+void OpenGlWidget::setPatchPreviewHideScene(const bool v) {
+    m_previewHideScene = v;
+    update();
+}
+
+void OpenGlWidget::setPatchPreviewShowNet(const bool v) {
+    m_previewShowNet = v;
+    if (m_previewPatch) {
+        m_previewPatch->setShowNet(v);
+        update();
+    }
+}
+
+void OpenGlWidget::clearPatchPreview() {
+    if (!m_previewPatch && !m_previewRegistry) {
+        return;
+    }
+    makeCurrent();
+    m_previewPatch.reset();
+    m_previewRegistry.reset();
+    m_previewParams.reset();
+    doneCurrent();
+    update();
 }
 
 PointHandle OpenGlWidget::pickPoint(const QPoint screenPos) const {
@@ -852,7 +1074,7 @@ void OpenGlWidget::handleTransformTranslate(const QPoint currentMousePos, PointR
     const cadm::Mat4 vp = proj * view;
     const cadm::Mat4 invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
 
-    const cadm::vec4 pivotClip = vp * cadm::vec4(m_transformPivot, 1);
+    const cadm::Vec4 pivotClip = vp * cadm::Vec4(m_transformPivot, 1);
     const cadm::cadf pivotNdcZ = pivotClip.z / pivotClip.w;
     auto unprojectAt = [&](const QPoint &p) -> cadm::Vec3 {
         return cadm::unprojectPoint({p.x(), p.y()}, pivotNdcZ, invVp, width(), height());
@@ -916,7 +1138,7 @@ void OpenGlWidget::handleTransformScale(const int dx, PointRegistry &registry) {
     );
 
     for (const auto &snap : m_transformSnapshots) {
-        const cadm::Vec3 pivot = (m_coordSpace == CoordSpace::local && snap.isTransformEntity)
+        const cadm::Vec3 pivot = m_coordSpace == CoordSpace::local && snap.isTransformEntity
                                      ? snap.origPos
                                      : m_transformPivot;
         const cadm::Vec3 newPos = pivot + (snap.origPos - pivot) * scaleFactor;

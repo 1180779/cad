@@ -12,13 +12,13 @@ enum class ChangeFlags : std::uint32_t {
     none = 0,
 
     /// @brief Values moved/edited
-    geometry = 1u << 0,
+    geometry = 1 << 0,
 
     /// @brief The set of selected entities changed
-    selection = 1u << 1,
+    selection = 1 << 1,
 
     /// @brief Entities added/removed/renamed
-    structure = 1u << 2,
+    structure = 1 << 2,
     all = geometry | selection | structure
 };
 

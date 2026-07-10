@@ -6,35 +6,59 @@
 #define CAD_VEC2_H
 
 #include <array>
+#include <span>
 
 #include <cad_math/VecBase.hpp>
 #include <cad_math/Common.hpp>
 
 namespace cadm {
-    template <>
-    struct Vec<2, cadf> : VecBase<Vec<2, cadf>, 2, cadf> {
+    template <typename T>
+    struct Vec<T, 2> : VecBase<T, 2, Vec<T, 2>> {
         union {
             struct {
-                cadf x, y;
+                T x, y;
             };
 
             struct {
-                cadf r, g;
+                T r, g;
             };
 
-            std::array<cadf, 2> data;
+            std::array<T, 2> data;
         };
 
-        constexpr Vec() : x(0), y(0) {}
+        constexpr Vec(const std::initializer_list<T> values)
+        : data{} {
+            std::size_t i = 0;
+            for (const T v : values) {
+                if (i == 2) {
+                    break;
+                }
+                data[i++] = v;
+            }
+        }
 
-        constexpr Vec(const cadf x, const cadf y) : x(x), y(y) {}
+        explicit constexpr Vec(T v)
+        : x(v),
+          y(v) {}
+
+        constexpr Vec()
+        : x(T{0}),
+          y({0}) {}
+
+        constexpr Vec(const T x, const T y)
+        : x(x),
+          y(y) {}
 
         constexpr static Vec unitX() noexcept {
-            return {1.0, 0.0};
+            return {T{1}, T{0}};
         }
 
         constexpr static Vec unitY() noexcept {
-            return {0.0, 1.0};
+            return {T{0}, T{1}};
+        }
+
+        [[nodiscard]] constexpr std::span<T, 2> flatView() const {
+            return data;
         }
 
         /// @brief Component indices for operator[] access
@@ -47,6 +71,7 @@ namespace cadm {
         };
     };
 
-    using vec2 = Vec<2, cadf>;
+    using Vec2 = Vec<cadf, 2>;
+    using Vec2I = Vec<int, 2>;
 }
 #endif //CAD_VEC2_H

@@ -1,9 +1,10 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
-    <!-- only assets actually referenced are registered here -->
     <qresource prefix="/">
         <file alias="icons/chevron-up.svg">icons/jetbrains/chevron-12px-up.svg</file>
         <file alias="icons/chevron-down.svg">icons/jetbrains/chevron-12px-down.svg</file>
+        <file alias="icons/check.svg">icons/jetbrains/checkmark-12px.svg</file>
+        <file alias="icons/remove.svg">icons/jetbrains/remove-12px.svg</file>
         <file alias="fonts/JetBrainsMono-Regular.ttf">fonts/JetBrainsMonoNerdFont-Regular.ttf</file>
         <file alias="fonts/JetBrainsMono-Bold.ttf">fonts/JetBrainsMonoNerdFont-Bold.ttf</file>
     </qresource>

@@ -6,35 +6,73 @@
 #define CAD_VEC4_H
 
 #include <array>
+#include <span>
 
 #include "VecBase.hpp"
 #include "Vec3.hpp"
 
 namespace cadm {
-    template <>
-    struct Vec<4, cadf> : VecBase<Vec<4, cadf>, 4, cadf> {
+    template <typename T>
+    struct Vec<T, 4> : VecBase<T, 4, Vec<T, 4>> {
         union {
             struct {
-                cadf x, y, z, w;
+                T x, y, z, w;
             };
 
             struct {
-                cadf r, g, b, a;
+                T r, g, b, a;
             };
 
-            std::array<cadf, 4> data;
+            std::array<T, 4> data;
         };
 
-        constexpr Vec() : x(0), y(0), z(0), w(0) {}
+        constexpr Vec(const std::initializer_list<T> values)
+        : data{} {
+            std::size_t i = 0;
+            for (const T v : values) {
+                if (i == 4) {
+                    break;
+                }
+                data[i++] = v;
+            }
+        }
 
-        constexpr Vec(const cadf x, const cadf y, const cadf z, const cadf w) : x(x), y(y), z(z), w(w) {}
+        explicit constexpr Vec(T v)
+        : x{v},
+          y{v},
+          z{v},
+          w{v} {}
 
-        constexpr Vec(const Vec3 &v, const cadf w) : x(v.x), y(v.y), z(v.z), w(w) {}
+        constexpr Vec()
+        : x(T{0}),
+          y(T{0}),
+          z(T{0}),
+          w(T{0}) {}
 
-        constexpr Vec(const cadf x, const Vec3 &v) : x(x), y(v.x), z(v.y), w(v.z) {}
+        constexpr Vec(const T x, const T y, const T z, const T w)
+        : x(x),
+          y(y),
+          z(z),
+          w(w) {}
+
+        constexpr Vec(const Vec3 &v, const T w)
+        : x(v.x),
+          y(v.y),
+          z(v.z),
+          w(w) {}
+
+        constexpr Vec(const T x, const Vec3 &v)
+        : x(x),
+          y(v.x),
+          z(v.y),
+          w(v.z) {}
 
         [[nodiscard]] constexpr Vec cross(const Vec &other) const {
             return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
+        }
+
+        [[nodiscard]] constexpr std::span<const T, 4> flatView() const {
+            return data;
         }
 
         [[nodiscard]] constexpr Vec3 xyz() const {
@@ -42,19 +80,19 @@ namespace cadm {
         }
 
         constexpr static Vec unitX() noexcept {
-            return {1.0, 0.0, 0.0, 0.0};
+            return {T{1}, T{0}, T{0}, T{0}};
         }
 
         constexpr static Vec unitY() noexcept {
-            return {0.0, 1.0, 0.0, 0.0};
+            return {T{0}, T{1}, T{0}, T{0}};
         }
 
         constexpr static Vec unitZ() noexcept {
-            return {0.0, 0.0, 1.0, 0.0};
+            return {T{0}, T{0}, T{1}, T{0}};
         }
 
         constexpr static Vec unitW() noexcept {
-            return {0.0, 0.0, 0.0, 1.0};
+            return {T{0}, T{0}, T{0}, T{1}};
         }
 
         /// @brief Component indices for operator[] access
@@ -73,7 +111,8 @@ namespace cadm {
         };
     };
 
-    using vec4 = Vec<4, cadf>;
+    using Vec4 = Vec<cadf, 4>;
+    using Vec4I = Vec<int, 4>;
 }
 
 #endif //CAD_VEC4_H

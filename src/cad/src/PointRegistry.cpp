@@ -4,6 +4,8 @@
 
 #include "PointRegistry.hpp"
 
+#include <algorithm>
+#include <numeric>
 #include <ranges>
 
 #include "CheckMacros.hpp"
@@ -41,6 +43,68 @@ PointHandle PointRegistry::addPoint(const cadm::Vec3 position) {
     m_dirtyPositions.insert(handle);
     m_dirtySelected.insert(handle);
     return handle;
+}
+
+PointHandle PointRegistry::addPoints(const std::span<const cadm::Vec3> positions) {
+    const size_t count = positions.size();
+    if (count == 0) {
+        return InvalidPointHandle;
+    }
+
+    // register the claimed slots [first, first + count) as alive and dirty
+    const auto registerRange = [this, count](const PointHandle first) {
+        std::vector<PointHandle> handles(count);
+        std::ranges::iota(handles, first);
+        m_indexBuffer.appendRange(handles);
+        m_dirtyPositions.insert(handles.begin(), handles.end());
+        m_dirtySelected.insert(handles.begin(), handles.end());
+    };
+
+    // reuse a contiguous run of freed slots before growing the arrays, so bulk
+    // create/delete cycles don't ratchet the buffers up forever
+    std::ranges::sort(m_freeList);
+    size_t runLen = 0;
+    for (size_t i = 0; i < m_freeList.size(); ++i) {
+        runLen = i > 0 && m_freeList[i] == m_freeList[i - 1] + 1
+                     ? runLen + 1
+                     : 1;
+        if (runLen == count) {
+            const auto runBegin = m_freeList.begin() + static_cast<ptrdiff_t>(i + 1 - count);
+            const PointHandle first = *runBegin;
+            m_freeList.erase(runBegin, runBegin + static_cast<ptrdiff_t>(count));
+
+            std::ranges::copy(positions, m_positions.begin() + first);
+            std::fill_n(m_selected.begin() + first, count, 0.0f);
+            std::fill_n(m_alive.begin() + first, count, true);
+            registerRange(first);
+            return first;
+        }
+    }
+
+    // otherwise append at the end
+    const auto first = static_cast<PointHandle>(m_positions.size());
+    m_positions.insert(m_positions.end(), positions.begin(), positions.end());
+    m_selected.insert(m_selected.end(), count, 0.0f);
+    m_alive.insert(m_alive.end(), count, true);
+    registerRange(first);
+    return first;
+}
+
+void PointRegistry::setPositions(const PointHandle first, const std::span<const cadm::Vec3> positions) {
+    if (first + positions.size() > m_positions.size()) {
+        return;
+    }
+    std::ranges::copy(positions, m_positions.begin() + first);
+
+    const auto handles = std::views::iota(first, first + static_cast<PointHandle>(positions.size()));
+    m_dirtyPositions.reserve(m_dirtyPositions.size() + handles.size());
+    m_dirtyPositions.insert(handles.begin(), handles.end());
+
+    for (const PointHandle h : handles) {
+        for (auto &cb : m_positionCallbacks | std::views::values) {
+            cb(h);
+        }
+    }
 }
 
 void PointRegistry::addPointAt(const PointHandle handle, const cadm::Vec3 position) {
@@ -82,9 +146,28 @@ void PointRegistry::addPointAt(const PointHandle handle, const cadm::Vec3 positi
     m_dirtySelected.insert(handle);
 }
 
-void PointRegistry::removePoint(const PointHandle handle) {
-    if (handle >= m_alive.size() || !m_alive[handle]) {
+void PointRegistry::lock(const PointHandle handle) {
+    ++m_lockCounts[handle];
+}
+
+void PointRegistry::unlock(const PointHandle handle) {
+    const auto it = m_lockCounts.find(handle);
+    if (it == m_lockCounts.end()) {
         return;
+    }
+    if (--it->second <= 0) {
+        m_lockCounts.erase(it);
+    }
+}
+
+bool PointRegistry::isLocked(const PointHandle handle) const {
+    const auto it = m_lockCounts.find(handle);
+    return it != m_lockCounts.end() && it->second > 0;
+}
+
+bool PointRegistry::removePoint(const PointHandle handle) {
+    if (handle >= m_alive.size() || !m_alive[handle] || isLocked(handle)) {
+        return false;
     }
 
     m_alive[handle] = false;
@@ -106,6 +189,7 @@ void PointRegistry::removePoint(const PointHandle handle) {
          const auto &cb : callbacks | std::views::values) {
         cb(handle);
     }
+    return true;
 }
 
 void PointRegistry::setPosition(const PointHandle handle, const cadm::Vec3 position) {
@@ -163,6 +247,26 @@ void PointRegistry::setSelected(const PointHandle handle, const bool selected) {
     }
     m_selected[handle] = value;
     m_dirtySelected.insert(handle);
+}
+
+void PointRegistry::clear() {
+    const auto callbacks = m_removeCallbacks;
+    for (const auto &handles = m_indexBuffer.data();
+         const PointHandle h : handles) {
+        for (const auto &cb : callbacks | std::views::values) {
+            cb(h);
+        }
+    }
+    m_positions.clear();
+    m_selected.clear();
+    m_alive.clear();
+    m_freeList.clear();
+    m_indexBuffer.clear();
+    m_dirtyPositions.clear();
+    m_dirtySelected.clear();
+    m_lockCounts.clear();
+    m_positionCallbacks.clear();
+    m_removeCallbacks.clear();
 }
 
 void PointRegistry::clearSelection() {

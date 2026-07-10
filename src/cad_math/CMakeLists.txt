@@ -2,6 +2,8 @@
 file(GLOB_RECURSE CAD_MATH_SOURCES
         include/cad_math/*.cpp
         include/cad_math/*.hpp
+        include/cad_math/*.cxx
+        include/cad_math/*.hxx
 )
 
 add_library(cad_math STATIC

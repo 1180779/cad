@@ -14,6 +14,12 @@
 #include "../components/TransformComponent.hpp"
 #include "../PointRegistry.hpp"
 
+class CameraController;
+
+namespace aliases {
+    using CamContr = CameraController;
+}
+
 /// @brief Manages the available ICameraStrategy and syncs them with scene entity changes
 class CameraController final : public QObject {
     Q_OBJECT
@@ -35,6 +41,11 @@ public:
     /// @param id id of the entity
     /// @note does not remove the strategy if it is the last one available
     void removeCamera(EntityId id);
+
+    /// @brief Removes every camera strategy; unlike @ref removeCamera, allowed
+    /// to go to zero
+    /// @note Use for resetting this class's state
+    void clear();
 
     /// @brief Get the active strategy
     /// @return the active strategy
@@ -77,10 +88,7 @@ public:
         return m_cameras;
     }
 
-    signals  :
-
-    
-
+signals :
     void cameraChanged(const std::string &name);
 
 private:

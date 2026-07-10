@@ -2,6 +2,14 @@
 
 out vec4 FragColor;
 
+layout (std140, binding = 1) uniform Palette {
+    vec4 lineColor;
+    vec4 pointColor;
+    vec4 curveColor;
+    vec4 gridMinor;
+    vec4 gridMajor;
+};
+
 void main() {
-    FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    FragColor = lineColor;
 }

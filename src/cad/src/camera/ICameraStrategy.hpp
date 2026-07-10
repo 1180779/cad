@@ -25,7 +25,10 @@ public:
         Entity *cameraEntity,
         std::function<int()> widthGetter,
         std::function<int()> heightGetter
-    ) : m_cameraEntity{cameraEntity}, m_widthGetter{std::move(widthGetter)}, m_heightGetter{std::move(heightGetter)} {}
+    )
+    : m_cameraEntity{cameraEntity},
+      m_widthGetter{std::move(widthGetter)},
+      m_heightGetter{std::move(heightGetter)} {}
 
     virtual cadm::Mat4 getView() = 0;
 
@@ -34,6 +37,9 @@ public:
     virtual cadm::Mat4 getInvProjection() = 0;
 
     virtual void setLookTarget(cadm::Vec3 target) = 0;
+
+    /// @brief Distance from the camera to its look target, in world units
+    virtual cadm::cadf distanceToTarget() = 0;
 
     void syncAspectRatio() const;
 

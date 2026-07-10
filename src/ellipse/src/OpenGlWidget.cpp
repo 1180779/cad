@@ -35,7 +35,7 @@ void OpenGlWidget::paintGL() {
     if (m_currentAdaptationStep > 0) {
         performRaycasting(m_renderState, m_cpuBuffer, m_prevAdaptationStep, m_currentAdaptationStep);
 
-        const auto gl = gl();
+        const auto gl = getGl();
         gl->glBindTexture(GL_TEXTURE_2D, m_texture);
         gl->glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width(), height(), GL_RGB, GL_UNSIGNED_BYTE, m_cpuBuffer.data());
 
@@ -49,7 +49,7 @@ void OpenGlWidget::paintGL() {
         }
     }
 
-    const auto gl = gl();
+    const auto gl = getGl();
     gl->glClear(GL_COLOR_BUFFER_BIT);
     m_shaderProgram->bind();
     gl->glActiveTexture(GL_TEXTURE0);
@@ -64,7 +64,7 @@ void OpenGlWidget::resizeGL(const int width, const int height) {
     const size_t bufferSize = width * height * 3;
     m_cpuBuffer.resize(bufferSize);
 
-    const auto gl = gl();
+    const auto gl = getGl();
     gl->glBindTexture(GL_TEXTURE_2D, m_texture);
     gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
@@ -76,7 +76,7 @@ void OpenGlWidget::resizeGL(const int width, const int height) {
 }
 
 void OpenGlWidget::initializeGL() {
-    const auto gl = gl();
+    const auto gl = getGl();
     gl->glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // for rgb the cpu buffer is not aligned, which leads to artifacts
     gl->glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
 
@@ -222,7 +222,6 @@ void OpenGlWidget::updateRenderParams() {
     const auto rotationM = cadm::Mat4::rotX(m_rotation.x) * cadm::Mat4::rotY(m_rotation.y) *
         cadm::Mat4::rotZ(m_rotation.z);
     const auto scaleM = cadm::Mat4::scale(m_scale);
-    const auto M = translationM * rotationM * scaleM;
 
     const auto D = cadm::Mat4::diag(1.0 / (m_a * m_a), 1.0 / (m_b * m_b), 1.0 / (m_c * m_c), -1.0);
     m_renderState.Minv = scaleM.inversedScale() * rotationM.inversedRotation() * translationM.
@@ -296,20 +295,20 @@ void OpenGlWidget::performRaycasting(
                     rgb = cadm::vec3i();
                 }
                 else {
-                    cadm::vec4 intersectionPoint = rayWorld.origin + rayWorld.direction * t.value();
-                    cadm::vec4 pWorld(intersectionPoint.x, intersectionPoint.y, intersectionPoint.z, 1.0);
-                    cadm::vec4 pObject = state.Minv * pWorld;
-                    cadm::vec4 nObject(
+                    cadm::Vec4 intersectionPoint = rayWorld.origin + rayWorld.direction * t.value();
+                    cadm::Vec4 pWorld(intersectionPoint.x, intersectionPoint.y, intersectionPoint.z, 1.0);
+                    cadm::Vec4 pObject = state.Minv * pWorld;
+                    cadm::Vec4 nObject(
                         2.0 * pObject.x / (state.a * state.a),
                         2.0 * pObject.y / (state.b * state.b),
                         2.0 * pObject.z / (state.c * state.c),
                         0.0
                     );
-                    cadm::vec4 nWorld4 = state.MinvT * nObject;
+                    cadm::Vec4 nWorld4 = state.MinvT * nObject;
                     cadm::Vec3 n(nWorld4.x, nWorld4.y, nWorld4.z);
                     n.normalize();
 
-                    cadm::vec4 viewDir4 = -rayWorld.direction;
+                    cadm::Vec4 viewDir4 = -rayWorld.direction;
                     cadm::Vec3 viewDir(viewDir4.x, viewDir4.y, viewDir4.z);
                     viewDir.normalize();
 

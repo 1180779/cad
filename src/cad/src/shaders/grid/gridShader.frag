@@ -1,8 +1,5 @@
 #version 450 core
 
-#define GRID_COLOR_MINOR vec3(0.72)
-#define GRID_COLOR_MAJOR vec3(0.50)
-
 #define GRID_ALPHA_MINOR 0.35
 #define GRID_ALPHA_MAJOR 0.80
 
@@ -16,11 +13,24 @@
 
 in vec2 fragNDC;
 
-uniform mat4 invVP;
-uniform mat4 VP;
-// bitmask: bit 0 = XY plane (z=0), bit 1 = XZ plane (y=0), bit 2 = YZ plane (x=0)
+layout (std140, binding = 0) uniform Camera {
+    mat4 view;
+    mat4 projection;
+    mat4 VP;
+    mat4 invVP;
+};
+
+layout (std140, binding = 1) uniform Palette {
+    vec4 lineColor;
+    vec4 pointColor;
+    vec4 curveColor;
+    vec4 gridMinor;
+    vec4 gridMajor;
+};
+
 uniform int u_gridPlanes;
 uniform vec3 u_viewDir;
+uniform int u_lodFade;
 
 out vec4 FragColor;
 
@@ -30,7 +40,11 @@ float gridAlpha(vec2 coord2D, float scale)
     vec2 coord = coord2D / scale;
     vec2 deriv = fwidth(coord);
     vec2 grid = abs(fract(coord - 0.5) - 0.5) / max(deriv, vec2(0.001));
-    return 1.0 - min(min(grid.x, grid.y), 1.0);
+    float line = 1.0 - min(min(grid.x, grid.y), 1.0);
+
+    float density = max(deriv.x, deriv.y);
+    float lod = (u_lodFade == 0) ? 1.0 : 1.0 - smoothstep(0.25, 0.5, density);
+    return line * lod;
 }
 
 // Samples one infinite grid plane. axis: 0=XY(z=0), 1=XZ(y=0), 2=YZ(x=0).
@@ -73,7 +87,7 @@ float samplePlane(vec3 nearW, vec3 farW, int axis, out float outDepth, out vec3 
     if (alpha < GRID_DISCARD_THRESHOLD) return 0.0;
 
     outDepth = clamp(depth, GRID_MIN_DEPTH, GRID_MAX_DEPTH);
-    outColorPremult = mix(GRID_COLOR_MINOR, GRID_COLOR_MAJOR, major) * alpha;
+    outColorPremult = mix(gridMinor.rgb, gridMajor.rgb, major) * alpha;
     return alpha;
 }
 
@@ -115,5 +129,7 @@ void main()
     if (!anyHit || totalAlpha < GRID_DISCARD_THRESHOLD) discard;
 
     gl_FragDepth = closestDepth;
-    FragColor = vec4(totalColorPremult, totalAlpha);
+    // un-premultiply: the global blend is SRC_ALPHA/ONE_MINUS_SRC_ALPHA, so emitting the
+    // premultiplied color would darken partial-coverage pixels by alpha^2
+    FragColor = vec4(totalColorPremult / max(totalAlpha, 1e-4), totalAlpha);
 }
