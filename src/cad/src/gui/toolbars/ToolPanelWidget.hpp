@@ -8,6 +8,7 @@
 #include <concepts>
 
 #include <QLayout>
+#include <QScrollArea>
 #include <QString>
 #include <QWidget>
 
@@ -26,11 +27,38 @@ public:
     }
 
 protected:
+    QScrollArea* createScroll() {
+        const auto scroll = new QScrollArea(this);
+        scroll->setWidgetResizable(true);
+        scroll->setFrameShape(QFrame::NoFrame);
+        scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
+        return scroll;
+    }
+
+    QScrollArea* createScroll(QWidget *widget) {
+        const auto scroll = createScroll();
+        scroll->setWidget(widget);
+        return scroll;
+    }
+
     template <typename TLayout = QVBoxLayout> requires std::derived_from<TLayout, QLayout>
     TLayout* createLayout(Qt::AlignmentFlag alignment = Qt::AlignTop) {
         const auto layout = new TLayout(this);
         layout->setContentsMargins(6, 6, 6, 6);
         layout->setAlignment(alignment);
+        return layout;
+    }
+
+    template <typename TLayout = QVBoxLayout> requires std::derived_from<TLayout, QLayout>
+    TLayout* createScrollLayout() {
+        return createLayout(Qt::AlignmentFlag{});
+    }
+
+    template <typename TLayout = QVBoxLayout> requires std::derived_from<TLayout, QLayout>
+    TLayout* createScrollLayout(QWidget *widget) {
+        const auto layout = createScrollLayout();
+        layout->addWidget(createScroll(widget));
         return layout;
     }
 

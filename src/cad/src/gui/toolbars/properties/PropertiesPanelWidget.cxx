@@ -8,9 +8,8 @@
 
 PropertiesPanelWidget::PropertiesPanelWidget(QWidget *parent)
 : ToolPanelWidget("Properties", parent),
-  m_entityProperties(new EntityPropertiesWidget(this)) {
-    const auto layout = createLayout();
-    layout->addWidget(m_entityProperties);
+  m_entityProperties(new EntityPropertiesWidget) {
+    createScrollLayout(m_entityProperties);
 }
 
 EntityPropertiesWidget* PropertiesPanelWidget::entityPropertiesWidget() const {
