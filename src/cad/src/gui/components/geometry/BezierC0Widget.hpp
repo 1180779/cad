@@ -42,7 +42,7 @@ private:
     /// exactly one row is selected
     void onListSelectionChanged();
 
-signals :
+signals:
     void pointSelectionChanged(QList<Entity*> selected);
 
 private:

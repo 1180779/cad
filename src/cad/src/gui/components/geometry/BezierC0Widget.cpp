@@ -11,14 +11,16 @@
 
 using namespace widgets;
 
-BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget *parent) : ComponentWidget(
-        bezier,
-        parent
-    ),
-    m_bezier(bezier),
-    m_scene(scene) {
+BezierC0Widget::BezierC0Widget(BezierC0Component *bezier, Scene *scene, QWidget *parent)
+: ComponentWidget(
+      bezier,
+      parent
+  ),
+  m_bezier(bezier),
+  m_scene(scene) {
     // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
+    layout->setAlignment(Qt::AlignTop);
     layout->setContentsMargins(0, 0, 0, 0);
 
     addTitle(layout, "Bezier C0 Curve");

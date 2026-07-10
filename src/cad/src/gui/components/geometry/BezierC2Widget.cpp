@@ -20,14 +20,16 @@ namespace {
     QString bernsteinLabel(int i, int segments);
 }
 
-BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget *parent) : ComponentWidget(
-        bezier,
-        parent
-    ),
-    m_bezier(bezier),
-    m_scene(scene) {
+BezierC2Widget::BezierC2Widget(BezierC2Component *bezier, Scene *scene, QWidget *parent)
+: ComponentWidget(
+      bezier,
+      parent
+  ),
+  m_bezier(bezier),
+  m_scene(scene) {
     // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
+    layout->setAlignment(Qt::AlignTop);
     layout->setContentsMargins(0, 0, 0, 0);
 
     addTitle(layout, "Bezier C2 Curve");

@@ -98,7 +98,6 @@ namespace widgets {
         layout->addWidget(new QLabel(label));
         const auto list = new QListWidget;
         list->setSelectionMode(mode);
-        list->setMaximumHeight(120);
         layout->addWidget(list);
         return list;
     }

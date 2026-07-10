@@ -16,14 +16,16 @@ namespace {
     QString pointLabel(Scene *scene, int i, PointHandle h);
 }
 
-InterpC2Widget::InterpC2Widget(InterpC2Component *curve, Scene *scene, QWidget *parent) : ComponentWidget(
-        curve,
-        parent
-    ),
-    m_curve(curve),
-    m_scene(scene) {
+InterpC2Widget::InterpC2Widget(InterpC2Component *curve, Scene *scene, QWidget *parent)
+: ComponentWidget(
+      curve,
+      parent
+  ),
+  m_curve(curve),
+  m_scene(scene) {
     // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
+    layout->setAlignment(Qt::AlignTop);
     layout->setContentsMargins(0, 0, 0, 0);
 
     addTitle(layout, "Interpolating C2 Curve");
