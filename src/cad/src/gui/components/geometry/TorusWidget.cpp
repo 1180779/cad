@@ -1,7 +1,9 @@
 #include "TorusWidget.hpp"
 #include <QLabel>
 
-TorusWidget::TorusWidget(TorusGeometry *torus, QWidget *parent) : ComponentWidget(torus, parent), m_torus(torus) {
+TorusWidget::TorusWidget(TorusComponent *torus, QWidget *parent)
+: ComponentWidget(torus, parent),
+  m_torus(torus) {
     const auto layout = new QFormLayout(this);
 
     setUpMajorRadiusControls(layout);
@@ -93,10 +95,10 @@ TorusWidget::TorusWidget(TorusGeometry *torus, QWidget *parent) : ComponentWidge
         }
     );
 
-    connect(m_torus, &TorusGeometry::majorRadiusChanged, this, &TorusWidget::onMajorRadiusChanged);
-    connect(m_torus, &TorusGeometry::minorRadiusChanged, this, &TorusWidget::onMinorRadiusChanged);
-    connect(m_torus, &TorusGeometry::majorSegmentsChanged, this, &TorusWidget::onMajorSegmentsChanged);
-    connect(m_torus, &TorusGeometry::minorSegmentsChanged, this, &TorusWidget::onMinorSegmentsChanged);
+    connect(m_torus, &TorusComponent::majorRadiusChanged, this, &TorusWidget::onMajorRadiusChanged);
+    connect(m_torus, &TorusComponent::minorRadiusChanged, this, &TorusWidget::onMinorRadiusChanged);
+    connect(m_torus, &TorusComponent::majorSegmentsChanged, this, &TorusWidget::onMajorSegmentsChanged);
+    connect(m_torus, &TorusComponent::minorSegmentsChanged, this, &TorusWidget::onMinorSegmentsChanged);
 }
 
 void TorusWidget::onMajorRadiusChanged(const double value) const {

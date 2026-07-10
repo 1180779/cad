@@ -44,7 +44,7 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
         const PointHandle h = pc.value()->m_handle;
         out.components.emplace_back(PointData{h, scene.getPointRegistry().getPosition(h)});
     }
-    if (const auto tg = entity->getComponent<TorusGeometry>()) {
+    if (const auto tg = entity->getComponent<TorusComponent>()) {
         out.components.emplace_back(
             TorusData{
                 tg.value()->getMajorRadius(),
@@ -54,7 +54,7 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
             }
         );
     }
-    if (const auto axes = entity->getComponent<AxesGeometry>()) {
+    if (const auto axes = entity->getComponent<AxesComponent>()) {
         out.components.emplace_back(AxesData{axes.value()->m_length});
     }
     if (entity->hasComponent<CursorComponent>()) {
@@ -132,14 +132,14 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
                     scene.attachPointComponent(e, d.handle, d.position);
                 },
                 [&](const TorusData &d) {
-                    const auto torus = e->addComponent<TorusGeometry>();
+                    const auto torus = e->addComponent<TorusComponent>();
                     torus->setMajorRadius(d.majorRadius);
                     torus->setMinorRadius(d.minorRadius);
                     torus->setMajorSegments(d.majorSegments);
                     torus->setMinorSegments(d.minorSegments);
                 },
                 [&](const AxesData &d) {
-                    e->addComponent<AxesGeometry>()->m_length = d.length;
+                    e->addComponent<AxesComponent>()->m_length = d.length;
                 },
                 [&](const CursorData &) {
                     e->addComponent<CursorComponent>();

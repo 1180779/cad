@@ -1,7 +1,8 @@
 #include "SceneHierarchyWidget.hpp"
 #include <QMenu>
-#include <QVBoxLayout>
 #include <QListWidget>
+#include "SceneFiltersPopup.hxx"
+#include "../../WidgetBuilders.hxx"
 #include <unordered_set>
 #include "../../../components/geometry/BezierC0Component.hpp"
 #include "../../../components/geometry/BezierC2Component.hpp"
@@ -13,21 +14,24 @@
 
 SceneHierarchyWidget::SceneHierarchyWidget(QWidget *parent)
 : QWidget(parent) {
+    using namespace aliases;
     // ReSharper disable once CppDFAMemoryLeak
     const auto layout = new QVBoxLayout(this);
+
+    m_filtersButton = widgets::addButton(layout, "Filters");
+
+    m_filtersPopup = new SceneFiltersPopup(this);
+    connect(m_filtersButton, &QPushButton::clicked, this, &SceneHierarchyWidget::onFiltersPopupRequested);
+    connect(m_filtersPopup, &SceneFiltersPopup::filtersChanged, this, &SceneHierarchyWidget::onFiltersChanged);
+
     m_listWidget = new QListWidget(this);
     m_listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_listWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     layout->addWidget(m_listWidget);
 
-    connect(m_listWidget, &QListWidget::itemSelectionChanged, this, &SceneHierarchyWidget::onItemSelectionChanged);
-    connect(m_listWidget, &QListWidget::itemChanged, this, &SceneHierarchyWidget::onItemChanged);
-    connect(
-        m_listWidget,
-        &QListWidget::customContextMenuRequested,
-        this,
-        &SceneHierarchyWidget::onContextMenuRequested
-    );
+    connect(m_listWidget, &QListWidget::itemSelectionChanged, this, &SceneHW::onItemSelectionChanged);
+    connect(m_listWidget, &QListWidget::itemChanged, this, &SceneHW::onItemChanged);
+    connect(m_listWidget, &QListWidget::customContextMenuRequested, this, &SceneHW::onContextMenuRequested);
 }
 
 void SceneHierarchyWidget::setScene(Scene *scene) {
@@ -59,6 +63,13 @@ void SceneHierarchyWidget::addEntityToList(const std::unique_ptr<Entity> &e) con
         }
     }
     m_listWidget->insertItem(lo, item);
+    item->setHidden(!matchesAnyFilter(e.get()));
+}
+
+void SceneHierarchyWidget::onFiltersChanged() {
+    auto newFilters = m_filtersPopup->currentFilters();
+    m_filters.swap(newFilters);
+    refresh();
 }
 
 void SceneHierarchyWidget::refresh() {
@@ -82,6 +93,7 @@ void SceneHierarchyWidget::refresh() {
         }
         else {
             item->setText(QString::fromStdString(e->getName()));
+            item->setHidden(!matchesAnyFilter(e));
             inScene.erase(e);
         }
     }
@@ -285,4 +297,21 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
     }
 
     menu.exec(m_listWidget->mapToGlobal(pos));
+}
+
+void SceneHierarchyWidget::onFiltersPopupRequested() const {
+    m_filtersPopup->move(m_filtersButton->mapToGlobal(QPoint(0, m_filtersButton->height())));
+    m_filtersPopup->show();
+}
+
+bool SceneHierarchyWidget::matchesAnyFilter(Entity *e) const {
+    if (m_filters.empty()) {
+        return true;
+    }
+    for (auto &filter : m_filters) {
+        if (filter->checkForComponent(e)) {
+            return true;
+        }
+    }
+    return false;
 }

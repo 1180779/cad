@@ -139,7 +139,7 @@ namespace {
         t->setTranslation(vecFromJson(json[sp::position].toObject()));
         t->setRotation(quatFromJson(json[sp::rotation].toObject()).toEuler());
         t->setScale(vecFromJson(json[sp::scale].toObject()));
-        const auto torus = e->addComponent<TorusGeometry>();
+        const auto torus = e->addComponent<TorusComponent>();
         torus->setMajorRadius(static_cast<cadm::cadf>(json[sp::largeRadius].toDouble()));
         torus->setMinorRadius(static_cast<cadm::cadf>(json[sp::smallRadius].toDouble()));
         torus->setMajorSegments(samples[sp::u].toInt());
@@ -308,7 +308,7 @@ QJsonDocument serialization::toJson(Scene &scene) {
             continue;
         }
 
-        if (const auto tg = e->getComponent<TorusGeometry>()) {
+        if (const auto tg = e->getComponent<TorusComponent>()) {
             const auto t = e->getComponent<TransformComponent>().value();
             obj[sp::objectType] = st::torus;
             obj[sp::position] = vecToJson(t->getTranslation());

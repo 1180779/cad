@@ -2,11 +2,15 @@
 #define SCENEHIERARCHYWIDGET_H
 
 #include <QListWidgetItem>
+#include <QPushButton>
+
 #include "../../../components/Entity.hpp"
 #include "../../../Scene.hpp"
 #include "../../../camera/CameraController.hpp"
+#include "components/ComponentChecker.hxx"
 
 class CommandStack;
+class SceneFiltersPopup;
 class SceneHierarchyWidget;
 
 namespace aliases {
@@ -33,7 +37,7 @@ public:
     /// @param cameraController the CameraController for the scene
     void setCameraController(CameraController *cameraController);
 
-signals :
+signals:
     void selectionChanged(QList<Entity*> entities);
 
     void deleteEntityRequested(Entity *e);
@@ -70,9 +74,8 @@ signals :
     void collapseSelectedPointsRequested();
 
 public
-slots :
+slots:
     /// @brief Update the m_listWidget to be in sync with the m_scene entities
-
     void refresh();
 
     /// @brief Sync the selection of the m_listWidget list items to be in sync with the m_scene
@@ -80,7 +83,7 @@ slots :
     void syncSelectionFromScene();
 
 private
-slots :
+slots:
     void onItemSelectionChanged();
 
     void onItemChanged(const QListWidgetItem *item) const;
@@ -90,6 +93,12 @@ slots :
     void onContextMenuRequested(const QPoint &pos);
 
 private:
+    void onFiltersPopupRequested() const;
+
+    void onFiltersChanged();
+
+    bool matchesAnyFilter(Entity *e) const;
+
     /// @brief Helper to add entity to the m_listWidget
     void addEntityToList(const std::unique_ptr<Entity> &e) const;
 
@@ -113,6 +122,11 @@ private:
 
     /// @brief List widget where each list item represents a single m_scene entity
     QListWidget *m_listWidget;
+
+    QPushButton *m_filtersButton;
+    SceneFiltersPopup *m_filtersPopup;
+
+    ComponentFilters m_filters{};
 };
 
 #endif // SCENEHIERARCHYWIDGET_H

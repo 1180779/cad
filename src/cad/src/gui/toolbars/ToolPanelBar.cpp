@@ -14,6 +14,7 @@
 #include <QPainterPath>
 
 #include "../Theme.hpp"
+#include "gui/WidgetBuilders.hxx"
 
 ToolPanelBar::ToolPanelBar(QWidget *parent)
 : QWidget(parent) {
@@ -28,11 +29,7 @@ ToolPanelBar::ToolPanelBar(QWidget *parent)
     m_topLayout->setContentsMargins(0, 0, 0, 0);
     m_topLayout->setSpacing(2);
 
-    const auto hFrame = new QFrame(this);
-    hFrame->setFrameShape(QFrame::HLine);
-    m_divider = hFrame;
-    m_divider->setFixedHeight(16);
-    m_divider->setAutoFillBackground(false);
+    m_divider = widgets::horizontalLine(this);
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto bottomContainer = new QWidget(this);
