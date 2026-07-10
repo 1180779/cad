@@ -421,52 +421,18 @@ namespace {
     }
 
     /// @brief Wires hierarchy context actions: delete, set-as-cursor/camera, focus camera
-    void wireHierarchyActions(OpenGlWidget *glWidget, SceneHierarchyWidget *hierarchyWidget) {
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::deleteEntityRequested,
-            glWidget,
-            [glWidget, hierarchyWidget](const Entity *e) {
-                glWidget->removeEntity(e->getId());
-                hierarchyWidget->refresh();
-                glWidget->update();
-            }
-        );
-
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::collapseSelectedPointsRequested,
-            glWidget,
-            &OpenGlWidget::collapseSelectedPoints
-        );
-
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::setAsCursorRequested,
-            glWidget,
-            [glWidget](Entity *e) {
-                glWidget->getScene().setActiveCursor(e);
-            }
-        );
-
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::setAsCameraRequested,
-            glWidget,
-            [glWidget](const EntityId id) {
-                glWidget->getCameraController().switchTo(id);
-            }
-        );
-
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::focusCameraRequested,
-            glWidget,
-            [glWidget](Entity *e) {
-                glWidget->getCameraController().lookAtEntity(e, glWidget->getScene().getPointRegistry());
-                glWidget->update();
-            }
-        );
+    void wireHierarchyActions(OpenGlWidget *glW, SceneHierarchyWidget *hW) {
+        using namespace aliases;
+        const auto onRemoveEntity = [glW, hW](const Entity *e) {
+            glW->removeEntity(e->getId());
+            hW->refresh();
+            glW->update();
+        };
+        QObject::connect(hW, &SceneHW::deleteEntityRequested, glW, onRemoveEntity);
+        QObject::connect(hW, &SceneHW::collapseSelectedPointsRequested, glW, qOverload<>(&GlW::collapseSelectedPoints));
+        QObject::connect(hW, &SceneHW::setAsCursorRequested, glW, &GlW::onSetAsCursorRequested);
+        QObject::connect(hW, &SceneHW::setAsCameraRequested, glW, &GlW::onSetAsCameraRequested);
+        QObject::connect(hW, &SceneHW::focusCameraRequested, glW, &GlW::onFocusCameraRequested);
     }
 
     /// @brief Dims and input-blocks the whole window except the viewport,

@@ -55,6 +55,24 @@ public:
 
     bool removeEntity(EntityId id);
 
+    void onSetAsCursorRequested(Entity *e);
+
+    void onSetAsCameraRequested(EntityId id);
+
+    void onFocusCameraRequested(Entity *e);
+
+    /// @brief Returns <tt>Entity*</tt> on which to focus the camera if a single
+    /// entity is selected or <tt>nullptr</tt> otherwise
+    Entity* isFocusOnEntityValid() const;
+
+    /// @brief Returns <tt>std::array<EntityId, 2></tt> containing points that
+    /// can be collapsed if points collapse is valid in current state;
+    /// <tt>std::nullopt</tt> otherwise
+    std::optional<std::array<EntityId, 2>> isCollapsingPointsValid() const;
+
+    /// @brief Collapse the two selected point entities into one (undoable);
+    void collapseSelectedPoints(std::array<EntityId, 2> pts);
+
     /// @brief Collapse the two selected point entities into one (undoable);
     /// no-op unless exactly two points are selected
     void collapseSelectedPoints();
@@ -222,6 +240,8 @@ signals :
     void createPatchC2Requested();
 
     void createGregoryRequested();
+
+    void collapseSelectedPointsRequested();
 
 protected:
     void paintGL() override;
