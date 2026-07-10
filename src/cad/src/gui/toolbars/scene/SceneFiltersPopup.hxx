@@ -44,7 +44,7 @@ public:
     }
 
     /// @brief Builds the filter list from the currently checked boxes
-    ComponentFilters currentFilters() const {
+    [[nodiscard]] ComponentFilters currentFilters() const {
         ComponentFilters filters;
         for (const auto &[box, make] : m_rows) {
             if (box->isChecked()) {
