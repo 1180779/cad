@@ -5,8 +5,7 @@
 #ifndef CAD_VIEWPORTPANELWIDGET_HPP
 #define CAD_VIEWPORTPANELWIDGET_HPP
 
-#include <QComboBox>
-
+#include "AlignCameraToPlaneWidget.hxx"
 #include "GridSettingsWidget.hpp"
 #include "../ToolPanelWidget.hpp"
 
@@ -16,14 +15,17 @@ class ViewportPanelWidget final : public ToolPanelWidget {
 public:
     explicit ViewportPanelWidget(QWidget *parent = nullptr);
 
-    [[nodiscard]] GridSettingsWidget* gridSettingsWidget() const;
+    [[nodiscard]] const GridSettingsWidget* gridSettingsWidget() const;
 
-    [[nodiscard]] QComboBox* pivotCombo() const;
+    [[nodiscard]] const QComboBox* pivotCombo() const;
 
-    [[nodiscard]] QComboBox* coordSpaceCombo() const;
+    [[nodiscard]] const QComboBox* coordSpaceCombo() const;
+
+    [[nodiscard]] const AlignCameraToPlaneWidget* alignCameraWidget() const;
 
 private:
     GridSettingsWidget *m_gridSettings;
+    AlignCameraToPlaneWidget *m_alignCameraWidget;
     QComboBox *m_pivotCombo;
     QComboBox *m_coordSpaceCombo;
 };

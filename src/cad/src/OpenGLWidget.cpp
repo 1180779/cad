@@ -62,6 +62,36 @@ OpenGlWidget::OpenGlWidget(QWidget *parent)
         }
         update();
     };
+
+    m_alignCameraAnim.setDuration(1000);
+    m_alignCameraAnim.setStartValue(0.0);
+    m_alignCameraAnim.setEndValue(1.0);
+    m_alignCameraAnim.setEasingCurve(QEasingCurve::InOutQuad);
+    connect(
+        &m_alignCameraAnim,
+        &QVariantAnimation::valueChanged,
+        this,
+        [this](const QVariant &value) {
+            const auto t = static_cast<cadm::cadf>(value.toDouble());
+            const auto q = cadm::Quat::slerp(m_alignCameraFrom, m_alignCameraTo, t);
+            m_cameraController.getActiveStrategy()->setViewOrientation(q.toRotationMatrix());
+            update();
+        }
+    );
+}
+
+void OpenGlWidget::alignCameraToPlane(const Plane plane) {
+    static const cadm::Mat3 targets[PlaneCount] = {
+        cadm::Mat3::identity(),
+        cadm::Mat3{{1, 0, 0}, {0, 0, -1}, {0, 1, 0}},
+        cadm::Mat3{{0, 0, -1}, {0, 1, 0}, {1, 0, 0}},
+    };
+
+    const auto strategy = m_cameraController.getActiveStrategy();
+    m_alignCameraFrom = cadm::Quat::fromRotationMatrix(strategy->getViewOrientation());
+    m_alignCameraTo = cadm::Quat::fromRotationMatrix(targets[static_cast<std::size_t>(plane)]);
+    m_alignCameraAnim.stop();
+    m_alignCameraAnim.start();
 }
 
 OpenGlWidget::~OpenGlWidget() = default;

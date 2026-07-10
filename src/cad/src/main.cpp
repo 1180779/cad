@@ -401,6 +401,13 @@ namespace {
         QObject::connect(viewportPanel->gridSettingsWidget(), &GridSW::lodFadeChanged, glW, &GlW::setGridLodFade);
         glW->setGridLodFade(viewportPanel->gridSettingsWidget()->getLodFade());
 
+        QObject::connect(
+            viewportPanel->alignCameraWidget(),
+            &AlignCameraToPlaneWidget::alignToPlaneRequested,
+            glW,
+            &GlW::alignCameraToPlane
+        );
+
         auto *pivotCombo = viewportPanel->pivotCombo();
         const auto glSetPivotMode = [glW, pivotCombo](const int index) {
             glW->setPivotMode(static_cast<PivotMode>(pivotCombo->itemData(index).toInt()));

@@ -13,7 +13,8 @@ CadCameraStrategy::CadCameraStrategy(
     Entity *cameraEntity,
     const std::function<int()> &widthGetter,
     const std::function<int()> &heightGetter
-) : ICameraStrategy(cameraEntity, widthGetter, heightGetter) {}
+)
+: ICameraStrategy(cameraEntity, widthGetter, heightGetter) {}
 
 cadm::Mat4 CadCameraStrategy::getView() {
     const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
@@ -72,6 +73,35 @@ cadm::cadf CadCameraStrategy::distanceToTarget() {
     }
     const auto pCamera = camera.value();
     return (pCamera->getPosition() - pCamera->getTarget()).length();
+}
+
+cadm::Mat3 CadCameraStrategy::getViewOrientation() {
+    const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
+    if (!camera) {
+        EXPECTED_COMPONENT_MISSING();
+        return cadm::Mat3::identity();
+    }
+    const auto pCamera = camera.value();
+    const auto back = (pCamera->getPosition() - pCamera->getTarget())
+        .safeNormalized(cadm::Vec3::unitZ());
+    return cadm::Mat3{pCamera->right(), pCamera->up(), back};
+}
+
+void CadCameraStrategy::setViewOrientation(const cadm::Mat3 &orientation) {
+    const auto camera = m_cameraEntity->getComponent<CadCameraComponent>();
+    if (!camera) {
+        EXPECTED_COMPONENT_MISSING();
+        return;
+    }
+    const auto pCamera = camera.value();
+    const auto distance = (pCamera->getPosition() - pCamera->getTarget()).length();
+    const auto newPosition = pCamera->getTarget() + orientation.columns[2] * distance;
+    pCamera->setPosition(newPosition);
+    pCamera->setUp(orientation.columns[1]);
+
+    if (const auto transform = m_cameraEntity->getComponent<TransformComponent>()) {
+        transform.value()->setTranslation(newPosition);
+    }
 }
 
 void CadCameraStrategy::handleOrbit(const QPoint mouseDelta, CadCameraComponent *const pCamera) const {

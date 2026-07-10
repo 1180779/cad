@@ -8,9 +8,11 @@
 #include <optional>
 #include <utility>
 
+#include <QVariantAnimation>
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
 #include <cad_math/Common.hpp>
+#include <cad_math/Quaternion.hxx>
 #include <cad_math/Vec3.hpp>
 #include "PatchGeometry.hxx"
 #include "PointRegistry.hpp"
@@ -125,6 +127,10 @@ public:
     void setCoordSpace(const CoordSpace space) {
         m_coordSpace = space;
     }
+
+    /// @brief Rotates the camera to face the given plane, animated with
+    /// quaternion slerp
+    void alignCameraToPlane(Plane plane);
 
     void setGridPlanes(const int planes) {
         m_renderSystem.setGridPlanes(planes);
@@ -320,6 +326,10 @@ private:
 
     CameraController m_cameraController{this};
     InputMap m_inputMap;
+
+    QVariantAnimation m_alignCameraAnim{this};
+    cadm::Quat m_alignCameraFrom{};
+    cadm::Quat m_alignCameraTo{};
 
     /// @brief Holds currently active drag i.e., the drag that is taking place right now
     DragMode m_activeDrag{DragMode::none};
