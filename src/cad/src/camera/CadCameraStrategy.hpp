@@ -29,6 +29,10 @@ public:
 
     cadm::cadf distanceToTarget() override;
 
+    cadm::Mat3 getViewOrientation() override;
+
+    void setViewOrientation(const cadm::Mat3 &orientation) override;
+
     bool handleCameraMove(CameraAction action, QPoint mouseDelta) override;
 
     bool handleCameraKeyAction(CameraKeyAction action) override;

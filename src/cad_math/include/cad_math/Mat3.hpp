@@ -13,11 +13,11 @@ namespace cadm {
     template <typename T, std::size_t R, std::size_t C>
     struct Mat;
 
-    template <>
-    struct Mat<cadf, 3, 3> : MatBase<cadf, 3, 3, Vec3, Vec3, Mat, Mat<cadf, 3, 3>> {
+    template <typename T>
+    struct Mat<T, 3, 3> : MatBase<T, 3, 3, Vec3, Vec3, Mat, Mat<T, 3, 3>> {
         union {
-            cadf data[9]{};
-            Vec3 columns[3];
+            T data[9]{};
+            Vec<T, 3> columns[3];
         };
 
         constexpr Mat() {
@@ -27,15 +27,15 @@ namespace cadm {
         }
 
         constexpr Mat(
-            const cadf x0,
-            const cadf x1,
-            const cadf x2,
-            const cadf y0,
-            const cadf y1,
-            const cadf y2,
-            const cadf z0,
-            const cadf z1,
-            const cadf z2
+            const T x0,
+            const T x1,
+            const T x2,
+            const T y0,
+            const T y1,
+            const T y2,
+            const T z0,
+            const T z1,
+            const T z2
         ) {
             columns[0] = Vec3(x0, x1, x2);
             columns[1] = Vec3(y0, y1, y2);
@@ -50,37 +50,37 @@ namespace cadm {
 
         constexpr static Mat identity() {
             return {
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
+                T{1},
+                T{0},
+                T{0},
+                T{0},
+                T{1},
+                T{0},
+                T{0},
+                T{0},
+                T{1},
             };
         }
 
-        constexpr static Mat scale(const Vec2 &s) {
+        constexpr static Mat scale(const Vec<T, 2> &s) {
             return scale(s.x, s.y);
         }
 
-        constexpr static Mat scale(const cadf sx, const cadf sy) {
+        constexpr static Mat scale(const T sx, const T sy) {
             return diag(sx, sy, 1.0);
         }
 
-        constexpr static Mat diag(const cadf m0, const cadf m1, const cadf m2) {
+        constexpr static Mat diag(const T m0, const T m1, const T m2) {
             return {
-                m0,
-                0,
-                0,
-                0,
-                m1,
-                0,
-                0,
-                0,
-                m2,
+                T{m0},
+                T{0},
+                T{0},
+                T{0},
+                T{m1},
+                T{0},
+                T{0},
+                T{0},
+                T{m2},
             };
         }
 
@@ -88,51 +88,51 @@ namespace cadm {
             return translation(t.x, t.y);
         }
 
-        constexpr static Mat translation(const cadf tx, const cadf ty) {
+        constexpr static Mat translation(const T tx, const T ty) {
             return {
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                tx,
-                ty,
-                1
+                T{1},
+                T{0},
+                T{0},
+                T{0},
+                T{1},
+                T{0},
+                T{tx},
+                T{ty},
+                T{1}
             };
         }
 
-        static Mat rotX(const cadf alpha) {
-            const cadf c = std::cos(alpha);
-            const cadf s = std::sin(alpha);
+        static Mat rotX(const T alpha) {
+            const T c = std::cos(alpha);
+            const T s = std::sin(alpha);
 
             return {
-                1,
-                0,
-                0,
-                0,
-                c,
-                s,
-                0,
-                -s,
-                c,
+                T{1},
+                T{0},
+                T{0},
+                T{0},
+                T{c},
+                T{s},
+                T{0},
+                T{-s},
+                T{c},
             };
         }
 
-        static Mat rotY(const cadf alpha) {
-            const cadf c = std::cos(alpha);
-            const cadf s = std::sin(alpha);
+        static Mat rotY(const T alpha) {
+            const T c = std::cos(alpha);
+            const T s = std::sin(alpha);
 
             return {
-                c,
-                0,
-                -s,
-                0,
-                1,
-                0,
-                s,
-                0,
-                c,
+                T{c},
+                T{0},
+                T{-s},
+                T{0},
+                T{1},
+                T{0},
+                T{s},
+                T{0},
+                T{c},
             };
         }
 
@@ -140,24 +140,24 @@ namespace cadm {
             return rotZ(xyz.z) * rotY(xyz.y) * rotX(xyz.x);
         }
 
-        static Mat rotZyx(const cadf rx, const cadf ry, const cadf rz) {
+        static Mat rotZyx(const T rx, const T ry, const T rz) {
             return rotZ(rz) * rotY(ry) * rotX(rx);
         }
 
-        static Mat rotZ(const cadf alpha) {
-            const cadf c = std::cos(alpha);
-            const cadf s = std::sin(alpha);
+        static Mat rotZ(const T alpha) {
+            const T c = std::cos(alpha);
+            const T s = std::sin(alpha);
 
             return {
-                c,
-                s,
-                0,
-                -s,
-                c,
-                0,
-                0,
-                0,
-                1,
+                T{c},
+                T{s},
+                T{0},
+                T{-s},
+                T{c},
+                T{0},
+                T{0},
+                T{0},
+                T{1},
             };
         }
     };

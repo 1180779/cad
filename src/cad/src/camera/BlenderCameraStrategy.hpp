@@ -32,6 +32,10 @@ public:
 
     void toggleProjection() override;
 
+    cadm::Mat3 getViewOrientation() override;
+
+    void setViewOrientation(const cadm::Mat3 &orientation) override;
+
     static constexpr cadm::cadf s_sensitivity = 0.01;
 };
 

@@ -6,9 +6,12 @@
 #define CAD_QUATERNION_HXX
 
 #include <algorithm>
+#include <cmath>
 #include <span>
 
+#include "Mat3.hpp"
 #include "VecBase.hpp"
+#include "Vec4.hpp"
 
 namespace cadm {
     template <typename T>
@@ -22,6 +25,13 @@ namespace cadm {
         };
 
     public:
+        explicit Quaternion() {
+            this->e0 = T{1};
+            this->e1 = T{0};
+            this->e2 = T{0};
+            this->e3 = T{0};
+        }
+
         explicit Quaternion(std::span<T, 4> d) {
             std::copy(d.begin(), d.end(), data);
         }
@@ -76,11 +86,11 @@ namespace cadm {
         }
 
         friend constexpr Quaternion<T> operator-(const Quaternion &v) noexcept {
-            Quaternion res = static_cast<const Quaternion&>(v);
-            for (int i = 0; i < 4; ++i) {
-                res[i] = -res[i];
-            }
-            return res;
+            return Quaternion{-v.e0, -v.e1, -v.e2, -v.e3};
+        }
+
+        Vec<T, 4> asVec() const noexcept {
+            return {e0, e1, e2, e3};
         }
 
         // ===== quaternion-quaternion operators =====
@@ -323,6 +333,100 @@ namespace cadm {
                 cr * sp * cy + sr * cp * sy,
                 cr * cp * sy - sr * sp * cy
             );
+        }
+
+        /// @brief Rotation matrix from a non-zero quaternion
+        Mat<T, 3, 3> toRotationMatrix() const {
+            // https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#From_a_quaternion_to_an_orthogonal_matrix
+            const auto a = e0,
+                       b = e1,
+                       c = e2,
+                       d = e3;
+            const auto s = T{2} / (a * a + b * b + c * c + d * d);
+            const auto bs = b * s,
+                       cs = c * s,
+                       ds = d * s;
+            const auto ab = a * bs,
+                       ac = a * cs,
+                       ad = a * ds;
+            const auto bb = b * bs,
+                       bc = b * cs,
+                       bd = b * ds;
+            const auto cc = c * cs,
+                       cd = c * ds,
+                       dd = d * ds;
+            return {
+                Vec<T, 3>{1 - cc - dd, bc + ad, bd - ac},
+                Vec<T, 3>{bc - ad, 1 - bb - dd, cd + ab},
+                Vec<T, 3>{bd + ac, cd - ab, 1 - bb - cc}
+            };
+        }
+
+        /// @brief Unit quaternion from a rotation matrix
+        static Quaternion fromRotationMatrix(const Mat<T, 3, 3> &m) {
+            // https://en.wikipedia.org/wiki/Rotation_matrix#Quaternion
+            const auto &x = m.row(0);
+            const auto &y = m.row(1);
+            const auto &z = m.row(2);
+            if (const T trace = x.x + y.y + z.z;
+                trace > T{gc_feps}) {
+                const T r = std::sqrt(trace + 1);
+                const T s = T{0.5} / r;
+                return Quaternion{
+                    T{0.5} * r,
+                    (z.y - y.z) * s,
+                    (x.z - z.x) * s,
+                    (y.x - x.y) * s
+                }.normalized();
+            }
+            if (x.x > y.y && x.x > z.z) {
+                const T r = std::sqrt(1 + x.x - y.y - z.z);
+                const T s = T{0.5} / r;
+                return Quaternion{
+                    (z.y - y.z) * s,
+                    T{0.5} * r,
+                    (x.y + y.x) * s,
+                    (z.x + x.z) * s
+                }.normalized();
+            }
+            if (y.y > z.z) {
+                const T r = std::sqrt(1 + y.y - x.x - z.z);
+                const T s = T{0.5} / r;
+                return Quaternion{
+                    (x.z - z.x) * s,
+                    (x.y + y.x) * s,
+                    T{0.5} * r,
+                    (y.z + z.y) * s
+                }.normalized();
+            }
+            const T r = std::sqrt(1 + z.z - x.x - y.y);
+            const T s = T{0.5} / r;
+            return Quaternion{
+                (y.x - x.y) * s,
+                (z.x + x.z) * s,
+                (y.z + z.y) * s,
+                T{0.5} * r
+            }.normalized();
+        }
+
+        /// @brief Spherical linear interpolation between unit quaternions along the
+        /// shorter arc; @p t in [0, 1]
+        static Quaternion slerp(const Quaternion &p0, Quaternion p1, const T t) {
+            // https://en.wikipedia.org/wiki/Spherical_linear_interpolation
+            // theta = angle subtended by the arc
+            T dot = p0.asVec().dot(p1.asVec());
+            if (dot < T{0}) {
+                // take the shorter of the two arcs
+                p1 = -p1;
+                dot = -dot;
+            }
+            if (dot > T{0.9995}) {
+                // theta close to 0 => sin close to 0
+                return (p0 + (p1 - p0) * t).normalized();
+            }
+            const T theta = std::acos(std::clamp(dot, T{-1}, T{1}));
+            const T s = std::sin(theta);
+            return (p0 * (std::sin((1 - t) * theta) / s) + p1 * (std::sin(t * theta) / s)).normalized();
         }
     };
 
