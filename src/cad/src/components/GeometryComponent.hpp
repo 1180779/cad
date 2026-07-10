@@ -55,7 +55,7 @@ public:
     bool m_needsUpdate = true;
 };
 
-class TorusGeometry final : public QObject, public GeometryComponent {
+class TorusComponent final : public QObject, public GeometryComponent {
     Q_OBJECT Q_PROPERTY(double majorRadius READ getMajorRadius WRITE setMajorRadius NOTIFY majorRadiusChanged)
 
     Q_PROPERTY(double minorRadius READ getMinorRadius WRITE setMinorRadius NOTIFY minorRadiusChanged)
@@ -65,7 +65,7 @@ class TorusGeometry final : public QObject, public GeometryComponent {
     Q_PROPERTY(int minorSegments READ getMinorSegments WRITE setMinorSegments NOTIFY minorSegmentsChanged)
 
 public:
-    TorusGeometry();
+    TorusComponent();
 
     [[nodiscard]] cadm::cadf getMajorRadius() const {
         return m_majorRadius;
@@ -113,7 +113,7 @@ signals :
     void minorSegmentsChanged(int segments);
 };
 
-class AxesGeometry final : public GeometryComponent {
+class AxesComponent final : public GeometryComponent {
 public:
     cadm::cadf m_length = 5.0f;
     float m_lineWidth = 1.0f;

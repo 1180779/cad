@@ -88,11 +88,11 @@ void GeometryComponent::syncToGpu() {
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-TorusGeometry::TorusGeometry() {
+TorusComponent::TorusComponent() {
     regenerateMesh();
 }
 
-void TorusGeometry::setMajorRadius(const cadm::cadf majorRadius) {
+void TorusComponent::setMajorRadius(const cadm::cadf majorRadius) {
     if (m_majorRadius == majorRadius) {
         return;
     }
@@ -101,7 +101,7 @@ void TorusGeometry::setMajorRadius(const cadm::cadf majorRadius) {
     emit majorRadiusChanged(m_majorRadius);
 }
 
-void TorusGeometry::setMinorRadius(const cadm::cadf minorRadius) {
+void TorusComponent::setMinorRadius(const cadm::cadf minorRadius) {
     if (m_minorRadius == minorRadius) {
         return;
     }
@@ -110,7 +110,7 @@ void TorusGeometry::setMinorRadius(const cadm::cadf minorRadius) {
     emit minorRadiusChanged(m_minorRadius);
 }
 
-void TorusGeometry::setMajorSegments(const uint32_t majorSegments) {
+void TorusComponent::setMajorSegments(const uint32_t majorSegments) {
     if (m_majorSegments == majorSegments) {
         return;
     }
@@ -119,7 +119,7 @@ void TorusGeometry::setMajorSegments(const uint32_t majorSegments) {
     emit majorSegmentsChanged(static_cast<int>(m_majorSegments));
 }
 
-void TorusGeometry::setMinorSegments(const uint32_t minorSegments) {
+void TorusComponent::setMinorSegments(const uint32_t minorSegments) {
     if (m_minorSegments == minorSegments) {
         return;
     }
@@ -128,7 +128,7 @@ void TorusGeometry::setMinorSegments(const uint32_t minorSegments) {
     emit minorSegmentsChanged(static_cast<int>(m_minorSegments));
 }
 
-void TorusGeometry::regenerateMesh() {
+void TorusComponent::regenerateMesh() {
     auto vertices = generateVertices();
     auto indices = generateIndicesForWireframe();
     m_lineIndices.swap(indices);
@@ -136,7 +136,7 @@ void TorusGeometry::regenerateMesh() {
     m_needsUpdate = true;
 }
 
-std::vector<Vertex> TorusGeometry::generateVertices() const {
+std::vector<Vertex> TorusComponent::generateVertices() const {
     std::vector<Vertex> vertices;
     const auto majorAngleStep = static_cast<cadm::cadf>(2 * std::numbers::pi / m_majorSegments);
     const auto minorAngleStep = static_cast<cadm::cadf>(2 * std::numbers::pi / m_minorSegments);
@@ -162,7 +162,7 @@ std::vector<Vertex> TorusGeometry::generateVertices() const {
     return vertices;
 }
 
-std::vector<std::uint32_t> TorusGeometry::generateIndicesForWireframe() const {
+std::vector<std::uint32_t> TorusComponent::generateIndicesForWireframe() const {
     std::vector<std::uint32_t> indices;
     for (std::uint32_t i = 0; i < m_majorSegments; ++i) {
         for (std::uint32_t j = 0; j < m_minorSegments; ++j) {
@@ -182,7 +182,7 @@ std::vector<std::uint32_t> TorusGeometry::generateIndicesForWireframe() const {
     return indices;
 }
 
-void AxesGeometry::regenerateMesh() {
+void AxesComponent::regenerateMesh() {
     m_vertices.clear();
     m_lineIndices.clear();
 

@@ -55,7 +55,7 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
     }
 
-    if (const auto torus = m_entity->getComponent<TorusGeometry>()) {
+    if (const auto torus = m_entity->getComponent<TorusComponent>()) {
         const auto widget = new TorusWidget(torus.value());
         widget->setCommandContext(m_scene, m_commandStack, m_entity->getId());
         m_layout->addWidget(widget);

@@ -5,7 +5,6 @@
 #include <QFontDatabase>
 #include <QMessageBox>
 #include <QPainter>
-#include <QPushButton>
 #include <QSplitter>
 #include <QTextStream>
 

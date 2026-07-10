@@ -27,7 +27,7 @@ Entity* GeometryFactory::createTorus(
     const auto entity = m_scene.createEntity(name);
     const auto transform = entity->addComponent<TransformComponent>();
     transform->setTranslation(position);
-    const auto torus = entity->addComponent<TorusGeometry>();
+    const auto torus = entity->addComponent<TorusComponent>();
     torus->setMajorRadius(majorRadius);
     torus->setMinorRadius(minorRadius);
     torus->setMajorSegments(majorSegments);
@@ -38,7 +38,7 @@ Entity* GeometryFactory::createTorus(
 Entity* GeometryFactory::createAxis(const float length, const cadm::Vec3 &position, const std::string &name) const {
     const auto e = m_scene.createEntity(name);
     e->addComponent<TransformComponent>()->setTranslation(position);
-    auto *axes = e->addComponent<AxesGeometry>();
+    auto *axes = e->addComponent<AxesComponent>();
     axes->m_length = length;
     return e;
 }
@@ -46,7 +46,7 @@ Entity* GeometryFactory::createAxis(const float length, const cadm::Vec3 &positi
 Entity* GeometryFactory::createCursor(const cadm::Vec3 &position, const std::string &name) const {
     const auto e = m_scene.createEntity(name);
     e->addComponent<TransformComponent>()->setTranslation(position);
-    auto *axes = e->addComponent<AxesGeometry>();
+    auto *axes = e->addComponent<AxesComponent>();
     axes->m_length = 0.5f;
     e->addComponent<CursorComponent>();
     return e;

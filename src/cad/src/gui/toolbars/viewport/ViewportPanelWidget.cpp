@@ -11,6 +11,8 @@
 #include "GridSettingsWidget.hpp"
 #include "ViewportTypes.hpp"
 
+// ReSharper disable CppDFAMemoryLeak
+
 ViewportPanelWidget::ViewportPanelWidget(QWidget *parent)
 : ToolPanelWidget("Viewport", parent),
   m_gridSettings(new GridSettingsWidget(this)),
@@ -22,13 +24,20 @@ ViewportPanelWidget::ViewportPanelWidget(QWidget *parent)
     m_coordSpaceCombo->addItem("World", static_cast<int>(CoordSpace::world));
     m_coordSpaceCombo->addItem("Local", static_cast<int>(CoordSpace::local));
 
-    const auto layout = createLayout();
-    layout->addWidget(m_gridSettings);
-    layout->addWidget(new QLabel("Transform pivot:", this));
-    layout->addWidget(m_pivotCombo);
-    layout->addWidget(new QLabel("Transform space:", this));
-    layout->addWidget(m_coordSpaceCombo);
+    const auto content = new QWidget;
+    const auto contentLayout = new QVBoxLayout(content);
+    contentLayout->setContentsMargins(0, 0, 0, 0);
+    contentLayout->setAlignment(Qt::AlignTop);
+    contentLayout->addWidget(m_gridSettings);
+    contentLayout->addWidget(new QLabel("Transform pivot:", this));
+    contentLayout->addWidget(m_pivotCombo);
+    contentLayout->addWidget(new QLabel("Transform space:", this));
+    contentLayout->addWidget(m_coordSpaceCombo);
+
+    createScrollLayout(content);
 }
+
+// ReSharper restore CppDFAMemoryLeak
 
 GridSettingsWidget* ViewportPanelWidget::gridSettingsWidget() const {
     return m_gridSettings;

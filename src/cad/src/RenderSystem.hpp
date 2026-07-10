@@ -175,7 +175,7 @@ private:
     /// @brief Upload the active theme's geometry colors into the Palette UBO
     void uploadPaletteUbo() const;
 
-    AxesGeometry m_pivotAxes;
+    AxesComponent m_pivotAxes;
 
     std::unique_ptr<ShaderProgram> m_basicShader = std::make_unique<ShaderProgram>();
     std::unique_ptr<ShaderProgram> m_wireframeShader = std::make_unique<ShaderProgram>();

@@ -11,7 +11,7 @@ class TorusWidget final : public ComponentWidget {
     Q_OBJECT
 
 public:
-    explicit TorusWidget(TorusGeometry *torus, QWidget *parent = nullptr);
+    explicit TorusWidget(TorusComponent *torus, QWidget *parent = nullptr);
 
 private
 slots :
@@ -45,7 +45,7 @@ private:
     static constexpr int s_minorSegmentsMin = 3;
     static constexpr int s_minorSegmentsMax = 1000;
 
-    TorusGeometry *m_torus;
+    TorusComponent *m_torus;
 
     ModifierDoubleSpinBox *m_majorRadius{};
     ModifierDoubleSpinBox *m_minorRadius{};

@@ -62,6 +62,12 @@ namespace widgets {
     inline void addSeparator(QLayout *layout);
 
     inline VirtualPointPropertiesWidget* addPointProps(QLayout *layout);
+
+    inline QFrame* horizontalLine();
+
+    inline QFrame* horizontalLine(QWidget *parent);
+
+    inline QFrame* horizontalLine(QLayout *layout);
 }
 
 namespace widgets {
@@ -92,7 +98,6 @@ namespace widgets {
         layout->addWidget(new QLabel(label));
         const auto list = new QListWidget;
         list->setSelectionMode(mode);
-        list->setMaximumHeight(120);
         layout->addWidget(list);
         return list;
     }
@@ -198,6 +203,26 @@ namespace widgets {
         layout->addWidget(props);
         props->setActive(false);
         return props;
+    }
+
+    inline QFrame* horizontalLine() {
+        const auto hLine = new QFrame();
+        hLine->setFrameShape(QFrame::HLine);
+        hLine->setFixedHeight(16);
+        hLine->setAutoFillBackground(false);
+        return hLine;
+    }
+
+    inline QFrame* horizontalLine(QWidget *parent) {
+        const auto hLine = horizontalLine();
+        hLine->setParent(parent);
+        return hLine;
+    }
+
+    inline QFrame* horizontalLine(QLayout *layout) {
+        const auto hLine = horizontalLine();
+        layout->addWidget(hLine);
+        return hLine;
     }
 }
 
