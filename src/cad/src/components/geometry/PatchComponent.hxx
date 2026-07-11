@@ -46,6 +46,19 @@ public:
         int patchCountY
     );
 
+    /// @brief Same as <tt>setGrid</tt> but for cases when point handles are
+    /// already wrapped
+    /// @param handles  grid points, row-major (size == rows * cols)
+    /// @param rows,cols  grid dimensions
+    /// @param patchCountX,patchCountY  number of single patches along columns / rows
+    void setAlreadyWrappedGrid(
+        std::vector<PointHandle> handles,
+        int rows,
+        int cols,
+        int patchCountX,
+        int patchCountY
+    );
+
     [[nodiscard]] const std::vector<PointHandle>& getControlPoints() const {
         return m_controlPoints;
     }
@@ -81,6 +94,20 @@ public:
     }
 
     void setControlPointHandles(const std::vector<PointHandle> &handles) override;
+
+    /// @brief Result of mapping global (u, v) to a single patch
+    struct PatchUv {
+        int xPatch, yPatch;
+        cadm::cadf localU, localV;
+    };
+
+    /// @brief Map global (u, v) to a single patch and local coordinates.
+    /// Wraps v when @ref m_wrapU is set (the column direction is the seam);
+    /// @returns <tt>std::nullopt</tt> when a non-wrapped parameter is outside
+    /// [0, 1]
+    [[nodiscard]] std::optional<PatchUv> resolveUv(cadm::cadf u, cadm::cadf v) const;
+
+    virtual ::std::optional<bezierUtils::Grid4x4> patchAtUv(cadm::cadf u, cadm::cadf v) const = 0;
 
     /// @brief View of a single patch (px, py)
     [[nodiscard]] SinglePatchView singlePatch(int px, int py) const;

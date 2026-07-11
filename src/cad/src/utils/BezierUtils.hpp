@@ -40,6 +40,15 @@ namespace bezierUtils {
     using generic4x4Grid = cadm::Vec<cadm::Vec<T, 4>, 4>;
 
     template <typename T>
+    [[nodiscard]] generic4x4Grid<T> grid4x4(const std::array<T, 16> &grid) {
+        const auto row0 = {grid[0], grid[1], grid[2], grid[3]};
+        const auto row1 = {grid[4], grid[5], grid[6], grid[7]};
+        const auto row2 = {grid[8], grid[9], grid[10], grid[11]};
+        const auto row3 = {grid[12], grid[13], grid[14], grid[15]};
+        return {row0, row1, row2, row3};
+    }
+
+    template <typename T>
     [[nodiscard]] generic4x4Grid<T> transposeGrid(const generic4x4Grid<T> &grid) {
         cadm::Mat<T, 4, 4> transposed{grid[0], grid[1], grid[2], grid[3]};
         return {transposed.row[0], transposed.row[1], transposed.row[2], transposed.row[3]};
@@ -82,13 +91,14 @@ namespace bezierUtils {
         return c[0];
     }
 
-    /// @brief Evaluate a cubic Bézier patch at (@p u, @p v) (de Casteljau)
+    /// @brief Evaluate a cubic Bézier patch at (@p u, @p v) (de Casteljau).
+    /// @p patch[i] is the constant-u(=i) row
     [[nodiscard]] inline cadm::Vec3 bezierAt(const Grid4x4 &patch, const cadm::cadf u, const cadm::cadf v) {
-        Curve4 row;
+        Curve4 col;
         for (int i = 0; i < 4; ++i) {
-            row[i] = bezierAt(patch[i], u);
+            col[i] = bezierAt(patch[i], v);
         }
-        return bezierAt(row, v);
+        return bezierAt(col, u);
     }
 
     /// @brief Evaluate a cubic Bézier patch at @p uv (de Casteljau)
@@ -104,22 +114,23 @@ namespace bezierUtils {
         const cadm::cadf u,
         const cadm::cadf v
     ) {
-        Curve4 uDerivativeCurve;
+        // patch[i] is the constant-u(=i) row
+        Curve4 vDerivativeCurve;
         for (int i = 0; i < 4; ++i) {
-            deCasteljauStep(patch[i].data.data(), 4, u);
-            deCasteljauStep(patch[i].data.data(), 3, u);
-            uDerivativeCurve[i] = cadm::cadf{3.0} * (-patch[i][0] + patch[i][1]);
+            deCasteljauStep(patch[i].data.data(), 4, v);
+            deCasteljauStep(patch[i].data.data(), 3, v);
+            vDerivativeCurve[i] = cadm::cadf{3.0} * (-patch[i][0] + patch[i][1]);
         }
         for (int i = 0; i < 4; ++i) {
-            deCasteljauStep(patch[i].data.data(), 2, u);
+            deCasteljauStep(patch[i].data.data(), 2, v);
         }
         Curve4 valueCurve{patch[0][0], patch[1][0], patch[2][0], patch[3][0]};
-        deCasteljauStep(valueCurve.data.data(), 4, v);
-        deCasteljauStep(valueCurve.data.data(), 3, v);
+        deCasteljauStep(valueCurve.data.data(), 4, u);
+        deCasteljauStep(valueCurve.data.data(), 3, u);
 
-        const auto uDerivative = bezierAt(uDerivativeCurve, v);
-        const auto vDerivative = 3 * (-valueCurve[0] + valueCurve[1]);
-        deCasteljauStep(valueCurve.data.data(), 2, v);
+        const auto vDerivative = bezierAt(vDerivativeCurve, u);
+        const auto uDerivative = 3 * (-valueCurve[0] + valueCurve[1]);
+        deCasteljauStep(valueCurve.data.data(), 2, u);
         const auto value = valueCurve[0];
         return {value, uDerivative, vDerivative};
     }
@@ -127,11 +138,11 @@ namespace bezierUtils {
     /// @brief Evaluate a cubic Bézier derivative with respect to u at (@p u, @p
     /// v) (de Casteljau)
     [[nodiscard]] inline cadm::Vec3 bezierUDerivativeAt(const Grid4x4 &patch, const cadm::cadf u, const cadm::cadf v) {
-        Curve4 row;
+        Curve4 col;
         for (int i = 0; i < 4; ++i) {
-            row[i] = bezierDerivativeAt(patch[i], u);
+            col[i] = bezierAt(patch[i], v);
         }
-        return bezierAt(row, v);
+        return bezierDerivativeAt(col, u);
     }
 
     /// @brief Evaluate a cubic Bézier derivative with respect to u at (@p u, @p
@@ -143,11 +154,11 @@ namespace bezierUtils {
     /// @brief Evaluate a cubic Bézier derivative with respect to v at (@p u, @p
     /// v) (de Casteljau)
     [[nodiscard]] inline cadm::Vec3 bezierVDerivativeAt(const Grid4x4 &patch, const cadm::cadf u, const cadm::cadf v) {
-        Curve4 row;
+        Curve4 col;
         for (int i = 0; i < 4; ++i) {
-            row[i] = bezierAt(patch[i], u);
+            col[i] = bezierDerivativeAt(patch[i], v);
         }
-        return bezierDerivativeAt(row, v);
+        return bezierAt(col, u);
     }
 
     /// @brief Evaluate a cubic Bézier derivative with respect to v at (@p u, @p

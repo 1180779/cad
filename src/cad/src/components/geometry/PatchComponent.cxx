@@ -5,6 +5,7 @@
 #include "PatchComponent.hxx"
 
 #include <algorithm>
+#include <cmath>
 
 #include "GlCommon.hpp"
 
@@ -56,6 +57,40 @@ void PatchComponent::setGrid(
     m_needsUpdate = true;
     buildNetEbo();
     rebuildPatchData();
+}
+
+void PatchComponent::setAlreadyWrappedGrid(
+    std::vector<PointHandle> handles,
+    const int rows,
+    const int cols,
+    const int patchCountX,
+    const int patchCountY
+) {
+    setGrid(std::move(handles), rows, cols, false, patchCountX, patchCountY);
+    m_wrapU = true;
+}
+
+std::optional<PatchComponent::PatchUv> PatchComponent::resolveUv(const cadm::cadf u, const cadm::cadf v) const {
+    const auto resolve = [](
+        cadm::cadf param,
+        const int count,
+        const bool wrap
+    ) -> std::optional<std::pair<int, cadm::cadf>> {
+        if (wrap) {
+            param -= std::floor(param);
+        }
+        else if (param < 0 || param > 1) {
+            return std::nullopt;
+        }
+        const int patch = std::min(static_cast<int>(param * count), count - 1);
+        return {{patch, param * count - patch}};
+    };
+    const auto y = resolve(u, m_patchCountY, false);
+    const auto x = resolve(v, m_patchCountX, m_wrapU);
+    if (!x || !y) {
+        return std::nullopt;
+    }
+    return PatchUv{x->first, y->first, y->second, x->second};
 }
 
 int PatchComponent::gridIndex(const int row, const int col) const {

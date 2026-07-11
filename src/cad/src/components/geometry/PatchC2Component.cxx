@@ -5,7 +5,6 @@
 #include "PatchC2Component.hxx"
 
 #include <array>
-#include <numeric>
 #include <span>
 
 #include "../../utils/BSplineToBezierConverter.hpp"
@@ -57,4 +56,25 @@ void PatchC2Component::rebuildPatchData() {
     std::vector<uint32_t> idx(static_cast<size_t>(getPatchCount()) * 16);
     std::ranges::iota(idx, 0u);
     m_patchEbo.diffAssign(std::move(idx));
+}
+
+std::optional<bezierUtils::Grid4x4> PatchC2Component::patchAtUv(const cadm::cadf u, const cadm::cadf v) const {
+    const auto loc = resolveUv(u, v);
+    if (!loc) {
+        return std::nullopt;
+    }
+    std::array<int, 16> grid;
+    gatherPatch(loc->xPatch, loc->yPatch, grid);
+
+    std::array<cadm::Vec3, 16> tmp{};
+    for (int i = 0; i < 4; ++i) {
+        bsplineToBezier::uniformSegment(
+            m_registry->getPosition(m_controlPoints[grid[i * 4 + 0]]),
+            m_registry->getPosition(m_controlPoints[grid[i * 4 + 1]]),
+            m_registry->getPosition(m_controlPoints[grid[i * 4 + 2]]),
+            m_registry->getPosition(m_controlPoints[grid[i * 4 + 3]]),
+            std::span<cadm::Vec3, 4>(std::span{tmp}.subspan(static_cast<size_t>(i) * 4, 4))
+        );
+    }
+    return bezierUtils::grid4x4(tmp);
 }

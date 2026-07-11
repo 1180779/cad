@@ -13,9 +13,12 @@
 /// Boor points
 class PatchC2Component final : public PatchComponent {
 public:
-    explicit PatchC2Component(PointRegistry *registry) : PatchComponent(registry) {}
+    explicit PatchC2Component(PointRegistry *registry)
+    : PatchComponent(registry) {}
 
     ~PatchC2Component() override;
+
+    std::optional<bezierUtils::Grid4x4> patchAtUv(cadm::cadf u, cadm::cadf v) const override;
 
     [[nodiscard]] cadm::Vec3 patchVertexPos(const uint32_t index) const override {
         return m_bernsteinVbo[static_cast<int>(index)];
