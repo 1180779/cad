@@ -11,6 +11,7 @@
 #include <QObject>
 #include <string>
 
+#include "cad_math/Vec2.hpp"
 #include "cad_math/Vec4.hpp"
 
 struct Vertex {
@@ -66,6 +67,12 @@ class TorusComponent final : public QObject, public GeometryComponent {
 
 public:
     TorusComponent();
+
+    [[nodiscard]] cadm::Vec3 evaluateAtAngles(cadm::cadf majorAngle, cadm::cadf minorAngle) const;
+
+    [[nodiscard]] cadm::Vec3 evaluateAtUv(cadm::cadf u, cadm::cadf v) const;
+
+    [[nodiscard]] cadm::Vec3 evaluateAtUv(cadm::Vec2 uv) const;
 
     [[nodiscard]] cadm::cadf getMajorRadius() const {
         return m_majorRadius;

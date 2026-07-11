@@ -92,6 +92,29 @@ TorusComponent::TorusComponent() {
     regenerateMesh();
 }
 
+cadm::Vec3 TorusComponent::evaluateAtAngles(const cadm::cadf majorAngle, const cadm::cadf minorAngle) const {
+    const cadm::Vec3 majorRadiusPosition{
+        m_majorRadius * std::cos(majorAngle),
+        0,
+        m_majorRadius * std::sin(majorAngle),
+    };
+    return {
+        majorRadiusPosition.x + std::cos(majorAngle) * std::cos(minorAngle) * m_minorRadius,
+        std::sin(minorAngle) * m_minorRadius,
+        majorRadiusPosition.z + std::sin(majorAngle) * std::cos(minorAngle) * m_minorRadius,
+    };
+}
+
+cadm::Vec3 TorusComponent::evaluateAtUv(const cadm::cadf u, const cadm::cadf v) const {
+    const auto majorAngle = u * 2.0 * std::numbers::pi_v<cadm::cadf>;
+    const auto minorAngle = v * 2.0 * std::numbers::pi_v<cadm::cadf>;
+    return evaluateAtAngles(majorAngle, minorAngle);
+}
+
+cadm::Vec3 TorusComponent::evaluateAtUv(const cadm::Vec2 uv) const {
+    return evaluateAtUv(uv.x, uv.y);
+}
+
 void TorusComponent::setMajorRadius(const cadm::cadf majorRadius) {
     if (m_majorRadius == majorRadius) {
         return;
@@ -145,18 +168,7 @@ std::vector<Vertex> TorusComponent::generateVertices() const {
         const cadm::cadf majorAngle = static_cast<cadm::cadf>(i) * majorAngleStep;
         for (std::size_t j = 0; j < m_minorSegments; ++j) {
             const cadm::cadf minorAngle = static_cast<cadm::cadf>(j) * minorAngleStep;
-
-            const cadm::Vec3 majorRadiusPosition{
-                m_majorRadius * std::cos(majorAngle),
-                0,
-                m_majorRadius * std::sin(majorAngle),
-            };
-            const cadm::Vec3 pos{
-                majorRadiusPosition.x + std::cos(majorAngle) * std::cos(minorAngle) * m_minorRadius,
-                std::sin(minorAngle) * m_minorRadius,
-                majorRadiusPosition.z + std::sin(majorAngle) * std::cos(minorAngle) * m_minorRadius,
-            };
-            vertices.push_back({pos, {}, {0, 0, 0, 1}});
+            vertices.push_back({evaluateAtAngles(majorAngle, minorAngle), {}, {0, 0, 0, 1}});
         }
     }
     return vertices;
