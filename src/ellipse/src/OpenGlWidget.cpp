@@ -290,9 +290,9 @@ void OpenGlWidget::performRaycasting(
 
                 const auto t = solveQuadraticMinPositive(a, b, c);
 
-                cadm::vec3i rgb;
+                cadm::Vec3I rgb;
                 if (!t) {
-                    rgb = cadm::vec3i();
+                    rgb = cadm::Vec3I();
                 }
                 else {
                     cadm::Vec4 intersectionPoint = rayWorld.origin + rayWorld.direction * t.value();
