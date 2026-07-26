@@ -82,8 +82,8 @@ std::optional<PatchComponent::PatchUv> PatchComponent::resolveUv(const cadm::cad
         else if (param < 0 || param > 1) {
             return std::nullopt;
         }
-        const int patch = std::min(static_cast<int>(param * count), count - 1);
-        return {{patch, param * count - patch}};
+        const int patch = std::min(static_cast<int>(param * static_cast<cadm::cadf>(count)), count - 1);
+        return {{patch, param * static_cast<cadm::cadf>(count) - static_cast<cadm::cadf>(patch)}};
     };
     const auto y = resolve(u, m_patchCountY, false);
     const auto x = resolve(v, m_patchCountX, m_wrapU);
