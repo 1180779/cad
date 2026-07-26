@@ -292,6 +292,46 @@ namespace cadm {
             tempRowI.swap(tempRowPivot);
         }
 
+        /// @brief Solve @p this * x = @p b (Gauss elimination, partial
+        /// pivoting)
+        /// @returns <tt>std::nullopt</tt> if (near-)singular
+        [[nodiscard]] constexpr std::optional<ColType> solveGepp(ColType b) const requires (R == C) {
+            Derived temp = *static_cast<const Derived*>(this);
+
+            // forward elimination
+            for (std::size_t i = 0; i < R; ++i) {
+                std::size_t pivot = temp.findPivotGepp(i);
+
+                if (std::abs(temp(pivot, i)) < gc_eps) {
+                    return std::nullopt;
+                }
+
+                if (pivot != i) {
+                    temp.swapRows(i, pivot);
+                    std::swap(b[i], b[pivot]);
+                }
+
+                auto pivotRow = temp.makeRowRef(i);
+                for (std::size_t j = i + 1; j < R; ++j) {
+                    T mul = temp(j, i) / pivotRow[i];
+                    temp.makeRowRef(j) -= pivotRow * mul;
+                    b[j] -= b[i] * mul;
+                }
+            }
+
+            // back-substitution
+            ColType x{};
+            for (std::size_t i = R; i > 0; --i) {
+                T sum = b[i];
+                for (std::size_t j = i + 1; j < R; ++j) {
+                    sum -= temp(i, j) * x[j];
+                }
+                x[i] = sum / temp(i, i);
+            }
+
+            return x;
+        }
+
         [[deprecated("inverse is not needed for this project")]]
         [[nodiscard]] constexpr std::optional<Derived> inversedSafe() const requires (R == C) {
             Derived temp = *static_cast<const Derived*>(this);
