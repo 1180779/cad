@@ -321,7 +321,7 @@ namespace cadm {
 
             // back-substitution
             ColType x{};
-            for (std::size_t i = R; i > 0; --i) {
+            for (std::size_t i = R - 1; i > 0; --i) {
                 T sum = b[i];
                 for (std::size_t j = i + 1; j < R; ++j) {
                     sum -= temp(i, j) * x[j];
