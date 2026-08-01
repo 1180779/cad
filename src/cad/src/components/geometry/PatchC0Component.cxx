@@ -13,7 +13,7 @@
     std::array<cadm::Vec3, 16> patchPos;
     gatherPatch(loc->xPatch, loc->yPatch, patch);
     for (int i = 0; i < 16; ++i) {
-        patchPos[i] = m_registry->getPosition(patch[i]);
+        patchPos[i] = m_registry->getPosition(m_controlPoints[patch[i]]);
     }
     return bezierUtils::grid4x4(patchPos);
 }
