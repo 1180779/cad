@@ -8,6 +8,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
+#include <QFormLayout>
 
 #include <common/ModifierSpinBox.hpp>
 
@@ -49,7 +50,18 @@ private:
     void updateForType() const;
 
     bool m_c2;
+    /// @brief Which parameter the dialog's seam combo currently selects
+    [[nodiscard]] WrapDirection seam() const;
+
+    /// @brief Whether the cylinder wraps along rows
+    [[nodiscard]] bool wrapsAlongRows() const;
+
+    /// @brief Retitle a field's label, which @ref QFormLayout owns
+    void setFieldLabel(QWidget *field, const QString &text) const;
+
+    QFormLayout *m_form{};
     QComboBox *m_typeCombo{};
+    QComboBox *m_seamCombo{};
     QSpinBox *m_countX{};
     QSpinBox *m_countY{};
     ModifierDoubleSpinBox *m_width{};

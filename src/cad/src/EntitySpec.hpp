@@ -14,6 +14,7 @@
 
 #include "PointRegistry.hpp"
 #include "components/Entity.hpp"
+#include "components/geometry/WrapDirection.hxx"
 
 class Scene;
 
@@ -68,7 +69,7 @@ struct PatchGridData {
     std::vector<PointHandle> controlPoints;
     int rows{};
     int cols{};
-    bool wrapU{};
+    WrapDirection wrap{WrapDirection::none};
     int patchCountX{};
     int patchCountY{};
     int gridDivisionsU{4};

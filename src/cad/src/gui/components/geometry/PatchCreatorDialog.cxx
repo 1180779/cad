@@ -13,7 +13,9 @@
 
 using namespace widgets;
 
-PatchCreatorDialog::PatchCreatorDialog(const bool c2, QWidget *parent) : QDialog(parent), m_c2(c2) {
+PatchCreatorDialog::PatchCreatorDialog(const bool c2, QWidget *parent)
+: QDialog(parent),
+  m_c2(c2) {
     const QString title = c2
                               ? "New Bézier Patch (C2)"
                               : "New Bézier Patch (C0)";
@@ -54,13 +56,15 @@ PatchCreatorDialog::PatchCreatorDialog(const bool c2, QWidget *parent) : QDialog
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto form = new QFormLayout;
+    m_form = form;
     form->setContentsMargins(14, 12, 14, 14);
     form->setHorizontalSpacing(12);
     form->setVerticalSpacing(8);
     outer->addLayout(form);
 
     m_typeCombo = addFormComboBox(form, "Type:", {"Plane", "Cylinder"});
-    m_countX = addFormSpinBox(form, "Patches along (around):", 1, 64, 1);
+    m_seamCombo = addFormComboBox(form, "Seam direction:", {"V (columns)", "U (rows)"});
+    m_countX = addFormSpinBox(form, "Patches along:", 1, 64, 1);
     m_countY = addFormSpinBox(form, "Patches across:", 1, 64, 1);
     m_width = addFormDoubleSpinBox(form, "Width:", 0.1, 1000.0, 5.0);
     m_length = addFormDoubleSpinBox(form, "Length:", 0.1, 1000.0, 5.0);
@@ -69,6 +73,7 @@ PatchCreatorDialog::PatchCreatorDialog(const bool c2, QWidget *parent) : QDialog
 
     // uniform field column; counts centered since they're short integers
     m_typeCombo->setFixedWidth(90);
+    m_seamCombo->setFixedWidth(90);
     for (QAbstractSpinBox *box : std::initializer_list<QAbstractSpinBox*>{
              m_countX,
              m_countY,
@@ -104,15 +109,12 @@ PatchCreatorDialog::PatchCreatorDialog(const bool c2, QWidget *parent) : QDialog
     const auto emitParams = [this] {
         emit paramsChanged(params());
     };
-    connect(
-        m_typeCombo,
-        &QComboBox::currentIndexChanged,
-        this,
-        [this, emitParams] {
-            updateForType();
-            emitParams();
-        }
-    );
+    const auto comboAction = [this, emitParams] {
+        updateForType();
+        emitParams();
+    };
+    connect(m_typeCombo, &QComboBox::currentIndexChanged, this, comboAction);
+    connect(m_seamCombo, &QComboBox::currentIndexChanged, this, comboAction);
     connect(m_countX, &QSpinBox::valueChanged, this, emitParams);
     connect(m_countY, &QSpinBox::valueChanged, this, emitParams);
     connect(m_width, &QDoubleSpinBox::valueChanged, this, emitParams);
@@ -135,14 +137,51 @@ PatchCreatorDialog::PatchCreatorDialog(const bool c2, QWidget *parent) : QDialog
     layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
 
+WrapDirection PatchCreatorDialog::seam() const {
+    return m_seamCombo->currentIndex() == 1
+               ? WrapDirection::u
+               : WrapDirection::v;
+}
+
+bool PatchCreatorDialog::wrapsAlongRows() const {
+    return seam() == WrapDirection::u;
+}
+
+void PatchCreatorDialog::setFieldLabel(QWidget *field, const QString &text) const {
+    if (const auto label = qobject_cast<QLabel*>(m_form->labelForField(field))) {
+        label->setText(text);
+    }
+}
+
 void PatchCreatorDialog::updateForType() const {
     const bool isCylinder = m_typeCombo->currentIndex() == 1;
+
+    const bool aroundIsY = isCylinder && wrapsAlongRows();
     m_countX->setMinimum(
-        isCylinder
+        isCylinder && !aroundIsY
+            ? 3
+            : 1
+    );
+    m_countY->setMinimum(
+        aroundIsY
             ? 3
             : 1
     );
 
+    setFieldLabel(
+        m_countX,
+        isCylinder && !aroundIsY
+            ? "Patches around:"
+            : "Patches along:"
+    );
+    setFieldLabel(
+        m_countY,
+        aroundIsY
+            ? "Patches around:"
+            : "Patches across:"
+    );
+
+    m_seamCombo->setEnabled(isCylinder);
     m_width->setEnabled(!isCylinder);
     m_length->setEnabled(!isCylinder);
     m_radius->setEnabled(isCylinder);
@@ -161,6 +200,7 @@ patchgen::PatchCreateParams PatchCreatorDialog::params() const {
         p.dimensions = patchgen::CylinderDimensions{
             .radius = static_cast<cadm::cadf>(m_radius->value()),
             .height = static_cast<cadm::cadf>(m_height->value()),
+            .seam = seam(),
         };
     }
     else {

@@ -37,7 +37,7 @@ void PatchComponent::setGrid(
     std::vector<PointHandle> handles,
     const int rows,
     const int cols,
-    const bool wrapU,
+    const WrapDirection wrap,
     const int patchCountX,
     const int patchCountY
 ) {
@@ -50,24 +50,13 @@ void PatchComponent::setGrid(
     m_controlPoints = std::move(handles);
     m_rows = rows;
     m_cols = cols;
-    m_wrapU = wrapU;
+    m_wrap = wrap;
     m_patchCountX = patchCountX;
     m_patchCountY = patchCountY;
     m_selectedPatches.clear();
     m_needsUpdate = true;
     buildNetEbo();
     rebuildPatchData();
-}
-
-void PatchComponent::setAlreadyWrappedGrid(
-    std::vector<PointHandle> handles,
-    const int rows,
-    const int cols,
-    const int patchCountX,
-    const int patchCountY
-) {
-    setGrid(std::move(handles), rows, cols, false, patchCountX, patchCountY);
-    m_wrapU = true;
 }
 
 std::optional<PatchComponent::PatchUv> PatchComponent::resolveUv(const cadm::cadf u, const cadm::cadf v) const {
@@ -85,8 +74,8 @@ std::optional<PatchComponent::PatchUv> PatchComponent::resolveUv(const cadm::cad
         const int patch = std::min(static_cast<int>(param * static_cast<cadm::cadf>(count)), count - 1);
         return {{patch, param * static_cast<cadm::cadf>(count) - static_cast<cadm::cadf>(patch)}};
     };
-    const auto y = resolve(u, m_patchCountY, false);
-    const auto x = resolve(v, m_patchCountX, m_wrapU);
+    const auto y = resolve(u, m_patchCountY, m_wrap == WrapDirection::u);
+    const auto x = resolve(v, m_patchCountX, m_wrap == WrapDirection::v);
     if (!x || !y) {
         return std::nullopt;
     }
@@ -94,10 +83,13 @@ std::optional<PatchComponent::PatchUv> PatchComponent::resolveUv(const cadm::cad
 }
 
 int PatchComponent::gridIndex(const int row, const int col) const {
-    const int c = m_wrapU
+    const int c = m_wrap == WrapDirection::v
                       ? col % m_cols
                       : col;
-    return row * m_cols + c;
+    const int r = m_wrap == WrapDirection::u
+                      ? row % m_rows
+                      : row;
+    return r * m_cols + c;
 }
 
 void PatchComponent::gatherPatch(const int px, const int py, std::array<int, 16> &out) const {
@@ -166,19 +158,20 @@ void PatchComponent::setPatchSelected(const int index, const bool selected) {
 
 void PatchComponent::buildNetEbo() {
     std::vector<uint32_t> lines;
-    // row-direction segments
+    const int lastCol = m_wrap == WrapDirection::v
+                            ? m_cols
+                            : m_cols - 1;
     for (int r = 0; r < m_rows; ++r) {
-        const int last = m_wrapU
-                             ? m_cols
-                             : m_cols - 1;
-        for (int c = 0; c < last; ++c) {
+        for (int c = 0; c < lastCol; ++c) {
             lines.push_back(m_controlPoints[gridIndex(r, c)]);
             lines.push_back(m_controlPoints[gridIndex(r, c + 1)]);
         }
     }
-    // column-direction segments
+    const int lastRow = m_wrap == WrapDirection::u
+                            ? m_rows
+                            : m_rows - 1;
     for (int c = 0; c < m_cols; ++c) {
-        for (int r = 0; r < m_rows - 1; ++r) {
+        for (int r = 0; r < lastRow; ++r) {
             lines.push_back(m_controlPoints[gridIndex(r, c)]);
             lines.push_back(m_controlPoints[gridIndex(r + 1, c)]);
         }

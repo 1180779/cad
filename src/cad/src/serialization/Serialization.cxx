@@ -5,6 +5,7 @@
 // ReSharper disable CppInconsistentNaming
 #include "Serialization.hxx"
 
+#include <algorithm>
 #include <unordered_map>
 
 #include <valijson/adapters/qtjson_adapter.hpp>
@@ -24,37 +25,36 @@ using valijson::ValidationResults;
 using namespace valijson::adapters;
 using namespace valijson::constraints;
 
-namespace {
-    namespace schemaType {
-        const auto torus = "torus";
-        // const auto chain = "chain";
-        const auto bezierC0 = "bezierC0";
-        const auto bezierC2 = "bezierC2";
-        const auto interpolatedC2 = "interpolatedC2";
-        const auto bezierSurfaceC0 = "bezierSurfaceC0";
-        const auto bezierSurfaceC2 = "bezierSurfaceC2";
+namespace { namespace schemaType {
+        constexpr auto torus = "torus";
+        // constexpr auto chain = "chain";
+        constexpr auto bezierC0 = "bezierC0";
+        constexpr auto bezierC2 = "bezierC2";
+        constexpr auto interpolatedC2 = "interpolatedC2";
+        constexpr auto bezierSurfaceC0 = "bezierSurfaceC0";
+        constexpr auto bezierSurfaceC2 = "bezierSurfaceC2";
     }
 
     namespace schemaProperties {
-        const auto points = "points";
-        const auto geometry = "geometry";
-        const auto name = "name";
-        const auto objectType = "objectType";
-        const auto id = "id";
-        const auto controlPoints = "controlPoints";
-        const auto size = "size";
-        const auto samples = "samples";
-        const auto position = "position";
-        const auto rotation = "rotation";
-        const auto scale = "scale";
-        const auto smallRadius = "smallRadius";
-        const auto largeRadius = "largeRadius";
-        const auto x = "x";
-        const auto y = "y";
-        const auto z = "z";
-        const auto w = "w";
-        const auto u = "u";
-        const auto v = "v";
+        constexpr auto points = "points";
+        constexpr auto geometry = "geometry";
+        constexpr auto name = "name";
+        constexpr auto objectType = "objectType";
+        constexpr auto id = "id";
+        constexpr auto controlPoints = "controlPoints";
+        constexpr auto size = "size";
+        constexpr auto samples = "samples";
+        constexpr auto position = "position";
+        constexpr auto rotation = "rotation";
+        constexpr auto scale = "scale";
+        constexpr auto smallRadius = "smallRadius";
+        constexpr auto largeRadius = "largeRadius";
+        constexpr auto x = "x";
+        constexpr auto y = "y";
+        constexpr auto z = "z";
+        constexpr auto w = "w";
+        constexpr auto u = "u";
+        constexpr auto v = "v";
     }
 
     namespace st = schemaType;
@@ -117,6 +117,26 @@ namespace {
             arr.append(QJsonObject{{sp::id, static_cast<int>(map.at(h))}});
         }
         return arr;
+    }
+
+    /// @brief Grid of a patch as the format expects it: a surface closed along
+    /// u is written flat, with its @p seam first rows repeated at the end
+    std::vector<PointHandle> patchGridForJson(const PatchComponent *patch, const int seam) {
+        const auto &cps = patch->getControlPoints();
+        if (patch->getWrap() != WrapDirection::u) {
+            return cps;
+        }
+        std::vector<PointHandle> out = cps;
+        const auto cols = static_cast<std::ptrdiff_t>(patch->getCols());
+        out.insert(out.end(), cps.begin(), cps.begin() + static_cast<std::ptrdiff_t>(seam) * cols);
+        return out;
+    }
+
+    /// @brief Row count matching <tt>patchGridForJson</tt>
+    int patchJsonRows(const PatchComponent *patch, const int seam) {
+        return patch->getWrap() == WrapDirection::u
+                   ? patch->getRows() + seam
+                   : patch->getRows();
     }
 
     /// @brief Reuses the JSON id as both the point's EntityId and its handle
@@ -183,17 +203,44 @@ namespace {
     /// @brief Rebuild a joined-patch surface. The JSON grid is row-major (rows
     /// = size.v, cols = size.u) and stores the control points explicitly,
     /// including any duplicated wrap-seam points
+    /// @brief Whether the grid's last @p seam rows repeat its first @p seam
+    /// rows
+    bool hasDuplicatedSeamRows(
+        const std::vector<PointHandle> &cps,
+        const int rows,
+        const int cols,
+        const int seam
+    ) {
+        if (rows <= seam) {
+            return false;
+        }
+        const auto first = cps.begin();
+        const auto last = cps.begin() + static_cast<std::ptrdiff_t>(rows - seam) * cols;
+        return std::equal(last, last + static_cast<std::ptrdiff_t>(seam) * cols, first);
+    }
+
     Entity* patchFromJson(Scene &scene, const QJsonObject &json, const PointIdToHandleMap &map, const bool c2) {
         auto cps = controlPointsFromJson(json[sp::controlPoints].toArray(), map);
         const auto size = json[sp::size].toObject();
         const int cols = size[sp::u].toInt();
-        const int rows = size[sp::v].toInt();
+        int rows = size[sp::v].toInt();
         const int patchCountX = c2
                                     ? cols - 3
                                     : (cols - 1) / 3;
         const int patchCountY = c2
                                     ? rows - 3
                                     : (rows - 1) / 3;
+
+        // a cylinder is stored flat, with its seam rows repeated at the end;
+        // drop them and mark the surface as closed instead
+        const int seam = c2
+                             ? 3
+                             : 1;
+        const bool wrapRows = hasDuplicatedSeamRows(cps, rows, cols, seam);
+        if (wrapRows) {
+            rows -= seam;
+            cps.resize(static_cast<size_t>(rows) * cols);
+        }
 
         Entity *e = scene.createEntityWithId(
             json[sp::id].toInt(),
@@ -209,7 +256,16 @@ namespace {
                                         e->addComponent<PatchC2Component>(&scene.getPointRegistry())
                                     )
                                     : e->addComponent<PatchC0Component>(&scene.getPointRegistry());
-        patch->setGrid(std::move(cps), rows, cols, false, patchCountX, patchCountY);
+        patch->setGrid(
+            std::move(cps),
+            rows,
+            cols,
+            wrapRows
+                ? WrapDirection::u
+                : WrapDirection::none,
+            patchCountX,
+            patchCountY
+        );
 
         const auto samples = json[sp::samples].toObject();
         patch->setGridDivisionsU(samples[sp::u].toInt());
@@ -335,14 +391,14 @@ QJsonDocument serialization::toJson(Scene &scene) {
         }
         else if (const auto p0 = e->getComponent<PatchC0Component>()) {
             obj[sp::objectType] = st::bezierSurfaceC0;
-            obj[sp::controlPoints] = controlPointsToJson(p0.value()->getControlPoints(), map);
-            obj[sp::size] = uint2ToJson(p0.value()->getCols(), p0.value()->getRows());
+            obj[sp::controlPoints] = controlPointsToJson(patchGridForJson(p0.value(), 1), map);
+            obj[sp::size] = uint2ToJson(p0.value()->getCols(), patchJsonRows(p0.value(), 1));
             obj[sp::samples] = uint2ToJson(p0.value()->getGridDivisionsU(), p0.value()->getGridDivisionsV());
         }
         else if (const auto p2 = e->getComponent<PatchC2Component>()) {
             obj[sp::objectType] = st::bezierSurfaceC2;
-            obj[sp::controlPoints] = controlPointsToJson(p2.value()->getControlPoints(), map);
-            obj[sp::size] = uint2ToJson(p2.value()->getCols(), p2.value()->getRows());
+            obj[sp::controlPoints] = controlPointsToJson(patchGridForJson(p2.value(), 3), map);
+            obj[sp::size] = uint2ToJson(p2.value()->getCols(), patchJsonRows(p2.value(), 3));
             obj[sp::samples] = uint2ToJson(p2.value()->getGridDivisionsU(), p2.value()->getGridDivisionsV());
         }
         else {

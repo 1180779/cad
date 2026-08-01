@@ -15,6 +15,7 @@
 #include "GpuBuffer.hpp"
 #include "PointRegistry.hpp"
 #include "SinglePatchView.hxx"
+#include "WrapDirection.hxx"
 #include "Vao.hxx"
 
 /// @brief Shared base for bicubic joined Bézier patches
@@ -35,26 +36,14 @@ public:
     /// @brief Set the generated control-point grid
     /// @param handles  grid points, row-major (size == rows * cols)
     /// @param rows,cols  grid dimensions
-    /// @param wrapU  true for a cylinder: the column direction wraps (seam shared)
+    /// @param wrap  for a cylinder, the periodic direction (seam shared, the
+    /// grid must not repeat it)
     /// @param patchCountX,patchCountY  number of single patches along columns / rows
     void setGrid(
         std::vector<PointHandle> handles,
         int rows,
         int cols,
-        bool wrapU,
-        int patchCountX,
-        int patchCountY
-    );
-
-    /// @brief Same as <tt>setGrid</tt> but for cases when point handles are
-    /// already wrapped
-    /// @param handles  grid points, row-major (size == rows * cols)
-    /// @param rows,cols  grid dimensions
-    /// @param patchCountX,patchCountY  number of single patches along columns / rows
-    void setAlreadyWrappedGrid(
-        std::vector<PointHandle> handles,
-        int rows,
-        int cols,
+        WrapDirection wrap,
         int patchCountX,
         int patchCountY
     );
@@ -75,8 +64,8 @@ public:
         return m_cols;
     }
 
-    [[nodiscard]] bool getWrapU() const {
-        return m_wrapU;
+    [[nodiscard]] WrapDirection getWrap() const {
+        return m_wrap;
     }
 
     [[nodiscard]] int getPatchCountX() const {
@@ -102,7 +91,7 @@ public:
     };
 
     /// @brief Map global (u, v) to a single patch and local coordinates.
-    /// Wraps v when @ref m_wrapU is set (the column direction is the seam);
+    /// Wraps whichever parameter @ref m_wrap marks as periodic;
     /// @returns <tt>std::nullopt</tt> when a non-wrapped parameter is outside
     /// [0, 1]
     [[nodiscard]] std::optional<PatchUv> resolveUv(cadm::cadf u, cadm::cadf v) const;
@@ -189,7 +178,7 @@ public:
 
 protected:
     /// @brief Array index into @ref m_controlPoints for grid cell (row, col),
-    /// wrapping the column when @ref m_wrapU is set
+    /// wrapping whichever direction @ref m_wrap marks as the seam
     /// @pre @p row and @p col must be non-negative
     [[nodiscard]] int gridIndex(int row, int col) const;
 
@@ -220,7 +209,7 @@ protected:
     std::vector<PointHandle> m_controlPoints;
     int m_rows = 0;
     int m_cols = 0;
-    bool m_wrapU = false;
+    WrapDirection m_wrap = WrapDirection::none;
     int m_patchCountX = 0;
     int m_patchCountY = 0;
 

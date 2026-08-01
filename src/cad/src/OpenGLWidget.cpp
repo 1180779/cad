@@ -800,12 +800,12 @@ void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
     std::tie(placed.origin, placed.orientation) = activeCursorPlacement();
     const bool sameType = m_previewParams && m_previewParams->type == placed.type;
     m_previewParams = placed;
-    const auto [rows, cols, wrapU, patchCountX, patchCountY, positions] = patchgen::generate(placed);
+    const auto [rows, cols, wrap, patchCountX, patchCountY, positions] = patchgen::generate(placed);
     if (m_previewPatch
         && sameType
         && m_previewPatch->getRows() == rows
         && m_previewPatch->getCols() == cols
-        && m_previewPatch->getWrapU() == wrapU
+        && m_previewPatch->getWrap() == wrap
         && m_previewPatch->getPatchCountX() == patchCountX
         && m_previewPatch->getPatchCountY() == patchCountY) {
         m_previewRegistry->setPositions(m_previewPatch->getControlPoints().front(), positions);
@@ -835,7 +835,7 @@ void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
         }
         m_previewPatch->setShowNet(m_previewShowNet);
     }
-    m_previewPatch->setGrid(std::move(handles), rows, cols, wrapU, patchCountX, patchCountY);
+    m_previewPatch->setGrid(std::move(handles), rows, cols, wrap, patchCountX, patchCountY);
 
     doneCurrent();
     update();

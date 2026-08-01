@@ -13,10 +13,22 @@ using namespace widgets;
 
 namespace {
     QString summaryText(const PatchComponent *patch) {
-        return QString("%1 x %2 patches, %3 control points (locked)")
+        return QString("%1 x %2 patches, %3 control points (locked)\n%4")
                .arg(patch->getPatchCountX())
                .arg(patch->getPatchCountY())
-               .arg(static_cast<int>(patch->getControlPoints().size()));
+               .arg(static_cast<int>(patch->getControlPoints().size()))
+               .arg(
+                   [patch] {
+                       switch (patch->getWrap()) {
+                       case WrapDirection::u:
+                           return "Cylinder closed along U";
+                       case WrapDirection::v:
+                           return "Cylinder closed along V";
+                       default:
+                           return "Flat";
+                       }
+                   }()
+               );
     }
 }
 

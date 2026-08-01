@@ -56,10 +56,21 @@ namespace {
         return std::visit(
             tools::Overloaded{
                 [&](const CylinderDimensions &c) -> cadm::Vec3 {
+                    const bool aroundRows = c.seam == WrapDirection::u;
+                    const int aroundIdx = aroundRows
+                                              ? row
+                                              : col;
+                    const int aroundCount = aroundRows
+                                                ? rows
+                                                : cols;
                     const cadm::cadf angle = 2.0f * std::numbers::pi_v<cadm::cadf>
-                        * static_cast<cadm::cadf>(col) / static_cast<cadm::cadf>(cols);
-                    const cadm::cadf radius = radiusF(c, cols);
-                    const cadm::cadf y = -c.height * 0.5f + c.height * fractionF(row, rows);
+                        * static_cast<cadm::cadf>(aroundIdx) / static_cast<cadm::cadf>(aroundCount);
+                    const cadm::cadf radius = radiusF(c, aroundCount);
+                    const cadm::cadf y = -c.height * 0.5f + c.height * (
+                        aroundRows
+                            ? fractionF(col, cols)
+                            : fractionF(row, rows)
+                    );
                     return {radius * std::cos(angle), y, radius * std::sin(angle)};
                 },
                 [&](const PlaneExtents &pl) -> cadm::Vec3 {
@@ -76,34 +87,36 @@ namespace {
 PatchGrid patchgen::generate(const PatchCreateParams &params) {
     const int nx = params.patchCountX;
     const int ny = params.patchCountY;
-    const bool wrap = std::visit(
+    const WrapDirection wrap = std::visit(
         tools::Overloaded{
             [](const PlaneExtents &) {
-                return false;
+                return WrapDirection::none;
             },
-            [](const CylinderDimensions &) {
-                return true;
+            [](const CylinderDimensions &c) {
+                return c.seam;
             }
         },
         params.dimensions
     );
 
     const bool c2 = params.type == PatchCreateParams::Type::c2;
-    const int rows = c2
-                         ? ny + 3
-                         : 3 * ny + 1;
-    const int cols = c2
-                         ? (wrap
-                                ? nx
-                                : nx + 3)
-                         : wrap
-                         ? 3 * nx
-                         : 3 * nx + 1;
+    const auto extent = [c2](const int count, const bool periodic) {
+        const int base = c2
+                             ? count
+                             : 3 * count;
+        return periodic
+                   ? base
+                   : base + (c2
+                                 ? 3
+                                 : 1);
+    };
+    const int rows = extent(ny, wrap == WrapDirection::u);
+    const int cols = extent(nx, wrap == WrapDirection::v);
 
     PatchGrid grid;
     grid.rows = rows;
     grid.cols = cols;
-    grid.wrapU = wrap;
+    grid.wrap = wrap;
     grid.patchCountX = nx;
     grid.patchCountY = ny;
     grid.positions.reserve(static_cast<size_t>(rows) * cols);
