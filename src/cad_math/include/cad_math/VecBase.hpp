@@ -207,6 +207,15 @@ namespace cadm {
             return res;
         }
 
+        /// @brief Sum of absolute component values
+        constexpr T absSum() const noexcept {
+            T res{};
+            for (int i = 0; i < N; ++i) {
+                res += std::abs((*this)[i]);
+            }
+            return res;
+        }
+
         constexpr T dot(const Derived &other) const noexcept {
             T res = 0;
             for (int i = 0; i < N; ++i) {

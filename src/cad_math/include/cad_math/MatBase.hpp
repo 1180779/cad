@@ -332,6 +332,11 @@ namespace cadm {
             return x;
         }
 
+        /// @brief MATLAB-style alias for @ref solveGepp: <tt>x = A / b</tt>
+        [[nodiscard]] constexpr std::optional<ColType> operator/(ColType b) const requires (R == C) {
+            return solveGepp(b);
+        }
+
         [[deprecated("inverse is not needed for this project")]]
         [[nodiscard]] constexpr std::optional<Derived> inversedSafe() const requires (R == C) {
             Derived temp = *static_cast<const Derived*>(this);

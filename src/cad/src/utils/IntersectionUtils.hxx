@@ -5,6 +5,7 @@
 #ifndef CAD_INTERSECTIONUTILS_HXX
 #define CAD_INTERSECTIONUTILS_HXX
 
+#include <algorithm>
 #include <functional>
 #include <limits>
 
@@ -197,6 +198,196 @@ namespace intersections {
         return fx < tolerance
                    ? std::optional{x}
                    : std::nullopt;
+    }
+
+    [[nodiscard]] inline std::optional<cadm::Vec4> solve4X4Gepp(const cadm::Mat4 &a, const cadm::Vec4 &b) {
+        return a / b;
+    }
+
+    /// @brief Signature of the linear solve used by each Newton-Raphson
+    /// iteration; see @ref solve4x4.
+    /// @details For more details see <br>
+    /// Numerical Recipes (3rd ed.), Ch. 9.6
+    /// "Newton-Raphson Method for Nonlinear Systems of Equations" <br> 
+    /// They solve the same per-iteration system via LU decomposition; this
+    /// method defaults to GEPP instead since the Jacobian is freshly rebuilt
+    /// every iteration
+    using Solve4X4Fn = std::function<std::optional<cadm::Vec4>(const cadm::Mat4 &, const cadm::Vec4 &)>;
+
+    /// @brief Tangent direction of the intersection curve at @p x
+    [[nodiscard]] inline std::optional<cadm::Vec3> intersectionTangent(
+        const PatchComponent *patch1,
+        const PatchComponent *patch2,
+        const cadm::Vec4 &x
+    ) {
+        const auto e1 = evaluateSurface(patch1, x.x, x.y);
+        const auto e2 = evaluateSurface(patch2, x.z, x.w);
+        if (!e1 || !e2) {
+            return std::nullopt;
+        }
+        const auto n1 = e1->du.cross(e1->dv);
+        const auto n2 = e2->du.cross(e2->dv);
+        return n1.cross(n2).safeNormalized(cadm::Vec3{});
+    }
+
+    /// @brief One step along the intersection curve
+    /// @param patch1,patch2 the two surfaces (may be the same)
+    /// @param xPrev previous point on the curve, in combined parameter space
+    /// @param pPrev previous point on the curve, in 3D
+    /// @param tangent tangent direction to march along
+    /// @param step approximate arclength to move along @p tangent
+    /// @param tolerance convergence threshold on the summed absolute residual
+    /// @param xTolerance convergence threshold on the summed absolute
+    /// correction @p delta
+    /// @param maxIterations safety cap on iterations
+    /// @param solve linear solve used each iteration, see @ref Solve4x4Fn
+    /// @returns the next point's parameters (u1, v1, u2, v2) on the
+    /// intersection curve, or <tt>std::nullopt</tt> if either surface's domain
+    /// is left, or the method fails to converge within @p maxIterations
+    [[nodiscard]] inline std::optional<cadm::Vec4> newtonRapson(
+        const PatchComponent *patch1,
+        const PatchComponent *patch2,
+        const cadm::Vec4 &xPrev,
+        const cadm::Vec3 &pPrev,
+        const cadm::Vec3 &tangent,
+        const cadm::cadf step,
+        const cadm::cadf tolerance = 1e-10,
+        const cadm::cadf xTolerance = 1e-12,
+        const int maxIterations = 20,
+        const Solve4X4Fn &solve = solve4X4Gepp
+    ) {
+        auto x = xPrev;
+        for (int iter = 0; iter < maxIterations; ++iter) {
+            // F = [F0, F1, F2, F3]
+            // F0 = patch1point.x - patch2point.x    |
+            // F1 = patch1point.y - patch2point.y    | i.e., patch1point = patch2point (within tolerance)
+            // F2 = patch1point.z - patch2point.z    |
+            // F3 = (patch1point - pPrev) [dot] tangent - step
+            //      i.e., the new point is step further along the tangent from
+            //      previous point (within tolerance)
+
+            // 1. evaluate F(x) and check function convergence
+            const auto e1 = evaluateSurface(patch1, x.x, x.y);
+            const auto e2 = evaluateSurface(patch2, x.z, x.w);
+            if (!e1 || !e2) {
+                return std::nullopt;
+            }
+            const auto r = e1->p - e2->p;
+            const cadm::Vec4 f{r.x, r.y, r.z, (e1->p - pPrev).dot(tangent) - step};
+            if (f.absSum() <= tolerance) {
+                return x;
+            }
+
+            // 2. assemble the Jacobian
+            // columns: d/du1, d/dv1, d/du2, d/dv2
+            // rows:    F0, F1, F2, F3
+            const cadm::Mat4 j{
+                cadm::Vec4{e1->du.x, e1->du.y, e1->du.z, e1->du.dot(tangent)},
+                cadm::Vec4{e1->dv.x, e1->dv.y, e1->dv.z, e1->dv.dot(tangent)},
+                cadm::Vec4{-e2->du.x, -e2->du.y, -e2->du.z, 0},
+                cadm::Vec4{-e2->dv.x, -e2->dv.y, -e2->dv.z, 0},
+            };
+
+            // 3. solve J * delta = -F and update x
+            const auto delta = solve(j, -f);
+            if (!delta) {
+                return std::nullopt;
+            }
+            const auto &deltaV = delta.value();
+            x += deltaV;
+
+            // 4. check root convergence
+            if (deltaV.absSum() <= xTolerance) {
+                return x;
+            }
+        }
+        return std::nullopt;
+    }
+
+    /// @brief A traced intersection curve in the two surfaces' combined
+    /// parameter space (u1, v1, u2, v2)
+    struct IntersectionCurve {
+        std::vector<cadm::Vec4> params;
+        bool closed = false;
+    };
+
+    /// @brief Trace the intersection curve through @p seed by marching with
+    /// Newton-Rapson method in both directions along the curve tangent
+    /// @param patch1,patch2 the two surfaces (may be the same)
+    /// @param seed a starting point on the intersection
+    /// @param step approximate arclength between consecutive traced points
+    /// @param tolerance Newton-Rapson convergence threshold
+    /// @param maxPoints safety cap per direction
+    [[nodiscard]] inline IntersectionCurve traceIntersectionCurve(
+        const PatchComponent *patch1,
+        const PatchComponent *patch2,
+        const cadm::Vec4 &seed,
+        const cadm::cadf step = 0.01,
+        const cadm::cadf tolerance = 1e-8,
+        const int maxPoints = 2000
+    ) {
+        const auto seedEval1 = evaluateSurface(patch1, seed.x, seed.y);
+        if (!seedEval1) {
+            return {
+                .params = {seed},
+                .closed = false
+            };
+        }
+        const auto seedPoint = seedEval1->p;
+        const auto initialTangent = intersectionTangent(patch1, patch2, seed);
+        if (!initialTangent || initialTangent->lengthSquared() < cadm::gc_eps) {
+            return {
+                .params = {seed},
+                .closed = false
+            };
+        }
+
+        const auto march = [&](const cadm::Vec3 &dir0) {
+            std::vector<cadm::Vec4> pts;
+            auto x = seed;
+            auto p = seedPoint;
+            auto tangent = dir0;
+            bool closed = false;
+            for (int i = 0; i < maxPoints; ++i) {
+                const auto next = newtonRapson(patch1, patch2, x, p, tangent, step, tolerance);
+                if (!next) {
+                    break;
+                }
+                const auto nextEval = evaluateSurface(patch1, next->x, next->y);
+                if (!nextEval) {
+                    break;
+                }
+                if (!pts.empty() && (nextEval->p - seedPoint).length() < step * 0.5) {
+                    closed = true;
+                    break;
+                }
+                pts.push_back(next.value());
+                x = next.value();
+                p = nextEval->p;
+                const auto nextTangent = intersectionTangent(patch1, patch2, x);
+                if (!nextTangent || nextTangent->lengthSquared() < cadm::gc_eps) {
+                    break;
+                }
+                tangent = nextTangent->dot(tangent) < 0
+                              ? -nextTangent.value()
+                              : nextTangent.value();
+            }
+            return IntersectionCurve{
+                .params = pts,
+                .closed = closed
+            };
+        };
+
+        auto [forward, forwardClosed] = march(initialTangent.value());
+        auto [backward, backwardClosed] = march(-initialTangent.value());
+
+        std::ranges::reverse(backward);
+        backward.push_back(seed);
+        backward.insert(backward.end(), forward.begin(), forward.end());
+        return {
+            .params = std::move(backward),
+            .closed = forwardClosed || backwardClosed
+        };
     }
 }
 
