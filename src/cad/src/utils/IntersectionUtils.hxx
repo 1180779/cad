@@ -311,6 +311,36 @@ namespace intersections {
         bool closed = false;
     };
 
+    /// @brief Per-surface parameter-space points and 3D points of @p curve
+    struct IntersectionCurveData {
+        std::vector<cadm::Vec3> points3D;
+        std::vector<cadm::Vec2> params1;
+        std::vector<cadm::Vec2> params2;
+    };
+
+    /// @brief Split @p curve's combined (u1,v1,u2,v2) params into per-surface
+    /// (u,v) points, and evaluate the 3D points on @p patch1
+    [[nodiscard]] inline IntersectionCurveData extractCurveData(
+        const PatchComponent *patch1,
+        const IntersectionCurve &curve
+    ) {
+        IntersectionCurveData data;
+        data.points3D.reserve(curve.params.size());
+        data.params1.reserve(curve.params.size());
+        data.params2.reserve(curve.params.size());
+        for (const auto &p : curve.params) {
+            const auto e1 = evaluateSurface(patch1, p.x, p.y);
+            data.points3D.push_back(
+                e1
+                    ? e1->p
+                    : cadm::Vec3{}
+            );
+            data.params1.push_back({p.x, p.y});
+            data.params2.push_back({p.z, p.w});
+        }
+        return data;
+    }
+
     /// @brief Trace the intersection curve through @p seed by marching with
     /// Newton-Rapson method in both directions along the curve tangent
     /// @param patch1,patch2 the two surfaces (may be the same)

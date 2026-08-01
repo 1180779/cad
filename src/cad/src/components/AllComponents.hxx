@@ -22,5 +22,6 @@
 #include "geometry/PatchC0Component.hxx"
 #include "geometry/PatchC2Component.hxx"
 #include "geometry/GregoryComponent.hxx"
+#include "geometry/IntersectionCurveComponent.hxx"
 
 #endif //CAD_ALLCOMPONENTS_HXX
