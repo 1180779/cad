@@ -652,6 +652,7 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
         addActionGl("New Bezier Patch C0", &OpenGlWidget::createPatchC0Requested);
         addActionGl("New Bezier Patch C2", &OpenGlWidget::createPatchC2Requested);
         addActionGl("Fill Holes (Gregory)", &OpenGlWidget::createGregoryRequested);
+        addActionGl("Intersect Surfaces", &OpenGlWidget::createIntersectionRequested);
         addSeparator();
 
         const auto pts = isCollapsingPointsValid();

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../PatchGeometry.hxx"
+#include "../utils/IntersectionUtils.hxx"
 
 class GeometryFactory final {
 public:
@@ -65,6 +66,20 @@ public:
     Entity* createGregory(
         const std::vector<PointHandle> &holeHandles,
         const std::string &name = "Gregory"
+    ) const;
+
+    /// @brief Create an intersection curve entity from an already-traced curve
+    /// @param patch1,patch2 ids of the source surface entities (see
+    /// <tt>intersections::traceIntersectionCurve</tt>)
+    /// @param curve the traced curve (params + closed flag)
+    /// @param data per-surface param points and 3D points, see
+    /// <tt>intersections::extractCurveData</tt>
+    Entity* createIntersectionCurve(
+        EntityId patch1,
+        EntityId patch2,
+        const intersections::IntersectionCurve &curve,
+        const intersections::IntersectionCurveData &data,
+        const std::string &name = "Intersection"
     ) const;
 
     /// @brief Create a joined Bézier patch: generates all control points and the patch entity

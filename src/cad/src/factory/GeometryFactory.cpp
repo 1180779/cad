@@ -8,11 +8,13 @@
 #include "../components/geometry/BezierC0Component.hpp"
 #include "../components/geometry/BezierC2Component.hpp"
 #include "../components/geometry/GregoryComponent.hxx"
+#include "../components/geometry/IntersectionCurveComponent.hxx"
 #include "../components/geometry/InterpC2Component.hxx"
 #include "../components/CursorComponent.hpp"
 #include "../components/GeometryComponent.hpp"
 #include "../components/geometry/PatchC0Component.hxx"
 #include "../components/geometry/PatchC2Component.hxx"
+#include "../utils/IntersectionUtils.hxx"
 #include "../components/PointComponent.hpp"
 #include "../components/TransformComponent.hpp"
 
@@ -102,8 +104,28 @@ Entity* GeometryFactory::createGregory(
     return entity;
 }
 
+Entity* GeometryFactory::createIntersectionCurve(
+    const EntityId patch1,
+    const EntityId patch2,
+    const intersections::IntersectionCurve &curve,
+    const intersections::IntersectionCurveData &data,
+    const std::string &name
+) const {
+    const auto entity = m_scene.createEntity(name);
+    entity->addComponent<TransformComponent>();
+    entity->addComponent<IntersectionCurveComponent>(
+        patch1,
+        patch2,
+        data.points3D,
+        data.params1,
+        data.params2,
+        curve.closed
+    );
+    return entity;
+}
+
 std::vector<Entity*> GeometryFactory::createPatch(const patchgen::PatchCreateParams &params) const {
-    const auto [rows, cols, wrapU, patchCountX, patchCountY, positions] = patchgen::generate(params);
+    const auto [rows, cols, wrap, patchCountX, patchCountY, positions] = patchgen::generate(params);
 
     std::vector<Entity*> created;
     created.reserve(positions.size() + 1);
@@ -126,7 +148,7 @@ std::vector<Entity*> GeometryFactory::createPatch(const patchgen::PatchCreatePar
                                     entity->addComponent<PatchC2Component>(&m_scene.getPointRegistry())
                                 )
                                 : entity->addComponent<PatchC0Component>(&m_scene.getPointRegistry());
-    patch->setGrid(std::move(handles), rows, cols, wrapU, patchCountX, patchCountY);
+    patch->setGrid(std::move(handles), rows, cols, wrap, patchCountX, patchCountY);
     created.push_back(entity);
     return created;
 }

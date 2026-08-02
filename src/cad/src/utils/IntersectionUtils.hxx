@@ -10,6 +10,7 @@
 #include <limits>
 
 #include "BezierUtils.hpp"
+#include "cad_math/Mat2.hxx"
 #include "components/geometry/PatchComponent.hxx"
 
 namespace intersections {
@@ -230,13 +231,78 @@ namespace intersections {
         return n1.cross(n2).safeNormalized(cadm::Vec3{});
     }
 
+    /// @brief Rate of change of a surface's (u, v) as the curve advances along
+    /// @p tangent by one unit of arclength
+    /// @returns (du/ds, dv/ds); <tt>std::nullopt</tt> at a degenerate point
+    /// (du, dv parallel, so the tangent plane collapses to a line)
+    [[nodiscard]] inline std::optional<cadm::Vec2> parameterVelocity(
+        const cadm::Vec3 &du,
+        const cadm::Vec3 &dv,
+        const cadm::Vec3 &tangent
+    ) {
+        // the intersection curve lies on both surfaces:
+        // γ(s) = P_1(u_1(s), v_1(s)) = P_2(u_2(s), v_2(s))
+        // differentiating with respect to s and using dγ/ds = tangent (holds
+        // since s is arclength, so curve has unit speed) gives:
+        // tangent = du/ds * du + dv/ds * dv
+        // (a, b) solving
+        // tangent = a * du + b * dv
+        // are parameter velocities (du/ds, dv/ds)
+        //
+        // Representing that in matrix notation as A*x = b with x = [a, b]^T and
+        // A a 3x2 matrix, and expanding we get
+        // | du.x  dv.x | |a|   | tangent.x |
+        // | du.y  dv.y | | | = | tangent.y |
+        // | du.z  dv.z | |b|   | tangent.z |
+        //
+        // one more equation than necessary; any two of the three rows would do
+        // but which two is data-dependent. One way to avoid the selection is to
+        // multiply both sides by A^T
+        // A^T * A * x = A^T * b
+        // [du dv]^T * [du dv] * [a b]^T = [du dv]^T * tangent
+        // ^^^^^^^^^^^^^^^^^^^
+        // Gram matrix of (du, dv)
+        // 
+        // after expansion
+        // | du [dot] du  du [dot] dv | |a| = | du [dot] tangent |
+        // | du [dot] dv  dv [dot] dv | |b|   | dv [dot] tangent |
+        // 
+
+        const auto gram = cadm::Mat2::symmetric(du.dot(du), du.dot(dv), dv.dot(dv));
+        return gram.solveCramer(cadm::Vec2{du.dot(tangent), dv.dot(tangent)});
+    }
+
+    /// @brief Predict the parameters one @p step of arclength further along @p
+    /// tangent, as a starting guess for the Newton
+    /// @returns @p x unchanged if either surface is degenerate at @p x
+    [[nodiscard]] inline cadm::Vec4 predictNextParameters(
+        const PatchComponent *patch1,
+        const PatchComponent *patch2,
+        const cadm::Vec4 &x,
+        const cadm::Vec3 &tangent,
+        const cadm::cadf step
+    ) {
+        const auto e1 = evaluateSurface(patch1, x.x, x.y);
+        const auto e2 = evaluateSurface(patch2, x.z, x.w);
+        if (!e1 || !e2) {
+            return x;
+        }
+        const auto velocity1 = parameterVelocity(e1->du, e1->dv, tangent);
+        const auto velocity2 = parameterVelocity(e2->du, e2->dv, tangent);
+        if (!velocity1 || !velocity2) {
+            return x;
+        }
+        return x + cadm::Vec4{velocity1->x, velocity1->y, velocity2->x, velocity2->y} * step;
+    }
+
     /// @brief One step along the intersection curve
     /// @param patch1,patch2 the two surfaces (may be the same)
-    /// @param xPrev previous point on the curve, in combined parameter space
+    /// @param xStart initial guess in combined parameter space
     /// @param pPrev previous point on the curve, in 3D
     /// @param tangent tangent direction to march along
     /// @param step approximate arclength to move along @p tangent
-    /// @param tolerance convergence threshold on the summed absolute residual
+    /// @param tolerance convergence threshold on the summed absolute residual,
+    /// relative to the surface's distance from the origin
     /// @param xTolerance convergence threshold on the summed absolute
     /// correction @p delta
     /// @param maxIterations safety cap on iterations
@@ -247,16 +313,16 @@ namespace intersections {
     [[nodiscard]] inline std::optional<cadm::Vec4> newtonRapson(
         const PatchComponent *patch1,
         const PatchComponent *patch2,
-        const cadm::Vec4 &xPrev,
+        const cadm::Vec4 &xStart,
         const cadm::Vec3 &pPrev,
         const cadm::Vec3 &tangent,
         const cadm::cadf step,
-        const cadm::cadf tolerance = 1e-10,
-        const cadm::cadf xTolerance = 1e-12,
+        const cadm::cadf tolerance = cadm::gc_eps10,
+        const cadm::cadf xTolerance = cadm::gc_eps,
         const int maxIterations = 20,
         const Solve4X4Fn &solve = solve4X4Gepp
     ) {
-        auto x = xPrev;
+        auto x = xStart;
         for (int iter = 0; iter < maxIterations; ++iter) {
             // F = [F0, F1, F2, F3]
             // F0 = patch1point.x - patch2point.x    |
@@ -274,7 +340,8 @@ namespace intersections {
             }
             const auto r = e1->p - e2->p;
             const cadm::Vec4 f{r.x, r.y, r.z, (e1->p - pPrev).dot(tangent) - step};
-            if (f.absSum() <= tolerance) {
+            if (const auto scale = std::max<cadm::cadf>(1, e1->p.length());
+                f.absSum() <= tolerance * scale) {
                 return x;
             }
 
@@ -353,7 +420,7 @@ namespace intersections {
         const PatchComponent *patch2,
         const cadm::Vec4 &seed,
         const cadm::cadf step = 0.01,
-        const cadm::cadf tolerance = 1e-8,
+        const cadm::cadf tolerance = cadm::gc_eps10,
         const int maxPoints = 2000
     ) {
         const auto seedEval1 = evaluateSurface(patch1, seed.x, seed.y);
@@ -379,7 +446,11 @@ namespace intersections {
             auto tangent = dir0;
             bool closed = false;
             for (int i = 0; i < maxPoints; ++i) {
-                const auto next = newtonRapson(patch1, patch2, x, p, tangent, step, tolerance);
+                // predict a step ahead, then correct back onto the curve; starting
+                // the corrector at x itself lets it converge onto a far-away branch
+                // that also satisfies the arclength constraint
+                const auto predicted = predictNextParameters(patch1, patch2, x, tangent, step);
+                const auto next = newtonRapson(patch1, patch2, predicted, p, tangent, step, tolerance);
                 if (!next) {
                     break;
                 }
@@ -387,7 +458,11 @@ namespace intersections {
                 if (!nextEval) {
                     break;
                 }
-                if (!pts.empty() && (nextEval->p - seedPoint).length() < step * 0.5) {
+                // converged somewhere implausible for one step
+                if ((nextEval->p - p).length() > step * 2) {
+                    break;
+                }
+                if (!pts.empty() && (nextEval->p - seedPoint).length() < step) {
                     closed = true;
                     break;
                 }
@@ -409,14 +484,21 @@ namespace intersections {
         };
 
         auto [forward, forwardClosed] = march(initialTangent.value());
-        auto [backward, backwardClosed] = march(-initialTangent.value());
+        if (forwardClosed) {
+            forward.insert(forward.begin(), seed);
+            return {
+                .params = std::move(forward),
+                .closed = true
+            };
+        }
 
+        auto [backward, backwardClosed] = march(-initialTangent.value());
         std::ranges::reverse(backward);
         backward.push_back(seed);
         backward.insert(backward.end(), forward.begin(), forward.end());
         return {
             .params = std::move(backward),
-            .closed = forwardClosed || backwardClosed
+            .closed = backwardClosed
         };
     }
 }

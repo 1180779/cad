@@ -6,7 +6,6 @@
 #define CAD_SCENEFILTERSPOPUP_HXX
 
 #include <ranges>
-#include <QVBoxLayout>
 #include <QWidget>
 #include "components/ComponentChecker.hxx"
 #include "gui/WidgetBuilders.hxx"
@@ -41,6 +40,7 @@ public:
         addRow<PatchC0Component>(layout, "Patch C0");
         addRow<PatchC2Component>(layout, "Patch C2");
         addRow<GregoryComponent>(layout, "Gregory patch");
+        addRow<IntersectionCurveComponent>(layout, "Intersection curve");
     }
 
     /// @brief Builds the filter list from the currently checked boxes

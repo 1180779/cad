@@ -719,6 +719,49 @@ namespace {
         };
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createGregoryRequested, glW, spawnGregory);
         QObject::connect(glW, &OpenGlWidget::createGregoryRequested, glW, spawnGregory);
+
+        const auto spawnIntersection = [glW] {
+            Scene &sc = glW->getScene();
+            std::vector<std::pair<EntityId, PatchComponent*>> patches;
+            for (Entity *e : sc.getSelectedEntities()) {
+                if (const auto patch = e->getComponent<PatchComponent>()) {
+                    patches.emplace_back(e->getId(), patch.value());
+                }
+            }
+            if (patches.size() != 2) {
+                QMessageBox::information(
+                    glW->window(),
+                    "Intersect Surfaces",
+                    "Select exactly two surfaces to intersect."
+                );
+                return;
+            }
+
+            const auto [id1, patch1] = patches[0];
+            const auto [id2, patch2] = patches[1];
+            const auto seed = intersections::nonlinearConjugateGradient(patch1, patch2);
+            if (!seed) {
+                QMessageBox::information(
+                    glW->window(),
+                    "Intersect Surfaces",
+                    "Could not find a starting point on the intersection."
+                );
+                return;
+            }
+
+            const auto curve = intersections::traceIntersectionCurve(patch1, patch2, seed.value());
+            const auto data = intersections::extractCurveData(patch1, curve);
+            glW->getCommandStack().push(
+                std::make_unique<CreateEntityCommand>(
+                    sc,
+                    [id1, id2, curve, data](Scene &s) {
+                        return GeometryFactory(s).createIntersectionCurve(id1, id2, curve, data);
+                    }
+                )
+            );
+        };
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createIntersectionRequested, glW, spawnIntersection);
+        QObject::connect(glW, &OpenGlWidget::createIntersectionRequested, glW, spawnIntersection);
     }
 }
 
