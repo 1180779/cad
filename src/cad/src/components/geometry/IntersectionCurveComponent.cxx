@@ -10,7 +10,9 @@ IntersectionCurveComponent::IntersectionCurveComponent(
     std::vector<cadm::Vec3> points3D,
     std::vector<cadm::Vec2> params1,
     std::vector<cadm::Vec2> params2,
-    const bool closed
+    const bool closed,
+    const trimming::SurfaceWrap wrap1,
+    const trimming::SurfaceWrap wrap2
 )
 : m_patch1(patch1),
   m_patch2(patch2),
@@ -18,6 +20,8 @@ IntersectionCurveComponent::IntersectionCurveComponent(
   m_params1(std::move(params1)),
   m_params2(std::move(params2)),
   m_closed(closed) {
+    m_mask1 = trimming::buildTrimMask(m_params1, m_closed, wrap1);
+    m_mask2 = trimming::buildTrimMask(m_params2, m_closed, wrap2);
     regenerateMesh();
 }
 

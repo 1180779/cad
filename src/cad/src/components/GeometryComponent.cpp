@@ -176,19 +176,32 @@ std::vector<Vertex> TorusComponent::generateVertices() const {
 
 std::vector<std::uint32_t> TorusComponent::generateIndicesForWireframe() const {
     std::vector<std::uint32_t> indices;
+    const auto kept = [this](const std::uint32_t i, const std::uint32_t j) {
+        return m_trim.keeps(
+            static_cast<cadm::cadf>(i) / static_cast<cadm::cadf>(m_majorSegments),
+            static_cast<cadm::cadf>(j) / static_cast<cadm::cadf>(m_minorSegments)
+        );
+    };
     for (std::uint32_t i = 0; i < m_majorSegments; ++i) {
         for (std::uint32_t j = 0; j < m_minorSegments; ++j) {
             const std::uint32_t currentVertexIdx = i * m_minorSegments + j;
+            if (!kept(i, j)) {
+                continue;
+            }
 
             // connect to the next vertex along the minor ring
-            const std::uint32_t nextMinorVertexIdx = i * m_minorSegments + (j + 1) % m_minorSegments;
-            indices.push_back(currentVertexIdx);
-            indices.push_back(nextMinorVertexIdx);
+            if (const std::uint32_t nextMinor = (j + 1) % m_minorSegments;
+                kept(i, nextMinor)) {
+                indices.push_back(currentVertexIdx);
+                indices.push_back(i * m_minorSegments + nextMinor);
+            }
 
             // connect to the next vertex along the major ring
-            const std::uint32_t nextMajorVertexIdx = (i + 1) % m_majorSegments * m_minorSegments + j;
-            indices.push_back(currentVertexIdx);
-            indices.push_back(nextMajorVertexIdx);
+            if (const std::uint32_t nextMajor = (i + 1) % m_majorSegments;
+                kept(nextMajor, j)) {
+                indices.push_back(currentVertexIdx);
+                indices.push_back(nextMajor * m_minorSegments + j);
+            }
         }
     }
     return indices;

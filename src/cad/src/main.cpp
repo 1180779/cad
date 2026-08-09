@@ -20,6 +20,7 @@
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/BlenderCameraStrategy.hpp"
 #include "gui/CadMenuBar.hpp"
+#include "gui/components/geometry/IntersectionDialog.hxx"
 #include "gui/components/geometry/PatchCreatorDialog.hxx"
 #include "gui/CadTitleBar.hpp"
 #include "gui/Theme.hpp"
@@ -627,7 +628,12 @@ namespace {
                     auto params = dialog->params();
                     std::tie(params.origin, params.orientation) = glW->activeCursorPlacement();
                     glW->getCommandStack().push(
-                        std::make_unique<CreatePatchCommand>(glW->getScene(), params)
+                        std::make_unique<CreateEntitiesCommand>(
+                            glW->getScene(),
+                            [params](Scene &s) {
+                                return GeometryFactory(s).createPatch(params);
+                            }
+                        )
                     );
                 }
             };
@@ -722,43 +728,86 @@ namespace {
 
         const auto spawnIntersection = [glW] {
             Scene &sc = glW->getScene();
-            std::vector<std::pair<EntityId, PatchComponent*>> patches;
+            std::vector<std::pair<EntityId, intersections::Surface>> surfaces;
             for (Entity *e : sc.getSelectedEntities()) {
-                if (const auto patch = e->getComponent<PatchComponent>()) {
-                    patches.emplace_back(e->getId(), patch.value());
+                if (auto surface = intersections::surfaceFor(e)) {
+                    surfaces.emplace_back(e->getId(), std::move(surface.value()));
                 }
             }
-            if (patches.size() != 2) {
-                QMessageBox::information(
-                    glW->window(),
-                    "Intersect Surfaces",
-                    "Select exactly two surfaces to intersect."
-                );
+            const auto notify = [glW](const QString &text) {
+                QMessageBox::information(glW->window(), "Intersect Surfaces", text);
+            };
+            if (surfaces.empty() || surfaces.size() > 2) {
+                notify("Select one surface to self-intersect, or two surfaces to intersect.");
                 return;
             }
 
-            const auto [id1, patch1] = patches[0];
-            const auto [id2, patch2] = patches[1];
-            const auto seed = intersections::nonlinearConjugateGradient(patch1, patch2);
-            if (!seed) {
-                QMessageBox::information(
-                    glW->window(),
-                    "Intersect Surfaces",
-                    "Could not find a starting point on the intersection."
-                );
+            const bool selfIntersection = surfaces.size() == 1;
+            const auto &[id1, surface1] = surfaces.front();
+            const auto &[id2, surface2] = surfaces.back();
+
+            Entity *cursor = sc.getActiveCursor();
+            IntersectionDialog dialog(cursor != nullptr, glW->window());
+            if (dialog.exec() != QDialog::Accepted) {
+                return;
+            }
+            const auto [step, maxPoints, useCursor] = dialog.params();
+
+            const intersections::SeedOptions seedOptions{
+                .minSeparation = selfIntersection
+                                     ? 0.05f
+                                     : 0.0f,
+            };
+
+            std::vector<cadm::Vec4> seeds;
+            if (useCursor && cursor) {
+                const auto at = cursor->getComponent<TransformComponent>().value()->getTranslation();
+                if (const auto seed = intersections::findSeedNear(surface1, surface2, at, seedOptions)) {
+                    seeds.push_back(seed.value());
+                }
+            }
+            else {
+                seeds = intersections::findSeeds(surface1, surface2, seedOptions);
+            }
+            if (seeds.empty()) {
+                notify("Could not find a starting point on the intersection.");
                 return;
             }
 
-            const auto curve = intersections::traceIntersectionCurve(patch1, patch2, seed.value());
-            const auto data = intersections::extractCurveData(patch1, curve);
-            glW->getCommandStack().push(
-                std::make_unique<CreateEntityCommand>(
-                    sc,
-                    [id1, id2, curve, data](Scene &s) {
-                        return GeometryFactory(s).createIntersectionCurve(id1, id2, curve, data);
-                    }
-                )
+            const auto branches = intersections::traceAllBranches(
+                surface1,
+                surface2,
+                seeds,
+                {
+                    .step = step,
+                    .tolerance = cadm::gc_eps10,
+                    .maxPoints = maxPoints
+                }
             );
+            if (branches.empty()) {
+                notify("Found a starting point, but could not trace a curve from it.");
+                return;
+            }
+
+            for (const auto &curve : branches) {
+                const auto data = intersections::extractCurveData(surface1, curve);
+                const trimming::SurfaceWrap wrap1{
+                    .u = surface1.wrapU,
+                    .v = surface1.wrapV
+                };
+                const trimming::SurfaceWrap wrap2{
+                    .u = surface2.wrapU,
+                    .v = surface2.wrapV
+                };
+                glW->getCommandStack().push(
+                    std::make_unique<CreateEntityCommand>(
+                        sc,
+                        [id1, id2, curve, data, wrap1, wrap2](Scene &s) {
+                            return GeometryFactory(s).createIntersectionCurve(id1, id2, curve, data, wrap1, wrap2);
+                        }
+                    )
+                );
+            }
         };
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createIntersectionRequested, glW, spawnIntersection);
         QObject::connect(glW, &OpenGlWidget::createIntersectionRequested, glW, spawnIntersection);

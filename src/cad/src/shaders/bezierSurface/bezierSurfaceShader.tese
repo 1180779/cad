@@ -10,9 +10,18 @@ uniform int uSub;
 // 1: line of constant u varying v
 uniform int uDir;
 
+// which quad of the joined patch this draw call covers, and how many there are
+// per direction
+uniform int uQuadX;
+uniform int uQuadY;
+uniform int uCountX;
+uniform int uCountY;
+
 in vec3 cpwPointPos[];
 flat in int tcInstanceID[];
 out vec4 color;
+// surface-wide parameters of this point, for trimming in the fragment stage
+out vec2 surfaceUv;
 
 layout (std140, binding = 0) uniform Camera {
     mat4 view;
@@ -59,9 +68,14 @@ void main() {
     float fixedParam = uLines > 1 ? float(lineIdx) / float(uLines - 1) : 0.0;
     float vary = (float(slice) + gl_TessCoord.x) / float(uSub); // varying
 
-    vec3 pos = uDir == 0
-    ? surfacePoint(vary, fixedParam)
-    : surfacePoint(fixedParam, vary);
+    float localU = uDir == 0 ? vary : fixedParam;
+    float localV = uDir == 0 ? fixedParam : vary;
+    vec3 pos = surfacePoint(localU, localV);
+
+    surfaceUv = vec2(
+            (float(uQuadY) + localU) / float(max(uCountY, 1)),
+            (float(uQuadX) + localV) / float(max(uCountX, 1))
+    );
 
     color = curveColor;
     gl_Position = VP * vec4(pos, 1.0);

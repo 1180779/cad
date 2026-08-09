@@ -13,6 +13,7 @@
 
 #include "cad_math/Vec2.hpp"
 #include "cad_math/Vec4.hpp"
+#include "utils/TrimMask.hxx"
 
 struct Vertex {
     cadm::Vec3 position;
@@ -98,6 +99,20 @@ public:
 
     void setMinorSegments(uint32_t minorSegments);
 
+    void setTrim(trimming::TrimMask mask, const bool keepInside) {
+        m_trim.set(std::move(mask), keepInside);
+        m_needsUpdate = true;
+    }
+
+    void clearTrim() {
+        m_trim.clear();
+        m_needsUpdate = true;
+    }
+
+    [[nodiscard]] const trimming::TrimState& getTrim() const {
+        return m_trim;
+    }
+
     void regenerateMesh() override;
 
     [[nodiscard]] std::vector<Vertex> generateVertices() const;
@@ -105,6 +120,8 @@ public:
     [[nodiscard]] std::vector<std::uint32_t> generateIndicesForWireframe() const;
 
 private:
+    trimming::TrimState m_trim;
+
     cadm::cadf m_majorRadius = 2.0f;
     cadm::cadf m_minorRadius = 0.5f;
     uint32_t m_majorSegments = 48;

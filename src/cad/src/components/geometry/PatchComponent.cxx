@@ -23,6 +23,9 @@ PatchComponent::PatchComponent(PointRegistry *registry)
 
 PatchComponent::~PatchComponent() {
     const auto gl = getGl();
+    if (m_trimTexture != 0) {
+        gl->glDeleteTextures(1, &m_trimTexture);
+    }
     m_patchEbo.deleteGpu(gl);
     m_netEbo.deleteGpu(gl);
     m_patchVao.deleteGpu(gl);
@@ -189,6 +192,49 @@ void PatchComponent::setGridDivisionsV(const int divisions) {
 
 void PatchComponent::setShowNet(const bool v) {
     m_showNet = v;
+}
+
+void PatchComponent::syncTrimToGpu() const {
+    if (!m_trimDirty) {
+        return;
+    }
+    m_trimDirty = false;
+    const auto gl = getGl();
+    if (!m_trim.enabled) {
+        return;
+    }
+
+    const auto &[size, cells] = m_trim.mask;
+    std::vector<std::uint8_t> texels(cells.size());
+    for (std::size_t i = 0; i < cells.size(); ++i) {
+        texels[i] = trimming::kept(cells[i], m_trim.keepInside)
+                        ? 255
+                        : 0;
+    }
+
+    if (m_trimTexture == 0) {
+        gl->glGenTextures(1, &m_trimTexture);
+    }
+    gl->glActiveTexture(GL_TEXTURE0);
+    gl->glBindTexture(GL_TEXTURE_2D, m_trimTexture);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    gl->glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    gl->glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_R8,
+        size,
+        size,
+        0,
+        GL_RED,
+        GL_UNSIGNED_BYTE,
+        texels.data()
+    );
+    gl->glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    gl->glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void PatchComponent::syncToGpu() {

@@ -17,6 +17,7 @@
 #include "SinglePatchView.hxx"
 #include "WrapDirection.hxx"
 #include "Vao.hxx"
+#include "utils/TrimMask.hxx"
 
 /// @brief Shared base for bicubic joined Bézier patches
 ///
@@ -170,6 +171,34 @@ public:
         return m_netEbo.size();
     }
 
+    /// @brief Hide the half of this surface that an intersection curve cut away
+    /// @param mask the surface's parameter square, split along the curve
+    /// @param keepInside which of the two regions stays visible
+    void setTrim(trimming::TrimMask mask, const bool keepInside) {
+        m_trim.set(std::move(mask), keepInside);
+        m_trimDirty = true;
+    }
+
+    void clearTrim() {
+        m_trim.clear();
+        m_trimDirty = true;
+    }
+
+    [[nodiscard]] const trimming::TrimState& getTrim() const {
+        return m_trim;
+    }
+
+    /// @brief GL texture holding the trim mask, uploaded on demand by the
+    /// renderer; 0 until then
+    [[nodiscard]] GLuint getTrimTexture() const {
+        return m_trimTexture;
+    }
+
+    /// @brief Upload @ref getTrim's mask to @ref getTrimTexture if it changed
+    /// @details Called by the renderer, which is the only place with a current
+    /// GL context
+    void syncTrimToGpu() const;
+
     /// @brief Recompute the surface vertex positions after a control point
     /// moved
     void regenerateMesh() override {}
@@ -225,6 +254,12 @@ protected:
     Vao m_netVao;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_patchEbo;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_netEbo;
+
+    trimming::TrimState m_trim;
+    /// @brief GPU mirror of @ref m_trim
+    /// @note Refreshed lazily
+    mutable GLuint m_trimTexture = 0;
+    mutable bool m_trimDirty = false;
 };
 
 #endif //CAD_PATCHCOMPONENT_HXX

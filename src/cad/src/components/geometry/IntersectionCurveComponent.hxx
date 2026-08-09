@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "../GeometryComponent.hpp"
+#include "utils/TrimMask.hxx"
 #include <cad_math/Vec2.hpp>
 
 /// @brief Curve traced along the intersection of two surfaces
@@ -22,7 +23,9 @@ public:
         std::vector<cadm::Vec3> points3D,
         std::vector<cadm::Vec2> params1,
         std::vector<cadm::Vec2> params2,
-        bool closed
+        bool closed,
+        trimming::SurfaceWrap wrap1 = {},
+        trimming::SurfaceWrap wrap2 = {}
     );
 
     [[nodiscard]] EntityId getPatch1() const {
@@ -52,6 +55,34 @@ public:
         return m_points3D;
     }
 
+    /// @brief Trim mask over patch1's parameter domain
+    [[nodiscard]] const trimming::TrimMask& getMask1() const {
+        return m_mask1;
+    }
+
+    /// @brief Trim mask over patch2's parameter domain
+    [[nodiscard]] const trimming::TrimMask& getMask2() const {
+        return m_mask2;
+    }
+
+    /// @brief Which side of the curve is kept when trimming each surface
+    [[nodiscard]] bool getKeepInside1() const {
+        return m_keepInside1;
+    }
+
+    /// @brief Which side of the curve is kept when trimming each surface
+    [[nodiscard]] bool getKeepInside2() const {
+        return m_keepInside2;
+    }
+
+    void setKeepInside1(const bool keep) {
+        m_keepInside1 = keep;
+    }
+
+    void setKeepInside2(const bool keep) {
+        m_keepInside2 = keep;
+    }
+
     void regenerateMesh() override;
 
 private:
@@ -61,6 +92,10 @@ private:
     std::vector<cadm::Vec2> m_params1;
     std::vector<cadm::Vec2> m_params2;
     bool m_closed;
+    trimming::TrimMask m_mask1;
+    trimming::TrimMask m_mask2;
+    bool m_keepInside1 = true;
+    bool m_keepInside2 = true;
 };
 
 #endif //CAD_INTERSECTIONCURVECOMPONENT_HXX
