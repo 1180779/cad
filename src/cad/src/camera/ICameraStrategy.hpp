@@ -15,6 +15,7 @@ enum class CameraAction { orbit, pan, zoomDrag };
 enum class CameraKeyAction { moveUp, moveDown, moveLeft, moveRight };
 
 #include "../components/Entity.hpp"
+#include "cad_math/Mat3.hpp"
 #include "cad_math/Mat4.hpp"
 
 class ICameraStrategy {
@@ -51,6 +52,14 @@ public:
 
     // no-op by default; override in strategies that support it
     virtual void toggleProjection() {}
+
+    /// @brief Camera orientation about the look target (orthonormal, columns:
+    /// right, up, back)
+    virtual cadm::Mat3 getViewOrientation() = 0;
+
+    /// @brief Reorients the camera about the look target; target and distance
+    /// to it are preserved
+    virtual void setViewOrientation(const cadm::Mat3 &orientation) = 0;
 
     [[nodiscard]] Entity* getEntity() const {
         return m_cameraEntity;

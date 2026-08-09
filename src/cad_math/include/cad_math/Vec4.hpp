@@ -68,7 +68,7 @@ namespace cadm {
           w(v.z) {}
 
         [[nodiscard]] constexpr Vec cross(const Vec &other) const {
-            return {x * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
+            return {y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x, 0};
         }
 
         [[nodiscard]] constexpr std::span<const T, 4> flatView() const {

@@ -157,7 +157,7 @@ private:
 
     cadm::Vec3 m_v{0, 0, -1};
     cadm::Vec3 m_specularColor{1.0, 1.0, 0.0};
-    cadm::vec3i m_ambient{25, 25, 25};
+    cadm::Vec3I m_ambient{25, 25, 25};
     cadm::cadf m_m{1};
     cadm::cadf m_sensitivity{0.001};
     cadm::cadf m_translationStep{0.1};

@@ -5,6 +5,13 @@
 #ifndef CAD_VIEWPORTTYPES_HPP
 #define CAD_VIEWPORTTYPES_HPP
 
+#include <iterator>
+
+#include "Macros.hxx"
+
+#define PLANE_ELEMENTS(X) X(xy) X(xz) X(yz)
+DECLARE_ENUM_WITH_TO_STRING(Plane, PLANE_ELEMENTS)
+
 enum class PivotMode { medianPoint, activeCursor };
 
 enum class TransformMode { none, rotate, scale, translate };

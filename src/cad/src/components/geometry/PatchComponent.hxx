@@ -15,7 +15,9 @@
 #include "GpuBuffer.hpp"
 #include "PointRegistry.hpp"
 #include "SinglePatchView.hxx"
+#include "WrapDirection.hxx"
 #include "Vao.hxx"
+#include "utils/TrimMask.hxx"
 
 /// @brief Shared base for bicubic joined Bézier patches
 ///
@@ -35,13 +37,14 @@ public:
     /// @brief Set the generated control-point grid
     /// @param handles  grid points, row-major (size == rows * cols)
     /// @param rows,cols  grid dimensions
-    /// @param wrapU  true for a cylinder: the column direction wraps (seam shared)
+    /// @param wrap  for a cylinder, the periodic direction (seam shared, the
+    /// grid must not repeat it)
     /// @param patchCountX,patchCountY  number of single patches along columns / rows
     void setGrid(
         std::vector<PointHandle> handles,
         int rows,
         int cols,
-        bool wrapU,
+        WrapDirection wrap,
         int patchCountX,
         int patchCountY
     );
@@ -62,8 +65,8 @@ public:
         return m_cols;
     }
 
-    [[nodiscard]] bool getWrapU() const {
-        return m_wrapU;
+    [[nodiscard]] WrapDirection getWrap() const {
+        return m_wrap;
     }
 
     [[nodiscard]] int getPatchCountX() const {
@@ -81,6 +84,20 @@ public:
     }
 
     void setControlPointHandles(const std::vector<PointHandle> &handles) override;
+
+    /// @brief Result of mapping global (u, v) to a single patch
+    struct PatchUv {
+        int xPatch, yPatch;
+        cadm::cadf localU, localV;
+    };
+
+    /// @brief Map global (u, v) to a single patch and local coordinates.
+    /// Wraps whichever parameter @ref m_wrap marks as periodic;
+    /// @returns <tt>std::nullopt</tt> when a non-wrapped parameter is outside
+    /// [0, 1]
+    [[nodiscard]] std::optional<PatchUv> resolveUv(cadm::cadf u, cadm::cadf v) const;
+
+    virtual ::std::optional<bezierUtils::Grid4x4> patchAtUv(cadm::cadf u, cadm::cadf v) const = 0;
 
     /// @brief View of a single patch (px, py)
     [[nodiscard]] SinglePatchView singlePatch(int px, int py) const;
@@ -154,6 +171,34 @@ public:
         return m_netEbo.size();
     }
 
+    /// @brief Hide the half of this surface that an intersection curve cut away
+    /// @param mask the surface's parameter square, split along the curve
+    /// @param keepInside which of the two regions stays visible
+    void setTrim(trimming::TrimMask mask, const bool keepInside) {
+        m_trim.set(std::move(mask), keepInside);
+        m_trimDirty = true;
+    }
+
+    void clearTrim() {
+        m_trim.clear();
+        m_trimDirty = true;
+    }
+
+    [[nodiscard]] const trimming::TrimState& getTrim() const {
+        return m_trim;
+    }
+
+    /// @brief GL texture holding the trim mask, uploaded on demand by the
+    /// renderer; 0 until then
+    [[nodiscard]] GLuint getTrimTexture() const {
+        return m_trimTexture;
+    }
+
+    /// @brief Upload @ref getTrim's mask to @ref getTrimTexture if it changed
+    /// @details Called by the renderer, which is the only place with a current
+    /// GL context
+    void syncTrimToGpu() const;
+
     /// @brief Recompute the surface vertex positions after a control point
     /// moved
     void regenerateMesh() override {}
@@ -162,7 +207,7 @@ public:
 
 protected:
     /// @brief Array index into @ref m_controlPoints for grid cell (row, col),
-    /// wrapping the column when @ref m_wrapU is set
+    /// wrapping whichever direction @ref m_wrap marks as the seam
     /// @pre @p row and @p col must be non-negative
     [[nodiscard]] int gridIndex(int row, int col) const;
 
@@ -193,7 +238,7 @@ protected:
     std::vector<PointHandle> m_controlPoints;
     int m_rows = 0;
     int m_cols = 0;
-    bool m_wrapU = false;
+    WrapDirection m_wrap = WrapDirection::none;
     int m_patchCountX = 0;
     int m_patchCountY = 0;
 
@@ -209,6 +254,12 @@ protected:
     Vao m_netVao;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_patchEbo;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_netEbo;
+
+    trimming::TrimState m_trim;
+    /// @brief GPU mirror of @ref m_trim
+    /// @note Refreshed lazily
+    mutable GLuint m_trimTexture = 0;
+    mutable bool m_trimDirty = false;
 };
 
 #endif //CAD_PATCHCOMPONENT_HXX

@@ -8,9 +8,11 @@
 #include <optional>
 #include <utility>
 
+#include <QVariantAnimation>
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
 #include <cad_math/Common.hpp>
+#include <cad_math/Quaternion.hxx>
 #include <cad_math/Vec3.hpp>
 #include "PatchGeometry.hxx"
 #include "PointRegistry.hpp"
@@ -54,6 +56,24 @@ public:
     }
 
     bool removeEntity(EntityId id);
+
+    void onSetAsCursorRequested(Entity *e);
+
+    void onSetAsCameraRequested(EntityId id);
+
+    void onFocusCameraRequested(Entity *e);
+
+    /// @brief Returns <tt>Entity*</tt> on which to focus the camera if a single
+    /// entity is selected or <tt>nullptr</tt> otherwise
+    Entity* isFocusOnEntityValid() const;
+
+    /// @brief Returns <tt>std::array<EntityId, 2></tt> containing points that
+    /// can be collapsed if points collapse is valid in current state;
+    /// <tt>std::nullopt</tt> otherwise
+    std::optional<std::array<EntityId, 2>> isCollapsingPointsValid() const;
+
+    /// @brief Collapse the two selected point entities into one (undoable);
+    void collapseSelectedPoints(std::array<EntityId, 2> pts);
 
     /// @brief Collapse the two selected point entities into one (undoable);
     /// no-op unless exactly two points are selected
@@ -107,6 +127,10 @@ public:
     void setCoordSpace(const CoordSpace space) {
         m_coordSpace = space;
     }
+
+    /// @brief Rotates the camera to face the given plane, animated with
+    /// quaternion slerp
+    void alignCameraToPlane(Plane plane);
 
     void setGridPlanes(const int planes) {
         m_renderSystem.setGridPlanes(planes);
@@ -223,6 +247,10 @@ signals :
 
     void createGregoryRequested();
 
+    void createIntersectionRequested();
+
+    void collapseSelectedPointsRequested();
+
 protected:
     void paintGL() override;
 
@@ -300,6 +328,10 @@ private:
 
     CameraController m_cameraController{this};
     InputMap m_inputMap;
+
+    QVariantAnimation m_alignCameraAnim{this};
+    cadm::Quat m_alignCameraFrom{};
+    cadm::Quat m_alignCameraTo{};
 
     /// @brief Holds currently active drag i.e., the drag that is taking place right now
     DragMode m_activeDrag{DragMode::none};

@@ -43,10 +43,11 @@
 #include "components/TransformComponent.hpp"
 #include "cursor/GridPlanePlacementStrategy.hpp"
 
-OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent),
-                                              m_cursorPlacementStrategy(
-                                                  std::make_unique<GridPlanePlacementStrategy>(1 /*XY plane*/)
-                                              ) {
+OpenGlWidget::OpenGlWidget(QWidget *parent)
+: QOpenGLWidget(parent),
+  m_cursorPlacementStrategy(
+      std::make_unique<GridPlanePlacementStrategy>(1 /*XY plane*/)
+  ) {
     setFocusPolicy(Qt::StrongFocus);
     m_commandStack.onChange = [this](const ChangeFlags flags) {
         if (hasFlag(flags, ChangeFlags::structure)) {
@@ -61,6 +62,36 @@ OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent),
         }
         update();
     };
+
+    m_alignCameraAnim.setDuration(1000);
+    m_alignCameraAnim.setStartValue(0.0);
+    m_alignCameraAnim.setEndValue(1.0);
+    m_alignCameraAnim.setEasingCurve(QEasingCurve::InOutQuad);
+    connect(
+        &m_alignCameraAnim,
+        &QVariantAnimation::valueChanged,
+        this,
+        [this](const QVariant &value) {
+            const auto t = static_cast<cadm::cadf>(value.toDouble());
+            const auto q = cadm::Quat::slerp(m_alignCameraFrom, m_alignCameraTo, t);
+            m_cameraController.getActiveStrategy()->setViewOrientation(q.toRotationMatrix());
+            update();
+        }
+    );
+}
+
+void OpenGlWidget::alignCameraToPlane(const Plane plane) {
+    static const cadm::Mat3 targets[PlaneCount] = {
+        cadm::Mat3::identity(),
+        cadm::Mat3{{1, 0, 0}, {0, 0, -1}, {0, 1, 0}},
+        cadm::Mat3{{0, 0, -1}, {0, 1, 0}, {1, 0, 0}},
+    };
+
+    const auto strategy = m_cameraController.getActiveStrategy();
+    m_alignCameraFrom = cadm::Quat::fromRotationMatrix(strategy->getViewOrientation());
+    m_alignCameraTo = cadm::Quat::fromRotationMatrix(targets[static_cast<std::size_t>(plane)]);
+    m_alignCameraAnim.stop();
+    m_alignCameraAnim.start();
 }
 
 OpenGlWidget::~OpenGlWidget() = default;
@@ -541,9 +572,14 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
     case InputAction::deleteSelected:
         deleteSelectedEntities();
         break;
-    case InputAction::collapseSelectedPoints:
-        collapseSelectedPoints();
+    case InputAction::collapseSelectedPoints: {
+        const auto pts = isCollapsingPointsValid();
+        if (!pts) {
+            break;
+        }
+        collapseSelectedPoints(pts.value());
         break;
+    }
     // undo/redo are handled by the Edit-menu actions, which own these shortcuts;
     // the menu shortcut consumes the key before it reaches here
     case InputAction::undo:
@@ -590,63 +626,53 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
             break;
         }
         QMenu menu(this);
-        menu.addAction(
-            "New Torus",
-            [this] {
-                emit createTorusRequested();
+        const auto addSeparator = [&] {
+            menu.addSeparator();
+        };
+        const auto addActionGl = [&](const QString &label, void (OpenGlWidget::*signal)()) {
+            const auto addedAction = menu.addAction(
+                label,
+                [ this, signal] {
+                    emit (this->*signal)();
+                }
+            );
+            return addedAction;
+        };
+        const auto addAction = [&](const QString &label, auto receiver) {
+            return menu.addAction(label, receiver);
+        };
+        addActionGl("New Torus", &OpenGlWidget::createTorusRequested);
+        addActionGl("New Cursor", &OpenGlWidget::createCursorRequested);
+        addActionGl("New Point", &OpenGlWidget::createPointRequested);
+        addSeparator();
+        addActionGl("New Bezier C0", &OpenGlWidget::createBezierC0Requested);
+        addActionGl("New Bezier C2", &OpenGlWidget::createBezierC2Requested);
+        addActionGl("New Interpolating C2", &OpenGlWidget::createInterpC2Requested);
+        addSeparator();
+        addActionGl("New Bezier Patch C0", &OpenGlWidget::createPatchC0Requested);
+        addActionGl("New Bezier Patch C2", &OpenGlWidget::createPatchC2Requested);
+        addActionGl("Fill Holes (Gregory)", &OpenGlWidget::createGregoryRequested);
+        addActionGl("Intersect Surfaces", &OpenGlWidget::createIntersectionRequested);
+        addSeparator();
+
+        const auto pts = isCollapsingPointsValid();
+        const auto collapsePoints = [&] {
+            if (!pts) {
+                return;
             }
-        );
-        menu.addAction(
-            "New Cursor",
-            [this] {
-                emit createCursorRequested();
+            collapseSelectedPoints(pts.value());
+        };
+        addAction("Collapse selected points", collapsePoints)->setEnabled(pts.has_value());
+
+        const auto entityToFocusOn = isFocusOnEntityValid();
+        const auto focusOnEntity = [&] {
+            if (!entityToFocusOn) {
+                return;
             }
-        );
-        menu.addAction(
-            "New Point",
-            [this] {
-                emit createPointRequested();
-            }
-        );
-        menu.addSeparator();
-        menu.addAction(
-            "New Bezier C0",
-            [this] {
-                emit createBezierC0Requested();
-            }
-        );
-        menu.addAction(
-            "New Bezier C2",
-            [this] {
-                emit createBezierC2Requested();
-            }
-        );
-        menu.addAction(
-            "New Interpolating C2",
-            [this] {
-                emit createInterpC2Requested();
-            }
-        );
-        menu.addSeparator();
-        menu.addAction(
-            "New Bezier Patch C0",
-            [this] {
-                emit createPatchC0Requested();
-            }
-        );
-        menu.addAction(
-            "New Bezier Patch C2",
-            [this] {
-                emit createPatchC2Requested();
-            }
-        );
-        menu.addSeparator();
-        menu.addAction(
-            "Fill Holes (Gregory)",
-            [this] {
-                emit createGregoryRequested();
-            }
-        );
+            onFocusCameraRequested(entityToFocusOn);
+        };
+        addAction("Focus camera on entity", focusOnEntity)->setEnabled(entityToFocusOn != nullptr);
+
         m_createMenuOpen = true;
         menu.exec(QCursor::pos());
         m_createMenuOpen = false;
@@ -704,16 +730,24 @@ void OpenGlWidget::keyReleaseEvent(QKeyEvent *event) {
     }
 }
 
-void OpenGlWidget::collapseSelectedPoints() {
-    std::vector<EntityId> pts;
+std::optional<std::array<EntityId, 2>> OpenGlWidget::isCollapsingPointsValid() const {
+    std::array<EntityId, 2> pts;
+    int i = 0;
     for (const Entity *e : m_scene.getSelectedEntities()) {
         if (e->hasComponent<PointComponent>()) {
-            pts.push_back(e->getId());
+            pts[i++] = e->getId();
+            if (i > 2) {
+                return std::nullopt;
+            }
         }
     }
-    if (pts.size() != 2) {
-        return;
+    if (i != 2) {
+        return std::nullopt;
     }
+    return pts;
+}
+
+void OpenGlWidget::collapseSelectedPoints(const std::array<EntityId, 2> pts) {
     m_commandStack.push(
         std::make_unique<CollapsePointsCommand>(
             m_scene,
@@ -722,6 +756,14 @@ void OpenGlWidget::collapseSelectedPoints() {
         )
     );
     update();
+}
+
+void OpenGlWidget::collapseSelectedPoints() {
+    const auto pts = isCollapsingPointsValid();
+    if (!pts) {
+        return;
+    }
+    collapseSelectedPoints(pts.value());
 }
 
 void OpenGlWidget::deleteSelectedEntities() {
@@ -759,12 +801,12 @@ void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
     std::tie(placed.origin, placed.orientation) = activeCursorPlacement();
     const bool sameType = m_previewParams && m_previewParams->type == placed.type;
     m_previewParams = placed;
-    const auto [rows, cols, wrapU, patchCountX, patchCountY, positions] = patchgen::generate(placed);
+    const auto [rows, cols, wrap, patchCountX, patchCountY, positions] = patchgen::generate(placed);
     if (m_previewPatch
         && sameType
         && m_previewPatch->getRows() == rows
         && m_previewPatch->getCols() == cols
-        && m_previewPatch->getWrapU() == wrapU
+        && m_previewPatch->getWrap() == wrap
         && m_previewPatch->getPatchCountX() == patchCountX
         && m_previewPatch->getPatchCountY() == patchCountY) {
         m_previewRegistry->setPositions(m_previewPatch->getControlPoints().front(), positions);
@@ -794,7 +836,7 @@ void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
         }
         m_previewPatch->setShowNet(m_previewShowNet);
     }
-    m_previewPatch->setGrid(std::move(handles), rows, cols, wrapU, patchCountX, patchCountY);
+    m_previewPatch->setGrid(std::move(handles), rows, cols, wrap, patchCountX, patchCountY);
 
     doneCurrent();
     update();
@@ -1292,6 +1334,27 @@ bool OpenGlWidget::removeEntity(const EntityId id) {
     emit sceneChanged();
     emit viewportSelectionChanged();
     return true;
+}
+
+void OpenGlWidget::onSetAsCursorRequested(Entity *e) {
+    getScene().setActiveCursor(e);
+}
+
+void OpenGlWidget::onSetAsCameraRequested(const EntityId id) {
+    getCameraController().switchTo(id);
+}
+
+void OpenGlWidget::onFocusCameraRequested(Entity *e) {
+    getCameraController().lookAtEntity(e, getScene().getPointRegistry());
+    update();
+}
+
+Entity* OpenGlWidget::isFocusOnEntityValid() const {
+    const auto selectedEntities = m_scene.getSelectedEntities();
+    if (selectedEntities.size() != 1) {
+        return nullptr;
+    }
+    return *selectedEntities.begin();
 }
 
 bool OpenGlWidget::eventFilter(QObject *obj, QEvent *event) {

@@ -113,7 +113,7 @@ void RenderSystem::initialize() {
     SHADER_ATTACHING_CHECK(
         m_bezierSurfaceShader->attachShaderFromFile(
             GL_FRAGMENT_SHADER,
-            "shaders/bezierCurve/bezierCurveShader.frag"
+            "shaders/bezierSurface/bezierSurfaceShader.frag"
         )
     );
 
@@ -835,6 +835,24 @@ void RenderSystem::drawPatchSurface(
                       : 0;
     }
 
+    patch->syncTrimToGpu();
+    const bool trimmed = patch->getTrim().enabled && patch->getTrimTexture() != 0;
+    SHADER_SET_UNIFORM_CHECK(
+        m_bezierSurfaceShader->setUniform1(
+            "uTrimEnabled",
+            trimmed
+            ? 1
+            : 0
+        )
+    );
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uCountX", patch->getPatchCountX()));
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uCountY", patch->getPatchCountY()));
+    if (trimmed) {
+        gl->glActiveTexture(GL_TEXTURE0);
+        gl->glBindTexture(GL_TEXTURE_2D, patch->getTrimTexture());
+        SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uTrimMask", 0));
+    }
+
     gl->glBindVertexArray(patch->getPatchVao());
     for (int dir = 0; dir < 2; ++dir) {
         const int lines = (dir == 0
@@ -855,6 +873,14 @@ void RenderSystem::drawPatchSurface(
                 )
             );
             SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uSub", subs[q]));
+            // quads are emitted row-major over (patchCountY, patchCountX), see
+            // PatchComponent::patchCoords
+            SHADER_SET_UNIFORM_CHECK(
+                m_bezierSurfaceShader->setUniform1("uQuadX", q % std::max(1, patch->getPatchCountX()))
+            );
+            SHADER_SET_UNIFORM_CHECK(
+                m_bezierSurfaceShader->setUniform1("uQuadY", q / std::max(1, patch->getPatchCountX()))
+            );
             gl->glDrawElementsInstanced(
                 GL_PATCHES,
                 16,

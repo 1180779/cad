@@ -20,6 +20,7 @@
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/BlenderCameraStrategy.hpp"
 #include "gui/CadMenuBar.hpp"
+#include "gui/components/geometry/IntersectionDialog.hxx"
 #include "gui/components/geometry/PatchCreatorDialog.hxx"
 #include "gui/CadTitleBar.hpp"
 #include "gui/Theme.hpp"
@@ -401,6 +402,13 @@ namespace {
         QObject::connect(viewportPanel->gridSettingsWidget(), &GridSW::lodFadeChanged, glW, &GlW::setGridLodFade);
         glW->setGridLodFade(viewportPanel->gridSettingsWidget()->getLodFade());
 
+        QObject::connect(
+            viewportPanel->alignCameraWidget(),
+            &AlignCameraToPlaneWidget::alignToPlaneRequested,
+            glW,
+            &GlW::alignCameraToPlane
+        );
+
         auto *pivotCombo = viewportPanel->pivotCombo();
         const auto glSetPivotMode = [glW, pivotCombo](const int index) {
             glW->setPivotMode(static_cast<PivotMode>(pivotCombo->itemData(index).toInt()));
@@ -421,52 +429,18 @@ namespace {
     }
 
     /// @brief Wires hierarchy context actions: delete, set-as-cursor/camera, focus camera
-    void wireHierarchyActions(OpenGlWidget *glWidget, SceneHierarchyWidget *hierarchyWidget) {
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::deleteEntityRequested,
-            glWidget,
-            [glWidget, hierarchyWidget](const Entity *e) {
-                glWidget->removeEntity(e->getId());
-                hierarchyWidget->refresh();
-                glWidget->update();
-            }
-        );
-
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::collapseSelectedPointsRequested,
-            glWidget,
-            &OpenGlWidget::collapseSelectedPoints
-        );
-
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::setAsCursorRequested,
-            glWidget,
-            [glWidget](Entity *e) {
-                glWidget->getScene().setActiveCursor(e);
-            }
-        );
-
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::setAsCameraRequested,
-            glWidget,
-            [glWidget](const EntityId id) {
-                glWidget->getCameraController().switchTo(id);
-            }
-        );
-
-        QObject::connect(
-            hierarchyWidget,
-            &SceneHierarchyWidget::focusCameraRequested,
-            glWidget,
-            [glWidget](Entity *e) {
-                glWidget->getCameraController().lookAtEntity(e, glWidget->getScene().getPointRegistry());
-                glWidget->update();
-            }
-        );
+    void wireHierarchyActions(OpenGlWidget *glW, SceneHierarchyWidget *hW) {
+        using namespace aliases;
+        const auto onRemoveEntity = [glW, hW](const Entity *e) {
+            glW->removeEntity(e->getId());
+            hW->refresh();
+            glW->update();
+        };
+        QObject::connect(hW, &SceneHW::deleteEntityRequested, glW, onRemoveEntity);
+        QObject::connect(hW, &SceneHW::collapseSelectedPointsRequested, glW, qOverload<>(&GlW::collapseSelectedPoints));
+        QObject::connect(hW, &SceneHW::setAsCursorRequested, glW, &GlW::onSetAsCursorRequested);
+        QObject::connect(hW, &SceneHW::setAsCameraRequested, glW, &GlW::onSetAsCameraRequested);
+        QObject::connect(hW, &SceneHW::focusCameraRequested, glW, &GlW::onFocusCameraRequested);
     }
 
     /// @brief Dims and input-blocks the whole window except the viewport,
@@ -654,7 +628,12 @@ namespace {
                     auto params = dialog->params();
                     std::tie(params.origin, params.orientation) = glW->activeCursorPlacement();
                     glW->getCommandStack().push(
-                        std::make_unique<CreatePatchCommand>(glW->getScene(), params)
+                        std::make_unique<CreateEntitiesCommand>(
+                            glW->getScene(),
+                            [params](Scene &s) {
+                                return GeometryFactory(s).createPatch(params);
+                            }
+                        )
                     );
                 }
             };
@@ -746,6 +725,92 @@ namespace {
         };
         QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createGregoryRequested, glW, spawnGregory);
         QObject::connect(glW, &OpenGlWidget::createGregoryRequested, glW, spawnGregory);
+
+        const auto spawnIntersection = [glW] {
+            Scene &sc = glW->getScene();
+            std::vector<std::pair<EntityId, intersections::Surface>> surfaces;
+            for (Entity *e : sc.getSelectedEntities()) {
+                if (auto surface = intersections::surfaceFor(e)) {
+                    surfaces.emplace_back(e->getId(), std::move(surface.value()));
+                }
+            }
+            const auto notify = [glW](const QString &text) {
+                QMessageBox::information(glW->window(), "Intersect Surfaces", text);
+            };
+            if (surfaces.empty() || surfaces.size() > 2) {
+                notify("Select one surface to self-intersect, or two surfaces to intersect.");
+                return;
+            }
+
+            const bool selfIntersection = surfaces.size() == 1;
+            const auto &[id1, surface1] = surfaces.front();
+            const auto &[id2, surface2] = surfaces.back();
+
+            Entity *cursor = sc.getActiveCursor();
+            IntersectionDialog dialog(cursor != nullptr, glW->window());
+            if (dialog.exec() != QDialog::Accepted) {
+                return;
+            }
+            const auto [step, maxPoints, useCursor] = dialog.params();
+
+            const intersections::SeedOptions seedOptions{
+                .minSeparation = selfIntersection
+                                     ? 0.05f
+                                     : 0.0f,
+            };
+
+            std::vector<cadm::Vec4> seeds;
+            if (useCursor && cursor) {
+                const auto at = cursor->getComponent<TransformComponent>().value()->getTranslation();
+                if (const auto seed = intersections::findSeedNear(surface1, surface2, at, seedOptions)) {
+                    seeds.push_back(seed.value());
+                }
+            }
+            else {
+                seeds = intersections::findSeeds(surface1, surface2, seedOptions);
+            }
+            if (seeds.empty()) {
+                notify("Could not find a starting point on the intersection.");
+                return;
+            }
+
+            const auto branches = intersections::traceAllBranches(
+                surface1,
+                surface2,
+                seeds,
+                {
+                    .step = step,
+                    .tolerance = cadm::gc_eps10,
+                    .maxPoints = maxPoints
+                }
+            );
+            if (branches.empty()) {
+                notify("Found a starting point, but could not trace a curve from it.");
+                return;
+            }
+
+            for (const auto &curve : branches) {
+                const auto data = intersections::extractCurveData(surface1, curve);
+                const trimming::SurfaceWrap wrap1{
+                    .u = surface1.wrapU,
+                    .v = surface1.wrapV
+                };
+                const trimming::SurfaceWrap wrap2{
+                    .u = surface2.wrapU,
+                    .v = surface2.wrapV
+                };
+                glW->getCommandStack().push(
+                    std::make_unique<CreateEntityCommand>(
+                        sc,
+                        [id1, id2, curve, data, wrap1, wrap2](Scene &s) {
+                            return GeometryFactory(s).createIntersectionCurve(id1, id2, curve, data, wrap1, wrap2);
+                        }
+                    )
+                );
+            }
+        };
+        QObject::connect(hierarchyWidget, &SceneHierarchyWidget::createIntersectionRequested, glW, spawnIntersection);
+        QObject::connect(glW, &OpenGlWidget::createIntersectionRequested, glW, spawnIntersection);
     }
 }
 

@@ -8,14 +8,14 @@
 #include <QGroupBox>
 #include <QVBoxLayout>
 
-GridSettingsWidget::GridSettingsWidget(QWidget *parent) : QWidget(parent) {
-    // ReSharper disable once CppDFAMemoryLeak
+// ReSharper disable CppDFAMemoryLeak
+
+GridSettingsWidget::GridSettingsWidget(QWidget *parent)
+: QWidget(parent) {
     const auto outerLayout = new QVBoxLayout(this);
     outerLayout->setAlignment(Qt::AlignTop);
 
-    // ReSharper disable once CppDFAMemoryLeak
     const auto groupBox = new QGroupBox("Grid Planes");
-    // ReSharper disable once CppDFAMemoryLeak
     const auto groupLayout = new QVBoxLayout(groupBox);
 
     m_xyPlane = new QCheckBox("XY Plane (z = 0)");
@@ -36,9 +36,7 @@ GridSettingsWidget::GridSettingsWidget(QWidget *parent) : QWidget(parent) {
     connect(m_xzPlane, &QCheckBox::toggled, this, &GridSettingsWidget::onCheckboxToggled);
     connect(m_yzPlane, &QCheckBox::toggled, this, &GridSettingsWidget::onCheckboxToggled);
 
-    // ReSharper disable once CppDFAMemoryLeak
     const auto axesBox = new QGroupBox("Axes");
-    // ReSharper disable once CppDFAMemoryLeak
     const auto axesLayout = new QVBoxLayout(axesBox);
     const auto addAxisCheckBox = [&](const QString &text) {
         const auto axis = new QCheckBox(text);
@@ -71,6 +69,8 @@ GridSettingsWidget::GridSettingsWidget(QWidget *parent) : QWidget(parent) {
         }
     );
 }
+
+// ReSharper restore CppDFAMemoryLeak
 
 bool GridSettingsWidget::getLodFade() const {
     return m_lodFade->isChecked();

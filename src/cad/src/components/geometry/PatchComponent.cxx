@@ -5,6 +5,7 @@
 #include "PatchComponent.hxx"
 
 #include <algorithm>
+#include <cmath>
 
 #include "GlCommon.hpp"
 
@@ -22,6 +23,9 @@ PatchComponent::PatchComponent(PointRegistry *registry)
 
 PatchComponent::~PatchComponent() {
     const auto gl = getGl();
+    if (m_trimTexture != 0) {
+        gl->glDeleteTextures(1, &m_trimTexture);
+    }
     m_patchEbo.deleteGpu(gl);
     m_netEbo.deleteGpu(gl);
     m_patchVao.deleteGpu(gl);
@@ -36,7 +40,7 @@ void PatchComponent::setGrid(
     std::vector<PointHandle> handles,
     const int rows,
     const int cols,
-    const bool wrapU,
+    const WrapDirection wrap,
     const int patchCountX,
     const int patchCountY
 ) {
@@ -49,7 +53,7 @@ void PatchComponent::setGrid(
     m_controlPoints = std::move(handles);
     m_rows = rows;
     m_cols = cols;
-    m_wrapU = wrapU;
+    m_wrap = wrap;
     m_patchCountX = patchCountX;
     m_patchCountY = patchCountY;
     m_selectedPatches.clear();
@@ -58,11 +62,37 @@ void PatchComponent::setGrid(
     rebuildPatchData();
 }
 
+std::optional<PatchComponent::PatchUv> PatchComponent::resolveUv(const cadm::cadf u, const cadm::cadf v) const {
+    const auto resolve = [](
+        cadm::cadf param,
+        const int count,
+        const bool wrap
+    ) -> std::optional<std::pair<int, cadm::cadf>> {
+        if (wrap) {
+            param -= std::floor(param);
+        }
+        else if (param < 0 || param > 1) {
+            return std::nullopt;
+        }
+        const int patch = std::min(static_cast<int>(param * static_cast<cadm::cadf>(count)), count - 1);
+        return {{patch, param * static_cast<cadm::cadf>(count) - static_cast<cadm::cadf>(patch)}};
+    };
+    const auto y = resolve(u, m_patchCountY, m_wrap == WrapDirection::u);
+    const auto x = resolve(v, m_patchCountX, m_wrap == WrapDirection::v);
+    if (!x || !y) {
+        return std::nullopt;
+    }
+    return PatchUv{x->first, y->first, y->second, x->second};
+}
+
 int PatchComponent::gridIndex(const int row, const int col) const {
-    const int c = m_wrapU
+    const int c = m_wrap == WrapDirection::v
                       ? col % m_cols
                       : col;
-    return row * m_cols + c;
+    const int r = m_wrap == WrapDirection::u
+                      ? row % m_rows
+                      : row;
+    return r * m_cols + c;
 }
 
 void PatchComponent::gatherPatch(const int px, const int py, std::array<int, 16> &out) const {
@@ -131,19 +161,20 @@ void PatchComponent::setPatchSelected(const int index, const bool selected) {
 
 void PatchComponent::buildNetEbo() {
     std::vector<uint32_t> lines;
-    // row-direction segments
+    const int lastCol = m_wrap == WrapDirection::v
+                            ? m_cols
+                            : m_cols - 1;
     for (int r = 0; r < m_rows; ++r) {
-        const int last = m_wrapU
-                             ? m_cols
-                             : m_cols - 1;
-        for (int c = 0; c < last; ++c) {
+        for (int c = 0; c < lastCol; ++c) {
             lines.push_back(m_controlPoints[gridIndex(r, c)]);
             lines.push_back(m_controlPoints[gridIndex(r, c + 1)]);
         }
     }
-    // column-direction segments
+    const int lastRow = m_wrap == WrapDirection::u
+                            ? m_rows
+                            : m_rows - 1;
     for (int c = 0; c < m_cols; ++c) {
-        for (int r = 0; r < m_rows - 1; ++r) {
+        for (int r = 0; r < lastRow; ++r) {
             lines.push_back(m_controlPoints[gridIndex(r, c)]);
             lines.push_back(m_controlPoints[gridIndex(r + 1, c)]);
         }
@@ -161,6 +192,49 @@ void PatchComponent::setGridDivisionsV(const int divisions) {
 
 void PatchComponent::setShowNet(const bool v) {
     m_showNet = v;
+}
+
+void PatchComponent::syncTrimToGpu() const {
+    if (!m_trimDirty) {
+        return;
+    }
+    m_trimDirty = false;
+    const auto gl = getGl();
+    if (!m_trim.enabled) {
+        return;
+    }
+
+    const auto &[size, cells] = m_trim.mask;
+    std::vector<std::uint8_t> texels(cells.size());
+    for (std::size_t i = 0; i < cells.size(); ++i) {
+        texels[i] = trimming::kept(cells[i], m_trim.keepInside)
+                        ? 255
+                        : 0;
+    }
+
+    if (m_trimTexture == 0) {
+        gl->glGenTextures(1, &m_trimTexture);
+    }
+    gl->glActiveTexture(GL_TEXTURE0);
+    gl->glBindTexture(GL_TEXTURE_2D, m_trimTexture);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    gl->glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    gl->glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_R8,
+        size,
+        size,
+        0,
+        GL_RED,
+        GL_UNSIGNED_BYTE,
+        texels.data()
+    );
+    gl->glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    gl->glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void PatchComponent::syncToGpu() {

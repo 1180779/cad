@@ -200,6 +200,13 @@ void SceneHierarchyWidget::onContextMenuRequested(const QPoint &pos) {
         connect(createPatchC2Action, &QAction::triggered, this, &SceneHierarchyWidget::createPatchC2Requested);
         const auto *createGregoryAction = menu.addAction("Fill Holes (Gregory)");
         connect(createGregoryAction, &QAction::triggered, this, &SceneHierarchyWidget::createGregoryRequested);
+        const auto *createIntersectionAction = menu.addAction("Intersect Surfaces");
+        connect(
+            createIntersectionAction,
+            &QAction::triggered,
+            this,
+            &SceneHierarchyWidget::createIntersectionRequested
+        );
         menu.exec(m_listWidget->mapToGlobal(pos));
         return;
     }

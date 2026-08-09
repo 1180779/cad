@@ -12,7 +12,8 @@ BlenderCameraStrategy::BlenderCameraStrategy(
     Entity *cameraEntity,
     const std::function<int()> &widthGetter,
     const std::function<int()> &heightGetter
-) : ICameraStrategy(cameraEntity, widthGetter, heightGetter) {}
+)
+: ICameraStrategy(cameraEntity, widthGetter, heightGetter) {}
 
 cadm::Mat4 BlenderCameraStrategy::getView() {
     const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
@@ -204,6 +205,28 @@ bool BlenderCameraStrategy::handleWheelEvent(QWheelEvent *event) {
     }
 
     return true;
+}
+
+cadm::Mat3 BlenderCameraStrategy::getViewOrientation() {
+    const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
+    if (!camera) {
+        EXPECTED_COMPONENT_MISSING();
+        return cadm::Mat3::identity();
+    }
+    return camera.value()->m_orbitRot;
+}
+
+void BlenderCameraStrategy::setViewOrientation(const cadm::Mat3 &orientation) {
+    const auto camera = m_cameraEntity->getComponent<BlenderCameraComponent>();
+    if (!camera) {
+        EXPECTED_COMPONENT_MISSING();
+        return;
+    }
+    if (camera.value()->m_orbitRot == orientation) {
+        return;
+    }
+    camera.value()->m_orbitRot = orientation;
+    emit camera.value()->propertyUpdated();
 }
 
 void BlenderCameraStrategy::toggleProjection() {
