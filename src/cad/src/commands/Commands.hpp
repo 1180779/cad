@@ -41,12 +41,18 @@ private:
     std::optional<EntitySpec> m_spec;
 };
 
-/// @brief Create a joined Bézier patch together with all its control points as
-/// one undoable unit. On first execute() the points and patch are generated and
-/// their specs captured; undo removes them all and redo rebuilds them
-class CreatePatchCommand final : public Command {
+/// @brief Create several entities as one undoable action
+/// @details On first execute() the builder runs and every created entity's spec
+/// is captured; undo removes them all and redo rebuilds them, points before the
+/// entity referencing them
+class CreateEntitiesCommand final : public Command {
 public:
-    CreatePatchCommand(Scene &scene, const patchgen::PatchCreateParams &params) : m_scene(scene), m_params(params) {}
+    /// @param scene the scene the entities will live in
+    /// @param builder returns everything it created, control points first and
+    /// the entity referencing them last
+    CreateEntitiesCommand(Scene &scene, std::function<std::vector<Entity*>(Scene &)> builder)
+    : m_scene(scene),
+      m_builder(std::move(builder)) {}
 
     void execute() override;
 
@@ -54,10 +60,10 @@ public:
 
 private:
     Scene &m_scene;
-    patchgen::PatchCreateParams m_params;
+    std::function<std::vector<Entity*>(Scene &)> m_builder;
 
-    /// @brief Specs of every created entity (control points first, patch last);
-    /// empty until the first @ref execute captures them
+    /// @brief Specs of every created entity (control points first, referrer
+    /// last); empty until the first @ref execute captures them
     std::vector<EntitySpec> m_specs;
 };
 

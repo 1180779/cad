@@ -8,6 +8,7 @@
 #include "../../components/geometry/TorusWidget.hpp"
 #include "../../components/TransformWidget.hpp"
 #include "../../components/geometry/GregoryWidget.hxx"
+#include "../../components/geometry/IntersectionCurveWidget.hxx"
 #include "../../components/geometry/PatchWidget.hxx"
 #include "../../../components/geometry/BezierC0Component.hpp"
 #include "../../../components/geometry/BezierC2Component.hpp"
@@ -137,6 +138,12 @@ void EntityPropertiesWidget::setEntity(Entity *entity) {
         widget->setCommandContext(m_scene, m_commandStack, m_entity->getId());
         m_layout->addWidget(widget);
         connect(widget, &ComponentWidget::propertyChanged, this, &EntityPropertiesWidget::propertyChanged);
+    }
+
+    if (const auto curve = m_entity->getComponent<IntersectionCurveComponent>()) {
+        const auto widget = new IntersectionCurveWidget(curve.value());
+        widget->setCommandContext(m_scene, m_commandStack, m_entity->getId());
+        m_layout->addWidget(widget);
     }
 }
 

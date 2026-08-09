@@ -8,11 +8,13 @@
 #include "../components/geometry/BezierC0Component.hpp"
 #include "../components/geometry/BezierC2Component.hpp"
 #include "../components/geometry/GregoryComponent.hxx"
+#include "../components/geometry/IntersectionCurveComponent.hxx"
 #include "../components/geometry/InterpC2Component.hxx"
 #include "../components/CursorComponent.hpp"
 #include "../components/GeometryComponent.hpp"
 #include "../components/geometry/PatchC0Component.hxx"
 #include "../components/geometry/PatchC2Component.hxx"
+#include "../utils/IntersectionUtils.hxx"
 #include "../components/PointComponent.hpp"
 #include "../components/TransformComponent.hpp"
 
@@ -102,8 +104,32 @@ Entity* GeometryFactory::createGregory(
     return entity;
 }
 
+Entity* GeometryFactory::createIntersectionCurve(
+    const EntityId patch1,
+    const EntityId patch2,
+    const intersections::IntersectionCurve &curve,
+    const intersections::IntersectionCurveData &data,
+    const trimming::SurfaceWrap wrap1,
+    const trimming::SurfaceWrap wrap2,
+    const std::string &name
+) const {
+    const auto entity = m_scene.createEntity(name);
+    entity->addComponent<TransformComponent>();
+    entity->addComponent<IntersectionCurveComponent>(
+        patch1,
+        patch2,
+        data.points3D,
+        data.params1,
+        data.params2,
+        curve.closed,
+        wrap1,
+        wrap2
+    );
+    return entity;
+}
+
 std::vector<Entity*> GeometryFactory::createPatch(const patchgen::PatchCreateParams &params) const {
-    const auto [rows, cols, wrapU, patchCountX, patchCountY, positions] = patchgen::generate(params);
+    const auto [rows, cols, wrap, patchCountX, patchCountY, positions] = patchgen::generate(params);
 
     std::vector<Entity*> created;
     created.reserve(positions.size() + 1);
@@ -126,7 +152,40 @@ std::vector<Entity*> GeometryFactory::createPatch(const patchgen::PatchCreatePar
                                     entity->addComponent<PatchC2Component>(&m_scene.getPointRegistry())
                                 )
                                 : entity->addComponent<PatchC0Component>(&m_scene.getPointRegistry());
-    patch->setGrid(std::move(handles), rows, cols, wrapU, patchCountX, patchCountY);
+    patch->setGrid(std::move(handles), rows, cols, wrap, patchCountX, patchCountY);
+    created.push_back(entity);
+    return created;
+}
+
+std::vector<Entity*> GeometryFactory::createInterpolatedFromPoints(
+    const std::vector<cadm::Vec3> &points,
+    const int everyNth,
+    const std::string &name
+) const {
+    std::vector<Entity*> created;
+    if (points.empty()) {
+        return created;
+    }
+    const auto stride = static_cast<std::size_t>(std::max(1, everyNth));
+
+    std::vector<PointHandle> handles;
+    handles.reserve(points.size() / stride + 1);
+    for (std::size_t i = 0; i < points.size(); i += stride) {
+        Entity *pe = m_scene.createPoint(points[i], "Spline Point");
+        created.push_back(pe);
+        handles.push_back(pe->getComponent<PointComponent>().value()->m_handle);
+    }
+    if ((points.size() - 1) % stride != 0) {
+        Entity *pe = m_scene.createPoint(points.back(), "Spline Point");
+        created.push_back(pe);
+        handles.push_back(pe->getComponent<PointComponent>().value()->m_handle);
+    }
+
+    const auto entity = m_scene.createEntity(name);
+    auto *curve = entity->addComponent<InterpC2Component>(&m_scene.getPointRegistry());
+    for (const auto h : handles) {
+        curve->addControlPoint(h);
+    }
     created.push_back(entity);
     return created;
 }

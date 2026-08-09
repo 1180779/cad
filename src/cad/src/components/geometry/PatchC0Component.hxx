@@ -12,7 +12,10 @@
 /// position VBO directly and needs no CPU vertex conversion
 class PatchC0Component final : public PatchComponent {
 public:
-    explicit PatchC0Component(PointRegistry *registry) : PatchComponent(registry) {}
+    explicit PatchC0Component(PointRegistry *registry)
+    : PatchComponent(registry) {}
+
+    std::optional<bezierUtils::Grid4x4> patchAtUv(cadm::cadf u, cadm::cadf v) const override;
 
 protected:
     [[nodiscard]] int patchRowBase(const int py) const override {

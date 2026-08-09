@@ -247,6 +247,8 @@ signals :
 
     void createGregoryRequested();
 
+    void createIntersectionRequested();
+
     void collapseSelectedPointsRequested();
 
 protected:

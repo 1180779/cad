@@ -105,29 +105,33 @@ void CreateEntityCommand::undo() {
 }
 
 // ---------------------------------------------------------------------------
-// CreatePatchCommand
+// CreateEntitiesCommand
 // ---------------------------------------------------------------------------
 
-void CreatePatchCommand::execute() {
+void CreateEntitiesCommand::execute() {
     if (!m_specs.empty()) {
-        // redo: points first so the patch can re-reference live handles
-        const auto isPatch = [](const EntitySpec &s) {
-            return s.has<PatchC0Data>() || s.has<PatchC2Data>();
+        // points first (so whatever references them finds live handles)
+        const auto referencesPoints = [](const EntitySpec &s) {
+            return s.has<PatchC0Data>()
+                || s.has<PatchC2Data>()
+                || s.has<InterpC2Data>()
+                || s.has<BezierC0Data>()
+                || s.has<BezierC2Data>();
         };
         for (const auto &s : m_specs) {
-            if (!isPatch(s)) {
+            if (!referencesPoints(s)) {
                 rebuildEntity(m_scene, s);
             }
         }
         for (const auto &s : m_specs) {
-            if (isPatch(s)) {
+            if (referencesPoints(s)) {
                 rebuildEntity(m_scene, s);
             }
         }
         return;
     }
 
-    for (const auto created = GeometryFactory(m_scene).createPatch(m_params);
+    for (const auto created = m_builder(m_scene);
          Entity *e : created) {
         if (EntitySpec spec;
             captureEntity(m_scene, e, spec)) {
@@ -136,7 +140,7 @@ void CreatePatchCommand::execute() {
     }
 }
 
-void CreatePatchCommand::undo() {
+void CreateEntitiesCommand::undo() {
     m_scene.removeEntities(specIds(m_specs));
 }
 

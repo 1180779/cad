@@ -66,6 +66,8 @@ signals:
 
     void createGregoryRequested();
 
+    void createIntersectionRequested();
+
     void setAsNewPointsTargetEntityRequested(Entity *e);
 
     void addSelectedPointsToNewPointsTargetEntityRequested(Entity *e);

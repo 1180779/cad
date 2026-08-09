@@ -13,9 +13,12 @@
 /// Boor points
 class PatchC2Component final : public PatchComponent {
 public:
-    explicit PatchC2Component(PointRegistry *registry) : PatchComponent(registry) {}
+    explicit PatchC2Component(PointRegistry *registry)
+    : PatchComponent(registry) {}
 
     ~PatchC2Component() override;
+
+    std::optional<bezierUtils::Grid4x4> patchAtUv(cadm::cadf u, cadm::cadf v) const override;
 
     [[nodiscard]] cadm::Vec3 patchVertexPos(const uint32_t index) const override {
         return m_bernsteinVbo[static_cast<int>(index)];
@@ -43,6 +46,10 @@ protected:
     }
 
 private:
+    /// @brief Bernstein net of single patch (@p px, @p py): the de Boor points
+    /// converted to Bézier along both directions, laid out k = i*4 + j
+    [[nodiscard]] std::array<cadm::Vec3, 16> bernsteinNet(int px, int py) const;
+
     /// @brief Derived Bernstein positions, 16 per single patch (joins
     /// duplicated)
     GpuBuffer<cadm::Vec3, GL_ARRAY_BUFFER> m_bernsteinVbo;

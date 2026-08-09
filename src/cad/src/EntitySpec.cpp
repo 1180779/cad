@@ -98,7 +98,7 @@ bool captureEntity(Scene &scene, Entity *entity, EntitySpec &out) {
             p->getControlPoints(),
             p->getRows(),
             p->getCols(),
-            p->getWrapU(),
+            p->getWrap(),
             p->getPatchCountX(),
             p->getPatchCountY(),
             p->getGridDivisionsU(),
@@ -201,7 +201,7 @@ Entity* rebuildEntity(Scene &scene, const EntitySpec &spec) {
 
 namespace {
     void setPatch(PatchComponent* const patch, const PatchGridData* const d) {
-        patch->setGrid(d->controlPoints, d->rows, d->cols, d->wrapU, d->patchCountX, d->patchCountY);
+        patch->setGrid(d->controlPoints, d->rows, d->cols, d->wrap, d->patchCountX, d->patchCountY);
         patch->setGridDivisionsU(d->gridDivisionsU);
         patch->setGridDivisionsV(d->gridDivisionsV);
         patch->setShowNet(d->showNet);

@@ -10,6 +10,8 @@
 
 #include <cad_math/Vec3.hpp>
 
+#include "components/geometry/WrapDirection.hxx"
+
 /// @brief Control-point grid generation for joined Bézier patches
 namespace patchgen {
     /// @brief Plane extents (columns x rows)
@@ -22,6 +24,9 @@ namespace patchgen {
     struct CylinderDimensions {
         cadm::cadf radius = 1.0;
         cadm::cadf height = 5.0;
+
+        /// @brief Which parameter runs around the cylinder
+        WrapDirection seam = WrapDirection::v;
     };
 
     /// @brief Parameters for creating a joined Bézier patch
@@ -53,7 +58,7 @@ namespace patchgen {
     struct PatchGrid {
         int rows = 0;
         int cols = 0;
-        bool wrapU = false;
+        WrapDirection wrap = WrapDirection::none;
         int patchCountX = 0;
         int patchCountY = 0;
         std::vector<cadm::Vec3> positions;
