@@ -20,6 +20,7 @@
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/BlenderCameraStrategy.hpp"
 #include "cursor/GridPlanePlacementStrategy.hpp"
+#include "cursor/PatchPlacementStrategy.hxx"
 #include "gui/CadMenuBar.hpp"
 #include "gui/components/geometry/IntersectionDialog.hxx"
 #include "gui/components/geometry/PatchCreatorDialog.hxx"
@@ -321,6 +322,7 @@ namespace {
         };
 
         addStrategy("axis plane", std::make_unique<GridPlanePlacementStrategy>(1));
+        addStrategy("approx patch", std::make_unique<PatchPlacementStrategy>(&glWidget->getScene()));
         menuBar->synchronizeSelectedCursorStrategy(glWidget->getCursorPlacementStrategyIndex());
     }
 
