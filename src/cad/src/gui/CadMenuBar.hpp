@@ -5,8 +5,11 @@
 #ifndef CAD_CADMENUBAR_HPP
 #define CAD_CADMENUBAR_HPP
 
+#include <functional>
+
 #include <QDoubleSpinBox>
 #include <QMenuBar>
+#include <QActionGroup>
 
 #include "input/InputMap.hpp"
 
@@ -34,6 +37,10 @@ public:
     void setStereoEyeSep(double eyeSep) const;
 
     void setStereoConvergence(double convergence) const;
+
+    void addCursorStrategy(const QString &name, const std::function<void()> &applyStrategy);
+
+    void synchronizeSelectedCursorStrategy(std::size_t index) const;
 
     /// @brief Register a toggleable panel entry under the Tools menu; returns the action
     [[nodiscard]] QAction* addToolPanelAction(const QString &name) const;
@@ -97,6 +104,9 @@ private:
     QDoubleSpinBox *const m_stereoEyeSepSpinbox;
     QDoubleSpinBox *const m_stereoConvergenceSpinbox;
     QDoubleSpinBox *const m_stereoSeparationRatioSpin;
+
+    QMenu *const m_cursorStrategyMenu;
+    QActionGroup *const m_cursorStrategiesGroup;
 };
 
 #endif //CAD_CADMENUBAR_HPP

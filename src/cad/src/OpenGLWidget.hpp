@@ -134,8 +134,8 @@ public:
 
     void setGridPlanes(const int planes) {
         m_renderSystem.setGridPlanes(planes);
-        if (m_cursorPlacementStrategy) {
-            m_cursorPlacementStrategy->onGridPlanesChanged(planes);
+        if (const auto cursorPlacementStrategy = getCursorPlacementStrategy()) {
+            cursorPlacementStrategy->onGridPlanesChanged(planes);
         }
         update();
     }
@@ -150,8 +150,28 @@ public:
         update();
     }
 
-    void setCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy) {
-        m_cursorPlacementStrategy = std::move(strategy);
+    void addCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy) {
+        m_cursorPlacementStrategies.push_back(std::move(strategy));
+    }
+
+    void addAndSetCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy) {
+        m_cursorPlacementStrategyIndex = m_cursorPlacementStrategies.size();
+        m_cursorPlacementStrategies.push_back(std::move(strategy));
+        getCursorPlacementStrategy()->onGridPlanesChanged(m_renderSystem.getGridPlanes());
+    }
+
+    void setCursorPlacementStrategy(const std::size_t index) {
+        if (index >= m_cursorPlacementStrategies.size()) {
+            return;
+        }
+        if (index != m_cursorPlacementStrategyIndex) {
+            m_cursorPlacementStrategyIndex = index;
+            getCursorPlacementStrategy()->onGridPlanesChanged(m_renderSystem.getGridPlanes());
+        }
+    }
+
+    std::size_t getCursorPlacementStrategyIndex() const {
+        return m_cursorPlacementStrategyIndex;
     }
 
     [[nodiscard]] bool isClickToAddMode() const {
@@ -280,6 +300,10 @@ private:
         std::span<cadm::Mat4, 2> projs
     ) const;
 
+    /// @brief Return current cursor placement strategy or <tt>nullptr</tt> if
+    /// none are available
+    IViewportPositionStrategy* getCursorPlacementStrategy() const;
+
     void renderTransformAxis() const;
 
     void renderBoxSelectionRectangle() const;
@@ -356,7 +380,8 @@ private:
     QPoint m_boxSelectStart;
     QPoint m_boxSelectCurrent;
 
-    std::unique_ptr<IViewportPositionStrategy> m_cursorPlacementStrategy;
+    std::vector<std::unique_ptr<IViewportPositionStrategy>> m_cursorPlacementStrategies;
+    std::size_t m_cursorPlacementStrategyIndex{0};
 
     /// @brief Valid only in PointDrag mode
     PointHandle m_draggedPoint = 0;
