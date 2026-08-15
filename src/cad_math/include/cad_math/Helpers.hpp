@@ -106,10 +106,11 @@ namespace cadm {
         return {gamma, beta, alpha};
     }
 
-    /// @brief Intersects a ray (origin + t*dir) with the infinite plane dot(normal, p) = offset.
-    /// Returns the parameter t at the intersection point, or nullopt when the ray is
-    /// parallel to the plane.
-    /// The hit position is: origin + dir * t
+    /// @brief Intersects a ray (origin + t*dir) with the infinite plane
+    /// dot(normal, p) = offset.
+    /// @returns the parameter t at the intersection point, or nullopt when the
+    /// ray is parallel to the plane. The hit position is: origin + dir * t
+    /// @pre @p dir and @p normal are unit length
     inline std::optional<cadf> intersectRayPlane(
         const Vec3 &origin,
         const Vec3 &dir,
@@ -122,6 +123,25 @@ namespace cadm {
             return std::nullopt;
         }
         return (offset - normal.dot(origin)) / denom;
+    }
+
+    /// @brief Intersects a ray (origin + t*dir) with the infinite plane with
+    /// normal @p normal and with point @p planePoint on it.
+    /// @returns the parameter t at the intersection point, or nullopt when the
+    /// ray is parallel to the plane. The hit position is: origin + dir * t
+    /// @pre @p dir and @p normal are unit length
+    inline std::optional<cadf> intersectRayPlane(
+        const Vec3 &origin,
+        const Vec3 &dir,
+        const Vec3 &normal,
+        const Vec3 &planePoint,
+        const cadf parallelThreshold = gc_feps
+    ) {
+        const auto denom = normal.dot(dir);
+        if (std::abs(denom) < parallelThreshold) {
+            return std::nullopt;
+        }
+        return (planePoint - origin).dot(normal) / denom;
     }
 }
 

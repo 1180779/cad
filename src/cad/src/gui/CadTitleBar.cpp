@@ -8,15 +8,22 @@
 #include <QToolButton>
 #include <QWindow>
 
+#include "Theme.hpp"
 #include "WidgetBuilders.hxx"
 
 namespace {
     constexpr int gc_titleBarHeight = 30;
     constexpr int gc_dialogTitleBarMargins = 10;
+    constexpr int gc_windowButtonIconSize = 14;
 
-    QToolButton* makeWindowButton(QWidget *parent, const QStyle::StandardPixmap icon, const bool isClose = false) {
+    QIcon windowButtonIcon(const QString &name) {
+        return QIcon(theme::recoloredIcon(name, theme::active().text));
+    }
+
+    QToolButton* makeWindowButton(QWidget *parent, const QString &icon, const bool isClose = false) {
         auto *btn = new QToolButton(parent);
-        btn->setIcon(parent->style()->standardIcon(icon));
+        btn->setIcon(windowButtonIcon(icon));
+        btn->setIconSize(QSize(gc_windowButtonIconSize, gc_windowButtonIconSize));
         btn->setAutoRaise(true);
         btn->setFocusPolicy(Qt::NoFocus);
         btn->setFixedSize(gc_titleBarHeight, gc_titleBarHeight);
@@ -30,8 +37,10 @@ namespace {
     /// @brief Drives native system-resize from the border of a frameless window
     class FramelessResizeFilter final : public QObject {
     public:
-        FramelessResizeFilter(QWidget *window, const int margin) : QObject(window), m_window(window), m_margin(margin) {
-        }
+        FramelessResizeFilter(QWidget *window, const int margin)
+        : QObject(window),
+          m_window(window),
+          m_margin(margin) {}
 
         bool eventFilter(QObject *watched, QEvent *event) override {
             if (watched != m_window) {
@@ -42,7 +51,7 @@ namespace {
             case QEvent::MouseMove: {
                 // don't offer a resize cursor on platforms that refused the gesture (e.g., tiling window managers)
                 if (m_resizeSupported && !m_window->isMaximized()) {
-                    const auto *me = static_cast<QMouseEvent*>(event);
+                    const auto *me = dynamic_cast<QMouseEvent*>(event);
                     if (const Qt::Edges edges = edgesAt(me->pos());
                         edges != Qt::Edges()) {
                         m_window->setCursor(cursorForEdges(edges));
@@ -57,7 +66,7 @@ namespace {
                 m_window->unsetCursor();
                 break;
             case QEvent::MouseButtonPress: {
-                if (const auto *me = static_cast<QMouseEvent*>(event);
+                if (const auto *me = dynamic_cast<QMouseEvent*>(event);
                     me->button() == Qt::LeftButton && m_resizeSupported && !m_window->isMaximized()) {
                     if (const Qt::Edges edges = edgesAt(me->pos());
                         edges != Qt::Edges()) {
@@ -124,7 +133,8 @@ namespace {
     };
 }
 
-CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent) : QWidget(parent) {
+CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent)
+: QWidget(parent) {
     setFixedHeight(gc_titleBarHeight);
 
     // ReSharper disable once CppDFAMemoryLeak
@@ -145,9 +155,9 @@ CadTitleBar::CadTitleBar(QMenuBar *menuBar, QWidget *parent) : QWidget(parent) {
     filler->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     layout->addWidget(filler, 1);
 
-    m_minButton = makeWindowButton(this, QStyle::SP_TitleBarMinButton);
-    m_maxButton = makeWindowButton(this, QStyle::SP_TitleBarMaxButton);
-    m_closeButton = makeWindowButton(this, QStyle::SP_TitleBarCloseButton, true);
+    m_minButton = makeWindowButton(this, "window-minimize");
+    m_maxButton = makeWindowButton(this, "window-maximize");
+    m_closeButton = makeWindowButton(this, "window-close", true);
     layout->addWidget(m_minButton);
     layout->addWidget(m_maxButton);
     layout->addWidget(m_closeButton);
@@ -199,11 +209,19 @@ void CadTitleBar::mouseDoubleClickEvent(QMouseEvent *event) {
 }
 
 bool CadTitleBar::event(QEvent *event) {
-    // keep the maximize/restore glyph in sync with the window state
     if (event->type() == QEvent::WindowStateChange) {
         updateMaximizeButton();
     }
+    if (event->type() == QEvent::PaletteChange) {
+        refreshButtonIcons();
+    }
     return QWidget::event(event);
+}
+
+void CadTitleBar::refreshButtonIcons() const {
+    m_minButton->setIcon(windowButtonIcon("window-minimize"));
+    m_closeButton->setIcon(windowButtonIcon("window-close"));
+    updateMaximizeButton();
 }
 
 void CadTitleBar::toggleMaximized() const {
@@ -218,10 +236,13 @@ void CadTitleBar::toggleMaximized() const {
 }
 
 void CadTitleBar::updateMaximizeButton() const {
-    const auto icon = window()->isMaximized()
-                          ? QStyle::SP_TitleBarNormalButton
-                          : QStyle::SP_TitleBarMaxButton;
-    m_maxButton->setIcon(style()->standardIcon(icon));
+    m_maxButton->setIcon(
+        windowButtonIcon(
+            window()->isMaximized()
+                ? "window-restore"
+                : "window-maximize"
+        )
+    );
 }
 
 void enableFramelessResize(QWidget *window, const int margin) {
@@ -229,7 +250,8 @@ void enableFramelessResize(QWidget *window, const int margin) {
     window->installEventFilter(new FramelessResizeFilter(window, margin));
 }
 
-DialogTitleBar::DialogTitleBar(const QString &title, QWidget *parent) : QWidget(parent) {
+DialogTitleBar::DialogTitleBar(const QString &title, QWidget *parent)
+: QWidget(parent) {
     setFixedHeight(gc_titleBarHeight);
     setAutoFillBackground(true);
 

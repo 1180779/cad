@@ -43,7 +43,7 @@ namespace cadm {
 
         constexpr Vec()
         : x(T{0}),
-          y({0}) {}
+          y(T{0}) {}
 
         constexpr Vec(const T x, const T y)
         : x(x),
