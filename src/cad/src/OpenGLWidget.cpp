@@ -219,7 +219,7 @@ void OpenGlWidget::initializeGL() {
     gl->glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     gl->glEnable(GL_DEPTH_TEST);
     gl->glEnable(GL_BLEND);
-    gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     gl->glEnable(GL_PROGRAM_POINT_SIZE);
 
     m_renderSystem.initialize();
