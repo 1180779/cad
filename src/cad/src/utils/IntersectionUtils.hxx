@@ -68,10 +68,10 @@ namespace intersections {
         return 0;
     }
 
-    /// @brief Parameter-space distance between two points of one surface
+    /// @brief Parameter-space gap between two points of one surface
     /// @param s the surface
     /// @param uv1,uv2 two parameter pairs
-    [[nodiscard]] inline cadm::cadf paramSpaceDist(
+    [[nodiscard]] inline cadm::Vec2 paramSpaceGap(
         const Surface &s,
         const cadm::Vec2 &uv1,
         const cadm::Vec2 &uv2
@@ -85,35 +85,61 @@ namespace intersections {
             gap.y -= std::floor(gap.y);
             gap.y = std::min(std::abs(gap.y), std::abs(1 - gap.y));
         }
-        return gap.length();
+        return gap;
     }
+
+    /// @brief Parameter-space distance between two points of one surface
+    /// @param s the surface
+    /// @param uv1,uv2 two parameter pairs
+    [[nodiscard]] inline cadm::cadf paramSpaceDist(
+        const Surface &s,
+        const cadm::Vec2 &uv1,
+        const cadm::Vec2 &uv2
+    ) {
+        return paramSpaceGap(s, uv1, uv2).length();
+    }
+
+    /// @brief Options for <tt>nonlinearConjugateGradient</tt>
+    struct NonlinearConjugateGradientOpts {
+        /// @brief One of the two surfaces (may be the same object as <tt>s2</tt>)
+        const Surface &s1;
+
+        /// @brief The other surface (may be the same object as <tt>s1</tt>)
+        const Surface &s2;
+
+        /// @brief Starting parameters (u1, v1, u2, v2)
+        const cadm::Vec4 x0 = {0.5, 0.5, 0.5, 0.5};
+
+        /// @brief Accept when f < <tt>tolerance</tt>
+        const cadm::cadf tolerance = 1e-10;
+
+        /// @brief Iteration cap before giving up
+        const int maxIterations = 200;
+
+        /// @brief Conjugate-direction weight (defaults to Polak-Ribiere+)
+        const BetaFn betaF = polakRibiere;
+
+        /// @brief Step-length search (defaults to backtracking/Armijo)
+        const LineSearchFn lineSearch = backtrackingLineSearch;
+
+        /// @brief When > 0, adds a barrier around the self-intersection
+        /// diagonal (u1, v1) = (u2, v2)
+        const cadm::cadf minSeparation = 0;
+    };
 
     /// @brief Find a common point of two surfaces by minimizing the squared
     /// distance f(u1, v1, u2, v2) = |P1 - P2|^2 with nonlinear conjugate
     /// gradients
     /// (https://en.wikipedia.org/wiki/Nonlinear_conjugate_gradient_method)
-    /// @param s1,s2 the two surfaces (may be the same)
-    /// @param x0 starting parameters (u1, v1, u2, v2)
-    /// @param tolerance accept when f < tolerance
-    /// @param maxIterations iteration cap before giving up
-    /// @param betaF conjugate-direction weight (default: Polak-Ribiere+)
-    /// @param lineSearch step-length search (default: backtracking/Armijo)
-    /// @param minSeparation when > 0, adds a barrier around the self
-    /// intersection diagonal (u1, v1) = (u2, v2), where the objective is zero
-    /// for @p s1 == @p s2; (keeps the iterates from collapsing onto the trivial
-    /// solution)
+    /// @param opts options. For details see
+    /// <tt>NonlinearConjugateGradientOpts</tt>
     /// @returns the parameters (u1, v1, u2, v2) of the common point, or
-    /// <tt>std::nullopt</tt> when the search failed to reach @p tolerance
+    /// <tt>std::nullopt</tt> when the search failed to reach
+    /// <tt>NonlinearConjugateGradientOpts::tolerance</tt>
     [[nodiscard]] inline std::optional<cadm::Vec4> nonlinearConjugateGradient(
-        const Surface &s1,
-        const Surface &s2,
-        const cadm::Vec4 x0 = {0.5, 0.5, 0.5, 0.5},
-        const cadm::cadf tolerance = 1e-10,
-        const int maxIterations = 200,
-        const BetaFn &betaF = polakRibiere,
-        const LineSearchFn &lineSearch = backtrackingLineSearch,
-        const cadm::cadf minSeparation = 0
+        NonlinearConjugateGradientOpts opts
     ) {
+        const auto [s1, s2, x0, tolerance, maxIterations, betaF, lineSearch, minSeparation] = opts;
         constexpr auto inf = std::numeric_limits<cadm::cadf>::infinity();
 
         const auto diagonalGap = [&](const cadm::Vec4 &x) -> cadm::Vec2 {
@@ -664,6 +690,7 @@ namespace intersections {
         int maxPoints = 2000;
         cadm::cadf duplicateTolerance = 0.01;
         double duplicateCoverage = 0.9;
+        int duplicateCheckStride = 2;
     };
 
     /// @brief Trace every branch in @p seeds, returning one
@@ -681,7 +708,7 @@ namespace intersections {
         branches.reserve(seeds.size());
         const auto duplicateTolerance = std::max(
             opts.duplicateTolerance,
-            cadm::cadf{2} * opts.step
+            static_cast<cadm::cadf>(opts.duplicateCheckStride) * opts.step
         );
         for (const auto &seed : seeds) {
             auto curve = traceIntersectionCurve(s1, s2, seed, opts.step, opts.tolerance, opts.maxPoints);
@@ -696,7 +723,8 @@ namespace intersections {
                         b,
                         curve,
                         duplicateTolerance,
-                        opts.duplicateCoverage
+                        opts.duplicateCoverage,
+                        opts.duplicateCheckStride
                     );
                 }
             );
@@ -721,6 +749,10 @@ namespace intersections {
         /// @brief Seeds/recovered starts closer than this in parameter space
         /// are treated as the same candidate
         cadm::cadf duplicateDistance = 0.15f;
+
+        /// @brief Min parameter space between grid candidates and hand picked
+        /// starting point
+        cadm::cadf pickTolerance = 0.2f;
 
         /// @brief Passed through to <tt>nonlinearConjugateGradient</tt>
         cadm::cadf tolerance = 1e-10;
@@ -783,11 +815,14 @@ namespace intersections {
         }
         std::ranges::sort(candidates, {}, &Candidate::distance);
 
-        const auto farFromAll = [&options](const std::vector<cadm::Vec4> &seen, const cadm::Vec4 &x) {
+        const auto farFromAll = [&options, &s1, &s2](const std::vector<cadm::Vec4> &seen, const cadm::Vec4 &x) {
             return std::ranges::none_of(
                 seen,
                 [&](const cadm::Vec4 &other) {
-                    return (other - x).length() < options.duplicateDistance;
+                    const auto s1Gap = paramSpaceGap(s1, x.xy(), other.xy());
+                    const auto s2Gap = paramSpaceGap(s2, x.zw(), other.zw());
+                    const auto gap = cadm::Vec4(s1Gap, s2Gap);
+                    return gap.length() < options.duplicateDistance;
                 }
             );
         };
@@ -804,16 +839,13 @@ namespace intersections {
 
         std::vector<cadm::Vec4> seeds;
         for (const auto &start : starts) {
-            const auto seed = nonlinearConjugateGradient(
-                s1,
-                s2,
-                start,
-                options.tolerance,
-                200,
-                polakRibiere,
-                backtrackingLineSearch,
-                options.minSeparation
-            );
+            const auto seed = nonlinearConjugateGradient({
+                .s1 = s1,
+                .s2 = s2,
+                .x0 = start,
+                .tolerance = options.tolerance,
+                .minSeparation = options.minSeparation
+            });
             if (!seed) {
                 continue;
             }
@@ -839,7 +871,7 @@ namespace intersections {
         const SeedOptions &options = {}
     ) {
         const auto pickClearance = options.minSeparation > 0
-                                       ? cadm::cadf{0.2}
+                                       ? options.pickTolerance
                                        : cadm::cadf{0};
         const auto nearest = [&](
             const Surface &s,
@@ -849,7 +881,7 @@ namespace intersections {
             std::optional<cadm::Vec2> best;
             cadm::cadf bestDistance = 0;
             for (const auto &[uv, p] : samples) {
-                if (avoid && paramSpaceDist(s, uv, *avoid) < pickClearance) {
+                if (avoid && paramSpaceDist(s, uv, avoid.value()) < pickClearance) {
                     continue;
                 }
                 if (const auto distance = (p - target).lengthSquared();
@@ -878,16 +910,13 @@ namespace intersections {
             p2 = *uv2;
         }
         const cadm::Vec4 x0{p1.x, p1.y, p2.x, p2.y};
-        const auto seed = nonlinearConjugateGradient(
-            s1,
-            s2,
-            x0,
-            options.tolerance,
-            200,
-            polakRibiere,
-            backtrackingLineSearch,
-            options.minSeparation
-        );
+        const auto seed = nonlinearConjugateGradient({
+            .s1 = s1,
+            .s2 = s2,
+            .x0 = x0,
+            .tolerance = options.tolerance,
+            .minSeparation = options.minSeparation
+        });
         if (!seed.has_value()) {
             return std::nullopt;
         }

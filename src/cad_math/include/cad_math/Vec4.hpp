@@ -8,6 +8,7 @@
 #include <array>
 #include <span>
 
+#include "Vec2.hpp"
 #include "VecBase.hpp"
 #include "Vec3.hpp"
 
@@ -36,6 +37,12 @@ namespace cadm {
                 data[i++] = v;
             }
         }
+
+        explicit constexpr Vec(Vec<T, 2> xy, Vec<T, 2> zw)
+        : x{xy.x},
+          y{xy.y},
+          z{zw.x},
+          w{zw.y} {}
 
         explicit constexpr Vec(T v)
         : x{v},
@@ -77,6 +84,14 @@ namespace cadm {
 
         [[nodiscard]] constexpr Vec3 xyz() const {
             return {x, y, z};
+        }
+
+        [[nodiscard]] constexpr Vec<T, 2> xy() const {
+            return {x, y};
+        }
+
+        [[nodiscard]] constexpr Vec<T, 2> zw() const {
+            return {z, w};
         }
 
         constexpr static Vec unitX() noexcept {
