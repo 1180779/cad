@@ -6,7 +6,6 @@
 #define CAD_INTERSECTIONUTILS_HXX
 
 #include <algorithm>
-#include <cmath>
 #include <functional>
 #include <limits>
 
@@ -37,7 +36,7 @@ namespace intersections {
     [[nodiscard]] inline cadm::cadf polakRibiere(
         const cadm::Vec4 &gNew,
         const cadm::Vec4 &gPrev,
-        const cadm::Vec4 &dPrev
+        [[maybe_unused]] const cadm::Vec4 &dPrev
     ) {
         const auto denom = gPrev.dot(gPrev);
         if (denom <= cadm::gc_eps) {
@@ -139,7 +138,7 @@ namespace intersections {
     [[nodiscard]] inline std::optional<cadm::Vec4> nonlinearConjugateGradient(
         NonlinearConjugateGradientOpts opts
     ) {
-        const auto [s1, s2, x0, tolerance, maxIterations, betaF, lineSearch, minSeparation] = opts;
+        const auto [s1, s2, x0, tolerance, maxIterations, betaF, lineSearch, minSeparation] = std::move(opts);
         constexpr auto inf = std::numeric_limits<cadm::cadf>::infinity();
 
         const auto diagonalGap = [&](const cadm::Vec4 &x) -> cadm::Vec2 {
@@ -758,13 +757,18 @@ namespace intersections {
         cadm::cadf tolerance = 1e-10;
     };
 
+    struct SurfaceSample {
+        cadm::Vec2 uv;
+        cadm::Vec3 point;
+    };
+
     /// @brief Sample @p s on a @p perAxis x @p perAxis grid over [0,1]^2
     /// @returns the (u, v) of each sample that evaluated, with its 3D point
-    [[nodiscard]] inline std::vector<std::pair<cadm::Vec2, cadm::Vec3>> sampleSurface(
+    [[nodiscard]] inline std::vector<SurfaceSample> sampleSurface(
         const Surface &s,
         const int perAxis
     ) {
-        std::vector<std::pair<cadm::Vec2, cadm::Vec3>> out;
+        std::vector<SurfaceSample> out;
         out.reserve(static_cast<std::size_t>(perAxis) * perAxis);
         for (int i = 0; i < perAxis; ++i) {
             for (int j = 0; j < perAxis; ++j) {
@@ -774,7 +778,10 @@ namespace intersections {
                     / static_cast<cadm::cadf>(perAxis);
 
                 if (const auto e = s(u, v)) {
-                    out.emplace_back(cadm::Vec2{u, v}, e->p);
+                    out.emplace_back(SurfaceSample{
+                        .uv = {u, v},
+                        .point = e->p
+                    });
                 }
             }
         }
