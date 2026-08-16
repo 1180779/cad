@@ -442,6 +442,15 @@ namespace {
         };
         QObject::connect(coordSpaceCombo, &QComboBox::currentIndexChanged, glW, glSetCoordSpace);
 
+        QObject::connect(
+            viewportPanel,
+            &ViewportPanelWidget::performanceLevelChanged,
+            glW,
+            &GlW::setPerformanceLevel
+        );
+
+        viewportPanel->syncPerformanceLevelFromOutside(glW->getPerformanceLevel());
+
         const auto glUpdate = [glW](const std::string &) {
             glW->update();
         };

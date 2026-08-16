@@ -7,6 +7,7 @@
 
 #include "ShaderProgram.hpp"
 #include "Quad.hpp"
+#include "ViewportTypes.hpp"
 #include "components/GeometryComponent.hpp"
 #include <functional>
 #include <memory>
@@ -41,7 +42,7 @@ public:
         std::span<cadm::Mat4, 2> projs,
         bool luminance,
         bool sceneVisible = true,
-        const std::function<void(const cadm::Mat4 & view, const cadm::Mat4 & projection)> &perEye = {}
+        const std::function<void(const cadm::Mat4 &view, const cadm::Mat4 &projection)> &perEye = {}
     );
 
     void renderBoxSelectionRect(
@@ -98,6 +99,15 @@ public:
     void setViewport(const int w, const int h) {
         m_viewportW = w;
         m_viewportH = h;
+    }
+
+    void setPerformanceLevel(const PerformanceLevel level) {
+        m_performanceLevel = level;
+        m_performanceConfig = PerformanceConfig::forLevel(level);
+    }
+
+    [[nodiscard]] PerformanceLevel getPerformanceLevel() const {
+        return m_performanceLevel;
     }
 
 private:
@@ -208,6 +218,8 @@ private:
     int m_stereoW{0};
     int m_stereoH{0};
 
+    PerformanceLevel m_performanceLevel = PerformanceLevel::low;
+    PerformanceConfig m_performanceConfig = PerformanceConfig::forLevel(m_performanceLevel);;
     int m_gridPlanes{0};
     int m_infiniteAxesMask{0};
     bool m_gridLodFade{true};

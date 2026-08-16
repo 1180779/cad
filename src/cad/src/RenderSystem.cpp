@@ -831,7 +831,10 @@ void RenderSystem::drawPatchSurface(
         }
         const auto extent = bezierUtils::screenExtent(pts, view, projection, m_viewportW, m_viewportH);
         subs[q] = extent.has_value()
-                      ? std::max(1, static_cast<int>(std::ceil(static_cast<cadm::cadf>(*extent) / 64.0f)))
+                      ? std::max(1,
+                          static_cast<int>(std::ceil(
+                              static_cast<cadm::cadf>(*extent) / static_cast<cadm::cadf>(m_performanceConfig.
+                                  uSubBase))))
                       : 0;
     }
 
@@ -847,6 +850,8 @@ void RenderSystem::drawPatchSurface(
     );
     SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uCountX", patch->getPatchCountX()));
     SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uCountY", patch->getPatchCountY()));
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uMinTessLevel", m_performanceConfig.minTessLevel));
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uMaxTessLevel", m_performanceConfig.maxTessLevel));
     if (trimmed) {
         gl->glActiveTexture(GL_TEXTURE0);
         gl->glBindTexture(GL_TEXTURE_2D, patch->getTrimTexture());
@@ -980,11 +985,15 @@ void RenderSystem::drawGregorySurface(
         }
         const auto extent = bezierUtils::screenExtent(pts, view, projection, m_viewportW, m_viewportH);
         subs[q] = extent.has_value()
-                      ? std::max(1, static_cast<int>(std::ceil(static_cast<cadm::cadf>(*extent) / 64.0f)))
+                      ? std::max(1,
+                          static_cast<int>(std::ceil(
+                              static_cast<cadm::cadf>(*extent) / static_cast<cadm::cadf>(m_performanceConfig.uSubBase))))
                       : 0;
     }
 
     SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("u_highlightStrength", entityHl));
+    SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uMinTessLevel", m_performanceConfig.minTessLevel));
+    SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uMaxTessLevel", m_performanceConfig.maxTessLevel));
     gl->glBindVertexArray(gregory->getPatchVao());
     for (int dir = 0; dir < 2; ++dir) {
         SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uDir", dir));

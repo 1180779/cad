@@ -8,6 +8,7 @@
 #include "AlignCameraToPlaneWidget.hxx"
 #include "GridSettingsWidget.hpp"
 #include "../ToolPanelWidget.hpp"
+#include "ViewportTypes.hpp"
 
 class ViewportPanelWidget final : public ToolPanelWidget {
     Q_OBJECT
@@ -23,11 +24,21 @@ public:
 
     [[nodiscard]] const AlignCameraToPlaneWidget* alignCameraWidget() const;
 
+    [[nodiscard]] const QComboBox* performanceCombo() const {
+        return m_performanceCombo;
+    }
+
+    void syncPerformanceLevelFromOutside(PerformanceLevel performanceLevel) const;
+
+signals:
+    void performanceLevelChanged(PerformanceLevel level);
+
 private:
     GridSettingsWidget *m_gridSettings;
     AlignCameraToPlaneWidget *m_alignCameraWidget;
     QComboBox *m_pivotCombo;
     QComboBox *m_coordSpaceCombo;
+    QComboBox *m_performanceCombo;
 };
 
 #endif //CAD_VIEWPORTPANELWIDGET_HPP
