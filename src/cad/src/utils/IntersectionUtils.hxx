@@ -523,6 +523,17 @@ namespace intersections {
         return data;
     }
 
+    static constexpr cadm::cadf gs_maxTangentAngleDeg = 80.0f;
+    static const cadm::cadf gs_maxTangentAngleCos =
+        std::cos(gs_maxTangentAngleDeg * std::numbers::pi_v<cadm::cadf> / 180);
+
+    /// @brief Minimum adaptive step, as a fraction of the requested step, below
+    /// which the march gives up
+    static constexpr cadm::cadf gs_minStepFraction = 0.01f;
+
+    static constexpr cadm::cadf gs_defaultStepReductionFactor = 0.5;
+    static constexpr cadm::cadf gs_defaultStepRestoreFactor = 1.2;
+
     /// @brief Trace the intersection curve through @p seed by marching with
     /// Newton-Rapson method in both directions along the curve tangent
     /// @param s1,s2 the two surfaces (may be the same)
@@ -530,14 +541,26 @@ namespace intersections {
     /// @param step approximate arclength between consecutive traced points
     /// @param tolerance Newton-Rapson convergence threshold
     /// @param maxPoints safety cap per direction
+    /// @param minStepReductionFactor Upper bound on the multiplier applied to
+    /// the step when the march detects convergence trouble. Clamped to a max of
+    /// <tt>defaultStepReductionFactor</tt>
+    /// @param maxStepRestoreFactor Lower bound on the multiplier applied to
+    /// recover the step toward its original size after a successful adaptive
+    /// sub-step. Clamped to a min of <tt>defaultStepRestoreFactor</tt>
     [[nodiscard]] inline IntersectionCurve traceIntersectionCurve(
         const Surface &s1,
         const Surface &s2,
         const cadm::Vec4 &seed,
         const cadm::cadf step = 0.01,
         const cadm::cadf tolerance = cadm::gc_eps10,
-        const int maxPoints = 2000
+        const int maxPoints = 2000,
+        const cadm::cadf minStepReductionFactor = gs_defaultStepReductionFactor,
+        const cadm::cadf maxStepRestoreFactor = gs_defaultStepRestoreFactor
     ) {
+        const auto stepReductionFactor = std::min(std::max(minStepReductionFactor, cadm::cadf{0.0}),
+            gs_defaultStepReductionFactor);
+        const auto stepRestoreFactor = std::max(maxStepRestoreFactor, gs_defaultStepRestoreFactor);
+
         const auto seedEval1 = s1(seed.x, seed.y);
         if (!seedEval1) {
             return {
@@ -554,41 +577,77 @@ namespace intersections {
             };
         }
 
+        const auto minStep = step * gs_minStepFraction;
         const auto march = [&](const cadm::Vec3 &dir0) {
             std::vector<cadm::Vec4> pts;
             auto x = seed;
             auto p = seedPoint;
             auto tangent = dir0;
             bool closed = false;
-            for (int i = 0; i < maxPoints; ++i) {
-                // predict a step ahead, then correct back onto the curve
-                const auto predicted = predictNextParameters(s1, s2, x, tangent, step);
-                const auto next = newtonRapson(s1, s2, predicted, p, tangent, step, tolerance);
-                if (!next) {
+            cadm::cadf currentStep = step;
+            int i = 0;
+            while (i < maxPoints) {
+                const auto predicted = predictNextParameters(s1, s2, x, tangent, currentStep);
+                const auto nextOpt = newtonRapson(s1, s2, predicted, p, tangent, currentStep, tolerance);
+                if (!nextOpt) {
+                    if (currentStep > minStep) {
+                        currentStep *= stepReductionFactor;
+                        continue;
+                    }
                     break;
                 }
-                const auto nextEval = s1(next->x, next->y);
+                const auto next = nextOpt.value();
+                const auto nextEval = s1(next.x, next.y);
                 if (!nextEval) {
                     break;
                 }
                 // converged somewhere implausible for one step
-                if ((nextEval->p - p).length() > step * 2) {
+                if ((nextEval->p - p).length() > currentStep * cadm::cadf{2}) {
+                    if (currentStep > minStep) {
+                        currentStep *= stepReductionFactor;
+                        continue;
+                    }
                     break;
                 }
-                if (!pts.empty() && (nextEval->p - seedPoint).length() < step) {
+                if (!pts.empty() && (nextEval->p - seedPoint).length() < currentStep) {
                     closed = true;
                     break;
                 }
-                pts.push_back(next.value());
-                x = next.value();
-                p = nextEval->p;
-                const auto nextTangent = intersectionTangent(s1, s2, x);
-                if (!nextTangent || nextTangent->lengthSquared() < cadm::gc_eps) {
+
+                const auto nextTangentOpt = intersectionTangent(s1, s2, next);
+                if (!nextTangentOpt.has_value()) {
                     break;
                 }
-                tangent = nextTangent->dot(tangent) < 0
-                              ? -nextTangent.value()
-                              : nextTangent.value();
+                const auto nextTangent = nextTangentOpt.value();
+                if (nextTangent.lengthSquared() < cadm::gc_eps) {
+                    break;
+                }
+
+                auto tangentCandidate = nextTangent.dot(tangent) < 0
+                                            ? -nextTangent
+                                            : nextTangent;
+
+                // if tangent changed too sharply; lower the step size if
+                // possible
+                if (const auto cosAngle = tangentCandidate.dot(tangent);
+                    cosAngle < gs_maxTangentAngleCos) {
+                    if (currentStep > minStep) {
+                        currentStep *= stepReductionFactor;
+                        continue;
+                    }
+                }
+
+                pts.push_back(next);
+                x = next;
+                p = nextEval->p;
+                tangent = tangentCandidate;
+
+                // restore step size gradually
+                if (currentStep < step) {
+                    currentStep = std::min(currentStep * stepRestoreFactor, step);
+                }
+
+                ++i;
             }
             return IntersectionCurve{
                 .params = pts,
