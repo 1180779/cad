@@ -914,7 +914,7 @@ namespace intersections {
         if (paramSpaceDist(s1, p1, p2) < options.minSeparation) {
             // both projections collapsed onto one point of a self-intersecting
             // surface; keep the grid pick
-            p2 = *uv2;
+            p2 = uv2.value();
         }
         const cadm::Vec4 x0{p1.x, p1.y, p2.x, p2.y};
         const auto seed = nonlinearConjugateGradient({
