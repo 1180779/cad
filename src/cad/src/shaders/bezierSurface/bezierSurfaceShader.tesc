@@ -18,6 +18,9 @@ layout (std140, binding = 0) uniform Camera {
 uniform vec2 uViewport;
 // slices per iso-line
 uniform int uSub;
+// minimum and maximum tessellation level
+uniform float uMinTessLevel;
+uniform float uMaxTessLevel;
 
 void main() {
     cpwPointPos[gl_InvocationID] = wPointPos[gl_InvocationID];
@@ -38,6 +41,6 @@ void main() {
         }
         float extent = behind ? 4096.0 : max(mx.x - mn.x, mx.y - mn.y);
         gl_TessLevelOuter[0] = 1.0;
-        gl_TessLevelOuter[1] = clamp(extent / float(uSub), 4.0, 64.0);
+        gl_TessLevelOuter[1] = clamp(extent / float(uSub), uMinTessLevel, uMaxTessLevel);
     }
 }

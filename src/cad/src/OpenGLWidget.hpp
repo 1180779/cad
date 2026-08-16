@@ -150,6 +150,15 @@ public:
         update();
     }
 
+    void setPerformanceLevel(const PerformanceLevel level) {
+        m_renderSystem.setPerformanceLevel(level);
+        update();
+    }
+
+    PerformanceLevel getPerformanceLevel() const {
+        return m_renderSystem.getPerformanceLevel();
+    }
+
     void addCursorPlacementStrategy(std::unique_ptr<IViewportPositionStrategy> strategy) {
         m_cursorPlacementStrategies.push_back(std::move(strategy));
     }
