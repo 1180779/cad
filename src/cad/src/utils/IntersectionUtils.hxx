@@ -856,7 +856,7 @@ namespace intersections {
             if (!seed) {
                 continue;
             }
-            if (const auto dist = paramSpaceDist(s1, {seed->x, seed->y}, {seed->z, seed->w});
+            if (const auto dist = paramSpaceDist(s1, seed->xy(), seed->zw());
                 dist < options.minSeparation) {
                 continue;
             }
@@ -927,7 +927,7 @@ namespace intersections {
         if (!seed.has_value()) {
             return std::nullopt;
         }
-        if (const auto dist = paramSpaceDist(s1, {seed->x, seed->y}, {seed->z, seed->w});
+        if (const auto dist = paramSpaceDist(s1, seed->xy(), seed->zw());
             dist < options.minSeparation) {
             return std::nullopt;
         }
