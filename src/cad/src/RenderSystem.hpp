@@ -218,7 +218,7 @@ private:
     int m_stereoW{0};
     int m_stereoH{0};
 
-    PerformanceLevel m_performanceLevel = PerformanceLevel::low;
+    PerformanceLevel m_performanceLevel = PerformanceLevel::ultra;
     PerformanceConfig m_performanceConfig = PerformanceConfig::forLevel(m_performanceLevel);;
     int m_gridPlanes{0};
     int m_infiniteAxesMask{0};
