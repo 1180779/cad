@@ -211,18 +211,32 @@ namespace bezierUtils {
     ) {
         int minX = vpW, maxX = 0, minY = vpH, maxY = 0;
         bool anyVisible = false;
+        // TODO: replace with a more elaborate technique
+        bool allLeft = true, allRight = true, allAbove = true, allBelow = true;
         for (const auto &pt : pts) {
             const auto sp = cadm::projectToScreenGl(pt, view, proj, vpW, vpH);
             if (!sp) {
                 continue;
             }
             anyVisible = true;
+            if (sp->x >= 0) {
+                allLeft = false;
+            }
+            if (sp->x < vpW) {
+                allRight = false;
+            }
+            if (sp->y >= 0) {
+                allAbove = false;
+            }
+            if (sp->y < vpH) {
+                allBelow = false;
+            }
             minX = std::min(minX, sp->x);
             maxX = std::max(maxX, sp->x);
             minY = std::min(minY, sp->y);
             maxY = std::max(maxY, sp->y);
         }
-        if (!anyVisible) {
+        if (!anyVisible || allLeft || allRight || allAbove || allBelow) {
             return std::nullopt;
         }
         return std::max(maxX - minX, maxY - minY);
