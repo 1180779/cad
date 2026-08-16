@@ -119,17 +119,30 @@ namespace { namespace schemaType {
         return arr;
     }
 
-    /// @brief Grid of a patch as the format expects it: a surface closed along
-    /// u is written flat, with its @p seam first rows repeated at the end
+    /// @brief Grid of a patch as the format expects it: 
+    /// - surface closed along u is written with its @p seam first rows repeated
+    /// at the end
+    /// - surface closed along v is written with its @p seam first columns
+    /// repeated at each row's end
     std::vector<PointHandle> patchGridForJson(const PatchComponent *patch, const int seam) {
         const auto &cps = patch->getControlPoints();
-        if (patch->getWrap() != WrapDirection::u) {
-            return cps;
-        }
-        std::vector<PointHandle> out = cps;
         const auto cols = static_cast<std::ptrdiff_t>(patch->getCols());
-        out.insert(out.end(), cps.begin(), cps.begin() + static_cast<std::ptrdiff_t>(seam) * cols);
-        return out;
+        if (patch->getWrap() == WrapDirection::u) {
+            std::vector<PointHandle> out = cps;
+            out.insert(out.end(), cps.begin(), cps.begin() + static_cast<std::ptrdiff_t>(seam) * cols);
+            return out;
+        }
+        if (patch->getWrap() == WrapDirection::v) {
+            std::vector<PointHandle> out;
+            out.reserve(cps.size() + static_cast<std::size_t>(patch->getRows()) * seam);
+            for (int r = 0; r < patch->getRows(); ++r) {
+                const auto row = cps.begin() + r * cols;
+                out.insert(out.end(), row, row + cols);
+                out.insert(out.end(), row, row + seam);
+            }
+            return out;
+        }
+        return cps;
     }
 
     /// @brief Row count matching <tt>patchGridForJson</tt>
@@ -137,6 +150,13 @@ namespace { namespace schemaType {
         return patch->getWrap() == WrapDirection::u
                    ? patch->getRows() + seam
                    : patch->getRows();
+    }
+
+    /// @brief Column count matching <tt>patchGridForJson</tt>
+    int patchJsonCols(const PatchComponent *patch, const int seam) {
+        return patch->getWrap() == WrapDirection::v
+                   ? patch->getCols() + seam
+                   : patch->getCols();
     }
 
     /// @brief Reuses the JSON id as both the point's EntityId and its handle
@@ -200,9 +220,6 @@ namespace { namespace schemaType {
         return controlPointCurveFromJson<InterpC2Component>(scene, json, map, "InterpC2");
     }
 
-    /// @brief Rebuild a joined-patch surface. The JSON grid is row-major (rows
-    /// = size.v, cols = size.u) and stores the control points explicitly,
-    /// including any duplicated wrap-seam points
     /// @brief Whether the grid's last @p seam rows repeat its first @p seam
     /// rows
     bool hasDuplicatedSeamRows(
@@ -219,10 +236,32 @@ namespace { namespace schemaType {
         return std::equal(last, last + static_cast<std::ptrdiff_t>(seam) * cols, first);
     }
 
+    /// @brief Whether the grid's last @p seam columns repeat its first @p seam
+    /// columns
+    bool hasDuplicatedSeamCols(
+        const std::vector<PointHandle> &cps,
+        const int rows,
+        const int cols,
+        const int seam
+    ) {
+        if (cols <= seam) {
+            return false;
+        }
+        for (int r = 0; r < rows; ++r) {
+            for (int c = 0; c < seam; ++c) {
+                if (cps[static_cast<std::size_t>(r) * cols + c]
+                    != cps[static_cast<std::size_t>(r) * cols + cols - seam + c]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     Entity* patchFromJson(Scene &scene, const QJsonObject &json, const PointIdToHandleMap &map, const bool c2) {
         auto cps = controlPointsFromJson(json[sp::controlPoints].toArray(), map);
         const auto size = json[sp::size].toObject();
-        const int cols = size[sp::u].toInt();
+        int cols = size[sp::u].toInt();
         int rows = size[sp::v].toInt();
         const int patchCountX = c2
                                     ? cols - 3
@@ -231,8 +270,8 @@ namespace { namespace schemaType {
                                     ? rows - 3
                                     : (rows - 1) / 3;
 
-        // a cylinder is stored flat, with its seam rows repeated at the end;
-        // drop them and mark the surface as closed instead
+        // a cylinder is stored flat, with its seam repeated at the end; drop
+        // them and mark the surface as closed instead
         const int seam = c2
                              ? 3
                              : 1;
@@ -240,6 +279,17 @@ namespace { namespace schemaType {
         if (wrapRows) {
             rows -= seam;
             cps.resize(static_cast<size_t>(rows) * cols);
+        }
+        const bool wrapCols = !wrapRows && hasDuplicatedSeamCols(cps, rows, cols, seam);
+        if (wrapCols) {
+            std::vector<PointHandle> trimmed;
+            trimmed.reserve(static_cast<std::size_t>(rows) * (cols - seam));
+            for (int r = 0; r < rows; ++r) {
+                const auto row = cps.begin() + static_cast<std::ptrdiff_t>(r) * cols;
+                trimmed.insert(trimmed.end(), row, row + cols - seam);
+            }
+            cps = std::move(trimmed);
+            cols -= seam;
         }
 
         Entity *e = scene.createEntityWithId(
@@ -262,6 +312,8 @@ namespace { namespace schemaType {
             cols,
             wrapRows
                 ? WrapDirection::u
+                : wrapCols
+                ? WrapDirection::v
                 : WrapDirection::none,
             patchCountX,
             patchCountY
@@ -392,13 +444,13 @@ QJsonDocument serialization::toJson(Scene &scene) {
         else if (const auto p0 = e->getComponent<PatchC0Component>()) {
             obj[sp::objectType] = st::bezierSurfaceC0;
             obj[sp::controlPoints] = controlPointsToJson(patchGridForJson(p0.value(), 1), map);
-            obj[sp::size] = uint2ToJson(p0.value()->getCols(), patchJsonRows(p0.value(), 1));
+            obj[sp::size] = uint2ToJson(patchJsonCols(p0.value(), 1), patchJsonRows(p0.value(), 1));
             obj[sp::samples] = uint2ToJson(p0.value()->getGridDivisionsU(), p0.value()->getGridDivisionsV());
         }
         else if (const auto p2 = e->getComponent<PatchC2Component>()) {
             obj[sp::objectType] = st::bezierSurfaceC2;
             obj[sp::controlPoints] = controlPointsToJson(patchGridForJson(p2.value(), 3), map);
-            obj[sp::size] = uint2ToJson(p2.value()->getCols(), patchJsonRows(p2.value(), 3));
+            obj[sp::size] = uint2ToJson(patchJsonCols(p2.value(), 3), patchJsonRows(p2.value(), 3));
             obj[sp::samples] = uint2ToJson(p2.value()->getGridDivisionsU(), p2.value()->getGridDivisionsV());
         }
         else {

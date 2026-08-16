@@ -44,10 +44,7 @@
 #include "cursor/GridPlanePlacementStrategy.hpp"
 
 OpenGlWidget::OpenGlWidget(QWidget *parent)
-: QOpenGLWidget(parent),
-  m_cursorPlacementStrategy(
-      std::make_unique<GridPlanePlacementStrategy>(1 /*XY plane*/)
-  ) {
+: QOpenGLWidget(parent) {
     setFocusPolicy(Qt::StrongFocus);
     m_commandStack.onChange = [this](const ChangeFlags flags) {
         if (hasFlag(flags, ChangeFlags::structure)) {
@@ -127,6 +124,13 @@ void OpenGlWidget::calculateStereoProjections(
     projs[1] = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, near, far);
     views[0] = cadm::Mat4::translation(halfSep, 0, 0) * view;
     views[1] = cadm::Mat4::translation(-halfSep, 0, 0) * view;
+}
+
+IViewportPositionStrategy* OpenGlWidget::getCursorPlacementStrategy() const {
+    if (m_cursorPlacementStrategyIndex >= m_cursorPlacementStrategies.size()) {
+        return nullptr;
+    }
+    return m_cursorPlacementStrategies[m_cursorPlacementStrategyIndex].get();
 }
 
 void OpenGlWidget::renderTransformAxis() const {
@@ -215,7 +219,7 @@ void OpenGlWidget::initializeGL() {
     gl->glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     gl->glEnable(GL_DEPTH_TEST);
     gl->glEnable(GL_BLEND);
-    gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     gl->glEnable(GL_PROGRAM_POINT_SIZE);
 
     m_renderSystem.initialize();
@@ -249,11 +253,11 @@ void OpenGlWidget::mousePressEvent(QMouseEvent *event) {
         }
         if (m_clickToAddMode) {
             // resolve 3D position, move active cursor there, then emit createPointRequested
-            if (m_cursorPlacementStrategy) {
+            if (const auto cursorPlacementStrategy = getCursorPlacementStrategy()) {
                 auto *cam = m_cameraController.getActiveStrategy();
                 const auto invView = cam->getView().inversedView();
                 const auto invProj = cam->getInvProjection();
-                if (const auto pos = m_cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj);
+                if (const auto pos = cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj);
                     pos.has_value()) {
                     if (Entity *cursor = m_scene.getActiveCursor()) {
                         if (const auto tc = cursor->getComponent<TransformComponent>()) {
@@ -317,12 +321,12 @@ void OpenGlWidget::mouseMoveEvent(QMouseEvent *event) {
         m_boxSelectCurrent = currentPos;
         update();
         return;
-    case DragMode::pointDrag:
-        if (m_cursorPlacementStrategy) {
+    case DragMode::pointDrag: {
+        if (const auto cursorPlacementStrategy = getCursorPlacementStrategy()) {
             auto *cam = m_cameraController.getActiveStrategy();
             const auto invView = cam->getView().inversedView();
             const auto invProj = cam->getInvProjection();
-            if (const auto pos = m_cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj);
+            if (const auto pos = cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj);
                 pos.has_value()) {
                 m_scene.getPointRegistry().setPosition(m_draggedPoint, pos.value());
                 emit geometryChanged();
@@ -330,12 +334,15 @@ void OpenGlWidget::mouseMoveEvent(QMouseEvent *event) {
             }
         }
         return;
-    case DragMode::cursorPlace:
-        if (Entity *cursor = m_scene.getActiveCursor()) {
+    }
+    case DragMode::cursorPlace: {
+        const auto cursorPlacementStrategy = getCursorPlacementStrategy();
+        if (Entity *cursor = m_scene.getActiveCursor();
+            cursor && cursorPlacementStrategy) {
             auto *cam = m_cameraController.getActiveStrategy();
             const auto invView = cam->getView().inversedView();
             const auto invProj = cam->getInvProjection();
-            if (const auto pos = m_cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj);
+            if (const auto pos = cursorPlacementStrategy->resolve(event, width(), height(), invView, invProj);
                 pos.has_value()) {
                 if (const auto transform = cursor->getComponent<TransformComponent>()) {
                     transform.value()->setTranslation(pos.value());
@@ -345,6 +352,7 @@ void OpenGlWidget::mouseMoveEvent(QMouseEvent *event) {
             }
         }
         return;
+    }
     case DragMode::cameraOrbit:
         if (m_cameraController.getActiveStrategy()->handleCameraMove(CameraAction::orbit, delta)) {
             update();

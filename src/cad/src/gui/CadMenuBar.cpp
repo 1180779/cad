@@ -99,7 +99,9 @@ CadMenuBar::CadMenuBar(QWidget *parent)
           100.0,
           0.5
       )
-  } {
+  },
+  m_cursorStrategyMenu{addMenu("Cursor")},
+  m_cursorStrategiesGroup{new QActionGroup(m_cursorStrategyMenu)} {
     const std::array globalContextActions = {
         m_newAction,
         m_saveAction,
@@ -166,6 +168,25 @@ void CadMenuBar::setStereoEyeSep(const double eyeSep) const {
 void CadMenuBar::setStereoConvergence(const double convergence) const {
     const QSignalBlocker block(m_stereoConvergenceSpinbox);
     m_stereoConvergenceSpinbox->setValue(convergence);
+}
+
+void CadMenuBar::addCursorStrategy(const QString &name, const std::function<void()> &applyStrategy) {
+    const auto action = addCheckableAction(m_cursorStrategyMenu, name);
+    const auto apply = [action, applyStrategy] {
+        if (action->isChecked()) {
+            applyStrategy();
+        }
+    };
+    connect(action, &QAction::toggled, apply);
+    m_cursorStrategiesGroup->addAction(action);
+}
+
+void CadMenuBar::synchronizeSelectedCursorStrategy(const std::size_t index) const {
+    const auto idx = static_cast<qsizetype>(index);
+    if (idx < 0 || idx >= m_cursorStrategiesGroup->actions().size()) {
+        return;
+    }
+    m_cursorStrategiesGroup->actions()[idx]->setChecked(true);
 }
 
 QAction* CadMenuBar::addToolPanelAction(const QString &name) const {

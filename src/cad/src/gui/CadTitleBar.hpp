@@ -37,6 +37,9 @@ private:
 
     /// @brief Refresh the maximize/restore button icon for the window's current state
     void updateMaximizeButton() const;
+
+    /// @brief Re-tint all window button icons for the active theme
+    void refreshButtonIcons() const;
 };
 
 /// @brief Install resize handling on a frameless top-level @p window

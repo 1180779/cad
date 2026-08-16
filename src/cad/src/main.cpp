@@ -19,6 +19,8 @@
 #include "components/INewPointsTargetComponent.hpp"
 #include "camera/CadCameraStrategy.hpp"
 #include "camera/BlenderCameraStrategy.hpp"
+#include "cursor/GridPlanePlacementStrategy.hpp"
+#include "cursor/PatchPlacementStrategy.hxx"
 #include "gui/CadMenuBar.hpp"
 #include "gui/components/geometry/IntersectionDialog.hxx"
 #include "gui/components/geometry/PatchCreatorDialog.hxx"
@@ -306,6 +308,24 @@ namespace {
         refreshEnabled();
     }
 
+    void wireCursorStrategiesMenu(CadMenuBar *menuBar, OpenGlWidget *glWidget) {
+        std::size_t index = 0;
+        const auto addStrategy = [menuBar, glWidget, &index](
+            const QString &name,
+            std::unique_ptr<IViewportPositionStrategy> strategy
+        ) {
+            glWidget->addCursorPlacementStrategy(std::move(strategy));
+            const auto setStrategy = [glWidget, idx = index++]() {
+                glWidget->setCursorPlacementStrategy(idx);
+            };
+            menuBar->addCursorStrategy(name, setStrategy);
+        };
+
+        addStrategy("axis plane", std::make_unique<GridPlanePlacementStrategy>(1));
+        addStrategy("approx patch", std::make_unique<PatchPlacementStrategy>(&glWidget->getScene()));
+        menuBar->synchronizeSelectedCursorStrategy(glWidget->getCursorPlacementStrategyIndex());
+    }
+
     /// @brief Keeps viewport, hierarchy and entity-properties selection/state in sync
     void wireSelectionSync(
         OpenGlWidget *glW,
@@ -421,6 +441,15 @@ namespace {
             glW->setCoordSpace(static_cast<CoordSpace>(coordSpaceCombo->itemData(index).toInt()));
         };
         QObject::connect(coordSpaceCombo, &QComboBox::currentIndexChanged, glW, glSetCoordSpace);
+
+        QObject::connect(
+            viewportPanel,
+            &ViewportPanelWidget::performanceLevelChanged,
+            glW,
+            &GlW::setPerformanceLevel
+        );
+
+        viewportPanel->syncPerformanceLevelFromOutside(glW->getPerformanceLevel());
 
         const auto glUpdate = [glW](const std::string &) {
             glW->update();
@@ -981,6 +1010,7 @@ int main(int argc, char *argv[]) {
 
     wireFileMenu(menuBar, glW, entityPropertiesWidget);
     wireEditMenu(menuBar, glW);
+    wireCursorStrategiesMenu(menuBar, glW);
     wireSelectionSync(glW, hierarchyWidget, entityPropertiesWidget);
     wireStatusBar(glW, statusBar);
     wireViewportControls(glW, viewportPanel);
