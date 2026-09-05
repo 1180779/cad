@@ -58,7 +58,7 @@ namespace trimming {
             return cells[static_cast<std::size_t>(y) * size + x];
         }
 
-        [[nodiscard]] Cell& operator[](const int x, const int y) {
+        Cell& operator[](const int x, const int y) {
             return cells[static_cast<std::size_t>(y) * size + x];
         }
 

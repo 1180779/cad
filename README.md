@@ -95,7 +95,7 @@ installed on your system, with paths set in CMake options if needed, e.g.
 ```
 to add Qt to the CMake search path on Windows.
 
-The project was tested to compile and run with CLion on Ubuntu 22.04 LTS.
+The project was tested to compile and run with CLion on Ubuntu 22.04 LTS and Windows 11 25H2.
 
 ## Ellipse
 The repository also contains a standalone ellipse project (first lab). See

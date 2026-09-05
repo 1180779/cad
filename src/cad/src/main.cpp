@@ -7,6 +7,7 @@
 #include <QPainter>
 #include <QSplitter>
 #include <QTextStream>
+#include <QPointer>
 
 #include "factory/CameraFactory.hpp"
 #include "components/PointComponent.hpp"

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <span>
+#include <numbers>
 
 #include "Mat3.hpp"
 #include "VecBase.hpp"
