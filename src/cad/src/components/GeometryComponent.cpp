@@ -2,6 +2,8 @@
 // Created on 3/15/26.
 //
 
+#include <numbers>
+
 #include "GeometryComponent.hpp"
 
 #include "../CheckMacros.hpp"
