@@ -1,0 +1,50 @@
+cmake_minimum_required(VERSION 4.1)
+if (POLICY CMP0207)
+    cmake_policy(SET CMP0207 NEW)
+endif ()
+
+if (NOT "$<CONFIG>" MATCHES "^(Release|RelWithDebInfo|MinSizeRel)$")
+    message(FATAL_ERROR "Build the bundle with Release, RelWithDebInfo, or MinSizeRel.")
+endif ()
+
+set(bundle_root "@PROJECT_BINARY_DIR@/bundle")
+set(bundle_name "cad-@CAD_BUNDLE_PLATFORM@-$<CONFIG>")
+set(bundle_dir "${bundle_root}/${bundle_name}")
+cmake_path(IS_PREFIX bundle_root "${bundle_dir}" NORMALIZE inside_bundle_root)
+if (NOT inside_bundle_root OR bundle_dir STREQUAL bundle_root)
+    message(FATAL_ERROR "Invalid bundle staging directory: ${bundle_dir}")
+endif ()
+file(REMOVE_RECURSE "${bundle_dir}")
+execute_process(COMMAND "@CMAKE_COMMAND@" -E env --unset=DESTDIR
+        "@CMAKE_COMMAND@" --install "@PROJECT_BINARY_DIR@"
+        --config "$<CONFIG>" --component cad_bundle --prefix "${bundle_dir}"
+        COMMAND_ERROR_IS_FATAL ANY)
+
+file(MAKE_DIRECTORY "${bundle_dir}/licenses/oneTBB" "${bundle_dir}/licenses/valijson"
+        "${bundle_dir}/licenses/fonts" "${bundle_dir}/licenses/icons")
+file(COPY "@onetbb_SOURCE_DIR@/LICENSE.txt" "@onetbb_SOURCE_DIR@/third-party-programs.txt"
+        DESTINATION "${bundle_dir}/licenses/oneTBB")
+file(COPY "@valijson_SOURCE_DIR@/LICENSE" DESTINATION "${bundle_dir}/licenses/valijson")
+file(COPY "@CMAKE_CURRENT_SOURCE_DIR@/resources/fonts/OFL.txt" DESTINATION "${bundle_dir}/licenses/fonts")
+file(COPY "@CMAKE_CURRENT_SOURCE_DIR@/resources/icons/jetbrains/LICENSE.txt" DESTINATION "${bundle_dir}/licenses/icons")
+if (IS_DIRECTORY "@CAD_QT_LICENSE_DIR@")
+    file(COPY "@CAD_QT_LICENSE_DIR@/" DESTINATION "${bundle_dir}/licenses/Qt")
+endif ()
+
+file(WRITE "${bundle_dir}/cad.sh" [=[#!/bin/sh
+bundle_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1
+export LD_LIBRARY_PATH="$bundle_dir/@CMAKE_INSTALL_LIBDIR@${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+cd "$bundle_dir/@CMAKE_INSTALL_BINDIR@" || exit 1
+exec ./cad "$@"
+]=])
+file(CHMOD "${bundle_dir}/cad.sh" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+        GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+file(WRITE "${bundle_dir}/README.txt"
+        "Extract the entire archive and run ./cad.sh. Keep the subfolders together.\n"
+        "Requires a compatible Linux system (glibc at least as new as the build host), a desktop session, and an OpenGL 4.5 driver.\n"
+        "Uses Qt @Qt6_VERSION@, oneTBB, valijson, and GCC runtime libraries; available license texts are in licenses/.\n"
+        "Qt source archives: https://download.qt.io/archive/qt/\n")
+set(archive "${bundle_root}/${bundle_name}.tar.gz")
+file(ARCHIVE_CREATE OUTPUT "${archive}" PATHS "${bundle_name}"
+        FORMAT gnutar COMPRESSION GZip WORKING_DIRECTORY "${bundle_root}")
+message(STATUS "Bundle created: ${archive}")

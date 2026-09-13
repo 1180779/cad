@@ -3,6 +3,8 @@
 //
 
 #include <fstream>
+#include <filesystem>
+#include <QCoreApplication>
 #include <QDebug>
 #include <ranges>
 
@@ -44,7 +46,8 @@ bool ShaderProgram::attachShader(const GLenum type, const std::string &source) {
 }
 
 bool ShaderProgram::attachShaderFromFile(const GLenum type, const std::string &filename) {
-    std::ifstream file(filename);
+    const auto path = std::filesystem::path(QCoreApplication::applicationDirPath().toStdWString()) / filename;
+    std::ifstream file(path);
     if (!file.is_open()) {
         qWarning() << "Failed to open shader file:" << filename.c_str();
         return false;

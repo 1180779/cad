@@ -14,9 +14,20 @@ find_package(Qt6 COMPONENTS
         REQUIRED)
 
 find_package(OpenGL REQUIRED)
-find_package(TBB REQUIRED)
 
 include(FetchContent)
+
+set(TBB_TEST OFF CACHE BOOL "Don't build TBB tests" FORCE)
+set(TBB_STRICT OFF CACHE BOOL "Don't treat TBB compiler warnings as errors" FORCE)
+set(TBB_EXAMPLES OFF CACHE BOOL "Don't build TBB examples" FORCE)
+
+FetchContent_Declare(
+        oneTBB
+        GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
+        GIT_TAG v2021.13.0
+        GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(oneTBB)
 
 FetchContent_Declare(
         valijson

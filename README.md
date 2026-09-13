@@ -88,7 +88,7 @@ The libraries used are:
 - **valijson** &mdash; JSON schema validation
 - **Catch2** &mdash; tests
 
-valijson and Catch2 are supplied via CMake's FetchContent. Qt and TBB need to be
+oneTBB, valijson, and Catch2 are supplied via CMake's FetchContent. Qt needs to be
 installed on your system, with paths set in CMake options if needed, e.g.
 ```
 -DCMAKE_PREFIX_PATH=C:\Qt\6.10.2\msvc2022_64
@@ -96,6 +96,48 @@ installed on your system, with paths set in CMake options if needed, e.g.
 to add Qt to the CMake search path on Windows.
 
 The project was tested to compile and run with CLion on Ubuntu 22.04 LTS and Windows 11 25H2.
+
+### Release bundles (Windows MSVC / MinGW and Linux GCC)
+
+Configure a Release build with Qt matching your compiler, then build the `bundle`
+target in CLion or from the command line:
+
+```sh
+# Linux: requires GCC and Qt 6.5 or newer; set CMAKE_PREFIX_PATH if needed
+cmake -S . -B cmake-build-release-gcc -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+cmake --build cmake-build-release-gcc --target bundle --config Release
+```
+
+```sh
+# Windows MinGW: put MinGW gcc/g++ and Ninja on PATH, with the MinGW version of Qt
+cmake -S . -B cmake-build-release-mingw -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_PREFIX_PATH=C:/Qt/6.10.2/mingw_64
+cmake --build cmake-build-release-mingw --target bundle --config Release
+```
+
+```sh
+# Windows: run from an MSVC developer shell, with the MSVC version of Qt
+cmake -S . -B cmake-build-release-msvc -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=cl -DCMAKE_C_COMPILER=cl -DCMAKE_PREFIX_PATH=C:/Qt/6.10.2/msvc2022_64
+cmake --build cmake-build-release-msvc --target bundle --config Release
+```
+
+Archives are created under `<build-directory>/bundle/`:
+
+| Toolchain | Archive | Run after extracting |
+| --- | --- | --- |
+| Windows MSVC | `cad-windows-msvc-Release.zip` | `cad.exe` |
+| Windows MinGW | `cad-windows-mingw-Release.zip` | `cad.exe` |
+| Linux GCC | `cad-linux-gcc-Release.tar.gz` | `./cad.sh` |
+
+The target builds the application and bundles Qt plugins, runtime dependencies,
+TBB, shaders, the scene schema, and available dependency license texts.
+Extract the entire archive and keep its subfolders together.
+Windows bundles use `windeployqt`; Linux bundles use
+[Qt's CMake deployment API](https://doc.qt.io/qt-6/qt-generate-deploy-app-script.html).
+
+Windows requires Windows 10/11 and a matching architecture. Linux requires a
+compatible desktop system with glibc at least as new as the build host; build on
+the oldest distribution you intend to support. System libraries and graphics
+drivers are not fully bundled. Both platforms require OpenGL 4.5 support.
 
 ## Ellipse
 The repository also contains a standalone ellipse project (first lab). See
