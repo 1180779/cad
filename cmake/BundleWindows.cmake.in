@@ -1,0 +1,79 @@
+cmake_minimum_required(VERSION 4.1)
+if (POLICY CMP0207)
+    cmake_policy(SET CMP0207 NEW)
+endif ()
+
+if (NOT "$<CONFIG>" MATCHES "^(Release|RelWithDebInfo|MinSizeRel)$")
+    message(FATAL_ERROR "Build the bundle with Release, RelWithDebInfo, or MinSizeRel.")
+endif ()
+
+set(bundle_root "@PROJECT_BINARY_DIR@/bundle")
+set(bundle_dir "${bundle_root}/cad-@CAD_BUNDLE_PLATFORM@-$<CONFIG>")
+cmake_path(IS_PREFIX bundle_root "${bundle_dir}" NORMALIZE inside_bundle_root)
+if (NOT inside_bundle_root OR bundle_dir STREQUAL bundle_root)
+    message(FATAL_ERROR "Invalid bundle staging directory: ${bundle_dir}")
+endif ()
+file(REMOVE_RECURSE "${bundle_dir}")
+file(MAKE_DIRECTORY "${bundle_dir}")
+file(COPY "$<TARGET_FILE:cad>" DESTINATION "${bundle_dir}")
+file(COPY "@CMAKE_CURRENT_SOURCE_DIR@/src/shaders" "@CMAKE_CURRENT_SOURCE_DIR@/format"
+        DESTINATION "${bundle_dir}")
+
+set(msvc_runtime_libraries "@CAD_MSVC_RUNTIME_LIBRARIES@")
+if (msvc_runtime_libraries)
+    file(COPY ${msvc_runtime_libraries} DESTINATION "${bundle_dir}")
+endif ()
+
+set(ENV{PATH} "@CAD_COMPILER_BIN_DIR@;@QT_BIN_DIR@;$ENV{PATH}")
+execute_process(COMMAND "@QT_BIN_DIR@/windeployqt.exe"
+        --release --compiler-runtime --no-translations --dir "${bundle_dir}"
+        "${bundle_dir}/cad.exe"
+        COMMAND_ERROR_IS_FATAL ANY)
+file(WRITE "${bundle_dir}/qt.conf" "[Paths]\nPrefix=.\nPlugins=.\n")
+
+# Scan Qt plugins as well as the executable to include their runtime dependencies.
+set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "windows+pe")
+set(CMAKE_GET_RUNTIME_DEPENDENCIES_TOOL "@CAD_DEPENDENCY_TOOL@")
+set(CMAKE_GET_RUNTIME_DEPENDENCIES_COMMAND "@CAD_DEPENDENCY_COMMAND@")
+file(GLOB_RECURSE bundled_dlls "${bundle_dir}/*.dll")
+file(GET_RUNTIME_DEPENDENCIES
+        EXECUTABLES "${bundle_dir}/cad.exe"
+        LIBRARIES ${bundled_dlls}
+        DIRECTORIES "${bundle_dir}" "@CAD_COMPILER_BIN_DIR@" "@QT_BIN_DIR@" "$<TARGET_FILE_DIR:TBB::tbb>"
+        RESOLVED_DEPENDENCIES_VAR dependencies
+        UNRESOLVED_DEPENDENCIES_VAR missing
+        PRE_EXCLUDE_REGEXES "api-ms-.*" "ext-ms-.*"
+        POST_EXCLUDE_REGEXES ".*[/\\\\][Ww][Ii][Nn][Dd][Oo][Ww][Ss][/\\\\].*")
+if (missing)
+    message(FATAL_ERROR "Missing bundle dependencies: ${missing}")
+endif ()
+foreach (dependency IN LISTS dependencies)
+    cmake_path(IS_PREFIX bundle_dir "${dependency}" NORMALIZE already_bundled)
+    if (NOT already_bundled)
+        file(COPY "${dependency}" DESTINATION "${bundle_dir}")
+    endif ()
+endforeach ()
+
+file(MAKE_DIRECTORY "${bundle_dir}/licenses/oneTBB" "${bundle_dir}/licenses/valijson"
+        "${bundle_dir}/licenses/fonts" "${bundle_dir}/licenses/icons")
+file(COPY "@onetbb_SOURCE_DIR@/LICENSE.txt" "@onetbb_SOURCE_DIR@/third-party-programs.txt"
+        DESTINATION "${bundle_dir}/licenses/oneTBB")
+file(COPY "@valijson_SOURCE_DIR@/LICENSE" DESTINATION "${bundle_dir}/licenses/valijson")
+file(COPY "@CMAKE_CURRENT_SOURCE_DIR@/resources/fonts/OFL.txt" DESTINATION "${bundle_dir}/licenses/fonts")
+file(COPY "@CMAKE_CURRENT_SOURCE_DIR@/resources/icons/jetbrains/LICENSE.txt" DESTINATION "${bundle_dir}/licenses/icons")
+if ("@MINGW@" AND EXISTS "@CAD_COMPILER_BIN_DIR@/../licenses")
+    file(COPY "@CAD_COMPILER_BIN_DIR@/../licenses/" DESTINATION "${bundle_dir}/licenses/MinGW")
+endif ()
+if (IS_DIRECTORY "@CAD_QT_LICENSE_DIR@")
+    file(COPY "@CAD_QT_LICENSE_DIR@/" DESTINATION "${bundle_dir}/licenses/Qt")
+endif ()
+
+file(WRITE "${bundle_dir}/README.txt"
+        "Extract the whole ZIP, then run cad.exe. Keep the DLLs and subfolders together.\n"
+        "Requires Windows 10/11 (64-bit) and a graphics driver supporting OpenGL 4.5.\n"
+        "Uses Qt @Qt6_VERSION@, oneTBB, valijson, and the @CAD_RUNTIME_NAME@; license texts are in licenses/.\n"
+        "Qt source archives: https://download.qt.io/archive/qt/\n")
+set(archive "${bundle_root}/cad-@CAD_BUNDLE_PLATFORM@-$<CONFIG>.zip")
+file(ARCHIVE_CREATE OUTPUT "${archive}" PATHS "cad-@CAD_BUNDLE_PLATFORM@-$<CONFIG>"
+        FORMAT zip WORKING_DIRECTORY "${bundle_root}")
+message(STATUS "Bundle created: ${archive}")
