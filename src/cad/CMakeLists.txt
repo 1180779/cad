@@ -20,6 +20,8 @@ target_link_libraries(cad_core PUBLIC
         Qt::Widgets
         Qt::OpenGLWidgets
         cad_math
+        cnc_core
+        cnc_gpu
         common
         TBB::tbb
         ValiJSON::valijson

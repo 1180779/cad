@@ -60,3 +60,17 @@ target_link_libraries(cad_scene_tests
 target_compile_features(cad_scene_tests PRIVATE cxx_std_23)
 
 add_test(NAME cad_scene_tests COMMAND cad_scene_tests)
+
+add_executable(cad_cnc_tests
+        CncCore.cxx
+)
+
+target_link_libraries(cad_cnc_tests
+        PRIVATE
+        cnc_reference
+        Catch2::Catch2WithMain
+)
+
+target_compile_features(cad_cnc_tests PRIVATE cxx_std_23)
+
+add_test(NAME cad_cnc_tests COMMAND cad_cnc_tests)

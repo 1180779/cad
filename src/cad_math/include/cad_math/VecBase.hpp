@@ -105,64 +105,76 @@ namespace cadm {
 
         // ===== vector-scalar operators =====
 
-        constexpr Derived& operator+=(const cadf rhs) {
+        constexpr Derived& operator+=(const T rhs) {
             for (int i = 0; i < N; ++i) {
                 (*this)[i] += rhs;
             }
             return static_cast<Derived&>(*this);
         }
 
-        friend constexpr Derived operator+(Derived lhs, const cadf s) {
+        friend constexpr Derived operator+(Derived lhs, const T s) {
             lhs += s;
             return lhs;
         }
 
-        friend constexpr Derived operator+(const cadf lhs, Derived rhs) {
+        friend constexpr Derived operator+(const T lhs, Derived rhs) {
             return lhs + rhs;
         }
 
-        constexpr Derived& operator-=(const cadf rhs) {
+        constexpr Derived& operator-=(const T rhs) {
             for (int i = 0; i < N; ++i) {
                 (*this)[i] -= rhs;
             }
             return static_cast<Derived&>(*this);
         }
 
-        friend constexpr Derived operator-(Derived lhs, const cadf s) {
+        friend constexpr Derived operator-(Derived lhs, const T s) {
             lhs -= s;
             return lhs;
         }
 
-        constexpr Derived& operator*=(const cadf rhs) {
+        constexpr Derived& operator*=(const T rhs) {
             for (int i = 0; i < N; ++i) {
                 (*this)[i] *= rhs;
             }
             return static_cast<Derived&>(*this);
         }
 
-        friend constexpr Derived operator*(Derived lhs, const cadf s) {
+        friend constexpr Derived operator*(Derived lhs, const T s) {
             lhs *= s;
             return lhs;
         }
 
-        friend constexpr Derived operator*(const cadf lhs, const Derived rhs) {
+        friend constexpr Derived operator*(const T lhs, const Derived rhs) {
             return rhs * lhs;
         }
 
-        constexpr Derived& operator/=(const cadf rhs) {
+        constexpr Derived& operator/=(const T rhs) {
             for (int i = 0; i < N; ++i) {
                 (*this)[i] /= rhs;
             }
             return static_cast<Derived&>(*this);
         }
 
-        friend constexpr Derived operator/(Derived lhs, const cadf s) {
+        friend constexpr Derived operator/(Derived lhs, const T s) {
             lhs /= s;
             return lhs;
         }
 
         // ===== common methods =====
 
+        /// @brief Linear interpolation
+        [[nodiscard]] static Derived lerp(const Derived &a, const Derived &b, const T t) noexcept
+        {
+            return static_cast<Derived>(a + (b - a) * t);
+        }
+        
+        /// @brief Linear interpolation
+        [[nodiscard]] Derived lerp(const Derived &other, const T t) const noexcept
+        {
+            return VecBase::lerp(static_cast<const Derived&>(*this), other, t);
+        }
+        
         /// @brief Normalizes in-place 
         /// 
         /// @pre Length must not be zero or near-zero

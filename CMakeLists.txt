@@ -15,6 +15,7 @@ find_package(Qt6 COMPONENTS
         Core
         Gui
         Widgets
+        OpenGL
         OpenGLWidgets
         REQUIRED)
 
@@ -51,6 +52,8 @@ FetchContent_Declare(
 )
 
 add_subdirectory(src/cad_math)
+add_subdirectory(src/cnc)
+add_subdirectory(src/cnc_gpu)
 add_subdirectory(src/common)
 add_subdirectory(src/ellipse)
 add_subdirectory(src/cad)
