@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 4.1)
 project(cad)
 
+# Distributable archives need Qt's runtime deployment API (Qt >= 6.5 on Linux).
+# Bundling is opt-in so development builds work on older Qt versions; pass
+# -DCAD_ENABLE_BUNDLE=ON to build the release archives.
+option(CAD_ENABLE_BUNDLE "Build the distributable bundle target" OFF)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
