@@ -13,8 +13,8 @@ void glSetDefaults() {
     format.setVersion(4, 5);
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setRenderableType(QSurfaceFormat::OpenGL);
-    // format.setDepthBufferSize(24);
-    // format.setStencilBufferSize(8);
+    format.setDepthBufferSize(24);
+    format.setStencilBufferSize(8);
     QSurfaceFormat::setDefaultFormat(format);
 }
 
