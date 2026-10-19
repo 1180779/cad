@@ -5,7 +5,7 @@
 #include "BezierC0Widget.hpp"
 
 #include "Scene.hpp"
-#include "../../WidgetBuilders.hxx"
+#include <common/WidgetBuilders.hxx>
 #include "../../../commands/CommandStack.hpp"
 #include "../../../commands/Commands.hpp"
 

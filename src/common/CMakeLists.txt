@@ -1,6 +1,7 @@
 add_library(common STATIC
         include/common/DoubleSlider.hpp
         include/common/ModifierSpinBox.hpp
+        include/common/WidgetBuilders.hxx
         src/DoubleSlider.cpp
 )
 
