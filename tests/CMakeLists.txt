@@ -68,6 +68,7 @@ add_executable(cad_cnc_tests
 target_link_libraries(cad_cnc_tests
         PRIVATE
         cnc_reference
+        cnc_core
         Catch2::Catch2WithMain
 )
 

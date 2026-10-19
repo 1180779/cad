@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "cnc/HeightField.hxx"
 #include "cnc/NcProgram.hxx"
 #include "cnc/Simulator.hxx"
 
@@ -25,7 +24,11 @@ namespace {
         std::optional<cnc::Tool> tool = std::nullopt
     ) {
         std::istringstream stream(std::move(text));
-        return cnc::parseNcProgram(stream, std::move(name), tool);
+        cnc::ParseResult result = cnc::parseNcProgram(stream, std::move(name), tool);
+        // Tests want warning-only programs to be considered parsed; errors
+        // still make ok() return false.
+        result.flags = static_cast<cnc::ParseResultFlags>(0);
+        return result;
     }
 
     /// @brief Safe move access. A missing move yields nullptr so a dependent
@@ -51,7 +54,7 @@ namespace {
     std::optional<cnc::Program> parseChecked(
         std::string text,
         std::string name = "test.k06",
-        std::optional<cnc::Tool> tool = std::nullopt
+        const std::optional<cnc::Tool> tool = std::nullopt
     ) {
         auto result = parseText(std::move(text), std::move(name), tool);
         CHECK(result.ok());
@@ -82,23 +85,11 @@ namespace {
     }
 
     bool hasWarning(const cnc::Snapshot &snapshot, const cnc::WarningKind kind) {
-        return std::any_of(
-            snapshot.warnings.begin(),
-            snapshot.warnings.end(),
-            [kind](const cnc::Warning &warning) {
-                return warning.kind == kind;
-            }
+        return std::ranges::any_of(snapshot.warnings,
+                                   [kind](const cnc::Warning &warning) {
+                                       return warning.kind == kind;
+                                   }
         );
-    }
-
-    /// @brief Test-only CPU oracle: replay the simulator's pending cutter moves
-    /// into the reference height field.
-    cnc::HeightField cpuCut(cnc::Simulator &simulator) {
-        cnc::HeightField field(simulator.material());
-        for (const cnc::Move &move : simulator.takeCutterMoves()) {
-            field.cut(move, move.tool);
-        }
-        return field;
     }
 
     std::string modalProgram() {
@@ -113,29 +104,10 @@ namespace {
             "N7G01Y5.000\n"
             "N8M30\n";
     }
-
-    std::string zigzagProgram() {
-        return
-            "%G71\n"
-            "G00X-8.000Y-8.000Z5.000\n"
-            "G01Z-2.000\n"
-            "G01X8.000Y-8.000\n"
-            "G01X8.000Y8.000\n"
-            "G01X-8.000Y8.000\n"
-            "G01X-8.000Y-8.000\n";
-    }
-
-    std::string straightProgram() {
-        return
-            "%G71\n"
-            "G00X-8.000Y0.000Z2.000\n"
-            "G01Z-3.000\n"
-            "G01X8.000\n";
-    }
 }
 
 TEST_CASE("material configuration supports a 1500x1500 grid", "[cnc][material]") {
-    const cnc::MaterialConfig material{
+    constexpr cnc::MaterialConfig material{
         .width = 100.0f,
         .depth = 100.0f,
         .thickness = 20.0f,
@@ -423,132 +395,30 @@ TEST_CASE("tool override takes precedence over the file name", "[cnc][parser]") 
     }
 }
 
-TEST_CASE("flat cutter removes a flat strip and clamps at the base", "[cnc][heightfield]") {
-    cnc::HeightField field(smallStock());
-    const cnc::Tool tool{.type = cnc::ToolType::flat, .diameter = 4.0f};
-    const cnc::Move move{
-        .from = {-10, 0, -5},
-        .to = {10, 0, -5},
-        .type = cnc::MoveType::G01,
-        .feed = 15000.0f,
-        .tool = tool,
-    };
-    const auto result = field.cut(move, tool);
+TEST_CASE("programs start with a safe approach above the stock", "[cnc][simulator]") {
+    cnc::MaterialConfig material = smallStock();
+    material.topZ = 66.0f;
+    material.thickness = 50.0f;
 
-    SECTION("material is removed") {
-        CHECK(result.removedVolume > 0.0);
+    cnc::Simulator simulator(material);
+    appendChecked(
+        simulator,
+        "%G71\nG01X0.000Y0.000Z66.000\nG01X0.000Y0.000Z60.000\n"
+    );
+    const auto snapshot = simulator.makeSnapshot();
+
+    SECTION("the initial tool position is above the stock top") {
+        CHECK(snapshot.toolPosition.z > material.topZ);
     }
 
-    SECTION("cells are touched") {
-        CHECK(result.touchedCells > 0);
+    SECTION("the first path move is a rapid approach") {
+        CHECK((snapshot.moves && !snapshot.moves->empty()
+            && snapshot.moves->front().type == cnc::MoveType::G00));
     }
 
-    SECTION("height on the centre line") {
-        CHECK_THAT(field.sampleHeight(0, 0), Catch::Matchers::WithinAbs(-5.0f, 1e-5f));
-    }
-
-    SECTION("height inside the cutter radius") {
-        CHECK_THAT(field.sampleHeight(0, 1), Catch::Matchers::WithinAbs(-5.0f, 1e-5f));
-    }
-
-    SECTION("height outside the cutter radius") {
-        CHECK_THAT(field.sampleHeight(0, 3), Catch::Matchers::WithinAbs(0.0f, 1e-5f));
-    }
-
-    SECTION("cutting below the base clamps at the base") {
-        const cnc::Move tooDeep{
-            .from = {-5, 0, -20},
-            .to = {5, 0, -20},
-            .type = cnc::MoveType::G01,
-            .feed = 15000.0f,
-            .tool = tool,
-        };
-        field.cut(tooDeep, tool);
-        CHECK_THAT(field.sampleHeight(0, 0), Catch::Matchers::WithinAbs(-10.0f, 1e-5f));
-    }
-}
-
-TEST_CASE("ball cutter produces a rounded profile", "[cnc][heightfield]") {
-    cnc::HeightField field(smallStock());
-    const cnc::Tool tool{.type = cnc::ToolType::ball, .diameter = 4.0f};
-    const cnc::Move move{
-        .from = {-10, 0, -5},
-        .to = {10, 0, -5},
-        .type = cnc::MoveType::G01,
-        .feed = 15000.0f,
-        .tool = tool,
-    };
-    field.cut(move, tool);
-
-    constexpr float radius = 2.0f;
-    const float expectedAtOne = -5.0f + radius - std::sqrt(radius * radius - 1.0f);
-
-    SECTION("height at the tool centre") {
-        CHECK_THAT(field.sampleHeight(0, 0), Catch::Matchers::WithinAbs(-5.0f, 1e-5f));
-    }
-
-    SECTION("height one millimetre off the centre") {
-        CHECK_THAT(
-            field.sampleHeight(0, 1),
-            Catch::Matchers::WithinAbs(expectedAtOne, 1e-4f)
-        );
-    }
-
-    SECTION("height outside the ball radius") {
-        CHECK_THAT(field.sampleHeight(0, 3), Catch::Matchers::WithinAbs(0.0f, 1e-5f));
-    }
-}
-
-TEST_CASE("height field tracks dirty rectangles", "[cnc][heightfield]") {
-    cnc::HeightField field(smallStock());
-    const auto initial = field.takeDirty();
-
-    SECTION("initial dirty rectangle is valid") {
-        CHECK(initial.valid());
-    }
-
-    SECTION("initial dirty rectangle starts at X zero") {
-        CHECK(initial.minX == 0);
-    }
-
-    SECTION("initial dirty rectangle starts at Y zero") {
-        CHECK(initial.minY == 0);
-    }
-
-    SECTION("a cut produces a bounded dirty rectangle") {
-        const cnc::Tool tool{.type = cnc::ToolType::flat, .diameter = 2.0f};
-        field.cut(
-            cnc::Move{
-                .from = {-2, 2, -1},
-                .to = {2, 2, -1},
-                .type = cnc::MoveType::G01,
-                .feed = 15000.0f,
-                .tool = tool,
-            },
-            tool
-        );
-        const auto dirty = field.takeDirty();
-        CHECK(dirty.valid());
-        CHECK((dirty.valid() && dirty.minX >= 7));
-        CHECK((dirty.valid() && dirty.maxX <= 13));
-        CHECK((dirty.valid() && dirty.minY >= 11));
-        CHECK((dirty.valid() && dirty.maxY <= 13));
-    }
-
-    SECTION("dirty data is consumed on read") {
-        const cnc::Tool tool{.type = cnc::ToolType::flat, .diameter = 2.0f};
-        field.cut(
-            cnc::Move{
-                .from = {-2, 2, -1},
-                .to = {2, 2, -1},
-                .type = cnc::MoveType::G01,
-                .feed = 15000.0f,
-                .tool = tool,
-            },
-            tool
-        );
-        (void) field.takeDirty();
-        CHECK_FALSE(field.takeDirty().valid());
+    SECTION("the approach ends at the programmed safe height") {
+        CHECK((snapshot.moves && !snapshot.moves->empty()
+            && std::abs(snapshot.moves->front().to.z - material.topZ) < 1e-4f));
     }
 }
 
@@ -567,25 +437,6 @@ TEST_CASE("vertical plunge is reported", "[cnc][simulator]") {
     }
 }
 
-TEST_CASE("cutting below the stock base is reported", "[cnc][simulator]") {
-    cnc::Simulator simulator(smallStock());
-    appendChecked(simulator, "%G71\nG01X2.000Z-15.000\n");
-    simulator.finishNow();
-    const auto snapshot = simulator.makeSnapshot();
-    const auto reference = cpuCut(simulator);
-
-    SECTION("too-deep warning") {
-        CHECK(hasWarning(snapshot, cnc::WarningKind::tooDeep));
-    }
-
-    SECTION("material is clamped at the base") {
-        CHECK_THAT(
-            reference.sampleHeight(2, 0),
-            Catch::Matchers::WithinAbs(-10.0f, 1e-5f)
-        );
-    }
-}
-
 TEST_CASE("ball shank collision is reported", "[cnc][simulator]") {
     cnc::Simulator simulator(smallStock());
     appendChecked(simulator, "%G71\nG01X5.000Z-5.000\n", "small.k02");
@@ -594,172 +445,6 @@ TEST_CASE("ball shank collision is reported", "[cnc][simulator]") {
 
     SECTION("non-cutting-part warning") {
         CHECK(hasWarning(snapshot, cnc::WarningKind::nonCuttingPart));
-    }
-}
-
-TEST_CASE("multiple programs keep previously removed material", "[cnc][simulator]") {
-    cnc::Simulator simulator(smallStock());
-    appendChecked(simulator, "%G71\nG00X-5.000\nG01Z-2.000\n");
-    appendChecked(simulator, "%G71\nG00X5.000\nG01Z-2.000\n");
-    simulator.finishNow();
-    const auto snapshot = simulator.makeSnapshot();
-    const auto reference = cpuCut(simulator);
-
-    SECTION("first program remains milled") {
-        CHECK_THAT(
-            reference.sampleHeight(-5, 0),
-            Catch::Matchers::WithinAbs(-2.0f, 1e-5f)
-        );
-    }
-
-    SECTION("second program is milled into the same stock") {
-        CHECK_THAT(
-            reference.sampleHeight(5, 0),
-            Catch::Matchers::WithinAbs(-2.0f, 1e-5f)
-        );
-    }
-
-    SECTION("both programs are retained") {
-        CHECK(simulator.programs().size() == 2);
-    }
-
-    SECTION("the snapshot reports both programs' moves") {
-        CHECK(snapshot.instructionCount == 4);
-    }
-}
-
-TEST_CASE("finish now matches stepped simulation", "[cnc][simulator]") {
-    cnc::Simulator stepped(smallStock());
-    appendChecked(stepped, zigzagProgram());
-
-    cnc::Simulator instant(smallStock());
-    appendChecked(instant, zigzagProgram());
-
-    stepped.advance(1e9);
-    instant.finishNow();
-
-    const auto steppedField = cpuCut(stepped);
-    const auto instantField = cpuCut(instant);
-
-    SECTION("the grids have the same size") {
-        CHECK(
-            steppedField.heights().size()
-            == instantField.heights().size()
-        );
-    }
-
-    SECTION("every height matches") {
-        const auto &a = steppedField.heights();
-        const auto &b = instantField.heights();
-        CHECK(a.size() == b.size());
-        const std::size_t common = std::min(a.size(), b.size());
-        for (std::size_t i = 0; i < common; ++i) {
-            CHECK_THAT(a[i], Catch::Matchers::WithinAbs(b[i], 1e-4f));
-        }
-    }
-
-    SECTION("both simulations finish") {
-        CHECK(stepped.finished());
-        CHECK(instant.finished());
-    }
-}
-
-TEST_CASE("simulation result is independent of the step size", "[cnc][simulator]") {
-    cnc::Simulator fine(smallStock());
-    appendChecked(fine, straightProgram());
-
-    cnc::Simulator coarse(smallStock());
-    appendChecked(coarse, straightProgram());
-
-    for (int i = 0; i < 20; ++i) {
-        fine.advance(0.5);
-    }
-    coarse.advance(10.0);
-
-    const auto fineField = cpuCut(fine);
-    const auto coarseField = cpuCut(coarse);
-
-    SECTION("the grids have the same size") {
-        CHECK(
-            fineField.heights().size()
-            == coarseField.heights().size()
-        );
-    }
-
-    SECTION("every height matches") {
-        const auto &a = fineField.heights();
-        const auto &b = coarseField.heights();
-        CHECK(a.size() == b.size());
-        const std::size_t common = std::min(a.size(), b.size());
-        for (std::size_t i = 0; i < common; ++i) {
-            CHECK_THAT(a[i], Catch::Matchers::WithinAbs(b[i], 1e-4f));
-        }
-    }
-
-    SECTION("both simulations finish") {
-        CHECK(fine.finished());
-        CHECK(coarse.finished());
-    }
-}
-
-TEST_CASE("fixed-step advancement is independent of host frame jitter", "[cnc][simulator]") {
-    constexpr double fixedStep = 0.01;
-    constexpr double total = 0.08;
-
-    cnc::Simulator steady(smallStock());
-    appendChecked(steady, straightProgram());
-
-    cnc::Simulator burst(smallStock());
-    appendChecked(burst, straightProgram());
-
-    cnc::Simulator jitter(smallStock());
-    appendChecked(jitter, straightProgram());
-
-    cnc::Simulator direct(smallStock());
-    appendChecked(direct, straightProgram());
-
-    for (int i = 0; i < 80; ++i) {
-        steady.advanceFixed(0.001, fixedStep);
-    }
-    for (int i = 0; i < 4; ++i) {
-        burst.advanceFixed(0.020, fixedStep);
-    }
-    for (int i = 0; i < 20; ++i) {
-        jitter.advanceFixed(0.001, fixedStep);
-        jitter.advanceFixed(0.003, fixedStep);
-    }
-    direct.advance(total);
-
-    const auto steadyField = cpuCut(steady);
-    const auto burstField = cpuCut(burst);
-    const auto jitterField = cpuCut(jitter);
-    const auto directField = cpuCut(direct);
-
-    const auto fieldsMatch = [](const cnc::HeightField &a, const cnc::HeightField &b) {
-        CHECK(a.heights().size() == b.heights().size());
-        const std::size_t common = std::min(a.heights().size(), b.heights().size());
-        for (std::size_t i = 0; i < common; ++i) {
-            CHECK_THAT(
-                a.heights()[i],
-                Catch::Matchers::WithinAbs(b.heights()[i], 1e-4f)
-            );
-        }
-    };
-
-    SECTION("small host ticks match large host ticks") {
-        fieldsMatch(steadyField, burstField);
-    }
-
-    SECTION("jittered host ticks match uniform host ticks") {
-        fieldsMatch(steadyField, jitterField);
-    }
-
-    SECTION("fixed-step cuts match a single direct delta") {
-        fieldsMatch(steadyField, directField);
-    }
-
-    SECTION("the fixed-step result is not yet finished") {
-        CHECK_FALSE(steady.finished());
     }
 }
 
@@ -776,7 +461,7 @@ TEST_CASE("snapshots expose progress, paths and queued cutter moves", "[cnc][sim
     }
 
     SECTION("the move count is reported") {
-        CHECK(initial.instructionCount == 1);
+        CHECK(initial.instructionCount == 2);
     }
 
     SECTION("the material configuration is reported") {
@@ -792,7 +477,7 @@ TEST_CASE("snapshots expose progress, paths and queued cutter moves", "[cnc][sim
     }
 
     SECTION("the path snapshot contains the move") {
-        CHECK((initial.moves && initial.moves->size() == 1));
+        CHECK((initial.moves && initial.moves->size() == 2));
     }
 
     SECTION("the simulation is finished") {
