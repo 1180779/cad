@@ -10,7 +10,7 @@
 #include <QPushButton>
 
 #include "OpenGlWidget.hpp"
-#include <common/DoubleSlider.hpp>
+#include <cad_common/DoubleSlider.hxx>
 
 void addFloatParameter(
     QVBoxLayout *parentLayout,

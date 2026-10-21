@@ -22,7 +22,7 @@ target_link_libraries(cad_core PUBLIC
         cad_math::cad_math
         cnc_core
         cnc_gpu
-        common
+        cad_common::cad_common
         TBB::tbb
         ValiJSON::valijson
 )

@@ -4,7 +4,7 @@
 
 #include "PointPropertiesWidget.hpp"
 
-#include <common/CoordinateSpinBox.hpp>
+#include <cad_common/CoordinateSpinBox.hxx>
 
 #include "../../../Scene.hpp"
 #include "../../../commands/CommandStack.hpp"

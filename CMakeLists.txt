@@ -58,9 +58,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cad_math)
 
+FetchContent_Declare(
+        cad_common
+        GIT_REPOSITORY https://github.com/1180779/cad_common.git
+        GIT_TAG b68d9e4ad6f5e3616b7888c31c0beef55b63dce4
+)
+FetchContent_MakeAvailable(cad_common)
+
 add_subdirectory(src/cnc)
 add_subdirectory(src/cnc_gpu)
-add_subdirectory(src/common)
 add_subdirectory(src/ellipse)
 add_subdirectory(src/cad)
 

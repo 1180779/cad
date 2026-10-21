@@ -88,8 +88,9 @@ The libraries used are:
 - **valijson** &mdash; JSON schema validation
 - **Catch2** &mdash; tests
 - **cad_math** &mdash; this project's reusable vector, matrix, and quaternion types
+- **cad_common** &mdash; reusable Qt widgets and widget builders
 
-oneTBB, valijson, Catch2, and cad_math are supplied via CMake's FetchContent. Qt needs to be
+oneTBB, valijson, Catch2, cad_math, and cad_common are supplied via CMake's FetchContent. Qt needs to be
 installed on your system, with paths set in CMake options if needed, e.g.
 ```
 -DCMAKE_PREFIX_PATH=C:\Qt\6.10.2\msvc2022_64

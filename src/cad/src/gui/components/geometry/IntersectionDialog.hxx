@@ -8,7 +8,7 @@
 #include <QCheckBox>
 #include <QDialog>
 
-#include <common/ModifierSpinBox.hpp>
+#include <cad_common/ModifierSpinBox.hxx>
 
 #include <cad_math/Common.hxx>
 
