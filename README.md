@@ -3,7 +3,7 @@
 A simple CAD/CAM made iteratively during the Geometric Modeling 1 labs at WUT.
 One of the project requirements was to not use any external math library
 dependencies, i.e., to design and use an own math library (`cadm` in this
-project; see [`./src/cad_math`](./src/cad_math). This includes custom vector and
+project; see [cad_math](https://github.com/1180779/cad_math). This includes custom vector and
 matrix types, quaternions and more.
 
 ## Objects
@@ -87,8 +87,9 @@ The libraries used are:
   compile on your system)
 - **valijson** &mdash; JSON schema validation
 - **Catch2** &mdash; tests
+- **cad_math** &mdash; this project's reusable vector, matrix, and quaternion types
 
-oneTBB, valijson, and Catch2 are supplied via CMake's FetchContent. Qt needs to be
+oneTBB, valijson, Catch2, and cad_math are supplied via CMake's FetchContent. Qt needs to be
 installed on your system, with paths set in CMake options if needed, e.g.
 ```
 -DCMAKE_PREFIX_PATH=C:\Qt\6.10.2\msvc2022_64

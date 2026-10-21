@@ -9,7 +9,7 @@
 
 #include "../GeometryComponent.hpp"
 #include "utils/TrimMask.hxx"
-#include <cad_math/Vec2.hpp>
+#include <cad_math/Vec2.hxx>
 
 /// @brief Curve traced along the intersection of two surfaces
 ///

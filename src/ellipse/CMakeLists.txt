@@ -16,7 +16,7 @@ target_link_libraries(ellipse
         Qt::Gui
         Qt::Widgets
         Qt::OpenGLWidgets
-        cad_math
+        cad_math::cad_math
         common
         TBB::tbb
 )

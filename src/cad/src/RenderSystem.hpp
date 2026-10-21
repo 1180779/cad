@@ -11,8 +11,8 @@
 #include "components/GeometryComponent.hpp"
 #include <functional>
 #include <memory>
-#include <cad_math/Vec3.hpp>
-#include <cad_math/Mat4.hpp>
+#include <cad_math/Vec3.hxx>
+#include <cad_math/Mat4.hxx>
 
 class Scene;
 class GregoryComponent;

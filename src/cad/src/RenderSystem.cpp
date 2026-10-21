@@ -16,8 +16,8 @@
 #include "gui/Theme.hpp"
 #include <algorithm>
 #include <array>
-#include <cad_math/Vec2.hpp>
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec2.hxx>
+#include <cad_math/Vec3.hxx>
 #include <cmath>
 #include <vector>
 #include <concepts>

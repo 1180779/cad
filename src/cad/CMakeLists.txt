@@ -19,7 +19,7 @@ target_link_libraries(cad_core PUBLIC
         Qt::Gui
         Qt::Widgets
         Qt::OpenGLWidgets
-        cad_math
+        cad_math::cad_math
         cnc_core
         cnc_gpu
         common

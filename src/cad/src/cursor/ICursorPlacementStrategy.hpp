@@ -8,8 +8,8 @@
 #include <QMouseEvent>
 
 #include <optional>
-#include <cad_math/Mat4.hpp>
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Mat4.hxx>
+#include <cad_math/Vec3.hxx>
 
 /// @brief Generic strategy for resolving a mouse event to a 3D world-space position.
 ///

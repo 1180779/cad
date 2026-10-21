@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <vector>
 
-#include <cad_math/Vec2.hpp>
+#include <cad_math/Vec2.hxx>
 
 /// @brief Splitting a surface's parameter square along an intersection curve
 namespace trimming {

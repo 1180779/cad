@@ -12,7 +12,7 @@
 #include <string_view>
 #include <vector>
 
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 
 namespace cnc
 {

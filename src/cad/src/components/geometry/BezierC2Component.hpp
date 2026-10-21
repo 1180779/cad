@@ -12,7 +12,7 @@
 #include "../GeometryComponent.hpp"
 #include "GpuBuffer.hpp"
 #include "PointRegistry.hpp"
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 
 #include "../INewPointsTargetComponent.hpp"
 #include "../IPointReferrer.hpp"

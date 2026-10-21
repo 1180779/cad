@@ -51,7 +51,13 @@ FetchContent_Declare(
         GIT_TAG v3.5.4
 )
 
-add_subdirectory(src/cad_math)
+FetchContent_Declare(
+        cad_math
+        GIT_REPOSITORY https://github.com/1180779/cad_math.git
+        GIT_TAG 5e27d4efa50e939ac53f8325e35ed0badbd158e2
+)
+FetchContent_MakeAvailable(cad_math)
+
 add_subdirectory(src/cnc)
 add_subdirectory(src/cnc_gpu)
 add_subdirectory(src/common)

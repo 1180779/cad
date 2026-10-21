@@ -9,10 +9,10 @@
 #include <map>
 #include <string>
 
-#include "cad_math/Mat4.hpp"
-#include "cad_math/Vec2.hpp"
-#include "cad_math/Vec3.hpp"
-#include "cad_math/Vec4.hpp"
+#include "cad_math/Mat4.hxx"
+#include "cad_math/Vec2.hxx"
+#include "cad_math/Vec3.hxx"
+#include "cad_math/Vec4.hxx"
 
 class ShaderProgram {
 public:

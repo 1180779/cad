@@ -10,7 +10,7 @@
 #include <span>
 #include <vector>
 
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 #include "BezierUtils.hpp"
 
 namespace gregory {

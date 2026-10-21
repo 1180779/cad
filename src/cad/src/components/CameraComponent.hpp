@@ -6,7 +6,7 @@
 #define CAD_ICAMERA_HPP
 
 #include "Entity.hpp"
-#include <cad_math/Common.hpp>
+#include <cad_math/Common.hxx>
 
 class CameraComponent : public Component {
 public:

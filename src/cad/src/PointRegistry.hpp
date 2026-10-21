@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 #include <GL/gl.h>
 
 #include "Callbacks.hpp"

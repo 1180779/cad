@@ -35,7 +35,7 @@
 #include "PointRegistry.hpp"
 #include "commands/Commands.hpp"
 #include "ViewportTypes.hpp"
-#include "cad_math/Helpers.hpp"
+#include "cad_math/Helpers.hxx"
 #include "components/geometry/BezierC0Component.hpp"
 #include "components/geometry/PatchC0Component.hxx"
 #include "components/geometry/PatchC2Component.hxx"

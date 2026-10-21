@@ -11,7 +11,7 @@ target_include_directories(cnc_core
 
 target_link_libraries(cnc_core
         PUBLIC
-        cad_math
+        cad_math::cad_math
 )
 
 target_compile_features(cnc_core PUBLIC cxx_std_20)

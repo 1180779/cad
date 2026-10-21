@@ -9,11 +9,11 @@
 #include <QKeyEvent>
 #include <memory>
 
-#include <cad_math/Common.hpp>
+#include <cad_math/Common.hxx>
 #include "Gl.hpp"
 #include "ShaderProgram.hpp"
 #include "Quad.hpp"
-#include "cad_math/Vec3.hpp"
+#include "cad_math/Vec3.hxx"
 #include "Camera.hpp"
 
 struct RenderState {

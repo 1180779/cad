@@ -11,9 +11,9 @@
 #include <QVariantAnimation>
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
-#include <cad_math/Common.hpp>
+#include <cad_math/Common.hxx>
 #include <cad_math/Quaternion.hxx>
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 #include "PatchGeometry.hxx"
 #include "PointRegistry.hpp"
 #include "RenderSystem.hpp"

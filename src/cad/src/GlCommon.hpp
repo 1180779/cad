@@ -7,7 +7,7 @@
 
 #include <QOpenGLFunctions_4_5_Core>
 
-#include "cad_math/Vec3.hpp"
+#include "cad_math/Vec3.hxx"
 
 void glSetDefaults();
 

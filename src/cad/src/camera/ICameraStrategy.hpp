@@ -15,8 +15,8 @@ enum class CameraAction { orbit, pan, zoomDrag };
 enum class CameraKeyAction { moveUp, moveDown, moveLeft, moveRight };
 
 #include "../components/Entity.hpp"
-#include "cad_math/Mat3.hpp"
-#include "cad_math/Mat4.hpp"
+#include "cad_math/Mat3.hxx"
+#include "cad_math/Mat4.hxx"
 
 class ICameraStrategy {
 public:
