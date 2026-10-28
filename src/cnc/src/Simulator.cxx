@@ -241,7 +241,7 @@ namespace cnc
             const Move& move = m_moves[m_moveIndex];
             const double moveDuration = move.durationSeconds();
 
-            if (moveDuration <= epsilon)
+            if (moveDuration <= gc_epsilon)
             {
                 applyMove(move, m_moveIndex);
                 ++m_moveIndex;
@@ -271,7 +271,7 @@ namespace cnc
                 remaining -= stepAdvancementDuration;
             }
 
-            if (m_moveElapsed >= moveDuration - epsilon)
+            if (m_moveElapsed >= moveDuration - gc_epsilon)
             {
                 ++m_moveIndex;
                 m_moveElapsed = 0.0;
@@ -307,7 +307,7 @@ namespace cnc
         }
 
         m_fixedStepRemainder += simulatedDeltaSeconds;
-        while (m_fixedStepRemainder + epsilon >= fixedStepSeconds)
+        while (m_fixedStepRemainder + gc_epsilon >= fixedStepSeconds)
         {
             advance(fixedStepSeconds);
             m_fixedStepRemainder -= fixedStepSeconds;

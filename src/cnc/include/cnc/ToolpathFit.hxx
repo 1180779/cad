@@ -8,7 +8,7 @@
 #include <optional>
 
 #include "cnc/Material.hxx"
-#include "cnc/NcProgram.hxx"
+#include "program/NcProgram.hxx"
 
 namespace cnc {
     struct ToolpathBounds {

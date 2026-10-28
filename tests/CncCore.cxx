@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "cnc/NcProgram.hxx"
+#include "../src/cnc/include/cnc/program/NcProgram.hxx"
 #include "cnc/Simulator.hxx"
 
 namespace {

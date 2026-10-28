@@ -12,7 +12,7 @@
 #include <QOpenGLFunctions_4_5_Core>
 
 #include "cnc/Material.hxx"
-#include "cnc/NcProgram.hxx"
+#include "../../../cnc/include/cnc/program/NcProgram.hxx"
 
 namespace cnc::gpu {
     class GpuHeightMap final {

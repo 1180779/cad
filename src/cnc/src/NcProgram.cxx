@@ -2,7 +2,7 @@
 // Created by Radosław Głasek on 18.10.2026
 //
 
-#include "cnc/NcProgram.hxx"
+#include "../include/cnc/program/NcProgram.hxx"
 
 #include <array>
 #include <cctype>
@@ -120,11 +120,14 @@ namespace cnc
             });
         }
 
-        [[maybe_unused]] constexpr auto addInfo = &addDiagnostic<DiagnosticMessageType::Info>;
-        [[maybe_unused]] constexpr auto addWarning = &addDiagnostic<DiagnosticMessageType::Warning>;
-        [[maybe_unused]] constexpr auto addError = &addDiagnostic<DiagnosticMessageType::Error>;
+        [[maybe_unused]] constexpr auto addInfo = // NOLINT(*-identifier-naming)
+            &addDiagnostic<DiagnosticMessageType::Info>;
+        [[maybe_unused]] constexpr auto addWarning = // NOLINT(*-identifier-naming) 
+            &addDiagnostic<DiagnosticMessageType::Warning>;
+        [[maybe_unused]] constexpr auto addError = // NOLINT(*-identifier-naming)
+            &addDiagnostic<DiagnosticMessageType::Error>;
 
-        /// @brief One `<letter><number>` G-code word, e.g. `X10.5`
+        /// @brief One `<letter><number>` G-code word
         struct Word
         {
             /// @brief Source text of the word, including the letter
@@ -248,50 +251,6 @@ namespace cnc
         {
             return toolFromFilename(name);
         }
-    }
-
-    std::string_view toolTypeName(const ToolType type)
-    {
-        switch (type)
-        {
-        case ToolType::ball:
-            return "ball";
-        case ToolType::flat:
-            return "flat";
-        }
-        return "unknown";
-    }
-
-    float Tool::cuttingLength() const
-    {
-        switch (type)
-        {
-        case ToolType::ball:
-            return std::max(radius(), 0.1f);
-        case ToolType::flat:
-            return std::max(3.0f * diameter, 10.0f);
-        }
-        return 0.0f;
-    }
-
-    float Move::length() const
-    {
-        return (to - from).length();
-    }
-
-    double Move::durationSeconds() const
-    {
-        float speed{};
-        switch (type)
-        {
-        case MoveType::G00:
-            speed = gc_rapidFeed;
-            break;
-        case MoveType::G01:
-            speed = feed > 0.0f ? feed : gc_defaultFeed;
-            break;
-        }
-        return static_cast<double>(length()) / static_cast<double>(speed) * 60.0;
     }
 
     ParseResultFlags operator|(ParseResultFlags lhs, ParseResultFlags rhs)

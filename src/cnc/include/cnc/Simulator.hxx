@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "cnc/Material.hxx"
-#include "cnc/NcProgram.hxx"
+#include "program/NcProgram.hxx"
 
 namespace cnc {
     enum class WarningKind {
@@ -194,7 +194,7 @@ namespace cnc {
         std::uint64_t m_revision{};
 
         static constexpr std::size_t gc_maxWarnings = 128;
-        static constexpr double epsilon = 1e-12;
+        static constexpr double gc_epsilon = 1e-12;
     };
 }
 

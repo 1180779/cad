@@ -7,7 +7,7 @@
 
 #include <algorithm>
 
-#include "NcProgram.hxx"
+#include "program/NcProgram.hxx"
 
 namespace cnc {
     /// @brief Stock and grid configuration
