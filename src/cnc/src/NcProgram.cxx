@@ -366,7 +366,7 @@ namespace cnc
         }
 
         double unitScale = 1.0;
-        cadm::Vec3 position{};
+        std::optional<cadm::Vec3> position{std::nullopt};
         float feed = gc_defaultFeed;
         auto moveType = MoveType::G00;
         bool stop = false;
@@ -440,7 +440,7 @@ namespace cnc
                                     "coordinates are treated as absolute."
                                 );
                             }
-                            // G40/G90 and other non-motion commands are ignored.
+                            // other commands are ignored
                             break;
                         }
                         break;
@@ -474,8 +474,6 @@ namespace cnc
                     sawCoordinate = true;
                     break;
                 default:
-                    // Unknown command words are ignored to stay tolerant of
-                    // machine-specific preambles.
                     break;
                 }
 
@@ -499,17 +497,20 @@ namespace cnc
             if (!words)
                 continue;
 
-            cadm::Vec3 target = position;
+            cadm::Vec3 target = position.value_or({});
             auto [lineError, sawCoordinate] = processWords(*words, target);
             if (lineError)
                 continue;
 
             if (sawCoordinate)
             {
-                if (target != position)
+                if (!position.has_value()) {
+                    position = target;
+                }
+                else if (target != position.value())
                 {
                     Move move{
-                        .from = position,
+                        .from = position.value(),
                         .to = target,
                         .type = moveType,
                         .feed = feed,

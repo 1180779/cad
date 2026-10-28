@@ -71,9 +71,7 @@ namespace cnc
         if (!m_moves.empty())
         {
             if (Move& first = m_moves.front();
-                first.type == MoveType::G00
-                && containsXY(m_material, first.to.x, first.to.y)
-                && first.from.z < m_material.topZ)
+                !isOutsideStock(m_material, first.from))
             {
                 first.from.z = m_material.topZ
                     + std::max(5.0f, first.tool.diameter);
@@ -97,59 +95,6 @@ namespace cnc
         }
 
         const bool wasEmpty = m_moves.empty();
-        const float clearance = std::max(5.0f, program.tool.diameter);
-        const Move& first = program.moves.front();
-
-        if (isOutsideStock(m_material, first.to))
-        {
-            const cadm::Vec3 safeTo = first.to;
-            cadm::Vec3 approachFrom = safeTo;
-            if (containsXY(m_material, safeTo.x, safeTo.y))
-            {
-                approachFrom.z = std::max(safeTo.z, m_material.topZ + clearance);
-            }
-
-            Move approach{
-                .from = wasEmpty ? approachFrom : m_toolPosition,
-                .to = safeTo,
-                .type = MoveType::G00,
-                .feed = gc_rapidFeed,
-                .tool = program.tool,
-            };
-
-            if (wasEmpty)
-            {
-                program.moves.front() = approach;
-            }
-            else
-            {
-                program.moves.erase(program.moves.begin());
-                program.moves.insert(program.moves.begin(), approach);
-            }
-        }
-        else if (wasEmpty
-            && containsXY(m_material, first.from.x, first.from.y)
-            && first.from.z >= m_material.topZ - 1e-3f)
-        {
-            // a program that starts directly with a plunge still gets an
-            // explicit approach from above the stock
-            cadm::Vec3 approachFrom = first.from;
-            approachFrom.z = std::max(first.from.z, m_material.topZ + clearance);
-            if (approachFrom.z > first.from.z + 1e-3f)
-            {
-                program.moves.insert(
-                    program.moves.begin(),
-                    Move{
-                        .from = approachFrom,
-                        .to = first.from,
-                        .type = MoveType::G00,
-                        .feed = gc_rapidFeed,
-                        .tool = program.tool,
-                    }
-                );
-            }
-        }
-
         const std::size_t programIndex = m_programs.size();
         for (Move& move : program.moves)
         {
@@ -396,7 +341,7 @@ namespace cnc
 
         const auto checkIfTooDeep = [&]
         {
-            if (lowestZ < bottom - 1e-4f)
+            if (lowestZ < bottom - 1e-3f)
             {
                 const cadm::Vec3 lowestPoint = move.from.z <= move.to.z ? move.from : move.to;
                 if (containsXY(m_material, lowestPoint.x, lowestPoint.y))
@@ -420,7 +365,7 @@ namespace cnc
             if (const float horizontalLength = std::sqrt(dx * dx + dy * dy);
                 overStock
                 && horizontalLength < 0.05f
-                && move.to.z < move.from.z - 1e-4f
+                && move.to.z < move.from.z - 1e-3f
                 && lowestZ < m_material.topZ)
             {
                 addWarning(
@@ -435,10 +380,8 @@ namespace cnc
         };
         const auto checkIfNonCuttingPart = [&]
         {
-            // Conservative first version: the original top surface is used
-            // instead of the current GPU height map. This may report a shank
-            // collision where material was already removed, but it never misses
-            // one. The GPU pass can supply exact flags later.
+            // TODO: update this with reading from the height map and comparing
+            //  directly; currently checks against topZ of the stock
             const float top = m_material.topZ;
             const float cuttingLength = tool.cuttingLength();
             for (const double t : {0.0, 0.5, 1.0})
@@ -448,7 +391,7 @@ namespace cnc
                 {
                     continue;
                 }
-                if (top > point.z + cuttingLength + 1e-4f)
+                if (top > point.z + cuttingLength + 1e-3f)
                 {
                     addWarning(
                         WarningKind::nonCuttingPart,
