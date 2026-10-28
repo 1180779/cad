@@ -4,7 +4,7 @@
 
 #include "VirtualPointPropertiesWidget.hpp"
 
-#include <cad_common/CoordinateSpinBox.hxx>
+#include <cad_common/widgets/CoordinateSpinBox.hxx>
 
 VirtualPointPropertiesWidget::VirtualPointPropertiesWidget(QWidget *parent) : QWidget(parent) {
     // ReSharper disable once CppDFAMemoryLeak

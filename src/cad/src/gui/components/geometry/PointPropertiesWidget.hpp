@@ -3,7 +3,7 @@
 //
 #ifndef CAD_POINTPROPERTIESWIDGET_HPP
 #define CAD_POINTPROPERTIESWIDGET_HPP
-#include <cad_common/ModifierSpinBox.hxx>
+#include <cad_common/widgets/ModifierSpinBox.hxx>
 #include "../../../PointRegistry.hpp"
 
 class Scene;

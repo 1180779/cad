@@ -33,8 +33,6 @@ struct Move
     std::size_t programIndex{0};
 
     [[nodiscard]] float length() const;
-
-    /// @brief Simulated duration of the move in seconds
     [[nodiscard]] double durationSeconds() const;
 };
 

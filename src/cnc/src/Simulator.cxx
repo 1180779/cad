@@ -2,6 +2,9 @@
 // Created by Radosław Głasek on 18.10.2026
 //
 
+#include "cnc/program/Tool.hxx"
+#include "cnc/program/ToolType.hxx"
+#include "cnc/program/Move.hxx"
 #include "cnc/Simulator.hxx"
 
 #include <algorithm>

@@ -10,7 +10,7 @@
 #include <QDialog>
 #include <QFormLayout>
 
-#include <cad_common/ModifierSpinBox.hxx>
+#include <cad_common/widgets/ModifierSpinBox.hxx>
 
 #include "PatchGeometry.hxx"
 

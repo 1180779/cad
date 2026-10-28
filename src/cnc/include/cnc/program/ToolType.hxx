@@ -15,7 +15,7 @@ enum class ToolType {
     flat,
 };
 
-    std::string_view toolTypeName(ToolType type);
+std::string_view toolTypeName(ToolType type);
 
 } // namespace cnc
 

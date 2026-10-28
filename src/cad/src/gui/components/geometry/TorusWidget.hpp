@@ -4,7 +4,7 @@
 #include <QFormLayout>
 
 #include "../ComponentWidget.hpp"
-#include <cad_common/ModifierSpinBox.hxx>
+#include <cad_common/widgets/ModifierSpinBox.hxx>
 #include "../../../components/GeometryComponent.hpp"
 
 class TorusWidget final : public ComponentWidget {

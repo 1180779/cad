@@ -2,7 +2,7 @@
 #define TRANSFORMWIDGET_H
 
 #include "ComponentWidget.hpp"
-#include <cad_common/ModifierSpinBox.hxx>
+#include <cad_common/widgets/ModifierSpinBox.hxx>
 #include "../../components/TransformComponent.hpp"
 
 class TransformWidget final : public ComponentWidget {

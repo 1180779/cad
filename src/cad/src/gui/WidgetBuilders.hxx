@@ -1,7 +1,7 @@
 #ifndef CAD_WIDGETBUILDERS_HXX
 #define CAD_WIDGETBUILDERS_HXX
 
-#include <cad_common/WidgetBuilders.hxx>
+#include <cad_common/widgets/WidgetBuilders.hxx>
 #include "components/geometry/VirtualPointPropertiesWidget.hpp"
 
 namespace widgets {
