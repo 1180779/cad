@@ -122,8 +122,6 @@ void Worker::queueCutterMoves(MovesList moves) {
 }
 
 void Worker::workerLoop(const std::stop_token stopToken) {
-    static constexpr auto playbackAdvanceDeltaTime = std::chrono::milliseconds(5);
-
     using Clock = std::chrono::steady_clock;
     auto last = Clock::now();
     auto lastPublish = last;
@@ -137,7 +135,7 @@ void Worker::workerLoop(const std::stop_token stopToken) {
                    || m_finishRequested.load(std::memory_order_relaxed);
         };
         if (m_simulator.playing()) {
-            m_condition.wait_for(lock, playbackAdvanceDeltaTime, condition);
+            m_condition.wait_for(lock, gc_playbackAdvanceDeltaTime, condition);
         } else {
             m_condition.wait(lock, condition);
             resetTimeline = true;

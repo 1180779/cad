@@ -23,6 +23,8 @@ namespace cnc {
 /// Exposes snapshots & queued cutter moves
 class Worker final {
 public:
+    static constexpr auto gc_playbackAdvanceDeltaTime = std::chrono::milliseconds(5);
+    
     using Command = std::function<void(Simulator&)>;
     using CommandQueue = std::deque<Command>;
     using MovesList = std::vector<Move>;

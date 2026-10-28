@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <tuple>
 #include <vector>
 
@@ -7,7 +8,6 @@
 #include <QPainter>
 #include <QSplitter>
 #include <QTextStream>
-#include <QPointer>
 
 #include "factory/CameraFactory.hpp"
 #include "components/PointComponent.hpp"
@@ -27,6 +27,7 @@
 #include "gui/components/geometry/PatchCreatorDialog.hxx"
 #include "gui/CadTitleBar.hpp"
 #include "gui/Theme.hpp"
+#include "gui/toolbars/cnc/CncPanelWidget.hxx"
 #include "gui/toolbars/properties/PropertiesPanelWidget.hxx"
 #include "gui/toolbars/scene/ScenePanelWidget.hpp"
 #include "gui/StatusBarWidget.hpp"
@@ -870,6 +871,7 @@ int main(int argc, char *argv[]) {
     QWidget window;
     window.setWindowFlag(Qt::FramelessWindowHint);
     window.setMinimumSize(QSize(500, 500));
+    window.showMaximized();
 
     // window paints its (now theme-seeded) QPalette::Window background
     window.setAutoFillBackground(true);
@@ -912,19 +914,22 @@ int main(int argc, char *argv[]) {
     const auto scenePanel = new ScenePanelWidget;
     const auto viewportPanel = new ViewportPanelWidget;
     const auto propertiesPanel = new PropertiesPanelWidget;
+    const auto cncPanel = new CncPanelWidget(glW);
 
     scenePanel->setFocusPolicy(Qt::ClickFocus);
     viewportPanel->setFocusPolicy(Qt::ClickFocus);
     propertiesPanel->setFocusPolicy(Qt::ClickFocus);
+    cncPanel->setFocusPolicy(Qt::ClickFocus);
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto panelStack = new SubdividedPanelBar;
     panelStack->registerPanel(0, scenePanel);
     panelStack->registerPanel(1, viewportPanel);
     panelStack->registerPanel(2, propertiesPanel);
+    panelStack->registerPanel(3, cncPanel);
     panelStack->setMinimumWidth(200);
 
-    prepareToolPanels({scenePanel, viewportPanel, propertiesPanel});
+    prepareToolPanels({scenePanel, viewportPanel, propertiesPanel, cncPanel});
 
     // ReSharper disable once CppDFAMemoryLeak
     const auto splitter = new QSplitter(Qt::Horizontal);
@@ -945,10 +950,12 @@ int main(int argc, char *argv[]) {
     const auto *sceneAction = menuBar->addToolPanelAction("Scene");
     const auto *viewportAction = menuBar->addToolPanelAction("Viewport");
     const auto *propertiesAction = menuBar->addToolPanelAction("Properties");
+    const auto *cncAction = menuBar->addToolPanelAction("CNC");
 
     auto *sceneBtn = toolsPanelBar->addPanel("Scene");
     auto *viewportBtn = toolsPanelBar->addPanel("Viewport");
     auto *propertiesBtn = toolsPanelBar->addPanel("Properties", false);
+    auto *cncBtn = toolsPanelBar->addPanel("CNC", false);
 
     wirePanelToggles(
         toolsPanelBar,
@@ -957,11 +964,12 @@ int main(int argc, char *argv[]) {
             {sceneAction, sceneBtn, 0},
             {viewportAction, viewportBtn, 1},
             {propertiesAction, propertiesBtn, 2},
+            {cncAction, cncBtn, 3},
         }
     );
 
     toolsPanelBar->openPanel(2);
-    toolsPanelBar->openPanel(0);
+    toolsPanelBar->openPanel(3);
 
     // intelliJ inspired active-tab accent: the open tab paints accent color
     // only while its tool panel holds focus, falling back to the hover color

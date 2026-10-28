@@ -23,7 +23,7 @@ GridSettingsWidget::GridSettingsWidget(QWidget *parent)
     m_yzPlane = new QCheckBox("YZ Plane (x = 0)");
 
     m_xyPlane->setChecked(false);
-    m_xzPlane->setChecked(true);
+    m_xzPlane->setChecked(false);
     m_yzPlane->setChecked(false);
 
     groupLayout->addWidget(m_xyPlane);
@@ -40,7 +40,7 @@ GridSettingsWidget::GridSettingsWidget(QWidget *parent)
     const auto axesLayout = new QVBoxLayout(axesBox);
     const auto addAxisCheckBox = [&](const QString &text) {
         const auto axis = new QCheckBox(text);
-        axis->setChecked(true);
+        axis->setChecked(false);
         axesLayout->addWidget(axis);
         return axis;
     };

@@ -17,14 +17,14 @@ namespace cnc {
     /// number of grid cells; the height map stores (subdivisions + 1) samples
     /// per axis
     struct MaterialConfig {
-        float width{100.0f};
-        float depth{100.0f};
-        float thickness{20.0f};
+        float width{200.0f};
+        float depth{200.0f};
+        float thickness{200.0f};
         /// @brief XY centre of the stock in world coordinates
         float centerX{0.0f};
         float centerY{0.0f};
         /// @brief Z coordinate of the initial top surface
-        float topZ{0.0f};
+        float topZ{100.0f};
         int subdivisionsX{gc_defaultSubdivisions};
         int subdivisionsY{gc_defaultSubdivisions};
 
@@ -36,6 +36,7 @@ namespace cnc {
             return std::max(subdivisionsY, 1) + 1;
         }
 
+        static constexpr int gc_minSubdivisions = 8;
         static constexpr int gc_defaultSubdivisions = 512;
         static constexpr int gc_maxSubdivisions = 4096;
         static constexpr float gc_maxExt = 100000.0f;
