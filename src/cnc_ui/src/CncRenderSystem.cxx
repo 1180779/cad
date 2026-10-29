@@ -5,7 +5,7 @@
 
 #include <cnc_ui/CncRenderSystem.hxx>
 
-#include "../../cad/src/CheckMacros.hpp"
+#include "cad_graphics/Checks.hxx"
 
 #include <cad_graphics/PrimitiveMeshes.hxx>
 #include <cad_graphics/ShaderProgramGlBoundBorrow.hxx>
@@ -397,14 +397,14 @@ void CncRenderSystem::drawStock(
     const auto setCommon = [&](const cadg::ShaderProgram& program) {
         const auto glBoundBorrow = program.borrowWithGlBound(*m_gl);
         glBoundBorrow.bind();
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uCameraPos", camPos));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setMat4("uViewProj", viewProjection));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setInt("uHeights", 0));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setIVec2("uSize", nx, ny));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uMin", minimum));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uWorldSize", size));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uColor", color));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setInt("uFlatShading", flatShading ? 1 : 0));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCameraPos", camPos));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniformMatrix4f("uViewProj", viewProjection));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1i("uHeights", 0));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform2i("uSize", nx, ny));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uMin", minimum));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uWorldSize", size));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uColor", color));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1i("uFlatShading", flatShading ? 1 : 0));
     };
 
     m_gl->glActiveTexture(GL_TEXTURE0);
@@ -432,7 +432,7 @@ void CncRenderSystem::drawPaths(const cadm::Mat4& viewProjection) const {
 
     const auto glBoundBorrow = m_lineProgram.borrowWithGlBound(*m_gl);
     glBoundBorrow.bind();
-    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setMat4("uViewProj", viewProjection));
+    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniformMatrix4f("uViewProj", viewProjection));
     m_pathMesh.draw<GL_LINES>(*m_gl);
     m_gl->glEnable(GL_DEPTH_TEST);
 }
@@ -453,17 +453,17 @@ void CncRenderSystem::drawTool(
 
     const auto glBoundBorrow = m_toolProgram.borrowWithGlBound(*m_gl);
     glBoundBorrow.bind();
-    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setMat4("uViewProj", viewProjection));
-    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uCameraPos", camPos));
-    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setInt("uFlatShading", flatShading ? 1 : 0));
+    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniformMatrix4f("uViewProj", viewProjection));
+    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCameraPos", camPos));
+    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1i("uFlatShading", flatShading ? 1 : 0));
 
     const auto drawMesh = [&](
         const cadg::GpuMesh& mesh,
         const cadm::Mat4& model,
         const cadm::Vec3& color
         ) {
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setMat4("uModel", model));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uColor", color));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniformMatrix4f("uModel", model));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uColor", color));
         mesh.draw(*m_gl);
     };
 

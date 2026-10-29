@@ -5,7 +5,7 @@
 #ifndef CAD_RENDERSYSTEM_H
 #define CAD_RENDERSYSTEM_H
 
-#include "ShaderProgram.hpp"
+#include "cad_graphics/ShaderProgram.hxx"
 #include "Quad.hpp"
 #include "ViewportTypes.hpp"
 #include "components/GeometryComponent.hpp"
@@ -187,16 +187,16 @@ private:
 
     AxesComponent m_pivotAxes;
 
-    std::unique_ptr<ShaderProgram> m_basicShader = std::make_unique<ShaderProgram>();
-    std::unique_ptr<ShaderProgram> m_wireframeShader = std::make_unique<ShaderProgram>();
-    std::unique_ptr<ShaderProgram> m_axesShader = std::make_unique<ShaderProgram>();
-    std::unique_ptr<ShaderProgram> m_gridShader = std::make_unique<ShaderProgram>();
-    std::unique_ptr<ShaderProgram> m_selectionRectShader = std::make_unique<ShaderProgram>();
-    std::unique_ptr<ShaderProgram> m_pointShader = std::make_unique<ShaderProgram>();
-    std::unique_ptr<ShaderProgram> m_bezierCurveShader = std::make_unique<ShaderProgram>();
-    std::unique_ptr<ShaderProgram> m_bezierSurfaceShader = std::make_unique<ShaderProgram>();
-    std::unique_ptr<ShaderProgram> m_gregorySurfaceShader = std::make_unique<ShaderProgram>();
-    std::unique_ptr<ShaderProgram> m_stereoCompositeShader = std::make_unique<ShaderProgram>();
+    cadg::ShaderProgram m_basicShader;
+    cadg::ShaderProgram m_wireframeShader;
+    cadg::ShaderProgram m_axesShader;
+    cadg::ShaderProgram m_gridShader;
+    cadg::ShaderProgram m_selectionRectShader;
+    cadg::ShaderProgram m_pointShader;
+    cadg::ShaderProgram m_bezierCurveShader;
+    cadg::ShaderProgram m_bezierSurfaceShader;
+    cadg::ShaderProgram m_gregorySurfaceShader;
+    cadg::ShaderProgram m_stereoCompositeShader;
     std::unique_ptr<Quad> m_screenQuad;
 
     /// @brief UBO with view/projection/VP/invVP

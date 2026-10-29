@@ -8,7 +8,7 @@
 #include <numeric>
 #include <ranges>
 
-#include "CheckMacros.hpp"
+#include "cad_graphics/Checks.hxx"
 #include "GlCommon.hpp"
 
 PointRegistry::~PointRegistry() {

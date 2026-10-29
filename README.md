@@ -89,9 +89,11 @@ The libraries used are:
 - **Catch2** &mdash; tests
 - **cad_math** &mdash; this project's reusable vector, matrix, and quaternion types
 - **cad_common** &mdash; reusable Qt widgets and widget builders
+- **cad_graphics** &mdash; reusable graphics and openGl wrappers
 
-oneTBB, valijson, Catch2, cad_math, and cad_common are supplied via CMake's FetchContent. Qt needs to be
-installed on your system, with paths set in CMake options if needed, e.g.
+oneTBB, valijson, Catch2, cad_math, cad_common, and cad_graphics are supplied
+via CMake's FetchContent. Qt needs to be installed on your system, with paths
+set in CMake options if needed, e.g.
 ```
 -DCMAKE_PREFIX_PATH=C:\Qt\6.10.2\msvc2022_64
 ```

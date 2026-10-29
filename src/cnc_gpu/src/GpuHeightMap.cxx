@@ -4,7 +4,7 @@
 
 #include "cnc_gpu/GpuHeightMap.hxx"
 #include "../../../../cad_graphics/src/include/cad_graphics/Gl.hxx"
-#include "../../cad/src/CheckMacros.hpp"
+#include "cad_graphics/Checks.hxx"
 #include "cad_graphics/ShaderProgramGlBoundBorrow.hxx"
 
 #include <algorithm>
@@ -299,12 +299,12 @@ namespace cnc::gpu {
         const auto glBoundBorrow = cadg::ShaderProgramGlBoundBorrow(m_program, m_gl);
         glBoundBorrow.bind();
         m_gl->glBindVertexArray(m_vao);
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setIVec2("uStockSize", nx, ny));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockWMinX", m_material.centerX - m_material.width * 0.5f));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockWMinY", m_material.centerY - m_material.depth * 0.5f));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockCellWResolutionX", m_material.width / static_cast<float>(nx - 1)));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockCellWResolutionY", m_material.depth / static_cast<float>(ny - 1)));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockWBottom", m_material.topZ - m_material.thickness));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform2i("uStockSize", nx, ny));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uStockWMinX", m_material.centerX - m_material.width * 0.5f));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uStockWMinY", m_material.centerY - m_material.depth * 0.5f));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uStockCellWResolutionX", m_material.width / static_cast<float>(nx - 1)));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uStockCellWResolutionY", m_material.depth / static_cast<float>(ny - 1)));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uStockWBottom", m_material.topZ - m_material.thickness));
 
         std::size_t consumed = 0;
         for (std::size_t i = first; i < end; ++i) {
@@ -318,10 +318,10 @@ namespace cnc::gpu {
             }
 
             m_gl->glScissor(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
-            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uCutterWFrom", move.from));
-            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uCutterWTo", move.to));
-            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uCutterRadius", move.tool.radius()));
-            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setInt("uCutterType", move.tool.type == ToolType::ball ? 0 : 1));
+            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCutterWFrom", move.from));
+            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCutterWTo", move.to));
+            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uCutterRadius", move.tool.radius()));
+            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1i("uCutterType", move.tool.type == ToolType::ball ? 0 : 1));
             m_gl->glDrawArrays(GL_TRIANGLES, 0, 3);
             ++consumed;
         }

@@ -4,7 +4,7 @@
 
 #include "RenderSystem.hpp"
 
-#include "CheckMacros.hpp"
+#include "cad_graphics/Checks.hxx"
 #include "GlCommon.hpp"
 #include "Scene.hpp"
 #include "utils/BezierUtils.hpp"
@@ -21,6 +21,10 @@
 #include <cmath>
 #include <vector>
 #include <concepts>
+#include <filesystem>
+#include <initializer_list>
+#include <utility>
+#include <QCoreApplication>
 
 #include "components/geometry/GregoryComponent.hxx"
 #include "components/geometry/PatchComponent.hxx"
@@ -44,127 +48,67 @@ namespace {
 }
 
 void RenderSystem::initialize() {
-    SHADER_ATTACHING_CHECK(m_basicShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/basicShader.vert"));
-    SHADER_ATTACHING_CHECK(m_basicShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/basicShader.frag"));
+    const auto gl = getGl();
+    const auto shaderDirectory = std::filesystem::path(QCoreApplication::applicationDirPath().toStdWString()) / "shaders";
+    const auto loadProgram = [gl](std::initializer_list<cadg::ShaderFile> files) {
+        auto program = cadg::ShaderProgram::fromFiles(*gl, std::span{files.begin(), files.size()});
+        if (!program) {
+            qFatal("Failed to load CAD shader program: %s", program.error().c_str());
+        }
+        return std::move(*program);
+    };
 
-    SHADER_ATTACHING_CHECK(
-        m_wireframeShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/wireframe/wireframeShader.vert")
-    );
-    SHADER_ATTACHING_CHECK(
-        m_wireframeShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/wireframe/wireframeShader.frag")
-    );
-
-    SHADER_ATTACHING_CHECK(m_axesShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/axis/axisShader.vert"));
-    SHADER_ATTACHING_CHECK(m_axesShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/axis/axisShader.frag"));
-
-    SHADER_ATTACHING_CHECK(m_gridShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/grid/gridShader.vert"));
-    SHADER_ATTACHING_CHECK(m_gridShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/grid/gridShader.frag"));
-
-    SHADER_ATTACHING_CHECK(
-        m_selectionRectShader->attachShaderFromFile(
-            GL_VERTEX_SHADER,
-            "shaders/selectionRect/selectionRectShader.vert"
-        )
-    );
-    SHADER_ATTACHING_CHECK(
-        m_selectionRectShader->attachShaderFromFile(
-            GL_FRAGMENT_SHADER,
-            "shaders/selectionRect/selectionRectShader.frag"
-        )
-    );
-
-    SHADER_ATTACHING_CHECK(m_pointShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/point/pointShader.vert"));
-    SHADER_ATTACHING_CHECK(m_pointShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/point/pointShader.frag"));
-
-    SHADER_ATTACHING_CHECK(
-        m_bezierCurveShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/bezierCurve/bezierCurveShader.vert")
-    );
-    SHADER_ATTACHING_CHECK(
-        m_bezierCurveShader->attachShaderFromFile(
-            GL_TESS_CONTROL_SHADER,
-            "shaders/bezierCurve/bezierCurveShader.tesc"
-        )
-    );
-    SHADER_ATTACHING_CHECK(
-        m_bezierCurveShader->attachShaderFromFile(
-            GL_TESS_EVALUATION_SHADER,
-            "shaders/bezierCurve/bezierCurveShader.tese"
-        )
-    );
-    SHADER_ATTACHING_CHECK(
-        m_bezierCurveShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/bezierCurve/bezierCurveShader.frag")
-    );
-
-    SHADER_ATTACHING_CHECK(
-        m_bezierSurfaceShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/bezierSurface/bezierSurfaceShader.vert")
-    );
-    SHADER_ATTACHING_CHECK(
-        m_bezierSurfaceShader->attachShaderFromFile(
-            GL_TESS_CONTROL_SHADER,
-            "shaders/bezierSurface/bezierSurfaceShader.tesc"
-        )
-    );
-    SHADER_ATTACHING_CHECK(
-        m_bezierSurfaceShader->attachShaderFromFile(
-            GL_TESS_EVALUATION_SHADER,
-            "shaders/bezierSurface/bezierSurfaceShader.tese"
-        )
-    );
-    SHADER_ATTACHING_CHECK(
-        m_bezierSurfaceShader->attachShaderFromFile(
-            GL_FRAGMENT_SHADER,
-            "shaders/bezierSurface/bezierSurfaceShader.frag"
-        )
-    );
-
-    SHADER_ATTACHING_CHECK(
-        m_gregorySurfaceShader->attachShaderFromFile(
-            GL_VERTEX_SHADER,
-            "shaders/bezierSurface/bezierSurfaceShader.vert"
-        )
-    );
-    SHADER_ATTACHING_CHECK(
-        m_gregorySurfaceShader->attachShaderFromFile(
-            GL_TESS_CONTROL_SHADER,
-            "shaders/gregorySurface/gregorySurfaceShader.tesc"
-        )
-    );
-    SHADER_ATTACHING_CHECK(
-        m_gregorySurfaceShader->attachShaderFromFile(
-            GL_TESS_EVALUATION_SHADER,
-            "shaders/gregorySurface/gregorySurfaceShader.tese"
-        )
-    );
-    SHADER_ATTACHING_CHECK(
-        m_gregorySurfaceShader->attachShaderFromFile(
-            GL_FRAGMENT_SHADER,
-            "shaders/bezierCurve/bezierCurveShader.frag"
-        )
-    );
-
-    SHADER_ATTACHING_CHECK(
-        m_stereoCompositeShader->attachShaderFromFile(GL_VERTEX_SHADER, "shaders/stereo/stereoComposite.vert")
-    );
-    SHADER_ATTACHING_CHECK(
-        m_stereoCompositeShader->attachShaderFromFile(GL_FRAGMENT_SHADER, "shaders/stereo/stereoComposite.frag")
-    );
-
-    SHADER_COMPILATION_CHECK(m_basicShader->compile());
-    SHADER_COMPILATION_CHECK(m_wireframeShader->compile());
-    SHADER_COMPILATION_CHECK(m_axesShader->compile());
-    SHADER_COMPILATION_CHECK(m_gridShader->compile());
-    SHADER_COMPILATION_CHECK(m_selectionRectShader->compile());
-    SHADER_COMPILATION_CHECK(m_pointShader->compile());
-    SHADER_COMPILATION_CHECK(m_bezierCurveShader->compile());
-    SHADER_COMPILATION_CHECK(m_bezierSurfaceShader->compile());
-    SHADER_COMPILATION_CHECK(m_gregorySurfaceShader->compile());
-    SHADER_COMPILATION_CHECK(m_stereoCompositeShader->compile());
+    m_basicShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "basicShader.vert"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "basicShader.frag"},
+    });
+    m_wireframeShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "wireframe/wireframeShader.vert"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "wireframe/wireframeShader.frag"},
+    });
+    m_axesShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "axis/axisShader.vert"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "axis/axisShader.frag"},
+    });
+    m_gridShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "grid/gridShader.vert"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "grid/gridShader.frag"},
+    });
+    m_selectionRectShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "selectionRect/selectionRectShader.vert"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "selectionRect/selectionRectShader.frag"},
+    });
+    m_pointShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "point/pointShader.vert"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "point/pointShader.frag"},
+    });
+    m_bezierCurveShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "bezierCurve/bezierCurveShader.vert"},
+        {cadg::ShaderStage::TessControl, shaderDirectory / "bezierCurve/bezierCurveShader.tesc"},
+        {cadg::ShaderStage::TessEvaluation, shaderDirectory / "bezierCurve/bezierCurveShader.tese"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "bezierCurve/bezierCurveShader.frag"},
+    });
+    m_bezierSurfaceShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "bezierSurface/bezierSurfaceShader.vert"},
+        {cadg::ShaderStage::TessControl, shaderDirectory / "bezierSurface/bezierSurfaceShader.tesc"},
+        {cadg::ShaderStage::TessEvaluation, shaderDirectory / "bezierSurface/bezierSurfaceShader.tese"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "bezierSurface/bezierSurfaceShader.frag"},
+    });
+    m_gregorySurfaceShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "bezierSurface/bezierSurfaceShader.vert"},
+        {cadg::ShaderStage::TessControl, shaderDirectory / "gregorySurface/gregorySurfaceShader.tesc"},
+        {cadg::ShaderStage::TessEvaluation, shaderDirectory / "gregorySurface/gregorySurfaceShader.tese"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "bezierCurve/bezierCurveShader.frag"},
+    });
+    m_stereoCompositeShader = loadProgram({
+        {cadg::ShaderStage::Vertex, shaderDirectory / "stereo/stereoComposite.vert"},
+        {cadg::ShaderStage::Fragment, shaderDirectory / "stereo/stereoComposite.frag"},
+    });
 
     m_pivotAxes.m_length = 0.5f;
     m_pivotAxes.updateIfNecessary();
     m_screenQuad = std::make_unique<Quad>();
 
-    const auto gl = getGl();
     // UBOs
     gl->glGenBuffers(1, &m_cameraUbo);
     gl->glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUbo);
@@ -222,10 +166,11 @@ void RenderSystem::render(
         return;
     }
 
-    m_wireframeShader->bind();
+    m_wireframeShader.bind(*gl);
     const QColor &lc = theme::active().line;
     SHADER_SET_UNIFORM_CHECK(
-        m_wireframeShader->setUniform4(
+        m_wireframeShader.uniform4f(
+            *gl,
             "u_overrideColor",
             cadm::Vec4{
             lc.redF(),
@@ -286,16 +231,16 @@ void RenderSystem::renderStereo(
     gl->glViewport(0, 0, m_viewportW, m_viewportH);
 
     gl->glDisable(GL_DEPTH_TEST);
-    m_stereoCompositeShader->bind();
+    m_stereoCompositeShader.bind(*gl);
     gl->glActiveTexture(GL_TEXTURE0);
     gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[0]);
     gl->glActiveTexture(GL_TEXTURE1);
     gl->glBindTexture(GL_TEXTURE_2D, m_stereoColor[1]);
-    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uLeft", 0));
-    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uRight", 1));
-    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader->setUniform1("uLuminance", luminance ? 1 : 0));
+    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader.uniform1i(*gl, "uLeft", 0));
+    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader.uniform1i(*gl, "uRight", 1));
+    SHADER_SET_UNIFORM_CHECK(m_stereoCompositeShader.uniform1i(*gl, "uLuminance", luminance ? 1 : 0));
     m_screenQuad->draw();
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
     gl->glActiveTexture(GL_TEXTURE0);
     gl->glEnable(GL_DEPTH_TEST);
 }
@@ -322,19 +267,19 @@ void RenderSystem::renderBoxSelectionRect(
     gl->glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    m_selectionRectShader->bind();
+    m_selectionRectShader.bind(*gl);
     gl->glBindVertexArray(m_selectionRectVAO);
 
     // fill
-    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectColor));
+    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader.uniform4f(*gl, "u_color", s_selectionRectColor));
     gl->glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     // outline
-    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader->setUniform4("u_color", s_selectionRectOutlineColor));
+    SHADER_SET_UNIFORM_CHECK(m_selectionRectShader.uniform4f(*gl, "u_color", s_selectionRectOutlineColor));
     gl->glDrawArrays(GL_LINE_LOOP, 0, 4);
 
     gl->glBindVertexArray(0);
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::renderPivotMarker(
@@ -343,10 +288,10 @@ void RenderSystem::renderPivotMarker(
     const auto gl = getGl();
     const cadm::Mat4 model = cadm::Mat4::translation(pos);
 
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", model));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
+    m_wireframeShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniformMatrix4f(*gl, "model", model));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform1f(*gl, "u_highlightStrength", s_noSelectionHS));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform4f(*gl, "u_overrideColor", cadm::Vec4{}));
 
     gl->glBindVertexArray(m_pivotAxes.m_VAO);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pivotAxes.m_EBO_Lines);
@@ -357,7 +302,7 @@ void RenderSystem::renderPivotMarker(
         nullptr
     );
     gl->glBindVertexArray(0);
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::renderTransformAxis(
@@ -365,48 +310,45 @@ void RenderSystem::renderTransformAxis(
     const cadm::Mat4 &axisModel,
     const int axesMask
 ) const {
-    m_axesShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", axisModel));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", pivot));
+    const auto gl = getGl();
+    m_axesShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniformMatrix4f(*gl, "u_model", axisModel));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniform3f(*gl, "u_axisOrigin", pivot));
     SHADER_SET_UNIFORM_CHECK(
-        m_axesShader->setUniform2(
+        m_axesShader.uniform2f(
+            *gl,
             "u_viewport",
             cadm::Vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
         )
     );
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", axesMask));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", 0));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniform1f(*gl, "u_lineWidth", 2.0f));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniform1i(*gl, "u_axesMask", axesMask));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniform1i(*gl, "u_lodFade", 0));
     m_screenQuad->draw();
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::shutdown() {
-    UNIQUE_PTR_RELEASE_CHECK(m_basicShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_wireframeShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_axesShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_gridShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_selectionRectShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_pointShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_bezierCurveShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_bezierSurfaceShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_gregorySurfaceShader.release());
-    UNIQUE_PTR_RELEASE_CHECK(m_stereoCompositeShader.release());
+    const auto gl = getGl();
+    for (auto* program : {
+        &m_basicShader, &m_wireframeShader, &m_axesShader, &m_gridShader, &m_selectionRectShader,
+        &m_pointShader, &m_bezierCurveShader, &m_bezierSurfaceShader, &m_gregorySurfaceShader,
+        &m_stereoCompositeShader,
+    }) {
+        program->destroy(*gl);
+    }
 
     if (m_selectionRectVAO != 0) {
-        const auto gl = getGl();
         gl->glDeleteBuffers(1, &m_selectionRectVBO);
         gl->glDeleteVertexArrays(1, &m_selectionRectVAO);
     }
 
     if (m_cameraUbo != 0) {
-        const auto gl = getGl();
         gl->glDeleteBuffers(1, &m_cameraUbo);
         gl->glDeleteBuffers(1, &m_paletteUbo);
     }
 
     if (m_stereoFbo[0] != 0) {
-        const auto gl = getGl();
         gl->glDeleteFramebuffers(2, m_stereoFbo);
         gl->glDeleteTextures(2, m_stereoColor);
         gl->glDeleteRenderbuffers(2, m_stereoDepth);
@@ -416,30 +358,33 @@ void RenderSystem::shutdown() {
 void RenderSystem::renderInfiniteGrid(
     const cadm::Mat4 &view
 ) const {
+    const auto gl = getGl();
     const cadm::Vec3 cameraForward{-view.row(2).xyz()};
-    m_gridShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_gridPlanes", m_gridPlanes));
-    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform3("u_viewDir", cameraForward));
-    SHADER_SET_UNIFORM_CHECK(m_gridShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
+    m_gridShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_gridShader.uniform1i(*gl, "u_gridPlanes", m_gridPlanes));
+    SHADER_SET_UNIFORM_CHECK(m_gridShader.uniform3f(*gl, "u_viewDir", cameraForward));
+    SHADER_SET_UNIFORM_CHECK(m_gridShader.uniform1i(*gl, "u_lodFade", m_gridLodFade ? 1 : 0));
     m_screenQuad->draw();
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::renderInfiniteAxes() const {
-    m_axesShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniformMat4("u_model", cadm::Mat4::identity()));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform3("u_axisOrigin", cadm::Vec3{}));
+    const auto gl = getGl();
+    m_axesShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniformMatrix4f(*gl, "u_model", cadm::Mat4::identity()));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniform3f(*gl, "u_axisOrigin", cadm::Vec3{}));
     SHADER_SET_UNIFORM_CHECK(
-        m_axesShader->setUniform2(
+        m_axesShader.uniform2f(
+            *gl,
             "u_viewport",
             cadm::Vec2{static_cast<cadm::cadf>(m_viewportW), static_cast<cadm::cadf>(m_viewportH)}
         )
     );
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lineWidth", 2.0f));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_axesMask", m_infiniteAxesMask));
-    SHADER_SET_UNIFORM_CHECK(m_axesShader->setUniform1("u_lodFade", m_gridLodFade ? 1 : 0));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniform1f(*gl, "u_lineWidth", 2.0f));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniform1i(*gl, "u_axesMask", m_infiniteAxesMask));
+    SHADER_SET_UNIFORM_CHECK(m_axesShader.uniform1i(*gl, "u_lodFade", m_gridLodFade ? 1 : 0));
     m_screenQuad->draw();
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::renderLineGeometry(const Scene &scene) const {
@@ -456,14 +401,15 @@ void RenderSystem::renderLineGeometry(const Scene &scene) const {
         }
 
         SHADER_SET_UNIFORM_CHECK(
-            m_wireframeShader->setUniform1(
+            m_wireframeShader.uniform1f(
+                *gl,
                 "u_highlightStrength",
                 e->isSelected()
                 ? s_selectionHS
                 : s_noSelectionHS
             )
         );
-        SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
+        SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniformMatrix4f(*gl, "model", transform.value()->getModelMatrix()));
         gl->glBindVertexArray(pGeo->m_VAO);
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pGeo->m_EBO_Lines);
         gl->glDrawElements(GL_LINES, static_cast<GLsizei>(pGeo->m_lineIndices.size()), GL_UNSIGNED_INT, nullptr);
@@ -482,17 +428,17 @@ void RenderSystem::renderActiveCursorColors(const Scene &scene) const {
     }
     const auto gl = getGl();
     const auto *pGeo = geometry.value();
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", s_noSelectionHS));
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
+    m_wireframeShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform4f(*gl, "u_overrideColor", cadm::Vec4{}));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform1f(*gl, "u_highlightStrength", s_noSelectionHS));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniformMatrix4f(*gl, "model", transform.value()->getModelMatrix()));
     gl->glBindVertexArray(pGeo->m_VAO);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pGeo->m_EBO_Lines);
     gl->glDepthFunc(GL_LEQUAL);
     gl->glDrawElements(GL_LINES, static_cast<GLsizei>(pGeo->m_lineIndices.size()), GL_UNSIGNED_INT, nullptr);
     gl->glDepthFunc(GL_LESS);
     gl->glBindVertexArray(0);
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::renderTriangleGeometry(const Scene &scene) const {
@@ -510,14 +456,15 @@ void RenderSystem::renderTriangleGeometry(const Scene &scene) const {
         }
 
         SHADER_SET_UNIFORM_CHECK(
-            m_wireframeShader->setUniform1(
+            m_wireframeShader.uniform1f(
+                *gl,
                 "u_highlightStrength",
                 e->isSelected()
                 ? s_selectionHS
                 : s_noSelectionHS
             )
         );
-        SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", transform.value()->getModelMatrix()));
+        SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniformMatrix4f(*gl, "model", transform.value()->getModelMatrix()));
         gl->glBindVertexArray(pGeo->m_VAO);
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pGeo->m_EBO_Triangles);
         gl->glDrawElements(
@@ -530,7 +477,7 @@ void RenderSystem::renderTriangleGeometry(const Scene &scene) const {
     gl->glDepthMask(GL_TRUE);
 
     gl->glBindVertexArray(0);
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::renderControlPoints(
@@ -539,7 +486,7 @@ void RenderSystem::renderControlPoints(
 ) const {
     if (const auto &pointRegistry = scene.getPointRegistry();
         !pointRegistry.empty()) {
-        m_pointShader->bind();
+        m_pointShader.bind(*gl);
         gl->glBindVertexArray(pointRegistry.getVAO());
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pointRegistry.getEBO());
         gl->glDrawElements(
@@ -549,7 +496,7 @@ void RenderSystem::renderControlPoints(
             nullptr
         );
         gl->glBindVertexArray(0);
-        ShaderProgram::release();
+        cadg::ShaderProgram::unbind(*gl);
     }
 }
 
@@ -567,7 +514,8 @@ void RenderSystem::renderC0BezierCurves(
         if (const int segments = pBezier->segmentCount();
             segments > 0 || pBezier->trailingEdges() > 0) {
             SHADER_SET_UNIFORM_CHECK(
-                m_bezierCurveShader->setUniform1(
+                m_bezierCurveShader.uniform1f(
+                    *gl,
                     "u_highlightStrength",
                     e->isSelected()
                     ? s_selectionHS
@@ -587,7 +535,7 @@ void RenderSystem::renderC0BezierCurves(
             gl->glBindVertexArray(pBezier->getPatchVao());
 
             // render each patch with its own adaptive tessellation count
-            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastPrimitive", 0));
+            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader.uniform1i(*gl, "uLastPrimitive", 0));
             for (int p = 0; p < totalPatches; ++p) {
                 const int base = p * 3;
                 const cadm::Vec3 pts[4] = {
@@ -607,9 +555,10 @@ void RenderSystem::renderC0BezierCurves(
                     static_cast<int>(std::ceil(static_cast<cadm::cadf>(pixels) / 64.0f))
                 );
                 const bool isTrailing = p == totalPatches - 1 && trailing > 0;
-                SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("numInstances", numInstances));
+                SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader.uniform1i(*gl, "numInstances", numInstances));
                 SHADER_SET_UNIFORM_CHECK(
-                    m_bezierCurveShader->setUniform1(
+                    m_bezierCurveShader.uniform1i(
+                        *gl,
                         "uLastDegree",
                         isTrailing
                         ? trailing
@@ -633,7 +582,8 @@ void RenderSystem::renderC0BezierCurves(
     ) {
         if (pBezier->getShowPolygon() && pBezier->getPolygonIndexCount() >= 2) {
             SHADER_SET_UNIFORM_CHECK(
-                m_wireframeShader->setUniform1(
+                m_wireframeShader.uniform1f(
+                    *gl,
                     "u_highlightStrength",
                     e->isSelected()
                     ? s_selectionHS
@@ -641,7 +591,7 @@ void RenderSystem::renderC0BezierCurves(
                 )
             );
             static constexpr cadm::Vec4 polygonColor{0.3f, 0.6f, 1.0f, 1.0f};
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", polygonColor));
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform4f(*gl, "u_overrideColor", polygonColor));
             gl->glBindVertexArray(pBezier->getPolygonVao());
             gl->glDrawElements(
                 GL_LINE_STRIP,
@@ -661,15 +611,15 @@ void RenderSystem::renderC0BezierCurves(
     };
 
     // control polygons
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    m_wireframeShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniformMatrix4f(*gl, "model", cadm::Mat4::identity()));
     forEachBezier(renderControlPolygon);
     gl->glBindVertexArray(0);
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
-    ShaderProgram::release();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform4f(*gl, "u_overrideColor", cadm::Vec4{}));
+    cadg::ShaderProgram::unbind(*gl);
 
     // tessellated curves
-    m_bezierCurveShader->bind();
+    m_bezierCurveShader.bind(*gl);
     forEachBezier(renderTesselated);
 }
 
@@ -697,9 +647,9 @@ void RenderSystem::renderC2BezierCurves(
     };
 
     // tessellated curves
-    m_bezierCurveShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastDegree", 3));
-    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("uLastPrimitive", 0));
+    m_bezierCurveShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader.uniform1i(*gl, "uLastDegree", 3));
+    SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader.uniform1i(*gl, "uLastPrimitive", 0));
     gl->glPatchParameteri(GL_PATCH_VERTICES, 4);
     forEachBezier(
         [&](const Entity *e, const bezierPatchCurve auto *pBezier) {
@@ -708,7 +658,7 @@ void RenderSystem::renderC2BezierCurves(
                 return;
             }
             const auto &bps = pBezier->getBernsteinPositions();
-            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("u_highlightStrength", highlight(e)));
+            SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader.uniform1f(*gl, "u_highlightStrength", highlight(e)));
             gl->glBindVertexArray(pBezier->getPatchVao());
             for (int p = 0; p < segments; ++p) {
                 const cadm::Vec3 pts[4] = {
@@ -727,7 +677,7 @@ void RenderSystem::renderC2BezierCurves(
                     1,
                     static_cast<int>(std::ceil(static_cast<cadm::cadf>(pixels) / 64.0f))
                 );
-                SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader->setUniform1("numInstances", numInstances));
+                SHADER_SET_UNIFORM_CHECK(m_bezierCurveShader.uniform1i(*gl, "numInstances", numInstances));
                 gl->glDrawElementsInstanced(
                     GL_PATCHES,
                     4,
@@ -739,24 +689,24 @@ void RenderSystem::renderC2BezierCurves(
         }
     );
     gl->glBindVertexArray(0);
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 
     // overlays (bernstein points/polygon, de Boor polygon)
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    m_wireframeShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniformMatrix4f(*gl, "model", cadm::Mat4::identity()));
     const auto drawWire = [&](
         const cadm::Vec4 &color,
         const GLuint vao,
         const GLenum mode,
         const int count
     ) {
-        SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", color));
+        SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform4f(*gl, "u_overrideColor", color));
         gl->glBindVertexArray(vao);
         gl->glDrawElements(mode, count, GL_UNSIGNED_INT, nullptr);
     };
     forEachBezier(
         [&](const Entity *e, const bezierPatchCurve auto *pBezier) {
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", highlight(e)));
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform1f(*gl, "u_highlightStrength", highlight(e)));
             if (pBezier->segmentCount() > 0) {
                 if (pBezier->getShowBernsteinCps()) {
                     gl->glPointSize(6.0f);
@@ -788,8 +738,8 @@ void RenderSystem::renderC2BezierCurves(
         }
     );
     gl->glBindVertexArray(0);
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
-    ShaderProgram::release();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform4f(*gl, "u_overrideColor", cadm::Vec4{}));
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::renderBezierCurves(
@@ -814,7 +764,8 @@ void RenderSystem::drawPatchSurface(
         return;
     }
     SHADER_SET_UNIFORM_CHECK(
-        m_bezierSurfaceShader->setUniform2(
+        m_bezierSurfaceShader.uniform2f(
+            *gl,
             "uViewport",
             static_cast<float>(m_viewportW),
             static_cast<float>(m_viewportH)
@@ -841,21 +792,22 @@ void RenderSystem::drawPatchSurface(
     patch->syncTrimToGpu();
     const bool trimmed = patch->getTrim().enabled && patch->getTrimTexture() != 0;
     SHADER_SET_UNIFORM_CHECK(
-        m_bezierSurfaceShader->setUniform1(
+        m_bezierSurfaceShader.uniform1i(
+            *gl,
             "uTrimEnabled",
             trimmed
             ? 1
             : 0
         )
     );
-    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uCountX", patch->getPatchCountX()));
-    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uCountY", patch->getPatchCountY()));
-    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uMinTessLevel", m_performanceConfig.minTessLevel));
-    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uMaxTessLevel", m_performanceConfig.maxTessLevel));
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader.uniform1i(*gl, "uCountX", patch->getPatchCountX()));
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader.uniform1i(*gl, "uCountY", patch->getPatchCountY()));
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader.uniform1f(*gl, "uMinTessLevel", m_performanceConfig.minTessLevel));
+    SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader.uniform1f(*gl, "uMaxTessLevel", m_performanceConfig.maxTessLevel));
     if (trimmed) {
         gl->glActiveTexture(GL_TEXTURE0);
         gl->glBindTexture(GL_TEXTURE_2D, patch->getTrimTexture());
-        SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uTrimMask", 0));
+        SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader.uniform1i(*gl, "uTrimMask", 0));
     }
 
     gl->glBindVertexArray(patch->getPatchVao());
@@ -863,28 +815,29 @@ void RenderSystem::drawPatchSurface(
         const int lines = (dir == 0
                                ? patch->getGridDivisionsV()
                                : patch->getGridDivisionsU()) + 1;
-        SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uLines", lines));
-        SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uDir", dir));
+        SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader.uniform1i(*gl, "uLines", lines));
+        SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader.uniform1i(*gl, "uDir", dir));
         for (int q = 0; q < patches; ++q) {
             if (subs[q] == 0) {
                 continue;
             }
             SHADER_SET_UNIFORM_CHECK(
-                m_bezierSurfaceShader->setUniform1(
+                m_bezierSurfaceShader.uniform1f(
+                    *gl,
                     "u_highlightStrength",
                     patch->isPatchSelected(q)
                     ? s_singlePatchSelectionHS
                     : entityHl
                 )
             );
-            SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader->setUniform1("uSub", subs[q]));
+            SHADER_SET_UNIFORM_CHECK(m_bezierSurfaceShader.uniform1i(*gl, "uSub", subs[q]));
             // quads are emitted row-major over (patchCountY, patchCountX), see
             // PatchComponent::patchCoords
             SHADER_SET_UNIFORM_CHECK(
-                m_bezierSurfaceShader->setUniform1("uQuadX", q % std::max(1, patch->getPatchCountX()))
+                m_bezierSurfaceShader.uniform1i(*gl, "uQuadX", q % std::max(1, patch->getPatchCountX()))
             );
             SHADER_SET_UNIFORM_CHECK(
-                m_bezierSurfaceShader->setUniform1("uQuadY", q / std::max(1, patch->getPatchCountX()))
+                m_bezierSurfaceShader.uniform1i(*gl, "uQuadY", q / std::max(1, patch->getPatchCountX()))
             );
             gl->glDrawElementsInstanced(
                 GL_PATCHES,
@@ -904,9 +857,9 @@ void RenderSystem::drawPatchNet(const PatchComponent *patch, const cadm::cadf hl
         return;
     }
     const auto gl = getGl();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", hl));
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform1f(*gl, "u_highlightStrength", hl));
     SHADER_SET_UNIFORM_CHECK(
-        m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{0.9f, 0.6f, 0.1f, 1.0f})
+        m_wireframeShader.uniform4f(*gl, "u_overrideColor", cadm::Vec4{0.9f, 0.6f, 0.1f, 1.0f})
     );
     gl->glBindVertexArray(patch->getNetVao());
     gl->glDrawElements(GL_LINES, patch->getNetIndexCount(), GL_UNSIGNED_INT, nullptr);
@@ -937,24 +890,24 @@ void RenderSystem::renderPatches(
         }
     };
 
-    m_bezierSurfaceShader->bind();
+    m_bezierSurfaceShader.bind(*gl);
     gl->glPatchParameteri(GL_PATCH_VERTICES, 16);
     forEachPatch(
         [&](const Entity *e, const PatchComponent *patch) {
             drawPatchSurface(patch, highlight(e), view, projection);
         }
     );
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    m_wireframeShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniformMatrix4f(*gl, "model", cadm::Mat4::identity()));
     forEachPatch(
         [&](const Entity *e, const PatchComponent *patch) {
             drawPatchNet(patch, highlight(e));
         }
     );
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
-    ShaderProgram::release();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform4f(*gl, "u_overrideColor", cadm::Vec4{}));
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::drawGregorySurface(
@@ -971,7 +924,8 @@ void RenderSystem::drawGregorySurface(
         return;
     }
     SHADER_SET_UNIFORM_CHECK(
-        m_gregorySurfaceShader->setUniform2(
+        m_gregorySurfaceShader.uniform2f(
+            *gl,
             "uViewport",
             static_cast<float>(m_viewportW),
             static_cast<float>(m_viewportH)
@@ -991,12 +945,12 @@ void RenderSystem::drawGregorySurface(
                       : 0;
     }
 
-    SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("u_highlightStrength", entityHl));
-    SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uMinTessLevel", m_performanceConfig.minTessLevel));
-    SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uMaxTessLevel", m_performanceConfig.maxTessLevel));
+    SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader.uniform1f(*gl, "u_highlightStrength", entityHl));
+    SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader.uniform1f(*gl, "uMinTessLevel", m_performanceConfig.minTessLevel));
+    SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader.uniform1f(*gl, "uMaxTessLevel", m_performanceConfig.maxTessLevel));
     gl->glBindVertexArray(gregory->getPatchVao());
     for (int dir = 0; dir < 2; ++dir) {
-        SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uDir", dir));
+        SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader.uniform1i(*gl, "uDir", dir));
         for (int net = 0; net < nets; ++net) {
             if (subs[net] == 0) {
                 continue;
@@ -1004,8 +958,8 @@ void RenderSystem::drawGregorySurface(
             const int lines = (dir == 0
                                    ? gregory->getGridDivisionsV(net)
                                    : gregory->getGridDivisionsU(net)) + 1;
-            SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uLines", lines));
-            SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader->setUniform1("uSub", subs[net]));
+            SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader.uniform1i(*gl, "uLines", lines));
+            SHADER_SET_UNIFORM_CHECK(m_gregorySurfaceShader.uniform1i(*gl, "uSub", subs[net]));
             gl->glDrawElementsInstanced(
                 GL_PATCHES,
                 netPts,
@@ -1025,7 +979,7 @@ void RenderSystem::renderGregory(
 ) const {
     const auto gl = getGl();
 
-    m_gregorySurfaceShader->bind();
+    m_gregorySurfaceShader.bind(*gl);
     gl->glPatchParameteri(GL_PATCH_VERTICES, 20);
     const auto forEachGregory = [&](const auto &doWork) {
         for (const auto &e : scene.getEntities()) {
@@ -1048,26 +1002,26 @@ void RenderSystem::renderGregory(
             drawGregorySurface(gregory, hl, view, projection);
         }
     );
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    m_wireframeShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniformMatrix4f(*gl, "model", cadm::Mat4::identity()));
     SHADER_SET_UNIFORM_CHECK(
-        m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{0.2f, 0.75f, 0.9f, 1.0f})
+        m_wireframeShader.uniform4f(*gl, "u_overrideColor", cadm::Vec4{0.2f, 0.75f, 0.9f, 1.0f})
     );
     forEachGregory(
         [&](const GregoryComponent *gregory, const cadm::cadf hl) {
             if (!gregory->getShowVectors() || gregory->getVectorsIndexCount() < 2) {
                 return;
             }
-            SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform1("u_highlightStrength", hl));
+            SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform1f(*gl, "u_highlightStrength", hl));
             gl->glBindVertexArray(gregory->getVectorsVao());
             gl->glDrawElements(GL_LINES, gregory->getVectorsIndexCount(), GL_UNSIGNED_INT, nullptr);
             gl->glBindVertexArray(0);
         }
     );
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
-    ShaderProgram::release();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform4f(*gl, "u_overrideColor", cadm::Vec4{}));
+    cadg::ShaderProgram::unbind(*gl);
 }
 
 void RenderSystem::renderPreviewPatch(
@@ -1078,19 +1032,19 @@ void RenderSystem::renderPreviewPatch(
 ) const {
     const auto gl = getGl();
 
-    m_bezierSurfaceShader->bind();
+    m_bezierSurfaceShader.bind(*gl);
     gl->glPatchParameteri(GL_PATCH_VERTICES, 16);
     drawPatchSurface(&patch, s_selectionHS, view, projection);
-    ShaderProgram::release();
+    cadg::ShaderProgram::unbind(*gl);
 
-    m_wireframeShader->bind();
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniformMat4("model", cadm::Mat4::identity()));
+    m_wireframeShader.bind(*gl);
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniformMatrix4f(*gl, "model", cadm::Mat4::identity()));
     drawPatchNet(&patch, s_selectionHS);
-    SHADER_SET_UNIFORM_CHECK(m_wireframeShader->setUniform4("u_overrideColor", cadm::Vec4{}));
-    ShaderProgram::release();
+    SHADER_SET_UNIFORM_CHECK(m_wireframeShader.uniform4f(*gl, "u_overrideColor", cadm::Vec4{}));
+    cadg::ShaderProgram::unbind(*gl);
 
     if (!registry.empty()) {
-        m_pointShader->bind();
+        m_pointShader.bind(*gl);
         gl->glBindVertexArray(registry.getVAO());
         gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, registry.getEBO());
         gl->glDrawElements(
@@ -1100,7 +1054,7 @@ void RenderSystem::renderPreviewPatch(
             nullptr
         );
         gl->glBindVertexArray(0);
-        ShaderProgram::release();
+        cadg::ShaderProgram::unbind(*gl);
     }
 }
 
