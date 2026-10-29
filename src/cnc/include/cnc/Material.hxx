@@ -17,14 +17,14 @@ namespace cnc {
 /// number of grid cells; the height map stores (subdivisions + 1) samples
 /// per axis
 struct Material {
-    float width{200.0f};
-    float depth{200.0f};
-    float thickness{200.0f};
+    float width{150.0f};
+    float depth{150.0f};
+    float thickness{50.0f};
     /// @brief XY centre of the stock in world coordinates
     float centerX{0.0f};
     float centerY{0.0f};
     /// @brief Z coordinate of the initial top surface
-    float topZ{100.0f};
+    float topZ{50.0f};
     int subdivisionsX{gc_defaultSubdivisions};
     int subdivisionsY{gc_defaultSubdivisions};
 
