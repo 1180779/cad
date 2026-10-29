@@ -34,8 +34,32 @@ refreshes from the latest CPU snapshot.
 The Mermaid diagram below shows how the parts interact. Arrows are dependency arrows, not data-flow arrows: `A --> B` means B depends on A.
 
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "htmlLabels": false,
+  "themeVariables": {
+    "fontFamily": "sans-serif",
+    "fontSize": "14px",
+    "lineColor": "#64748b",
+    "primaryTextColor": "#1e293b",
+    "clusterBkg": "#f8fafc",
+    "clusterBorder": "#cbd5e1"
+  },
+  "flowchart": {
+    "htmlLabels": false,
+    "diagramPadding": 24,
+    "subGraphTitleMargin": {
+      "top": 12,
+      "bottom": 28
+    },
+    "nodeSpacing": 36,
+    "rankSpacing": 48,
+    "padding": 16,
+    "curve": "basis"
+  }
+}}%%
 graph TD
-    subgraph cnc_core [cnc_core = core logic]
+    subgraph cnc_core ["cnc_core<br/>Core logic"]
         MoveType[MoveType]
         Move[Move]
         ToolType[ToolType]
@@ -46,15 +70,15 @@ graph TD
         Worker[Worker]
     end
 
-    subgraph cnc_gpu [cnc_gpu = height map implementation]
+    subgraph cnc_gpu ["cnc_gpu<br/>Height map"]
         GpuHeightMap[GpuHeightMap]
     end
 
-    subgraph cnc_ui [cnc_ui = rendering]
+    subgraph cnc_ui ["cnc_ui<br/>Rendering"]
         CncRenderSystem[CncRenderSystem]
     end
 
-    subgraph cad_core [cad_core = application integration]
+    subgraph cad_core ["cad_core<br/>Application integration"]
         OpenGlWidget[OpenGlWidget]
         CncPanelWidget[CNC controls]
     end
@@ -75,6 +99,21 @@ graph TD
     GpuHeightMap --> OpenGlWidget
     CncRenderSystem --> OpenGlWidget
     OpenGlWidget -->|used by| CncPanelWidget
+
+    classDef core fill:#eff6ff,stroke:#60a5fa,color:#1e3a8a,stroke-width:1.5px,rx:10,ry:10
+    classDef gpu fill:#ecfdf5,stroke:#34d399,color:#065f46,stroke-width:1.5px,rx:10,ry:10
+    classDef rendering fill:#f5f3ff,stroke:#a78bfa,color:#5b21b6,stroke-width:1.5px,rx:10,ry:10
+    classDef integration fill:#fff7ed,stroke:#fb923c,color:#9a3412,stroke-width:1.5px,rx:10,ry:10
+
+    class MoveType,Move,ToolType,Tool,Material,Snapshot,Simulator,Worker core
+    class GpuHeightMap gpu
+    class CncRenderSystem rendering
+    class OpenGlWidget,CncPanelWidget integration
+
+    style cnc_core fill:#f8fbff,stroke:#93c5fd,rx:14,ry:14
+    style cnc_gpu fill:#f0fdf4,stroke:#6ee7b7,rx:14,ry:14
+    style cnc_ui fill:#faf5ff,stroke:#c4b5fd,rx:14,ry:14
+    style cad_core fill:#fffbeb,stroke:#fdba74,rx:14,ry:14
 ```
 
 `main` is the composition root: it creates `OpenGlWidget` and `CncPanelWidget`,
