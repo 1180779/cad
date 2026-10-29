@@ -7,11 +7,12 @@
 
 namespace cnc {
 float Tool::cuttingLength() const {
+    static constexpr float expectedMultiplier{3.0f};
     switch (type) {
     case ToolType::ball:
-        return std::max(radius(), 0.1f);
+        return std::max(expectedMultiplier * radius(), 0.1f);
     case ToolType::flat:
-        return std::max(3.0f * diameter, 10.0f);
+        return std::max(expectedMultiplier * diameter, 10.0f);
     }
     return 0.0f;
 }
