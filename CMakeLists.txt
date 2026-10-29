@@ -54,7 +54,7 @@ FetchContent_Declare(
 FetchContent_Declare(
         cad_math
         GIT_REPOSITORY https://github.com/1180779/cad_math.git
-        GIT_TAG v1.0.1
+        GIT_TAG v1.0.2
 )
 FetchContent_MakeAvailable(cad_math)
 
