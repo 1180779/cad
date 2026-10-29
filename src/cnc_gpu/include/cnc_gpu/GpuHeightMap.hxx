@@ -9,8 +9,6 @@
 #include <string>
 #include <vector>
 
-#include <QOpenGLFunctions_4_5_Core>
-
 #include "cnc/Material.hxx"
 #include "cnc/ShankCollision.hxx"
 #include "cnc/program/NcProgram.hxx"
@@ -27,7 +25,7 @@ namespace cnc::gpu {
         GpuHeightMap(GpuHeightMap &&) = delete;
         GpuHeightMap &operator=(GpuHeightMap &&) = delete;
 
-        /// @brief Create the textures, FBOs, SSBO and cutter program
+        /// @brief Create the height texture, framebuffer and cutter program
         /// @pre A current openGl context must exist
         /// @param material Cutting material configuration
         /// @param shaderDirectory Directory containing shader sources
@@ -99,9 +97,8 @@ namespace cnc::gpu {
         Material m_material;
         bool m_initialized{};
 
-        GLuint m_textures[2]{};
-        GLuint m_fbos[2]{};
-        std::size_t m_front{};
+        GLuint m_texture{};
+        GLuint m_fbo{};
 
         cadg::ShaderProgram m_program;
         GLuint m_vao{};

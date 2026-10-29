@@ -109,23 +109,21 @@ bool GpuHeightMap::createResources(std::string* error) {
     const int nx = m_material.resolutionX();
     const int ny = m_material.resolutionY();
 
-    m_gl->glGenTextures(2, m_textures);
-    m_gl->glGenFramebuffers(2, m_fbos);
-    for (int i = 0; i < 2; ++i) {
-        m_gl->glBindTexture(GL_TEXTURE_2D, m_textures[i]);
-        m_gl->glTexImage2D(GL_TEXTURE_2D, 0,GL_R32F, nx, ny, 0,GL_RED,GL_FLOAT, nullptr);
-        m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    m_gl->glGenTextures(1, &m_texture);
+    m_gl->glGenFramebuffers(1, &m_fbo);
+    m_gl->glBindTexture(GL_TEXTURE_2D, m_texture);
+    m_gl->glTexImage2D(GL_TEXTURE_2D, 0,GL_R32F, nx, ny, 0,GL_RED,GL_FLOAT, nullptr);
+    m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-        m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_fbos[i]);
-        m_gl->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D, m_textures[i], 0);
-        if (m_gl->glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            m_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            m_gl->glBindTexture(GL_TEXTURE_2D, 0);
-            return fail("Could not create a complete height-map framebuffer.");
-        }
+    m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    m_gl->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D, m_texture, 0);
+    if (m_gl->glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        m_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        m_gl->glBindTexture(GL_TEXTURE_2D, 0);
+        return fail("Could not create a complete height-map framebuffer.");
     }
     m_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
     m_gl->glBindTexture(GL_TEXTURE_2D, 0);
@@ -139,19 +137,18 @@ void GpuHeightMap::destroyResources() {
         return;
     }
     m_program.destroy(m_gl);
-    if (m_textures[0] != 0 || m_textures[1] != 0) {
-        m_gl->glDeleteTextures(2, m_textures);
+    if (m_texture != 0) {
+        m_gl->glDeleteTextures(1, &m_texture);
     }
-    if (m_fbos[0] != 0 || m_fbos[1] != 0) {
-        m_gl->glDeleteFramebuffers(2, m_fbos);
+    if (m_fbo != 0) {
+        m_gl->glDeleteFramebuffers(1, &m_fbo);
     }
     if (m_vao != 0) {
         m_gl->glDeleteVertexArrays(1, &m_vao);
     }
-    m_textures[0] = m_textures[1] = 0;
-    m_fbos[0] = m_fbos[1] = 0;
+    m_texture = 0;
+    m_fbo = 0;
     m_vao = 0;
-    m_front = 0;
 }
 
 void GpuHeightMap::reset() {
@@ -160,14 +157,11 @@ void GpuHeightMap::reset() {
     }
     const int nx = m_material.resolutionX();
     const int ny = m_material.resolutionY();
-    for (const unsigned int fbo : m_fbos) {
-        m_gl->glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        m_gl->glViewport(0, 0, nx, ny);
-        m_gl->glClearColor(m_material.topZ, 0.0f, 0.0f, 0.0f);
-        m_gl->glClear(GL_COLOR_BUFFER_BIT);
-    }
+    m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    m_gl->glViewport(0, 0, nx, ny);
+    m_gl->glClearColor(m_material.topZ, 0.0f, 0.0f, 0.0f);
+    m_gl->glClear(GL_COLOR_BUFFER_BIT);
     m_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    m_front = 0;
 }
 
 std::size_t GpuHeightMap::apply(
@@ -249,19 +243,13 @@ std::size_t GpuHeightMap::applyBatch(
 
     const auto glSnapshot = cadg::GlStateSnapshot::create(m_gl);
 
-    const auto back = m_front ^ 1u;
-    m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbos[m_front]);
-    m_gl->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbos[back]);
-    m_gl->glBlitFramebuffer(0, 0, nx, ny, 0, 0, nx, ny, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_fbos[back]);
+    m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     m_gl->glViewport(0, 0, nx, ny);
     m_gl->glDisable(GL_DEPTH_TEST);
     m_gl->glDisable(GL_CULL_FACE);
     m_gl->glEnable(GL_SCISSOR_TEST);
     m_gl->glEnable(GL_BLEND);
     m_gl->glBlendEquation(GL_MIN);
-    m_gl->glBlendFunc(GL_ONE, GL_ONE);
 
     const auto glBoundBorrow = cadg::ShaderProgramGlBoundBorrow(m_program, m_gl);
     glBoundBorrow.bind();
@@ -300,7 +288,6 @@ std::size_t GpuHeightMap::applyBatch(
         m_gl->glDrawArrays(GL_TRIANGLES, 0, 3);
         ++consumed;
     }
-    m_front ^= consumed > 0;
 
     m_gl->glDisable(GL_SCISSOR_TEST);
     m_gl->glDisable(GL_BLEND);
@@ -333,7 +320,7 @@ std::vector<float> GpuHeightMap::readHeights(const HeightRegion region) const {
     }
 
     std::vector<float> heights(static_cast<std::size_t>(region.width) * region.height);
-    m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbos[m_front]);
+    m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
     m_gl->glPixelStorei(GL_PACK_ALIGNMENT, 1);
     m_gl->glReadPixels(region.x, region.y, region.width, region.height, GL_RED, GL_FLOAT, heights.data());
     m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
@@ -341,7 +328,7 @@ std::vector<float> GpuHeightMap::readHeights(const HeightRegion region) const {
 }
 
 GLuint GpuHeightMap::texture() const {
-    return m_textures[m_front];
+    return m_texture;
 }
 
 const Material& GpuHeightMap::material() const {
