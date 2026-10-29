@@ -4,7 +4,7 @@
 
 #include "CadCameraStrategy.hpp"
 
-#include "../CheckMacros.hpp"
+#include "cad_graphics/Checks.hxx"
 #include "../components/camera/CadCameraComponent.hpp"
 #include "../components/camera/BlenderCameraComponent.hpp"
 #include "../components/TransformComponent.hpp"

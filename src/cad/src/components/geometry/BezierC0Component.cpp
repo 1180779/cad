@@ -11,10 +11,10 @@ BezierC0Component::BezierC0Component(PointRegistry *registry)
 BezierC0Component::~BezierC0Component() {
     const auto gl = getGl();
     m_patchIndexBuf.deleteGpu(gl);
-    m_patchVao.deleteGpu(gl);
+    m_patchVao.destroy(gl);
 
     m_polygonIndexBuf.deleteGpu(gl);
-    m_polygonVao.deleteGpu(gl);
+    m_polygonVao.destroy(gl);
 
     for (const auto subId : m_removeControlPointCallbacks | std::views::values) {
         m_registry->unsubscribeFromRemove(subId);
@@ -277,10 +277,10 @@ void BezierC0Component::syncToGpu() {
     m_patchIndexBuf.syncToGpu(gl);
     m_polygonIndexBuf.syncToGpu(gl);
 
-    if (!m_patchVao.created()) {
-        m_patchVao.setup(gl, m_registry->getPositionVBO(), m_patchIndexBuf.vboId());
+    if (!m_patchVao.valid()) {
+        m_patchVao = createPositionVertexArray(*gl, m_registry->getPositionVBO(), m_patchIndexBuf.vboId());
     }
-    if (!m_polygonVao.created()) {
-        m_polygonVao.setup(gl, m_registry->getPositionVBO(), m_polygonIndexBuf.vboId());
+    if (!m_polygonVao.valid()) {
+        m_polygonVao = createPositionVertexArray(*gl, m_registry->getPositionVBO(), m_polygonIndexBuf.vboId());
     }
 }

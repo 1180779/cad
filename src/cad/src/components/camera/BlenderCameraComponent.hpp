@@ -5,9 +5,9 @@
 #ifndef CAD_CAMERA_HPP
 #define CAD_CAMERA_HPP
 
-#include "cad_math/Mat3.hpp"
-#include "cad_math/Mat4.hpp"
-#include "cad_math/Vec3.hpp"
+#include "cad_math/Mat3.hxx"
+#include "cad_math/Mat4.hxx"
+#include "cad_math/Vec3.hxx"
 #include <QObject>
 #include <numbers>
 

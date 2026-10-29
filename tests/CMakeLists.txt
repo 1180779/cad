@@ -6,7 +6,7 @@ add_executable(cad_math_tests
 
 target_link_libraries(cad_math_tests
         PRIVATE
-        cad_math
+        cad_math::cad_math
         Catch2::Catch2WithMain
 )
 

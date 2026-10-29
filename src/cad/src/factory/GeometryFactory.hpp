@@ -7,7 +7,7 @@
 
 #include "../Scene.hpp"
 #include "../PointRegistry.hpp"
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 #include <vector>
 
 #include "../PatchGeometry.hxx"

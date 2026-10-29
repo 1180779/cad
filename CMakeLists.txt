@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 4.1)
 project(cad)
 
+# Distributable archives need Qt's runtime deployment API (Qt >= 6.5 on Linux).
+# Bundling is opt-in so development builds work on older Qt versions; pass
+# -DCAD_ENABLE_BUNDLE=ON to build the release archives.
+option(CAD_ENABLE_BUNDLE "Build the distributable bundle target" OFF)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -10,6 +15,7 @@ find_package(Qt6 COMPONENTS
         Core
         Gui
         Widgets
+        OpenGL
         OpenGLWidgets
         REQUIRED)
 
@@ -45,8 +51,30 @@ FetchContent_Declare(
         GIT_TAG v3.5.4
 )
 
-add_subdirectory(src/cad_math)
-add_subdirectory(src/common)
+FetchContent_Declare(
+        cad_math
+        GIT_REPOSITORY https://github.com/1180779/cad_math.git
+        GIT_TAG v1.0.2
+)
+FetchContent_MakeAvailable(cad_math)
+
+FetchContent_Declare(
+        cad_graphics
+        GIT_REPOSITORY https://github.com/1180779/cad_graphics.git
+        GIT_TAG v1.1.0
+)
+FetchContent_MakeAvailable(cad_graphics)
+
+FetchContent_Declare(
+        cad_common
+        GIT_REPOSITORY https://github.com/1180779/cad_common.git
+        GIT_TAG v1.1.1
+)
+FetchContent_MakeAvailable(cad_common)
+
+add_subdirectory(src/cnc)
+add_subdirectory(src/cnc_gpu)
+add_subdirectory(src/cnc_ui)
 add_subdirectory(src/ellipse)
 add_subdirectory(src/cad)
 

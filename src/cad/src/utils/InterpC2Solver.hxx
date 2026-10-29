@@ -8,7 +8,7 @@
 #include <span>
 #include <vector>
 
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 
 namespace interpC2 {
     /// @brief Fit a C2 cubic spline through @p points and emit its piecewise Bezier form

@@ -8,9 +8,9 @@
 #include <QCheckBox>
 #include <QDialog>
 
-#include <common/ModifierSpinBox.hpp>
+#include <cad_common/widgets/ModifierSpinBox.hxx>
 
-#include <cad_math/Common.hpp>
+#include <cad_math/Common.hxx>
 
 /// @brief Parameters for one run of the intersection tracer
 struct IntersectionParams {

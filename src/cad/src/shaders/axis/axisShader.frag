@@ -19,10 +19,7 @@ uniform int u_lodFade;
 out vec4 FragColor;
 
 #define AXIS_FADE_FAR 1000.0
-#define AXIS_FAR  0.9999
-#define AXIS_NEAR 0.0001
 #define SOFT_EDGE 1.0
-#define AXIS_DEPTH_BIAS 0.0001
 
 const vec3 AXIS_DIR[3] = vec3[3](
         vec3(1, 0, 0),
@@ -109,6 +106,9 @@ void main()
         float pixDist2 = pixDist * pixDist;
         if (pixDist2 >= threshold2 || pixDist2 >= bestDist2) continue;
 
+        vec4 clip = VP * vec4(hit, 1.0);
+        if (clip.z < -clip.w || clip.z > clip.w) continue;
+
         bestDist2 = pixDist2;
         float alpha = 1.0 - smoothstep(halfW - SOFT_EDGE, halfW + SOFT_EDGE, pixDist);
         float distAlongAxis = abs(dot(hit - u_axisOrigin, d));
@@ -116,8 +116,7 @@ void main()
         bestColor = vec4(AXIS_COLOR[i].rgb, alpha);
         bestHit = hit;
 
-        vec4 clip = VP * vec4(hit, 1.0);
-        bestDepth = clamp((clip.z / clip.w) * 0.5 + 0.5, AXIS_NEAR, AXIS_FAR);
+        bestDepth = (clip.z / clip.w) * 0.5 + 0.5;
     }
 
     // match the grid's grazing-angle LOD fade: thin the axis out where world units per
@@ -129,6 +128,7 @@ void main()
     }
 
     if (bestColor.a < 0.01) discard;
-    gl_FragDepth = clamp(bestDepth - AXIS_DEPTH_BIAS, AXIS_NEAR, AXIS_FAR);
+    // Preserve geometric depth so distant axes cannot occlude solid geometry.
+    gl_FragDepth = bestDepth;
     FragColor = bestColor;
 }

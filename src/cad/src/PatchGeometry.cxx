@@ -7,7 +7,7 @@
 #include <cmath>
 #include <numbers>
 
-#include <cad_math/Mat4.hpp>
+#include <cad_math/Mat4.hxx>
 
 #include "Tools.hxx"
 

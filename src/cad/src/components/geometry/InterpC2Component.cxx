@@ -31,9 +31,9 @@ InterpC2Component::~InterpC2Component() {
     }
 
     const auto gl = getGl();
-    m_patchVao.deleteGpu(gl);
-    m_polylineVao.deleteGpu(gl);
-    m_bernsteinPolyVao.deleteGpu(gl);
+    m_patchVao.destroy(gl);
+    m_polylineVao.destroy(gl);
+    m_bernsteinPolyVao.destroy(gl);
     m_bernsteinVbo.deleteGpu(gl);
     m_patchEbo.deleteGpu(gl);
     m_polylineEbo.deleteGpu(gl);
@@ -189,14 +189,14 @@ void InterpC2Component::syncToGpu() {
     m_patchEbo.syncToGpu(gl);
     m_polylineEbo.syncToGpu(gl);
 
-    if (!m_patchVao.created() && segmentCount() > 0) {
-        m_patchVao.setup(gl, m_bernsteinVbo.vboId(), m_patchEbo.vboId());
+    if (!m_patchVao.valid() && segmentCount() > 0) {
+        m_patchVao = createPositionVertexArray(*gl, m_bernsteinVbo.vboId(), m_patchEbo.vboId());
     }
-    if (!m_bernsteinPolyVao.created() && segmentCount() > 0) {
-        m_bernsteinPolyVao.setup(gl, m_bernsteinVbo.vboId(), m_patchEbo.vboId());
+    if (!m_bernsteinPolyVao.valid() && segmentCount() > 0) {
+        m_bernsteinPolyVao = createPositionVertexArray(*gl, m_bernsteinVbo.vboId(), m_patchEbo.vboId());
     }
-    if (!m_polylineVao.created() && m_points.size() >= 2) {
-        m_polylineVao.setup(gl, m_registry->getPositionVBO(), m_polylineEbo.vboId());
+    if (!m_polylineVao.valid() && m_points.size() >= 2) {
+        m_polylineVao = createPositionVertexArray(*gl, m_registry->getPositionVBO(), m_polylineEbo.vboId());
     }
 
     m_needsUpdate = false;

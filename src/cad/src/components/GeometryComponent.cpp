@@ -6,7 +6,8 @@
 
 #include "GeometryComponent.hpp"
 
-#include "../CheckMacros.hpp"
+#include "GlCommon.hpp"
+#include "cad_graphics/Checks.hxx"
 
 GeometryComponent::~GeometryComponent() {
     if (m_VAO != 0) {

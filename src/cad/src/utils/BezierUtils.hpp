@@ -5,10 +5,10 @@
 #ifndef CAD_BEZIERUTILS_HPP
 #define CAD_BEZIERUTILS_HPP
 
-#include <cad_math/Vec3.hpp>
-#include <cad_math/Vec4.hpp>
-#include <cad_math/Mat4.hpp>
-#include <cad_math/Helpers.hpp>
+#include <cad_math/Vec3.hxx>
+#include <cad_math/Vec4.hxx>
+#include <cad_math/Mat4.hxx>
+#include <cad_math/Helpers.hxx>
 #include <algorithm>
 #include <array>
 #include <cmath>

@@ -5,15 +5,19 @@
 #ifndef CAD_RENDERINGWINDOW_H
 #define CAD_RENDERINGWINDOW_H
 
+#include <chrono>
+#include <cstddef>
+#include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 
 #include <QVariantAnimation>
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
-#include <cad_math/Common.hpp>
+#include <cad_math/Common.hxx>
 #include <cad_math/Quaternion.hxx>
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 #include "PatchGeometry.hxx"
 #include "PointRegistry.hpp"
 #include "RenderSystem.hpp"
@@ -38,6 +42,13 @@ enum class DragMode {
 
 class PatchComponent;
 class OpenGlWidget;
+class QTimer;
+
+namespace cnc {
+    struct Material;
+    struct Program;
+    struct Snapshot;
+}
 
 namespace aliases {
     using GlW = OpenGlWidget;
@@ -47,6 +58,8 @@ class OpenGlWidget final : public QOpenGLWidget {
     Q_OBJECT
 
 public:
+    static constexpr std::chrono::milliseconds gc_cncPollInterval{16};
+
     explicit OpenGlWidget(QWidget *parent = nullptr);
 
     ~OpenGlWidget() override;
@@ -54,6 +67,8 @@ public:
     CameraController& getCameraController() {
         return m_cameraController;
     }
+
+    std::optional<cadm::Vec3> getCameraPos() const;
 
     bool removeEntity(EntityId id);
 
@@ -238,6 +253,27 @@ public:
         update();
     }
 
+    // ===== CNC simulation =====
+
+    [[nodiscard]] std::shared_ptr<const cnc::Snapshot> cncSnapshot() const;
+    [[nodiscard]] const cnc::Material& cncMaterial() const;
+    [[nodiscard]] const std::string& cncError() const;
+    [[nodiscard]] bool cncInitialized() const;
+    [[nodiscard]] std::size_t pendingCncCutCount() const;
+    void setCncMaterial(const cnc::Material &material);
+    void appendCncProgram(cnc::Program program) const;
+    void clearCncPrograms();
+    void resetCncMaterial();
+    void setCncPlaying(bool playing) const;
+    void setCncSpeed(double speed) const;
+    void finishCncNow() const;
+    void setCncShowPaths(bool show);
+    void setCncShowTool(bool show);
+    void setCncFlatShading(bool flat);
+    void setCncShankCollisions(bool enabled);
+    void setCncVisible(bool visible);
+    void focusCncView();
+
 signals :
     void viewportSelectionChanged();
 
@@ -280,6 +316,9 @@ signals :
 
     void collapseSelectedPointsRequested();
 
+    /// @brief Emitted when the CNC snapshot, toolpath or warning state changes
+    void cncChanged();
+
 protected:
     void paintGL() override;
 
@@ -300,6 +339,13 @@ protected:
     void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
+    struct CncState;
+
+    void initializeCnc() const;
+    void pollCnc();
+    void applyPendingCncCuts();
+    void renderCnc(const cadm::Mat4 &view, const cadm::Mat4 &projection) const;
+
     static void clearBuffers(QOpenGLFunctions_4_5_Core *gl);
 
     void calculateStereoProjections(
@@ -373,6 +419,9 @@ private:
     Scene m_scene;
     CommandStack m_commandStack;
     RenderSystem m_renderSystem;
+
+    std::unique_ptr<CncState> m_cnc;
+    QTimer *m_cncPollTimer{};
 
     /// @brief Live preview of a patch being configured in the creation dialog:
     /// a self-contained point registry + patch component

@@ -5,7 +5,7 @@
 #ifndef CAD_PATCHC2COMPONENT_HXX
 #define CAD_PATCHC2COMPONENT_HXX
 
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 
 #include "PatchComponent.hxx"
 

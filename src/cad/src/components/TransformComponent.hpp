@@ -8,8 +8,8 @@
 #include <QObject>
 
 #include "Entity.hpp"
-#include <cad_math/Vec3.hpp>
-#include <cad_math/Mat4.hpp>
+#include <cad_math/Vec3.hxx>
+#include <cad_math/Mat4.hxx>
 
 class TransformComponent final : public QObject, public Component {
     Q_OBJECT

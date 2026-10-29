@@ -4,10 +4,10 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <cad_math/Vec3.hpp>
-#include <cad_math/Vec4.hpp>
-#include <cad_math/Mat4.hpp>
-#include <cad_math/Helpers.hpp>
+#include <cad_math/Vec3.hxx>
+#include <cad_math/Vec4.hxx>
+#include <cad_math/Mat4.hxx>
+#include <cad_math/Helpers.hxx>
 #include <numbers>
 
 namespace {

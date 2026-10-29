@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 
 #include "Command.hpp"
 #include "PatchGeometry.hxx"

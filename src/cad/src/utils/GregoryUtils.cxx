@@ -13,7 +13,7 @@ namespace gregory {
     namespace {
         /// @brief Reflection of @p inner across @p boundary
         Curve4 reflected(const Curve4 &boundary, const Curve4 &inner) {
-            return boundary * 2.0f - inner;
+            return boundary * cadm::Vec3(2.0f) - inner;
         }
     }
 

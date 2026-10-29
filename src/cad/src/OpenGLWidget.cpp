@@ -5,13 +5,19 @@
 #include "OpenGLWidget.hpp"
 
 #include <algorithm>
-#include <numeric>
+#include <cmath>
+#include <cstddef>
+#include <fstream>
+#include <iterator>
+#include <set>
 #include <tuple>
 
 #include <QAbstractSpinBox>
+#include <QDebug>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QMenu>
+#include <QTimer>
 
 // undefine Qt's emit macro to avoid conflicts with TBB
 #ifdef emit
@@ -34,17 +40,50 @@
 #include "gui/Theme.hpp"
 #include "PointRegistry.hpp"
 #include "commands/Commands.hpp"
-#include "ViewportTypes.hpp"
-#include "cad_math/Helpers.hpp"
+#include "cad_math/Helpers.hxx"
+
+#include "cnc/ShankCollision.hxx"
+#include "cnc/Worker.hxx"
+#include "cnc_gpu/GpuHeightMap.hxx"
+#include "cnc_ui/CncRenderSystem.hxx"
+#include "components/PointComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/camera/BlenderCameraComponent.hpp"
+#include "components/camera/CadCameraComponent.hpp"
 #include "components/geometry/BezierC0Component.hpp"
 #include "components/geometry/PatchC0Component.hxx"
 #include "components/geometry/PatchC2Component.hxx"
-#include "components/PointComponent.hpp"
-#include "components/TransformComponent.hpp"
 #include "cursor/GridPlanePlacementStrategy.hpp"
 
+namespace {
+    std::string cncShaderDirectory(const char *deployedSubdirectory, const char *fallback) {
+        const QString deployed = QCoreApplication::applicationDirPath()
+            + QStringLiteral("/shaders/cnc/") + deployedSubdirectory;
+        if (QDir(deployed).exists()) {
+            return deployed.toStdString();
+        }
+        return fallback;
+    }
+}
+
+struct OpenGlWidget::CncState {
+    cnc::Material material;
+    cnc::Worker worker;
+    cnc::gpu::GpuHeightMap heightMap;
+    cnc::ui::CncRenderSystem renderer;
+    cnc::ui::RenderOptions options;
+    std::shared_ptr<const cnc::Snapshot> snapshot;
+    std::shared_ptr<const cnc::ToolPath> path;
+    cnc::ToolPath pending;
+    std::set<std::size_t> flaggedShankMoves;
+    bool shankCollisions{false};
+    bool initialized{};
+    bool visible{false};
+    std::string error;
+};
+
 OpenGlWidget::OpenGlWidget(QWidget *parent)
-: QOpenGLWidget(parent) {
+    : QOpenGLWidget(parent) {
     setFocusPolicy(Qt::StrongFocus);
     m_commandStack.onChange = [this](const ChangeFlags flags) {
         if (hasFlag(flags, ChangeFlags::structure)) {
@@ -74,7 +113,231 @@ OpenGlWidget::OpenGlWidget(QWidget *parent)
             m_cameraController.getActiveStrategy()->setViewOrientation(q.toRotationMatrix());
             update();
         }
-    );
+        );
+
+    m_cnc = std::make_unique<CncState>();
+    m_cnc->worker.setMaterial(m_cnc->material);
+    m_cnc->worker.start();
+
+    m_cncPollTimer = new QTimer(this);
+    m_cncPollTimer->setInterval(gc_cncPollInterval);
+    connect(m_cncPollTimer, &QTimer::timeout, this, [this] {
+        pollCnc();
+    });
+    m_cncPollTimer->start();
+}
+
+OpenGlWidget::~OpenGlWidget() {
+    if (m_cncPollTimer != nullptr) {
+        m_cncPollTimer->stop();
+    }
+
+    if (context() == nullptr) {
+        return;
+    }
+    makeCurrent();
+
+    if (m_cnc && m_cnc->initialized) {
+        m_cnc->renderer.shutdown();
+        m_cnc->heightMap.shutdown();
+        m_cnc->initialized = false;
+    }
+    m_renderSystem.shutdown();
+}
+
+std::optional<cadm::Vec3> OpenGlWidget::getCameraPos() const {
+    const ICameraStrategy *strategy = m_cameraController.getActiveStrategy();
+    if (strategy == nullptr) {
+        return std::nullopt;
+    }
+
+    Entity *entity = strategy->getEntity();
+    if (const auto blender = entity->getComponent<BlenderCameraComponent>()) {
+        return blender.value()->getPosition();
+    }
+    if (const auto cad = entity->getComponent<CadCameraComponent>()) {
+        return cad.value()->getPosition();
+    }
+    return std::nullopt;
+}
+
+bool OpenGlWidget::removeEntity(const EntityId id) {
+    const auto entity = m_scene.getEntity(id);
+    if (!entity) {
+        return false;
+    }
+
+    // undoable for serializable geometry;
+    // cameras/other entities fall back to the direct path
+    // (which also detaches the camera controller)
+    // and are not recorded
+    if (EntitySpec probe;
+        captureEntity(m_scene, entity.value(), probe)) {
+        m_commandStack.push(std::make_unique<DeleteEntityCommand>(m_scene, std::vector{id}));
+    }
+    else {
+        removeEntityInternal(id);
+    }
+
+    emit sceneChanged();
+    emit viewportSelectionChanged();
+    return true;
+}
+
+void OpenGlWidget::onSetAsCursorRequested(Entity *e) {
+    getScene().setActiveCursor(e);
+}
+
+void OpenGlWidget::onSetAsCameraRequested(const EntityId id) {
+    getCameraController().switchTo(id);
+}
+
+void OpenGlWidget::onFocusCameraRequested(Entity *e) {
+    getCameraController().lookAtEntity(e, getScene().getPointRegistry());
+    update();
+}
+
+Entity* OpenGlWidget::isFocusOnEntityValid() const {
+    const auto selectedEntities = m_scene.getSelectedEntities();
+    if (selectedEntities.size() != 1) {
+        return nullptr;
+    }
+    return *selectedEntities.begin();
+}
+
+std::optional<std::array<EntityId, 2>> OpenGlWidget::isCollapsingPointsValid() const {
+    std::array<EntityId, 2> pts{};
+    int i = 0;
+    for (const Entity *e : m_scene.getSelectedEntities()) {
+        if (e->hasComponent<PointComponent>()) {
+            pts[i++] = e->getId();
+            if (i > 2) {
+                return std::nullopt;
+            }
+        }
+    }
+    if (i != 2) {
+        return std::nullopt;
+    }
+    return pts;
+}
+
+void OpenGlWidget::collapseSelectedPoints(const std::array<EntityId, 2> pts) {
+    m_commandStack.push(
+        std::make_unique<CollapsePointsCommand>(
+            m_scene,
+            std::min(pts[0], pts[1]),
+            std::max(pts[0], pts[1])
+            )
+        );
+    update();
+}
+
+void OpenGlWidget::collapseSelectedPoints() {
+    const auto pts = isCollapsingPointsValid();
+    if (!pts) {
+        return;
+    }
+    collapseSelectedPoints(pts.value());
+}
+
+bool OpenGlWidget::eventFilter(QObject *obj, QEvent *event) {
+    if (const QWidget *focus = QApplication::focusWidget();
+        focus && focus != this) {
+        return QObject::eventFilter(obj, event);
+    }
+
+    if (event->type() == QEvent::KeyPress) {
+        const auto keyEvent = dynamic_cast<QKeyEvent*>(event);
+        keyPressEvent(keyEvent);
+        return true;
+    }
+    if (event->type() == QEvent::KeyRelease) {
+        const auto keyEvent = dynamic_cast<QKeyEvent*>(event);
+        keyReleaseEvent(keyEvent);
+        return true;
+    }
+    return QObject::eventFilter(obj, event);
+}
+
+void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
+    patchgen::PatchCreateParams placed = params;
+    std::tie(placed.origin, placed.orientation) = activeCursorPlacement();
+    const bool sameType = m_previewParams && m_previewParams->type == placed.type;
+    m_previewParams = placed;
+    const auto [rows, cols, wrap, patchCountX, patchCountY, positions] = patchgen::generate(placed);
+    if (m_previewPatch
+        && sameType
+        && m_previewPatch->getRows() == rows
+        && m_previewPatch->getCols() == cols
+        && m_previewPatch->getWrap() == wrap
+        && m_previewPatch->getPatchCountX() == patchCountX
+        && m_previewPatch->getPatchCountY() == patchCountY) {
+        m_previewRegistry->setPositions(m_previewPatch->getControlPoints().front(), positions);
+        m_previewPatch->markForUpdate();
+        update();
+        return;
+    }
+
+    makeCurrent();
+
+    if (!m_previewRegistry) {
+        m_previewRegistry = std::make_unique<PointRegistry>();
+        m_previewRegistry->initialize();
+    }
+    else {
+        m_previewRegistry->clear();
+    }
+    const PointHandle first = m_previewRegistry->addPoints(positions);
+    std::vector<PointHandle> handles(positions.size());
+    std::ranges::iota(handles, first);
+    if (!m_previewPatch || !sameType) {
+        if (placed.type == patchgen::PatchCreateParams::Type::c2) {
+            m_previewPatch = std::make_unique<PatchC2Component>(m_previewRegistry.get());
+        }
+        else {
+            m_previewPatch = std::make_unique<PatchC0Component>(m_previewRegistry.get());
+        }
+        m_previewPatch->setShowNet(m_previewShowNet);
+    }
+    m_previewPatch->setGrid(std::move(handles), rows, cols, wrap, patchCountX, patchCountY);
+
+    doneCurrent();
+    update();
+}
+
+void OpenGlWidget::setPatchPreviewShowNet(const bool v) {
+    m_previewShowNet = v;
+    if (m_previewPatch) {
+        m_previewPatch->setShowNet(v);
+        update();
+    }
+}
+
+void OpenGlWidget::setPatchPreviewHideScene(const bool v) {
+    m_previewHideScene = v;
+    update();
+}
+
+std::pair<cadm::Vec3, cadm::Vec3> OpenGlWidget::activeCursorPlacement() const {
+    if (Entity *cursor = m_scene.getActiveCursor()) {
+        if (const auto tc = cursor->getComponent<TransformComponent>()) {
+            return {tc.value()->getTranslation(), tc.value()->getRotation()};
+        }
+    }
+    return {};
+}
+
+void OpenGlWidget::clearPatchPreview() {
+    if (!m_previewPatch && !m_previewRegistry) {
+        return;
+    }
+    makeCurrent();
+    m_previewPatch.reset();
+    m_previewRegistry.reset();
+    m_previewParams.reset();
+    doneCurrent();
+    update();
 }
 
 void OpenGlWidget::alignCameraToPlane(const Plane plane) {
@@ -91,69 +354,194 @@ void OpenGlWidget::alignCameraToPlane(const Plane plane) {
     m_alignCameraAnim.start();
 }
 
-OpenGlWidget::~OpenGlWidget() = default;
+std::shared_ptr<const cnc::Snapshot> OpenGlWidget::cncSnapshot() const {
+    return m_cnc ? m_cnc->snapshot : nullptr;
+}
 
-void OpenGlWidget::renderBoxSelectionRectangle() const {
-    if (m_activeDrag == DragMode::boxSelect) {
-        const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
-        const auto w = static_cast<cadm::cadf>(width());
-        const auto h = static_cast<cadm::cadf>(height());
-        const auto x0 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.left()) / w - 1.0);
-        const auto x1 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.right()) / w - 1.0);
-        const auto y0 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.bottom()) / h);
-        const auto y1 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.top()) / h);
-        m_renderSystem.renderBoxSelectionRect(x0, y0, x1, y1);
+const cnc::Material& OpenGlWidget::cncMaterial() const {
+    static constexpr cnc::Material fallback;
+    return m_cnc ? m_cnc->material : fallback;
+}
+
+const std::string& OpenGlWidget::cncError() const {
+    static constexpr std::string empty;
+    return m_cnc ? m_cnc->error : empty;
+}
+
+bool OpenGlWidget::cncInitialized() const {
+    return m_cnc && m_cnc->initialized;
+}
+
+std::size_t OpenGlWidget::pendingCncCutCount() const {
+    return m_cnc ? m_cnc->pending.size() : 0;
+}
+
+void OpenGlWidget::setCncMaterial(const cnc::Material &material) {
+    if (!m_cnc) {
+        return;
     }
-}
 
-void OpenGlWidget::calculateStereoProjections(
-    const cadm::Mat4 &view,
-    const cadm::Mat4 &projection,
-    std::span<cadm::Mat4, 2> views,
-    std::span<cadm::Mat4, 2> projs
-) const {
-    const auto [left, right, bottom, top, near, far] = projection.toFrustum();
-    const cadm::cadf halfH = static_cast<cadm::cadf>(0.5) * (top - bottom);
-    const cadm::cadf halfW = static_cast<cadm::cadf>(0.5) * (right - left);
-    // frustum skew in near-plane units: a half-separation offset at the convergence
-    // plane rescales to the near plane by similar triangles (near / convergence)
-    const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (near / m_stereoConvergence);
-    const cadm::cadf halfSep = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation;
+    m_cnc->material = material.normalized();
+    m_cnc->error.clear();
+    m_cnc->worker.setMaterial(m_cnc->material);
+    m_cnc->pending.clear();
+    m_cnc->flaggedShankMoves.clear();
 
-    projs[0] = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, near, far);
-    projs[1] = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, near, far);
-    views[0] = cadm::Mat4::translation(halfSep, 0, 0) * view;
-    views[1] = cadm::Mat4::translation(-halfSep, 0, 0) * view;
-}
-
-IViewportPositionStrategy* OpenGlWidget::getCursorPlacementStrategy() const {
-    if (m_cursorPlacementStrategyIndex >= m_cursorPlacementStrategies.size()) {
-        return nullptr;
-    }
-    return m_cursorPlacementStrategies[m_cursorPlacementStrategyIndex].get();
-}
-
-void OpenGlWidget::renderTransformAxis() const {
-    if (const int axesMask = axisConstraint::fromEnum(m_axisConstraint);
-        axesMask != 0) {
-        cadm::Mat4 axisModel = cadm::Mat4::identity();
-        if (m_coordSpace == CoordSpace::local && !m_transformSnapshots.empty()) {
-            const auto &r = m_transformSnapshots[0].origRotMat;
-            axisModel = cadm::Mat4{
-                cadm::Vec4(r.columns[0], 0),
-                cadm::Vec4(r.columns[1], 0),
-                cadm::Vec4(r.columns[2], 0),
-                cadm::Vec4::unitW()
-            };
+    if (m_cnc->initialized) {
+        makeCurrent();
+        std::string error;
+        if (!m_cnc->heightMap.initialize(
+            m_cnc->material,
+            cncShaderDirectory("gpu", CNC_GPU_SHADER_DIR),
+            &error
+            )) {
+            m_cnc->error = std::move(error);
+            qWarning().noquote() << "CNC height map:" << QString::fromStdString(m_cnc->error);
         }
-        m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask);
+        m_cnc->renderer.setMaterial(m_cnc->material);
+        doneCurrent();
+    }
+
+    focusCncView();
+    emit cncChanged();
+    update();
+}
+
+void OpenGlWidget::appendCncProgram(cnc::Program program) const {
+    if (m_cnc) {
+        m_cnc->worker.appendProgram(std::move(program));
     }
 }
 
-void OpenGlWidget::clearBuffers(QOpenGLFunctions_4_5_Core *const gl) {
-    const auto &vpColor = theme::active().viewport;
-    gl->glClearColor(vpColor.redF(), vpColor.greenF(), vpColor.blueF(), 1.0f);
-    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void OpenGlWidget::clearCncPrograms() {
+    if (!m_cnc) {
+        return;
+    }
+    m_cnc->worker.clearPrograms();
+    m_cnc->pending.clear();
+    m_cnc->flaggedShankMoves.clear();
+    m_cnc->path.reset();
+    m_cnc->snapshot.reset();
+    if (m_cnc->initialized) {
+        makeCurrent();
+        m_cnc->renderer.setPath(nullptr);
+        doneCurrent();
+    }
+    emit cncChanged();
+    update();
+}
+
+void OpenGlWidget::resetCncMaterial() {
+    if (!m_cnc) {
+        return;
+    }
+    m_cnc->worker.resetMaterial();
+    m_cnc->pending.clear();
+    m_cnc->flaggedShankMoves.clear();
+    if (m_cnc->initialized) {
+        makeCurrent();
+        m_cnc->heightMap.reset();
+        doneCurrent();
+    }
+    emit cncChanged();
+    update();
+}
+
+void OpenGlWidget::setCncPlaying(const bool playing) const {
+    if (m_cnc) {
+        m_cnc->worker.setPlaying(playing);
+    }
+}
+
+void OpenGlWidget::setCncSpeed(const double speed) const {
+    if (m_cnc) {
+        m_cnc->worker.setSpeed(speed);
+    }
+}
+
+void OpenGlWidget::finishCncNow() const {
+    if (m_cnc) {
+        m_cnc->worker.finishNow();
+    }
+}
+
+void OpenGlWidget::setCncShowPaths(const bool show) {
+    if (m_cnc) {
+        m_cnc->options.showPaths = show;
+        update();
+    }
+}
+
+void OpenGlWidget::setCncShowTool(const bool show) {
+    if (m_cnc) {
+        m_cnc->options.showTool = show;
+        update();
+    }
+}
+
+void OpenGlWidget::setCncFlatShading(const bool flat) {
+    if (m_cnc) {
+        m_cnc->options.flatShading = flat;
+        update();
+    }
+}
+
+void OpenGlWidget::setCncShankCollisions(const bool enabled) {
+    if (m_cnc) {
+        m_cnc->shankCollisions = enabled;
+        update();
+    }
+}
+
+void OpenGlWidget::setCncVisible(const bool visible) {
+    if (m_cnc) {
+        m_cnc->visible = visible;
+        update();
+    }
+}
+
+void OpenGlWidget::focusCncView() {
+    if (!m_cnc) {
+        return;
+    }
+
+    const cnc::Material &material = m_cnc->material;
+    const cadm::Vec3 center{
+        material.centerX,
+        material.topZ - material.thickness * 0.5f,
+        -material.centerY,
+    };
+    const float diagonal = std::sqrt(
+        material.width * material.width
+        + material.depth * material.depth
+        + material.thickness * material.thickness
+        );
+    const float distance = std::max(diagonal * 1.45f, 10.0f);
+
+    ICameraStrategy *strategy = m_cameraController.getActiveStrategy();
+    if (strategy == nullptr) {
+        return;
+    }
+    strategy->setLookTarget(center);
+
+    Entity *entity = strategy->getEntity();
+    if (const auto blender = entity->getComponent<BlenderCameraComponent>()) {
+        blender.value()->setRadius(distance);
+        blender.value()->setFarPlane(
+            std::max(blender.value()->getFarPlane(), distance * 4.0f)
+            );
+    }
+    else if (const auto cad = entity->getComponent<CadCameraComponent>()) {
+        const cadm::Vec3 direction = (cad.value()->getPosition() - cad.value()->getTarget())
+            .safeNormalized(cadm::Vec3(1, 1, 1));
+        cad.value()->setTarget(center);
+        cad.value()->setPosition(center + direction * distance);
+        cad.value()->setOrthoHeight(
+            std::min(distance, CadCameraComponent::s_orthoHeightMax)
+            );
+    }
+
+    update();
 }
 
 void OpenGlWidget::paintGL() {
@@ -163,6 +551,8 @@ void OpenGlWidget::paintGL() {
     const auto view = m_cameraController.getActiveStrategy()->getView();
     const auto projection = m_cameraController.getActiveStrategy()->getProjection();
     const auto invVp = view.inversedView() * m_cameraController.getActiveStrategy()->getInvProjection();
+
+    applyPendingCncCuts();
 
     if (m_previewPatch) {
         if (const auto [pos, rot] = activeCursorPlacement();
@@ -174,6 +564,8 @@ void OpenGlWidget::paintGL() {
     }
     const bool sceneVisible = !(m_previewPatch && m_previewHideScene);
     const auto drawSceneOverlays = [this](const cadm::Mat4 &passView, const cadm::Mat4 &passProjection) {
+        renderCnc(passView, passProjection);
+
         if (m_previewPatch) {
             m_renderSystem.renderPreviewPatch(*m_previewPatch, *m_previewRegistry, passView, passProjection);
         }
@@ -206,6 +598,8 @@ void OpenGlWidget::paintGL() {
     m_renderSystem.render(m_scene, view, projection, invVp, sceneVisible);
     drawSceneOverlays(view, projection);
     renderBoxSelectionRectangle();
+
+
 }
 
 void OpenGlWidget::resizeGL(const int width, const int height) {
@@ -225,6 +619,7 @@ void OpenGlWidget::initializeGL() {
     m_renderSystem.initialize();
     m_renderSystem.setViewport(width(), height());
     m_scene.getPointRegistry().initialize();
+    initializeCnc();
 }
 
 void OpenGlWidget::mousePressEvent(QMouseEvent *event) {
@@ -406,7 +801,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
             dist2 <= s_clickRadiusPx * s_clickRadiusPx) {
             // treat as a selection click on the point
             const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-                InputAction::selectAdditive;
+                                  InputAction::selectAdditive;
             selectPoint(m_draggedPoint, additive);
         }
         else {
@@ -414,7 +809,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
             const cadm::Vec3 after = m_scene.getPointRegistry().getPosition(m_draggedPoint);
             m_commandStack.push(
                 std::make_unique<MovePointCommand>(m_scene, m_draggedPoint, m_draggedPointStart, after)
-            );
+                );
             m_scene.getPointRegistry().syncToGpu();
             emit sceneChanged();
             update();
@@ -436,7 +831,7 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
         }
 
         const bool additive = m_inputMap.matchAction(event->button(), event->modifiers()) ==
-            InputAction::selectAdditive;
+                              InputAction::selectAdditive;
 
         if (const PointHandle hit = pickPoint(event->pos());
             hit != InvalidPointHandle) {
@@ -486,8 +881,8 @@ void OpenGlWidget::mouseReleaseEvent(QMouseEvent *event) {
                     setCursor(before);
                 },
                 nullptr
-            )
-        );
+                )
+            );
     }
 
     default:
@@ -506,7 +901,7 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
         static_cast<Qt::Key>(event->key()),
         event->modifiers(),
         event->isAutoRepeat()
-    );
+        );
     if (!action) {
         QOpenGLWidget::keyPressEvent(event);
         return;
@@ -623,7 +1018,7 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
             }
             m_commandStack.push(
                 std::make_unique<TransformCommand>(m_scene, std::move(before), std::move(after))
-            );
+                );
         }
         break;
     }
@@ -643,7 +1038,7 @@ void OpenGlWidget::keyPressEvent(QKeyEvent *event) {
                 [ this, signal] {
                     emit (this->*signal)();
                 }
-            );
+                );
             return addedAction;
         };
         const auto addAction = [&](const QString &label, auto receiver) {
@@ -738,192 +1133,197 @@ void OpenGlWidget::keyReleaseEvent(QKeyEvent *event) {
     }
 }
 
-std::optional<std::array<EntityId, 2>> OpenGlWidget::isCollapsingPointsValid() const {
-    std::array<EntityId, 2> pts;
-    int i = 0;
-    for (const Entity *e : m_scene.getSelectedEntities()) {
-        if (e->hasComponent<PointComponent>()) {
-            pts[i++] = e->getId();
-            if (i > 2) {
-                return std::nullopt;
+void OpenGlWidget::initializeCnc() const {
+    if (!m_cnc) {
+        return;
+    }
+
+    m_cnc->error.clear();
+    std::string error;
+    if (!m_cnc->renderer.initialize(
+        cncShaderDirectory("ui", CNC_UI_SHADER_DIR),
+        &error
+        )) {
+        m_cnc->error = std::move(error);
+        qWarning().noquote() << "CNC renderer:" << QString::fromStdString(m_cnc->error);
+        return;
+    }
+    if (!m_cnc->heightMap.initialize(
+        m_cnc->material,
+        cncShaderDirectory("gpu", CNC_GPU_SHADER_DIR),
+        &error
+        )) {
+        m_cnc->renderer.shutdown();
+        m_cnc->error = std::move(error);
+        qWarning().noquote() << "CNC height map:" << QString::fromStdString(m_cnc->error);
+        return;
+    }
+
+    m_cnc->renderer.setMaterial(m_cnc->material);
+    m_cnc->renderer.setPath(m_cnc->path);
+    m_cnc->initialized = true;
+    m_cnc->error.clear();
+}
+
+void OpenGlWidget::pollCnc() {
+    if (!m_cnc) {
+        return;
+    }
+
+    bool changed = false;
+    if (const auto snapshot = m_cnc->worker.latestSnapshot();
+        snapshot && snapshot != m_cnc->snapshot) {
+        m_cnc->snapshot = snapshot;
+        if (snapshot->moves != m_cnc->path) {
+            m_cnc->path = snapshot->moves;
+            if (m_cnc->initialized) {
+                makeCurrent();
+                m_cnc->renderer.setPath(m_cnc->path);
+                doneCurrent();
+            }
+        }
+        changed = true;
+    }
+
+    if (auto cuts = m_cnc->worker.takeCutterMoves(); !cuts.empty()) {
+        m_cnc->pending.insert(
+            m_cnc->pending.end(),
+            std::make_move_iterator(cuts.begin()),
+            std::make_move_iterator(cuts.end())
+            );
+        changed = true;
+    }
+
+    if (changed) {
+        emit cncChanged();
+        update();
+    }
+}
+
+void OpenGlWidget::applyPendingCncCuts() {
+    if (!m_cnc || !m_cnc->initialized || m_cnc->pending.empty()) {
+        return;
+    }
+
+    const std::size_t limit = std::max<std::size_t>(m_cnc->heightMap.batchSize() * 8, 1);
+    const std::size_t count = std::min(m_cnc->pending.size(), limit);
+    std::size_t first = 0;
+    if (m_cnc->shankCollisions) {
+        for (std::size_t i = 0; i < count; ++i) {
+            const cnc::Move& move = m_cnc->pending[i];
+            if (m_cnc->flaggedShankMoves.contains(move.instructionIndex)) {
+                // don't duplicate warnings
+                continue;
+            }
+            const auto region = cnc::shankRegion(m_cnc->material, move);
+            if (!region) {
+                continue;
+            }
+
+            m_cnc->heightMap.apply(m_cnc->pending, first, i - first);
+            first = i;
+            if (auto warning = cnc::checkShankCollision(
+                    m_cnc->material, move, *region, m_cnc->heightMap.readHeights(*region))) {
+                m_cnc->flaggedShankMoves.insert(move.instructionIndex);
+                m_cnc->worker.reportShankCollision(std::move(*warning));
             }
         }
     }
-    if (i != 2) {
-        return std::nullopt;
-    }
-    return pts;
-}
-
-void OpenGlWidget::collapseSelectedPoints(const std::array<EntityId, 2> pts) {
-    m_commandStack.push(
-        std::make_unique<CollapsePointsCommand>(
-            m_scene,
-            std::min(pts[0], pts[1]),
-            std::max(pts[0], pts[1])
-        )
-    );
-    update();
-}
-
-void OpenGlWidget::collapseSelectedPoints() {
-    const auto pts = isCollapsingPointsValid();
-    if (!pts) {
-        return;
-    }
-    collapseSelectedPoints(pts.value());
-}
-
-void OpenGlWidget::deleteSelectedEntities() {
-    const Entity *activeCursor = m_scene.getActiveCursor();
-    std::vector<EntityId> toDelete;
-    for (const auto *e : m_scene.getSelectedEntities()) {
-        if (m_cameraController.isEntityManagedAsCamera(e->getId())) {
-            continue;
-        }
-        if (e == activeCursor) {
-            continue;
-        }
-        toDelete.push_back(e->getId());
-    }
-
-    if (!toDelete.empty()) {
-        m_commandStack.push(std::make_unique<DeleteEntityCommand>(m_scene, toDelete));
-        emit sceneChanged();
-        emit viewportSelectionChanged();
-        update();
-    }
-}
-
-std::pair<cadm::Vec3, cadm::Vec3> OpenGlWidget::activeCursorPlacement() const {
-    if (Entity *cursor = m_scene.getActiveCursor()) {
-        if (const auto tc = cursor->getComponent<TransformComponent>()) {
-            return {tc.value()->getTranslation(), tc.value()->getRotation()};
-        }
-    }
-    return {};
-}
-
-void OpenGlWidget::setPatchPreview(const patchgen::PatchCreateParams &params) {
-    patchgen::PatchCreateParams placed = params;
-    std::tie(placed.origin, placed.orientation) = activeCursorPlacement();
-    const bool sameType = m_previewParams && m_previewParams->type == placed.type;
-    m_previewParams = placed;
-    const auto [rows, cols, wrap, patchCountX, patchCountY, positions] = patchgen::generate(placed);
-    if (m_previewPatch
-        && sameType
-        && m_previewPatch->getRows() == rows
-        && m_previewPatch->getCols() == cols
-        && m_previewPatch->getWrap() == wrap
-        && m_previewPatch->getPatchCountX() == patchCountX
-        && m_previewPatch->getPatchCountY() == patchCountY) {
-        m_previewRegistry->setPositions(m_previewPatch->getControlPoints().front(), positions);
-        m_previewPatch->markForUpdate();
-        update();
-        return;
-    }
-
-    makeCurrent();
-
-    if (!m_previewRegistry) {
-        m_previewRegistry = std::make_unique<PointRegistry>();
-        m_previewRegistry->initialize();
-    }
-    else {
-        m_previewRegistry->clear();
-    }
-    const PointHandle first = m_previewRegistry->addPoints(positions);
-    std::vector<PointHandle> handles(positions.size());
-    std::ranges::iota(handles, first);
-    if (!m_previewPatch || !sameType) {
-        if (placed.type == patchgen::PatchCreateParams::Type::c2) {
-            m_previewPatch = std::make_unique<PatchC2Component>(m_previewRegistry.get());
-        }
-        else {
-            m_previewPatch = std::make_unique<PatchC0Component>(m_previewRegistry.get());
-        }
-        m_previewPatch->setShowNet(m_previewShowNet);
-    }
-    m_previewPatch->setGrid(std::move(handles), rows, cols, wrap, patchCountX, patchCountY);
-
-    doneCurrent();
-    update();
-}
-
-void OpenGlWidget::setPatchPreviewHideScene(const bool v) {
-    m_previewHideScene = v;
-    update();
-}
-
-void OpenGlWidget::setPatchPreviewShowNet(const bool v) {
-    m_previewShowNet = v;
-    if (m_previewPatch) {
-        m_previewPatch->setShowNet(v);
-        update();
-    }
-}
-
-void OpenGlWidget::clearPatchPreview() {
-    if (!m_previewPatch && !m_previewRegistry) {
-        return;
-    }
-    makeCurrent();
-    m_previewPatch.reset();
-    m_previewRegistry.reset();
-    m_previewParams.reset();
-    doneCurrent();
-    update();
-}
-
-PointHandle OpenGlWidget::pickPoint(const QPoint screenPos) const {
-    const auto view = m_cameraController.getActiveStrategy()->getView();
-    const auto projection = m_cameraController.getActiveStrategy()->getProjection();
-    const auto &registry = m_scene.getPointRegistry();
-
-    PointHandle best = InvalidPointHandle;
-    int bestDist = s_clickRadiusPx * s_clickRadiusPx + 1;
-
-    for (const PointHandle h : registry.aliveHandles()) {
-        const auto screen = cadm::projectToScreenGl(
-            registry.getPosition(h),
-            view,
-            projection,
-            width(),
-            height()
+    // apply all remaining moves
+    m_cnc->heightMap.apply(m_cnc->pending, first, count - first);
+    m_cnc->pending.erase(
+        m_cnc->pending.begin(),
+        m_cnc->pending.begin() + static_cast<std::ptrdiff_t>(count)
         );
-        if (!screen.has_value()) {
-            continue;
-        }
-
-        const int dx = screen->x - screenPos.x();
-        const int dy = screen->y - screenPos.y();
-        if (const int dist = dx * dx + dy * dy;
-            dist < bestDist) {
-            bestDist = dist;
-            best = h;
-        }
+    if (!m_cnc->pending.empty()) {
+        update();
     }
-
-    return best;
 }
 
-void OpenGlWidget::selectPoint(const PointHandle hit, const bool additive) {
-    if (!additive) {
-        m_scene.clearSelection();
+void OpenGlWidget::renderCnc(
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection
+    ) const {
+    if (!m_cnc || !m_cnc->initialized || !m_cnc->visible) {
+        return;
     }
 
-    if (const auto entity = m_scene.getEntityByPointHandle(hit)) {
-        Entity *pEntity = entity.value();
-        m_scene.setSelected(
-            pEntity,
-            additive
-                ? !pEntity->isSelected()
-                : true
+    cnc::Snapshot fallback;
+    fallback.material = m_cnc->material;
+    fallback.hasPrograms = false;
+    fallback.tool.diameter = 0.0f;
+
+    m_cnc->renderer.render(
+        m_cnc->heightMap,
+        m_cnc->snapshot ? *m_cnc->snapshot : fallback,
+        view,
+        projection,
+        getCameraPos().value_or({}),
+        m_cnc->options
         );
-        m_scene.syncPointSelectionToRegistry();
+}
+
+void OpenGlWidget::clearBuffers(QOpenGLFunctions_4_5_Core *const gl) {
+    const auto &vpColor = theme::active().viewport;
+    gl->glClearColor(vpColor.redF(), vpColor.greenF(), vpColor.blueF(), 1.0f);
+    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void OpenGlWidget::calculateStereoProjections(
+    const cadm::Mat4 &view,
+    const cadm::Mat4 &projection,
+    std::span<cadm::Mat4, 2> views,
+    std::span<cadm::Mat4, 2> projs
+    ) const {
+    const auto [left, right, bottom, top, near, far] = projection.toFrustum();
+    const cadm::cadf halfH = static_cast<cadm::cadf>(0.5) * (top - bottom);
+    const cadm::cadf halfW = static_cast<cadm::cadf>(0.5) * (right - left);
+    // frustum skew in near-plane units: a half-separation offset at the convergence
+    // plane rescales to the near plane by similar triangles (near / convergence)
+    const cadm::cadf shift = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation * (near / m_stereoConvergence);
+    const cadm::cadf halfSep = static_cast<cadm::cadf>(0.5) * m_stereoEyeSeparation;
+
+    projs[0] = cadm::Mat4::frustum(-halfW + shift, halfW + shift, -halfH, halfH, near, far);
+    projs[1] = cadm::Mat4::frustum(-halfW - shift, halfW - shift, -halfH, halfH, near, far);
+    views[0] = cadm::Mat4::translation(halfSep, 0, 0) * view;
+    views[1] = cadm::Mat4::translation(-halfSep, 0, 0) * view;
+}
+
+IViewportPositionStrategy* OpenGlWidget::getCursorPlacementStrategy() const {
+    if (m_cursorPlacementStrategyIndex >= m_cursorPlacementStrategies.size()) {
+        return nullptr;
     }
-    emit viewportSelectionChanged();
-    update();
+    return m_cursorPlacementStrategies[m_cursorPlacementStrategyIndex].get();
+}
+
+void OpenGlWidget::renderTransformAxis() const {
+    if (const int axesMask = axisConstraint::fromEnum(m_axisConstraint);
+        axesMask != 0) {
+        cadm::Mat4 axisModel = cadm::Mat4::identity();
+        if (m_coordSpace == CoordSpace::local && !m_transformSnapshots.empty()) {
+            const auto &r = m_transformSnapshots[0].origRotMat;
+            axisModel = cadm::Mat4{
+                cadm::Vec4(r.columns[0], 0),
+                cadm::Vec4(r.columns[1], 0),
+                cadm::Vec4(r.columns[2], 0),
+                cadm::Vec4::unitW()
+            };
+        }
+        m_renderSystem.renderTransformAxis(m_transformPivot, axisModel, axesMask);
+    }
+}
+
+void OpenGlWidget::renderBoxSelectionRectangle() const {
+    if (m_activeDrag == DragMode::boxSelect) {
+        const QRect rect = QRect(m_boxSelectStart, m_boxSelectCurrent).normalized();
+        const auto w = static_cast<cadm::cadf>(width());
+        const auto h = static_cast<cadm::cadf>(height());
+        const auto x0 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.left()) / w - 1.0);
+        const auto x1 = static_cast<cadm::cadf>(2.0 * static_cast<cadm::cadf>(rect.right()) / w - 1.0);
+        const auto y0 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.bottom()) / h);
+        const auto y1 = static_cast<cadm::cadf>(1.0 - 2.0 * static_cast<cadm::cadf>(rect.top()) / h);
+        m_renderSystem.renderBoxSelectionRect(x0, y0, x1, y1);
+    }
 }
 
 void OpenGlWidget::performBoxSelect() {
@@ -953,6 +1353,78 @@ void OpenGlWidget::performBoxSelect() {
 
     m_scene.syncPointSelectionToRegistry();
     emit viewportSelectionChanged();
+}
+
+void OpenGlWidget::deleteSelectedEntities() {
+    const Entity *activeCursor = m_scene.getActiveCursor();
+    std::vector<EntityId> toDelete;
+    for (const auto *e : m_scene.getSelectedEntities()) {
+        if (m_cameraController.isEntityManagedAsCamera(e->getId())) {
+            continue;
+        }
+        if (e == activeCursor) {
+            continue;
+        }
+        toDelete.push_back(e->getId());
+    }
+
+    if (!toDelete.empty()) {
+        m_commandStack.push(std::make_unique<DeleteEntityCommand>(m_scene, toDelete));
+        emit sceneChanged();
+        emit viewportSelectionChanged();
+        update();
+    }
+}
+
+PointHandle OpenGlWidget::pickPoint(const QPoint screenPos) const {
+    const auto view = m_cameraController.getActiveStrategy()->getView();
+    const auto projection = m_cameraController.getActiveStrategy()->getProjection();
+    const auto &registry = m_scene.getPointRegistry();
+
+    PointHandle best = InvalidPointHandle;
+    int bestDist = s_clickRadiusPx * s_clickRadiusPx + 1;
+
+    for (const PointHandle h : registry.aliveHandles()) {
+        const auto screen = cadm::projectToScreenGl(
+            registry.getPosition(h),
+            view,
+            projection,
+            width(),
+            height()
+            );
+        if (!screen.has_value()) {
+            continue;
+        }
+
+        const int dx = screen->x - screenPos.x();
+        const int dy = screen->y - screenPos.y();
+        if (const int dist = dx * dx + dy * dy;
+            dist < bestDist) {
+            bestDist = dist;
+            best = h;
+        }
+    }
+
+    return best;
+}
+
+void OpenGlWidget::selectPoint(const PointHandle hit, const bool additive) {
+    if (!additive) {
+        m_scene.clearSelection();
+    }
+
+    if (const auto entity = m_scene.getEntityByPointHandle(hit)) {
+        Entity *pEntity = entity.value();
+        m_scene.setSelected(
+            pEntity,
+            additive
+                ? !pEntity->isSelected()
+                : true
+            );
+        m_scene.syncPointSelectionToRegistry();
+    }
+    emit viewportSelectionChanged();
+    update();
 }
 
 std::optional<cadm::Vec3> OpenGlWidget::computePivot() const {
@@ -991,73 +1463,6 @@ std::optional<cadm::Vec3> OpenGlWidget::computePivot() const {
         return std::nullopt;
     }
     return sum * (static_cast<cadm::cadf>(1.0) / static_cast<cadm::cadf>(count));
-}
-
-QString OpenGlWidget::axisLabel(const AxisConstraint constraint) {
-    switch (constraint) {
-    case AxisConstraint::x:
-        return "X";
-    case AxisConstraint::y:
-        return "Y";
-    case AxisConstraint::z:
-        return "Z";
-    default:
-        return {};
-    }
-}
-
-void OpenGlWidget::beginTransform(const TransformMode mode) {
-    const auto pivot = computePivot();
-    if (!pivot.has_value()) {
-        return;
-    }
-
-    m_transformPivot = pivot.value();
-    m_transformStartMousePos = mapFromGlobal(QCursor::pos());
-    m_transformSnapshots.clear();
-
-    const auto &registry = m_scene.getPointRegistry();
-    for (const auto &e : m_scene.getEntities()) {
-        if (!e->isSelected()) {
-            continue;
-        }
-
-        // Bezier curve: move all its control points rather than the curve entity itself
-        if (const auto bc = e->getComponent<BezierC0Component>()) {
-            for (const auto h : bc.value()->getControlPoints()) {
-                if (const auto ptEntity = m_scene.getEntityByPointHandle(h)) {
-                    const EntityId ptId = ptEntity.value()->getId();
-                    const bool already = std::ranges::any_of(
-                        m_transformSnapshots,
-                        [ptId](const EntitySnapshot &s) {
-                            return s.id == ptId;
-                        }
-                    );
-                    if (!already) {
-                        EntitySnapshot snap;
-                        snap.fillFromEntity(registry, ptEntity.value());
-                        m_transformSnapshots.push_back(snap);
-                    }
-                }
-            }
-            continue;
-        }
-
-        EntitySnapshot snap;
-        if (!snap.fillFromEntity(registry, e.get())) {
-            continue;
-        }
-
-        m_transformSnapshots.push_back(snap);
-    }
-
-    if (m_transformSnapshots.empty()) {
-        return;
-    }
-
-    m_transformMode = mode;
-    m_transformApplied = false;
-    emit transformModeChanged(m_transformMode, {});
 }
 
 void OpenGlWidget::handleTransformRotate(const int dx, PointRegistry &registry) {
@@ -1185,7 +1590,7 @@ void OpenGlWidget::handleTransformTranslate(const QPoint currentMousePos, PointR
 void OpenGlWidget::handleTransformScale(const int dx, PointRegistry &registry) {
     const cadm::cadf scaleFactor = std::exp(
         static_cast<cadm::cadf>(dx) * static_cast<cadm::cadf>(2.0) / static_cast<cadm::cadf>(width())
-    );
+        );
 
     for (const auto &snap : m_transformSnapshots) {
         const cadm::Vec3 pivot = m_coordSpace == CoordSpace::local && snap.isTransformEntity
@@ -1210,6 +1615,73 @@ void OpenGlWidget::handleTransformScale(const int dx, PointRegistry &registry) {
             }
         }
     }
+}
+
+QString OpenGlWidget::axisLabel(const AxisConstraint constraint) {
+    switch (constraint) {
+    case AxisConstraint::x:
+        return "X";
+    case AxisConstraint::y:
+        return "Y";
+    case AxisConstraint::z:
+        return "Z";
+    default:
+        return {};
+    }
+}
+
+void OpenGlWidget::beginTransform(const TransformMode mode) {
+    const auto pivot = computePivot();
+    if (!pivot.has_value()) {
+        return;
+    }
+
+    m_transformPivot = pivot.value();
+    m_transformStartMousePos = mapFromGlobal(QCursor::pos());
+    m_transformSnapshots.clear();
+
+    const auto &registry = m_scene.getPointRegistry();
+    for (const auto &e : m_scene.getEntities()) {
+        if (!e->isSelected()) {
+            continue;
+        }
+
+        // Bezier curve: move all its control points rather than the curve entity itself
+        if (const auto bc = e->getComponent<BezierC0Component>()) {
+            for (const auto h : bc.value()->getControlPoints()) {
+                if (const auto ptEntity = m_scene.getEntityByPointHandle(h)) {
+                    const EntityId ptId = ptEntity.value()->getId();
+                    const bool already = std::ranges::any_of(
+                        m_transformSnapshots,
+                        [ptId](const EntitySnapshot &s) {
+                            return s.id == ptId;
+                        }
+                        );
+                    if (!already) {
+                        EntitySnapshot snap;
+                        snap.fillFromEntity(registry, ptEntity.value());
+                        m_transformSnapshots.push_back(snap);
+                    }
+                }
+            }
+            continue;
+        }
+
+        EntitySnapshot snap;
+        if (!snap.fillFromEntity(registry, e.get())) {
+            continue;
+        }
+
+        m_transformSnapshots.push_back(snap);
+    }
+
+    if (m_transformSnapshots.empty()) {
+        return;
+    }
+
+    m_transformMode = mode;
+    m_transformApplied = false;
+    emit transformModeChanged(m_transformMode, {});
 }
 
 void OpenGlWidget::applyTransform(const QPoint currentMousePos) {
@@ -1319,67 +1791,4 @@ void OpenGlWidget::wrapMouseIfNeeded(const QPoint currentPos, const QPoint delta
 bool OpenGlWidget::removeEntityInternal(const EntityId id) {
     m_cameraController.removeCamera(id);
     return m_scene.removeEntity(id);
-}
-
-bool OpenGlWidget::removeEntity(const EntityId id) {
-    const auto entity = m_scene.getEntity(id);
-    if (!entity) {
-        return false;
-    }
-
-    // undoable for serializable geometry;
-    // cameras/other entities fall back to the direct path
-    // (which also detaches the camera controller)
-    // and are not recorded
-    if (EntitySpec probe;
-        captureEntity(m_scene, entity.value(), probe)) {
-        m_commandStack.push(std::make_unique<DeleteEntityCommand>(m_scene, std::vector{id}));
-    }
-    else {
-        removeEntityInternal(id);
-    }
-
-    emit sceneChanged();
-    emit viewportSelectionChanged();
-    return true;
-}
-
-void OpenGlWidget::onSetAsCursorRequested(Entity *e) {
-    getScene().setActiveCursor(e);
-}
-
-void OpenGlWidget::onSetAsCameraRequested(const EntityId id) {
-    getCameraController().switchTo(id);
-}
-
-void OpenGlWidget::onFocusCameraRequested(Entity *e) {
-    getCameraController().lookAtEntity(e, getScene().getPointRegistry());
-    update();
-}
-
-Entity* OpenGlWidget::isFocusOnEntityValid() const {
-    const auto selectedEntities = m_scene.getSelectedEntities();
-    if (selectedEntities.size() != 1) {
-        return nullptr;
-    }
-    return *selectedEntities.begin();
-}
-
-bool OpenGlWidget::eventFilter(QObject *obj, QEvent *event) {
-    if (const QWidget *focus = QApplication::focusWidget();
-        focus && focus != this) {
-        return QObject::eventFilter(obj, event);
-    }
-
-    if (event->type() == QEvent::KeyPress) {
-        const auto keyEvent = dynamic_cast<QKeyEvent*>(event);
-        keyPressEvent(keyEvent);
-        return true;
-    }
-    if (event->type() == QEvent::KeyRelease) {
-        const auto keyEvent = dynamic_cast<QKeyEvent*>(event);
-        keyReleaseEvent(keyEvent);
-        return true;
-    }
-    return QObject::eventFilter(obj, event);
 }

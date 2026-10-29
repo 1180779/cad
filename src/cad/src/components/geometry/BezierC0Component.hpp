@@ -10,7 +10,7 @@
 #include "../GeometryComponent.hpp"
 #include "PointRegistry.hpp"
 #include "GpuBuffer.hpp"
-#include "Vao.hxx"
+#include "cad_graphics/VertexArray.hxx"
 #include "../INewPointsTargetComponent.hpp"
 #include "../IPointReferrer.hpp"
 
@@ -79,10 +79,10 @@ public:
 
 private:
     /// Patch VAO; binds PointRegistry's position VBO, EBO holds PointHandle patch sequences
-    Vao m_patchVao;
+    cadg::VertexArray m_patchVao;
 
     /// Polygon VAO; binds PointRegistry's position VBO, EBO holds PointHandle line pairs
-    Vao m_polygonVao;
+    cadg::VertexArray m_polygonVao;
 
     PointRegistry *m_registry;
     std::vector<PointHandle> m_controlPoints;

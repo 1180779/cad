@@ -6,7 +6,7 @@
 #define CAD_VIRTUALPOINTPROPERTIESWIDGET_HPP
 
 #include <QWidget>
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 
 class QLabel;
 class ModifierDoubleSpinBox;

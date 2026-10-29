@@ -19,14 +19,23 @@ target_link_libraries(cad_core PUBLIC
         Qt::Gui
         Qt::Widgets
         Qt::OpenGLWidgets
-        cad_math
-        common
+        cad_math::cad_math
+        cnc_core
+        cnc_gpu
+        cnc_ui
+        cad_common::cad_common
+        cad_graphics::cad_graphics
         TBB::tbb
         ValiJSON::valijson
 )
 
 target_include_directories(cad_core PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_definitions(cad_core PRIVATE
+        CNC_UI_SHADER_DIR="${CMAKE_SOURCE_DIR}/src/cnc_ui/src/shaders"
+        CNC_GPU_SHADER_DIR="${CMAKE_SOURCE_DIR}/src/cnc_gpu/shaders"
 )
 
 add_executable(cad src/main.cpp)
@@ -37,6 +46,16 @@ add_custom_target(CadCopyShaders
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders
         $<TARGET_FILE_DIR:cad>/shaders
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+        "$<TARGET_FILE_DIR:cad>/shaders/cnc/ui"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/src/cnc_ui/src/shaders
+        "$<TARGET_FILE_DIR:cad>/shaders/cnc/ui"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+        "$<TARGET_FILE_DIR:cad>/shaders/cnc/gpu"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/src/cnc_gpu/shaders
+        "$<TARGET_FILE_DIR:cad>/shaders/cnc/gpu"
         COMMENT "Copying shaders to output directory"
 )
 
@@ -62,7 +81,7 @@ if (WIN32)
     )
 endif ()
 
-if (MINGW OR MSVC OR (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+if (CAD_ENABLE_BUNDLE AND (MINGW OR MSVC OR (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")))
     get_target_property(QMAKE_EXECUTABLE Qt::qmake IMPORTED_LOCATION)
     get_filename_component(QT_BIN_DIR "${QMAKE_EXECUTABLE}" DIRECTORY)
     if (MSVC)
@@ -101,6 +120,10 @@ if (MINGW OR MSVC OR (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_
         install(TARGETS tbb
                 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT cad_bundle)
         install(DIRECTORY src/shaders format DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT cad_bundle)
+        install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/cnc_ui/src/shaders/
+                DESTINATION ${CMAKE_INSTALL_BINDIR}/shaders/cnc/ui COMPONENT cad_bundle)
+        install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/cnc_gpu/shaders/
+                DESTINATION ${CMAKE_INSTALL_BINDIR}/shaders/cnc/gpu COMPONENT cad_bundle)
         qt_generate_deploy_app_script(TARGET cad OUTPUT_SCRIPT CAD_DEPLOY_SCRIPT NO_TRANSLATIONS)
         install(SCRIPT ${CAD_DEPLOY_SCRIPT} COMPONENT cad_bundle)
     endif ()

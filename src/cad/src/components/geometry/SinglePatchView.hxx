@@ -8,7 +8,7 @@
 
 #include <array>
 
-#include <cad_math/Vec4.hpp>
+#include <cad_math/Vec4.hxx>
 #include "PointRegistry.hpp"
 #include "utils/BezierUtils.hpp"
 

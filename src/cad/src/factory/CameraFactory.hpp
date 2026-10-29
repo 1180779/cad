@@ -5,7 +5,7 @@
 #ifndef CAD_CAMERAFACTORY_HPP
 #define CAD_CAMERAFACTORY_HPP
 #include "../Scene.hpp"
-#include "cad_math/Vec3.hpp"
+#include "cad_math/Vec3.hxx"
 #include "../components/Entity.hpp"
 
 class CameraFactory final {

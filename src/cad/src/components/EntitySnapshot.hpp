@@ -7,9 +7,9 @@
 #include "Entity.hpp"
 #include "PointComponent.hpp"
 #include "TransformComponent.hpp"
-#include "cad_math/Helpers.hpp"
-#include "cad_math/Mat3.hpp"
-#include "cad_math/Vec3.hpp"
+#include "cad_math/Helpers.hxx"
+#include "cad_math/Mat3.hxx"
+#include "cad_math/Vec3.hxx"
 
 struct EntitySnapshot {
     EntityId id{};

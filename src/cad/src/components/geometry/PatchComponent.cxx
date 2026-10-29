@@ -28,8 +28,8 @@ PatchComponent::~PatchComponent() {
     }
     m_patchEbo.deleteGpu(gl);
     m_netEbo.deleteGpu(gl);
-    m_patchVao.deleteGpu(gl);
-    m_netVao.deleteGpu(gl);
+    m_patchVao.destroy(gl);
+    m_netVao.destroy(gl);
     m_registry->unsubscribeFromPositionChanges(m_positionCallbackId);
     for (const PointHandle h : m_controlPoints) {
         m_registry->unlock(h);
@@ -243,10 +243,10 @@ void PatchComponent::syncToGpu() {
     m_patchEbo.syncToGpu(gl);
     m_netEbo.syncToGpu(gl);
 
-    if (!m_patchVao.created() && !m_patchEbo.empty()) {
-        m_patchVao.setup(gl, patchSourceVbo(), m_patchEbo.vboId());
+    if (!m_patchVao.valid() && !m_patchEbo.empty()) {
+        m_patchVao = createPositionVertexArray(*gl, patchSourceVbo(), m_patchEbo.vboId());
     }
-    if (!m_netVao.created() && !m_netEbo.empty()) {
-        m_netVao.setup(gl, m_registry->getPositionVBO(), m_netEbo.vboId());
+    if (!m_netVao.valid() && !m_netEbo.empty()) {
+        m_netVao = createPositionVertexArray(*gl, m_registry->getPositionVBO(), m_netEbo.vboId());
     }
 }

@@ -7,7 +7,7 @@
 
 #include <span>
 
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 
 /// @brief Pure uniform cubic B-spline to Bézier conversions
 namespace bsplineUtils {

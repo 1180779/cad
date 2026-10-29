@@ -22,8 +22,8 @@
 #undef QT_EMIT_DEFINED
 #endif
 
-#include "cad_math/Helpers.hpp"
-#include "cad_math/Mat4.hpp"
+#include "cad_math/Helpers.hxx"
+#include "cad_math/Mat4.hxx"
 
 OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent) {
     setFocusPolicy(Qt::StrongFocus);

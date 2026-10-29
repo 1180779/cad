@@ -10,7 +10,7 @@
 #include <variant>
 #include <vector>
 
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 
 #include "PointRegistry.hpp"
 #include "components/Entity.hpp"

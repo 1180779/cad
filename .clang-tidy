@@ -1,0 +1,14 @@
+Checks: 'readability-identifier-naming'
+CheckOptions:
+  - key: readability-identifier-naming.ClassMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.ClassMemberPrefix
+    value: m_
+  - key: readability-identifier-naming.ClassConstexprCase
+    value: camelBack
+  - key: readability-identifier-naming.ClassConstexprPrefix
+    value: gc_
+  - key: readability-identifier-naming.GlobalConstexprVariableCase
+    value: camelBack
+  - key: readability-identifier-naming.GlobalConstexprVariablePrefix
+    value: gc_

@@ -6,13 +6,13 @@
 #define CAD_GEOMETRY_H
 
 #include "Entity.hpp"
-#include <cad_math/Vec3.hpp>
+#include <cad_math/Vec3.hxx>
 #include <vector>
 #include <QObject>
 #include <string>
 
-#include "cad_math/Vec2.hpp"
-#include "cad_math/Vec4.hpp"
+#include "cad_math/Vec2.hxx"
+#include "cad_math/Vec4.hxx"
 #include "utils/TrimMask.hxx"
 
 struct Vertex {
