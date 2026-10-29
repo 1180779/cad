@@ -12,7 +12,8 @@
 #include <QOpenGLFunctions_4_5_Core>
 
 #include "cnc/Material.hxx"
-#include "../../../cnc/include/cnc/program/NcProgram.hxx"
+#include "cnc/program/NcProgram.hxx"
+#include "cad_graphics/ShaderProgram.hxx"
 
 namespace cnc::gpu {
     class GpuHeightMap final {
@@ -114,34 +115,10 @@ namespace cnc::gpu {
         GLuint m_fbos[2]{};
         std::size_t m_front{};
 
-        GLuint m_program{};
+        cadg::ShaderProgram m_program;
         GLuint m_vao{};
 
         using shaderNameTuple = std::tuple<GLint*, std::string_view>;
-        const std::array<shaderNameTuple, 10> m_uniformNames = std::to_array<shaderNameTuple>({
-            {&m_uStockSize, "uStockSize"},
-            {&m_uStockWMinX, "uStockWMinX"},
-            {&m_uStockWMinY, "uStockWMinY"},
-            {&m_uStockCellWResolutionX, "uStockCellWResolutionX"},
-            {&m_uStockCellWResolutionY, "uStockCellWResolutionY"},
-            {&m_uStockWBottom, "uStockWBottom"},
-            {&m_uCutterWFrom, "uCutterWFrom"},
-            {&m_uCutterWTo, "uCutterWTo"},
-            {&m_uCutterRadius, "uCutterRadius"},
-            {&m_uCutterType, "uCutterType"},
-        });
-        
-        GLint m_uStockSize{-1};
-        GLint m_uStockWMinX{-1};
-        GLint m_uStockWMinY{-1};
-        GLint m_uStockCellWResolutionX{-1};
-        GLint m_uStockCellWResolutionY{-1};
-        GLint m_uStockWBottom{-1};
-        GLint m_uCutterWFrom{-1};
-        GLint m_uCutterWTo{-1};
-        GLint m_uCutterRadius{-1};
-        GLint m_uCutterType{-1};
-
         std::size_t m_batchSize{gc_defaultBatchSize};
     };
 }

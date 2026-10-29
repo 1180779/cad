@@ -4,6 +4,8 @@
 
 #include "cnc_gpu/GpuHeightMap.hxx"
 #include "../../../../cad_graphics/src/include/cad_graphics/Gl.hxx"
+#include "../../cad/src/CheckMacros.hpp"
+#include "cad_graphics/ShaderProgramGlBoundBorrow.hxx"
 
 #include <algorithm>
 #include <cassert>
@@ -119,46 +121,13 @@ namespace cnc::gpu {
         };
 
         const std::filesystem::path directory(shaderDirectory);
-        const std::string vertexSource = readFile(directory / "heightmap.vert");
-        const std::string fragmentSource = readFile(directory / "heightmap.frag");
-        if (vertexSource.empty() || fragmentSource.empty()) {
+        auto program = cadg::ShaderProgram::fromFiles(m_gl, directory / "heightmap.vert", directory / "heightmap.frag");
+        if (!program.has_value()) {
             return fail(
-                "Could not read height-map shaders from \"" + shaderDirectory + "\"."
+                "GpuHeighMap shader compilation failed:  \"" + program.error() + "\"."
             );
         }
-
-        std::string compileError;
-        const GLuint vertex = compileShader(m_gl, GL_VERTEX_SHADER, vertexSource, compileError);
-        if (vertex == 0) {
-            return fail("Height-map vertex shader: " + compileError);
-        }
-        const GLuint fragment = compileShader(m_gl, GL_FRAGMENT_SHADER, fragmentSource, compileError);
-        if (fragment == 0) {
-            m_gl->glDeleteShader(vertex);
-            return fail("Height-map fragment shader: " + compileError);
-        }
-
-        m_program = m_gl->glCreateProgram();
-        m_gl->glAttachShader(m_program, vertex);
-        m_gl->glAttachShader(m_program, fragment);
-        m_gl->glLinkProgram(m_program);
-        m_gl->glDeleteShader(vertex);
-        m_gl->glDeleteShader(fragment);
-
-        GLint linked = GL_FALSE;
-        m_gl->glGetProgramiv(m_program, GL_LINK_STATUS, &linked);
-        if (linked == GL_FALSE) {
-            GLchar log[1024]{};
-            m_gl->glGetProgramInfoLog(m_program, sizeof(log), nullptr, log);
-            m_gl->glDeleteProgram(m_program);
-            m_program = 0;
-            return fail(std::string("Height-map shader link error: ") + log);
-        }
-
-        for (auto [memberPtr, strView] : m_uniformNames)
-        {
-            *memberPtr = m_gl->glGetUniformLocation(m_program, strView.data());
-        }
+        m_program = std::move(program.value());
         return true;
     }
 
@@ -202,21 +171,18 @@ namespace cnc::gpu {
         if (m_gl == nullptr) {
             return;
         }
+        m_program.destroy(m_gl);
         if (m_textures[0] != 0 || m_textures[1] != 0) {
             m_gl->glDeleteTextures(2, m_textures);
         }
         if (m_fbos[0] != 0 || m_fbos[1] != 0) {
             m_gl->glDeleteFramebuffers(2, m_fbos);
         }
-        if (m_program != 0) {
-            m_gl->glDeleteProgram(m_program);
-        }
         if (m_vao != 0) {
             m_gl->glDeleteVertexArrays(1, &m_vao);
         }
         m_textures[0] = m_textures[1] = 0;
         m_fbos[0] = m_fbos[1] = 0;
-        m_program = 0;
         m_vao = 0;
         m_front = 0;
     }
@@ -330,14 +296,15 @@ namespace cnc::gpu {
         m_gl->glBlendEquation(GL_MIN);
         m_gl->glBlendFunc(GL_ONE, GL_ONE);
 
-        m_gl->glUseProgram(m_program);
+        const auto glBoundBorrow = cadg::ShaderProgramGlBoundBorrow(m_program, m_gl);
+        glBoundBorrow.bind();
         m_gl->glBindVertexArray(m_vao);
-        m_gl->glUniform2i(m_uStockSize, nx, ny);
-        m_gl->glUniform1f(m_uStockWMinX, m_material.centerX - m_material.width * 0.5f);
-        m_gl->glUniform1f(m_uStockWMinY, m_material.centerY - m_material.depth * 0.5f);
-        m_gl->glUniform1f(m_uStockCellWResolutionX, m_material.width / static_cast<float>(nx - 1));
-        m_gl->glUniform1f(m_uStockCellWResolutionY, m_material.depth / static_cast<float>(ny - 1));
-        m_gl->glUniform1f(m_uStockWBottom, m_material.topZ - m_material.thickness);
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setIVec2("uStockSize", nx, ny));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockWMinX", m_material.centerX - m_material.width * 0.5f));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockWMinY", m_material.centerY - m_material.depth * 0.5f));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockCellWResolutionX", m_material.width / static_cast<float>(nx - 1)));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockCellWResolutionY", m_material.depth / static_cast<float>(ny - 1)));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uStockWBottom", m_material.topZ - m_material.thickness));
 
         std::size_t consumed = 0;
         for (std::size_t i = first; i < end; ++i) {
@@ -351,10 +318,10 @@ namespace cnc::gpu {
             }
 
             m_gl->glScissor(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
-            m_gl->glUniform3f(m_uCutterWFrom, move.from.x, move.from.y, move.from.z);
-            m_gl->glUniform3f(m_uCutterWTo, move.to.x, move.to.y, move.to.z);
-            m_gl->glUniform1f(m_uCutterRadius, move.tool.radius());
-            m_gl->glUniform1i(m_uCutterType, move.tool.type == ToolType::ball ? 0 : 1);
+            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uCutterWFrom", move.from));
+            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setVec3("uCutterWTo", move.to));
+            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setFloat("uCutterRadius", move.tool.radius()));
+            SHADER_SET_UNIFORM_CHECK(glBoundBorrow.setInt("uCutterType", move.tool.type == ToolType::ball ? 0 : 1));
             m_gl->glDrawArrays(GL_TRIANGLES, 0, 3);
             ++consumed;
         }
@@ -364,8 +331,8 @@ namespace cnc::gpu {
         m_gl->glDisable(GL_BLEND);
         m_gl->glBlendEquation(GL_FUNC_ADD);
         m_gl->glBindVertexArray(0);
-        m_gl->glUseProgram(0);
         m_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBoundBorrow.unbind();
         glSnapshot.restore(m_gl);
         return consumed;
     }
