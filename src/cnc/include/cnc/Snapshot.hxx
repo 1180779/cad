@@ -24,6 +24,7 @@ struct Warning {
     std::size_t programIndex{};
     cadm::Vec3 position{};
     std::string message;
+    std::uint64_t timeline{};
 };
 
 /// @brief Immutable state consumed by another thread

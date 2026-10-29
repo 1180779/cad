@@ -58,6 +58,7 @@ private:
     void setPathsVisible(bool checked) const;
     void setToolVisible(bool checked) const;
     void setFlatShading(bool checked) const;
+    void setShankCollisions(bool checked) const;
     void setMaterialControls(const cnc::Material& material) const;
     void updateWarnings();
 
@@ -90,6 +91,7 @@ private:
     QCheckBox* m_showPaths{};
     QCheckBox* m_showTool{};
     QCheckBox* m_flatShading{};
+    QCheckBox* m_shankCollisions{};
     QSlider* m_speed{};
     QLabel* m_speedLabel{};
     QLabel* m_statusLabel{};

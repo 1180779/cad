@@ -518,10 +518,10 @@ namespace cnc::ui
         SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCameraPos", camPos));
         SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1i("uFlatShading", flatShading ? 1 : 0));
 
+        constexpr cadm::Vec3 color{0.60f, 0.70f, 0.80f};
         const auto drawMesh = [&](
             const cadg::GpuMesh& mesh,
-            const cadm::Mat4& model,
-            const cadm::Vec3& color
+            const cadm::Mat4& model
         )
         {
             SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniformMatrix4f("uModel", model));
@@ -535,7 +535,7 @@ namespace cnc::ui
             const cadm::Mat4 sphereModel =
                 cadm::Mat4::translation(sphereCenter)
                 * cadm::Mat4::scale(cadm::Vec3(radius, radius, radius));
-            drawMesh(m_sphereMesh, sphereModel, {0.60f, 0.68f, 0.80f});
+            drawMesh(m_sphereMesh, sphereModel);
 
             if (const float shaft = std::max(cuttingLength - radius, 0.0f);
                 shaft > 0.0f)
@@ -544,7 +544,7 @@ namespace cnc::ui
                     cadm::Mat4::translation(sphereCenter)
                     * cadm::Mat4::scale(cadm::Vec3(radius, shaft, radius))
                     * cadm::Mat4::translation(cadm::Vec3(0, 0.5f, 0));
-                drawMesh(m_cylinderMesh, shaftModel, {0.42f, 0.45f, 0.50f});
+                drawMesh(m_cylinderMesh, shaftModel);
             }
         }
         else
@@ -553,7 +553,7 @@ namespace cnc::ui
                 cadm::Mat4::translation(position)
                 * cadm::Mat4::scale(cadm::Vec3(radius, cuttingLength, radius))
                 * cadm::Mat4::translation(cadm::Vec3(0, 0.5f, 0));
-            drawMesh(m_cylinderMesh, model, {0.58f, 0.62f, 0.70f});
+            drawMesh(m_cylinderMesh, model);
         }
 
         m_gl->glBindVertexArray(0);

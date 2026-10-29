@@ -44,7 +44,7 @@ namespace cnc
 
     void Worker::setMaterial(Material material)
     {
-        post([material = material](Simulator& simulator)
+        postReset([material = material](Simulator& simulator)
         {
             simulator.setMaterial(material);
         });
@@ -61,7 +61,7 @@ namespace cnc
 
     void Worker::clearPrograms()
     {
-        post([](Simulator& simulator)
+        postReset([](Simulator& simulator)
         {
             simulator.clearPrograms();
         });
@@ -69,7 +69,7 @@ namespace cnc
 
     void Worker::resetMaterial()
     {
-        post([](Simulator& simulator)
+        postReset([](Simulator& simulator)
         {
             simulator.resetMaterial();
         });
@@ -80,6 +80,14 @@ namespace cnc
         post([playing](Simulator& simulator)
         {
             simulator.setPlaying(playing);
+        });
+    }
+
+    void Worker::reportShankCollision(Warning warning)
+    {
+        post([warning = std::move(warning)](Simulator& simulator) mutable
+        {
+            simulator.reportShankCollision(std::move(warning));
         });
     }
 
@@ -131,9 +139,27 @@ namespace cnc
         m_condition.notify_one();
     }
 
-    void Worker::queueCutterMoves(ToolPath moves)
+    void Worker::postReset(Command command)
+    {
+        {
+            std::lock_guard lock(m_mutex);
+            ++m_resetRevision;
+            m_pendingCutterMoves.clear();
+            m_latestSnapshot.reset();
+            m_finishRequested.store(false, std::memory_order_relaxed);
+            m_commands.push_back(std::move(command));
+        }
+        m_condition.notify_one();
+    }
+
+    void Worker::queueCutterMoves(ToolPath moves, const std::uint64_t resetRevision)
     {
         std::lock_guard lock(m_mutex);
+        if (resetRevision != m_resetRevision)
+        {
+            return;
+        }
+
         if (m_pendingCutterMoves.empty())
         {
             m_pendingCutterMoves = std::move(moves);
@@ -153,6 +179,7 @@ namespace cnc
         using Clock = std::chrono::steady_clock;
         auto last = Clock::now();
         bool resetTimeline = false;
+        std::uint64_t resetRevision = 0;
 
         const auto waitAndSwapQueues = [&](CommandQueue& commands, bool& finish)
         {
@@ -173,6 +200,7 @@ namespace cnc
                 resetTimeline = true;
             }
             commands.swap(m_commands);
+            resetRevision = m_resetRevision;
             finish = m_finishRequested.exchange(false, std::memory_order_relaxed);
         };
 
@@ -221,7 +249,7 @@ namespace cnc
             if (ToolPath cutterMoves = m_simulator.takeCutterMoves();
                 !cutterMoves.empty())
             {
-                queueCutterMoves(std::move(cutterMoves));
+                queueCutterMoves(std::move(cutterMoves), resetRevision);
                 return true;
             }
             return false;
@@ -234,7 +262,10 @@ namespace cnc
                 auto snapshot = std::make_shared<Snapshot>(m_simulator.makeSnapshot());
                 {
                     std::lock_guard lock(m_mutex);
-                    m_latestSnapshot = std::move(snapshot);
+                    if (resetRevision == m_resetRevision)
+                    {
+                        m_latestSnapshot = std::move(snapshot);
+                    }
                 }
             }
         };

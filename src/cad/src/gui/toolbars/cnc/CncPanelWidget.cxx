@@ -136,6 +136,7 @@ void CncPanelWidget::buildUi() {
         m_speedLabel = controls.addLabel();
 
         m_progress = controls.addProgressBar(0, 1000, false, 10);
+        m_shankCollisions = controls.addCheckBox("Check shank collisions (slow)", false);
 
         m_statusLabel = controls.addLabel("Ready", true);
         m_timeLabel = controls.addLabel("0.00 / 0.00 s");
@@ -176,6 +177,7 @@ void CncPanelWidget::connectSignals() {
     connect(m_showPaths, &QCheckBox::toggled, this, &CNC::setPathsVisible);
     connect(m_showTool, &QCheckBox::toggled, this, &CNC::setToolVisible);
     connect(m_flatShading, &QCheckBox::toggled, this, &CNC::setFlatShading);
+    connect(m_shankCollisions, &QCheckBox::toggled, this, &CNC::setShankCollisions);
     connect(m_gl, &OpenGlWidget::cncChanged, this, [this] {
         if (isVisible() && !m_refreshTimer.isActive()) {
             m_refreshTimer.start();
@@ -217,6 +219,10 @@ void CncPanelWidget::setToolVisible(const bool checked) const {
 
 void CncPanelWidget::setFlatShading(const bool checked) const {
     m_gl->setCncFlatShading(checked);
+}
+
+void CncPanelWidget::setShankCollisions(const bool checked) const {
+    m_gl->setCncShankCollisions(checked);
 }
 
 double CncPanelWidget::speedFromSlider(const int value) {

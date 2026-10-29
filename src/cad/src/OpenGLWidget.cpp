@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <fstream>
 #include <iterator>
+#include <set>
 #include <tuple>
 
 #include <QAbstractSpinBox>
@@ -40,6 +41,8 @@
 #include "PointRegistry.hpp"
 #include "commands/Commands.hpp"
 #include "cad_math/Helpers.hxx"
+
+#include "cnc/ShankCollision.hxx"
 #include "cnc/Worker.hxx"
 #include "cnc_gpu/GpuHeightMap.hxx"
 #include "cnc_ui/CncRenderSystem.hxx"
@@ -72,6 +75,8 @@ struct OpenGlWidget::CncState {
     std::shared_ptr<const cnc::Snapshot> snapshot;
     std::shared_ptr<const cnc::ToolPath> path;
     cnc::ToolPath pending;
+    std::set<std::size_t> flaggedShankMoves;
+    bool shankCollisions{false};
     bool initialized{};
     bool visible{false};
     std::string error;
@@ -380,6 +385,7 @@ void OpenGlWidget::setCncMaterial(const cnc::Material &material) {
     m_cnc->error.clear();
     m_cnc->worker.setMaterial(m_cnc->material);
     m_cnc->pending.clear();
+    m_cnc->flaggedShankMoves.clear();
 
     if (m_cnc->initialized) {
         makeCurrent();
@@ -413,6 +419,7 @@ void OpenGlWidget::clearCncPrograms() {
     }
     m_cnc->worker.clearPrograms();
     m_cnc->pending.clear();
+    m_cnc->flaggedShankMoves.clear();
     m_cnc->path.reset();
     m_cnc->snapshot.reset();
     if (m_cnc->initialized) {
@@ -430,6 +437,7 @@ void OpenGlWidget::resetCncMaterial() {
     }
     m_cnc->worker.resetMaterial();
     m_cnc->pending.clear();
+    m_cnc->flaggedShankMoves.clear();
     if (m_cnc->initialized) {
         makeCurrent();
         m_cnc->heightMap.reset();
@@ -474,6 +482,13 @@ void OpenGlWidget::setCncShowTool(const bool show) {
 void OpenGlWidget::setCncFlatShading(const bool flat) {
     if (m_cnc) {
         m_cnc->options.flatShading = flat;
+        update();
+    }
+}
+
+void OpenGlWidget::setCncShankCollisions(const bool enabled) {
+    if (m_cnc) {
+        m_cnc->shankCollisions = enabled;
         update();
     }
 }
@@ -1192,7 +1207,30 @@ void OpenGlWidget::applyPendingCncCuts() {
 
     const std::size_t limit = std::max<std::size_t>(m_cnc->heightMap.batchSize() * 8, 1);
     const std::size_t count = std::min(m_cnc->pending.size(), limit);
-    m_cnc->heightMap.apply(m_cnc->pending, 0, count);
+    std::size_t first = 0;
+    if (m_cnc->shankCollisions) {
+        for (std::size_t i = 0; i < count; ++i) {
+            const cnc::Move& move = m_cnc->pending[i];
+            if (m_cnc->flaggedShankMoves.contains(move.instructionIndex)) {
+                // don't duplicate warnings
+                continue;
+            }
+            const auto region = cnc::shankRegion(m_cnc->material, move);
+            if (!region) {
+                continue;
+            }
+
+            m_cnc->heightMap.apply(m_cnc->pending, first, i - first);
+            first = i;
+            if (auto warning = cnc::checkShankCollision(
+                    m_cnc->material, move, *region, m_cnc->heightMap.readHeights(*region))) {
+                m_cnc->flaggedShankMoves.insert(move.instructionIndex);
+                m_cnc->worker.reportShankCollision(std::move(*warning));
+            }
+        }
+    }
+    // apply all remaining moves
+    m_cnc->heightMap.apply(m_cnc->pending, first, count - first);
     m_cnc->pending.erase(
         m_cnc->pending.begin(),
         m_cnc->pending.begin() + static_cast<std::ptrdiff_t>(count)

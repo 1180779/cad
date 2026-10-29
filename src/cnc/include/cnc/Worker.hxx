@@ -21,7 +21,7 @@
 namespace cnc
 {
     /// @brief Owns the simulation timeline on a worker thread.
-/// Exposes snapshots & queued cutter moves
+    /// Exposes snapshots & queued moves
     class Worker final
     {
     public:
@@ -44,6 +44,7 @@ namespace cnc
         void setPlaying(bool playing);
         void setSpeed(double speed);
         void finishNow();
+        void reportShankCollision(Warning warning);
         [[nodiscard]] std::shared_ptr<const Snapshot> latestSnapshot() const;
         [[nodiscard]] ToolPath takeCutterMoves();
         [[nodiscard]] std::size_t pendingCutterMoveCount() const;
@@ -51,8 +52,9 @@ namespace cnc
 
     private:
         void post(Command command);
+        void postReset(Command command);
         void workerLoop(std::stop_token stopToken);
-        void queueCutterMoves(ToolPath moves);
+        void queueCutterMoves(ToolPath moves, std::uint64_t resetRevision);
 
         Simulator m_simulator;
 
@@ -62,6 +64,7 @@ namespace cnc
         CommandQueue m_commands;
         ToolPath m_pendingCutterMoves;
         std::shared_ptr<const Snapshot> m_latestSnapshot;
+        std::uint64_t m_resetRevision{};
 
         std::atomic<double> m_speed{1.0};
         std::atomic<bool> m_finishRequested{false};

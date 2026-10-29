@@ -12,6 +12,7 @@
 #include <QOpenGLFunctions_4_5_Core>
 
 #include "cnc/Material.hxx"
+#include "cnc/ShankCollision.hxx"
 #include "cnc/program/NcProgram.hxx"
 #include "cad_graphics/ShaderProgram.hxx"
 
@@ -60,6 +61,8 @@ namespace cnc::gpu {
 
         /// @brief Read the texture to CPU
         [[nodiscard]] std::vector<float> readHeights() const;
+        /// @brief Read the texture region to CPU
+        [[nodiscard]] std::vector<float> readHeights(HeightRegion region) const;
         [[nodiscard]] GLuint texture() const;
         [[nodiscard]] const Material &material() const;
         [[nodiscard]] bool initialized() const;

@@ -59,6 +59,7 @@ public:
     /// height map
     [[nodiscard]] ToolPath takeCutterMoves();
     [[nodiscard]] std::size_t pendingCutterMoveCount() const;
+    void reportShankCollision(Warning warning);
     [[nodiscard]] Snapshot makeSnapshot();
     [[nodiscard]] const Material& material() const;
     [[nodiscard]] const ToolPath& moves() const;
@@ -103,6 +104,7 @@ private:
     std::set<std::pair<WarningKind, std::size_t>> m_warningKeys;
     std::size_t m_suppressedWarnings{};
     std::uint64_t m_revision{};
+    std::uint64_t m_timeline{};
 
     static constexpr std::size_t gc_maxWarnings = 128;
     static constexpr double gc_epsilon = 1e-12;

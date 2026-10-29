@@ -3,12 +3,10 @@
 //
 
 #include "cnc/program/Tool.hxx"
-#include "cnc/program/ToolType.hxx"
 #include "cnc/program/Move.hxx"
 #include "cnc/Simulator.hxx"
 
 #include <algorithm>
-#include <cmath>
 #include <iomanip>
 #include <iterator>
 #include <sstream>
@@ -24,10 +22,10 @@ std::string formatNumber(const double value) {
 bool containsXY(const Material& material, const float x, const float y) {
     const float halfWidth = material.width * 0.5f;
     const float halfDepth = material.depth * 0.5f;
-    return x >= material.centerX - halfWidth
-           && x <= material.centerX + halfWidth
-           && y >= material.centerY - halfDepth
-           && y <= material.centerY + halfDepth;
+    return x >= material.centerX - halfWidth &&
+           x <= material.centerX + halfWidth &&
+           y >= material.centerY - halfDepth &&
+           y <= material.centerY + halfDepth;
 }
 }
 
@@ -121,6 +119,7 @@ bool Simulator::finished() const {
 }
 
 void Simulator::resetTimeline() {
+    ++m_timeline;
     m_moveIndex = 0;
     m_moveElapsed = 0.0;
     m_elapsed = 0.0;
@@ -234,9 +233,13 @@ void Simulator::finishNow() {
     if (m_moveIndex < m_moves.size()) {
         const Move& move = m_moves[m_moveIndex];
         if (const double duration = move.durationSeconds();
-            m_moveElapsed > 0.0 && duration > 0.0) {
+            m_moveElapsed > 0.0 &&
+            duration > 0.0) {
             Move portion = move;
-            portion.from = move.from.lerp(move.to, static_cast<cadm::cadf>(m_moveElapsed / duration));
+            portion.from = move.from.lerp(
+                move.to,
+                static_cast<cadm::cadf>(m_moveElapsed / duration)
+                );
             applyMove(portion, m_moveIndex);
         } else {
             applyMove(move, m_moveIndex);
@@ -270,14 +273,13 @@ std::size_t Simulator::pendingCutterMoveCount() const {
 
 void Simulator::applyMove(const Move& move, const std::size_t moveIndex) {
     checkWarnings(move, moveIndex);
-    if (move.type != MoveType::G00) {
-        m_pendingCutterMoves.push_back(move);
-    }
+    m_pendingCutterMoves.push_back(move);
+    m_pendingCutterMoves.back().instructionIndex = moveIndex;
+    m_pendingCutterMoves.back().timeline = m_timeline;
     m_toolPosition = move.to;
 }
 
 void Simulator::checkWarnings(const Move& move, const std::size_t moveIndex) {
-    const Tool& tool = move.tool;
     const float midX = (move.from.x + move.to.x) * 0.5f;
     const float midY = (move.from.y + move.to.y) * 0.5f;
     const bool overStock = containsXY(m_material, midX, midY);
@@ -285,9 +287,12 @@ void Simulator::checkWarnings(const Move& move, const std::size_t moveIndex) {
     const float lowestZ = std::min(move.from.z, move.to.z);
 
     const auto checkIfTooDeep = [&] {
-        if (lowestZ < bottom - 1e-3f) {
-            const cadm::Vec3 lowestPoint = move.from.z <= move.to.z ? move.from : move.to;
-            if (containsXY(m_material, lowestPoint.x, lowestPoint.y)) {
+        if (lowestZ < bottom) {
+            if (const cadm::Vec3 lowestPoint =
+                    move.from.z <= move.to.z
+                        ? move.from
+                        : move.to;
+                containsXY(m_material, lowestPoint.x, lowestPoint.y)) {
                 addWarning(
                     WarningKind::tooDeep,
                     moveIndex,
@@ -301,53 +306,37 @@ void Simulator::checkWarnings(const Move& move, const std::size_t moveIndex) {
         }
     };
     const auto checkIfVerticalPlunge = [&] {
-        const float dx = move.to.x - move.from.x;
-        const float dy = move.to.y - move.from.y;
-        if (const float horizontalLength = std::sqrt(dx * dx + dy * dy);
-            overStock
-            && horizontalLength < 0.05f
-            && move.to.z < move.from.z - 1e-3f
-            && lowestZ < m_material.topZ) {
+        if (overStock &&
+            move.from.xy() == move.to.xy() &&
+            move.to.z < move.from.z &&
+            lowestZ < m_material.topZ) {
             addWarning(
                 WarningKind::verticalPlunge,
                 moveIndex,
                 move.programIndex,
                 move.to,
                 "Vertical plunge into material by "
-                + formatNumber(move.from.z - move.to.z) + " mm."
+                + formatNumber(move.from.z - move.to.z)
+                + " mm."
                 );
         }
     };
-    const auto checkIfNonCuttingPart = [&] {
-        // TODO: update this with reading from the height map and comparing
-        //  directly; currently checks against topZ of the stock
-        const float top = m_material.topZ;
-        const float cuttingLength = tool.cuttingLength();
-        for (const double t : {0.0, 0.5, 1.0}) {
-            const cadm::Vec3 point = move.from.lerp(move.to, static_cast<cadm::cadf>(t));
-            if (!containsXY(m_material, point.x, point.y)) {
-                continue;
-            }
-            if (top > point.z + cuttingLength + 1e-3f) {
-                addWarning(
-                    WarningKind::nonCuttingPart,
-                    moveIndex,
-                    move.programIndex,
-                    point,
-                    "Stock top z=" + formatNumber(top) + " is above the cutting length "
-                    + formatNumber(cuttingLength)
-                    + " mm of a " + formatNumber(tool.diameter)
-                    + " mm " + std::string(toolTypeName(tool.type))
-                    + " tool; the non-cutting shank may rub."
-                    );
-                break;
-            }
-        }
-    };
-
     checkIfTooDeep();
     checkIfVerticalPlunge();
-    checkIfNonCuttingPart();
+}
+
+void Simulator::reportShankCollision(Warning warning) {
+    if (warning.kind == WarningKind::nonCuttingPart &&
+        warning.timeline == m_timeline &&
+        warning.moveIndex < m_moves.size()) {
+        addWarning(
+            warning.kind,
+            warning.moveIndex,
+            warning.programIndex,
+            warning.position,
+            std::move(warning.message)
+            );
+    }
 }
 
 void Simulator::addWarning(
@@ -366,11 +355,12 @@ void Simulator::addWarning(
         return;
     }
     m_warnings.push_back({
-        kind,
-        moveIndex,
-        programIndex,
-        position,
-        std::move(message),
+        .kind = kind,
+        .moveIndex = moveIndex,
+        .programIndex = programIndex,
+        .position = position,
+        .message = std::move(message),
+        .timeline = m_timeline,
     });
 }
 

@@ -6,6 +6,7 @@
 #define CAD_MATERIAL_HXX
 
 #include <algorithm>
+#include "cad_math/Vec2.hxx"
 
 #include "program/NcProgram.hxx"
 
@@ -34,6 +35,32 @@ struct Material {
 
     [[nodiscard]] int resolutionY() const {
         return std::max(subdivisionsY, 1) + 1;
+    }
+
+    [[nodiscard]] cadm::Vec2 sizeXY() const {
+        return {width, depth};
+    }
+
+    [[nodiscard]] cadm::Vec2 minXY() const {
+        return cadm::Vec2{centerX, centerY} - sizeXY() * 0.5f;
+    }
+
+    [[nodiscard]] cadm::Vec2 cellSizeXY() const {
+        return sizeXY() / cadm::Vec2{
+            static_cast<float>(resolutionX() - 1),
+            static_cast<float>(resolutionY() - 1)
+        };
+    }
+
+    [[nodiscard]] cadm::Vec2 samplePositionXY(const cadm::Vec2I coordinates) const {
+        return minXY() + cadm::Vec2{
+            static_cast<float>(coordinates.x),
+            static_cast<float>(coordinates.y)
+        } * cellSizeXY();
+    }
+
+    [[nodiscard]] float bottomZ() const {
+        return topZ - thickness;
     }
 
     static constexpr int gc_minSubdivisions = 8;

@@ -313,16 +313,29 @@ std::size_t GpuHeightMap::applyBatch(
 }
 
 std::vector<float> GpuHeightMap::readHeights() const {
-    if (!m_initialized) {
+    return readHeights({
+        .x = 0,
+        .y = 0,
+        .width = m_material.resolutionX(),
+        .height = m_material.resolutionY()
+    });
+}
+
+std::vector<float> GpuHeightMap::readHeights(const HeightRegion region) const {
+    if (!m_initialized ||
+        region.x < 0 ||
+        region.y < 0 ||
+        region.width <= 0 ||
+        region.height <= 0 ||
+        region.x + region.width > m_material.resolutionX() ||
+        region.y + region.height > m_material.resolutionY()) {
         return {};
     }
 
-    const int nx = m_material.resolutionX();
-    const int ny = m_material.resolutionY();
-    std::vector heights(static_cast<std::size_t>(nx) * static_cast<std::size_t>(ny), 0.0f);
+    std::vector<float> heights(static_cast<std::size_t>(region.width) * region.height);
     m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbos[m_front]);
     m_gl->glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    m_gl->glReadPixels(0, 0, nx, ny,GL_RED,GL_FLOAT, heights.data());
+    m_gl->glReadPixels(region.x, region.y, region.width, region.height, GL_RED, GL_FLOAT, heights.data());
     m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
     return heights;
 }

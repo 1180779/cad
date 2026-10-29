@@ -1,5 +1,6 @@
 file(GLOB_RECURSE CNC_SOURCES
         src/*.cxx
+        include/*.cxx
         include/*.hxx
 )
 
