@@ -286,9 +286,15 @@ std::size_t GpuHeightMap::applyBatch(
             continue;
         }
 
+        const float deltaX = move.to.x - move.from.x;
+        const float deltaY = move.to.y - move.from.y;
+        const float lengthSquared = deltaX * deltaX + deltaY * deltaY;
+
         m_gl->glScissor(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
         SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCutterWFrom", move.from));
         SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCutterWTo", move.to));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform2f("uCutterDelta", deltaX, deltaY));
+        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uCutterLengthSquared", lengthSquared));
         SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uCutterRadius", move.tool.radius()));
         SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1i("uCutterType", move.tool.type == ToolType::ball ? 0 : 1));
         m_gl->glDrawArrays(GL_TRIANGLES, 0, 3);
