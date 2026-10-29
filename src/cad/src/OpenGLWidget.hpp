@@ -45,7 +45,7 @@ class OpenGlWidget;
 class QTimer;
 
 namespace cnc {
-    struct MaterialConfig;
+    struct Material;
     struct Program;
     struct Snapshot;
 }
@@ -256,11 +256,11 @@ public:
     // ===== CNC simulation =====
 
     [[nodiscard]] std::shared_ptr<const cnc::Snapshot> cncSnapshot() const;
-    [[nodiscard]] const cnc::MaterialConfig& cncMaterial() const;
+    [[nodiscard]] const cnc::Material& cncMaterial() const;
     [[nodiscard]] const std::string& cncError() const;
     [[nodiscard]] bool cncInitialized() const;
     [[nodiscard]] std::size_t pendingCncCutCount() const;
-    void setCncMaterial(const cnc::MaterialConfig &material);
+    void setCncMaterial(const cnc::Material &material);
     void appendCncProgram(cnc::Program program) const;
     void clearCncPrograms();
     void resetCncMaterial();

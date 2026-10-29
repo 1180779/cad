@@ -27,27 +27,26 @@ namespace cnc::gpu {
         GpuHeightMap &operator=(GpuHeightMap &&) = delete;
 
         /// @brief Create the textures, FBOs, SSBO and cutter program
-        /// @pre A current OpenGL 4.5 core context must exist
-        /// @param material cutting material configuration
-        /// @param shaderDirectory Directory containing `heightmap.vert` and
-        /// `heightmap.frag`.
+        /// @pre A current openGl context must exist
+        /// @param material Cutting material configuration
+        /// @param shaderDirectory Directory containing shader sources
         /// @param error Optional failure description
         [[nodiscard]] bool initialize(
-            const MaterialConfig &material,
+            const Material &material,
             const std::string &shaderDirectory,
             std::string *error = nullptr
         );
 
-        /// @brief Release GL objects. A current context is required
+        /// @brief Release Gl objects
+        /// @note A current context is required
         void shutdown();
 
         /// @brief Clear the height texture to a flat top surface
         void reset();
 
         /// @brief Apply cutting moves at [first, first + count)
-        /// Rapids are ignored. The moves are internally split into batches of
-        /// batchSize(), and each batch is one render pass over the affected
-        /// texel rectangle
+        /// Rapids are ignored. The moves are internally split into batches; and
+        /// each batch is one render pass over the affected texel rectangle
         /// @returns The number of cutting moves consumed
         std::size_t apply(
             const ToolPath &moves,
@@ -59,37 +58,23 @@ namespace cnc::gpu {
         /// @returns The number of cutting moves consumed
         std::size_t applyAll(const ToolPath &moves);
 
-        /// @brief Read the current texture back to CPU
+        /// @brief Read the texture to CPU
         [[nodiscard]] std::vector<float> readHeights() const;
+        [[nodiscard]] GLuint texture() const;
+        [[nodiscard]] const Material &material() const;
+        [[nodiscard]] bool initialized() const;
+        [[nodiscard]] std::size_t batchSize() const;
 
-        [[nodiscard]] GLuint texture() const {
-            return m_textures[m_front];
-        }
-
-        [[nodiscard]] const MaterialConfig &material() const {
-            return m_material;
-        }
-
-        [[nodiscard]] bool initialized() const {
-            return m_initialized;
-        }
-
-        [[nodiscard]] std::size_t batchSize() const {
-            return m_batchSize;
-        }
-
-        /// @brief Segment count per render pass. Clamped. 
+        /// @brief Segment count per render pass. Clamped.
         void setBatchSize(std::size_t batchSize);
 
     private:
         static constexpr int gc_minBatchSize{1};
         static constexpr int gc_maxBatchSize{1024};
         static constexpr int gc_defaultBatchSize{256};
-        
+
         bool createResources(std::string *error);
-
         bool compileProgram(const std::string &shaderDirectory, std::string *error);
-
         void destroyResources();
 
         /// @brief Apply one batch. Returns the number of cutting moves consumed
@@ -108,7 +93,7 @@ namespace cnc::gpu {
         ) const;
 
         QOpenGLFunctions_4_5_Core *m_gl{};
-        MaterialConfig m_material;
+        Material m_material;
         bool m_initialized{};
 
         GLuint m_textures[2]{};

@@ -64,14 +64,14 @@ namespace {
 }
 
 struct OpenGlWidget::CncState {
-    cnc::MaterialConfig material;
-    cnc::Worker controller;
+    cnc::Material material;
+    cnc::Worker worker;
     cnc::gpu::GpuHeightMap heightMap;
     cnc::ui::CncRenderSystem renderer;
     cnc::ui::RenderOptions options;
     std::shared_ptr<const cnc::Snapshot> snapshot;
-    std::shared_ptr<const std::vector<cnc::Move>> path;
-    std::vector<cnc::Move> pending;
+    std::shared_ptr<const cnc::ToolPath> path;
+    cnc::ToolPath pending;
     bool initialized{};
     bool visible{false};
     std::string error;
@@ -111,8 +111,8 @@ OpenGlWidget::OpenGlWidget(QWidget *parent)
         );
 
     m_cnc = std::make_unique<CncState>();
-    m_cnc->controller.setMaterial(m_cnc->material);
-    m_cnc->controller.start();
+    m_cnc->worker.setMaterial(m_cnc->material);
+    m_cnc->worker.start();
 
     m_cncPollTimer = new QTimer(this);
     m_cncPollTimer->setInterval(gc_cncPollInterval);
@@ -353,8 +353,8 @@ std::shared_ptr<const cnc::Snapshot> OpenGlWidget::cncSnapshot() const {
     return m_cnc ? m_cnc->snapshot : nullptr;
 }
 
-const cnc::MaterialConfig& OpenGlWidget::cncMaterial() const {
-    static constexpr cnc::MaterialConfig fallback;
+const cnc::Material& OpenGlWidget::cncMaterial() const {
+    static constexpr cnc::Material fallback;
     return m_cnc ? m_cnc->material : fallback;
 }
 
@@ -371,14 +371,14 @@ std::size_t OpenGlWidget::pendingCncCutCount() const {
     return m_cnc ? m_cnc->pending.size() : 0;
 }
 
-void OpenGlWidget::setCncMaterial(const cnc::MaterialConfig &material) {
+void OpenGlWidget::setCncMaterial(const cnc::Material &material) {
     if (!m_cnc) {
         return;
     }
 
     m_cnc->material = material.normalized();
     m_cnc->error.clear();
-    m_cnc->controller.setMaterial(m_cnc->material);
+    m_cnc->worker.setMaterial(m_cnc->material);
     m_cnc->pending.clear();
 
     if (m_cnc->initialized) {
@@ -403,7 +403,7 @@ void OpenGlWidget::setCncMaterial(const cnc::MaterialConfig &material) {
 
 void OpenGlWidget::appendCncProgram(cnc::Program program) const {
     if (m_cnc) {
-        m_cnc->controller.appendProgram(std::move(program));
+        m_cnc->worker.appendProgram(std::move(program));
     }
 }
 
@@ -411,7 +411,7 @@ void OpenGlWidget::clearCncPrograms() {
     if (!m_cnc) {
         return;
     }
-    m_cnc->controller.clearPrograms();
+    m_cnc->worker.clearPrograms();
     m_cnc->pending.clear();
     m_cnc->path.reset();
     m_cnc->snapshot.reset();
@@ -428,7 +428,7 @@ void OpenGlWidget::resetCncMaterial() {
     if (!m_cnc) {
         return;
     }
-    m_cnc->controller.resetMaterial();
+    m_cnc->worker.resetMaterial();
     m_cnc->pending.clear();
     if (m_cnc->initialized) {
         makeCurrent();
@@ -441,19 +441,19 @@ void OpenGlWidget::resetCncMaterial() {
 
 void OpenGlWidget::setCncPlaying(const bool playing) const {
     if (m_cnc) {
-        m_cnc->controller.setPlaying(playing);
+        m_cnc->worker.setPlaying(playing);
     }
 }
 
 void OpenGlWidget::setCncSpeed(const double speed) const {
     if (m_cnc) {
-        m_cnc->controller.setSpeed(speed);
+        m_cnc->worker.setSpeed(speed);
     }
 }
 
 void OpenGlWidget::finishCncNow() const {
     if (m_cnc) {
-        m_cnc->controller.finishNow();
+        m_cnc->worker.finishNow();
     }
 }
 
@@ -490,7 +490,7 @@ void OpenGlWidget::focusCncView() {
         return;
     }
 
-    const cnc::MaterialConfig &material = m_cnc->material;
+    const cnc::Material &material = m_cnc->material;
     const cadm::Vec3 center{
         material.centerX,
         material.topZ - material.thickness * 0.5f,
@@ -1156,7 +1156,7 @@ void OpenGlWidget::pollCnc() {
     }
 
     bool changed = false;
-    if (const auto snapshot = m_cnc->controller.latestSnapshot();
+    if (const auto snapshot = m_cnc->worker.latestSnapshot();
         snapshot && snapshot != m_cnc->snapshot) {
         m_cnc->snapshot = snapshot;
         if (snapshot->moves != m_cnc->path) {
@@ -1170,7 +1170,7 @@ void OpenGlWidget::pollCnc() {
         changed = true;
     }
 
-    if (auto cuts = m_cnc->controller.takeCutterMoves(); !cuts.empty()) {
+    if (auto cuts = m_cnc->worker.takeCutterMoves(); !cuts.empty()) {
         m_cnc->pending.insert(
             m_cnc->pending.end(),
             std::make_move_iterator(cuts.begin()),

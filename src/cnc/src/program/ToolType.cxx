@@ -5,16 +5,17 @@
 
 #include "cnc/program/ToolType.hxx"
 
-namespace cnc {
-
-std::string_view toolTypeName(const ToolType type) {
-    switch (type) {
-    case ToolType::ball:
-        return "ball";
-    case ToolType::flat:
-        return "flat";
+namespace cnc
+{
+    std::string_view toolTypeName(const ToolType type)
+    {
+        switch (type)
+        {
+        case ToolType::ball:
+            return "ball";
+        case ToolType::flat:
+            return "flat";
+        }
+        return "unknown";
     }
-    return "unknown";
-}
-
 } // namespace cnc

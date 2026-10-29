@@ -26,7 +26,8 @@ class QPushButton;
 class QSlider;
 class QSpinBox;
 
-class CncPanelWidget final : public ToolPanelWidget {
+class CncPanelWidget final : public ToolPanelWidget
+{
 public:
     explicit CncPanelWidget(OpenGlWidget* glWidget, QWidget* parent = nullptr);
 
@@ -41,7 +42,7 @@ private:
     static constexpr QColor gc_criticalErrorColor{217, 83, 79};
     static constexpr QColor gc_errorColor{217, 83, 79};
     static constexpr QColor gc_warningColor{217, 83, 79};
-    
+
     void buildUi();
     void connectSignals();
     void refresh();
@@ -57,10 +58,10 @@ private:
     void setPathsVisible(bool checked) const;
     void setToolVisible(bool checked) const;
     void setFlatShading(bool checked) const;
-    void setMaterialControls(const cnc::MaterialConfig& material) const;
+    void setMaterialControls(const cnc::Material& material) const;
     void updateWarnings();
 
-    [[nodiscard]] cnc::MaterialConfig materialFromControls() const;
+    [[nodiscard]] cnc::Material materialFromControls() const;
     [[nodiscard]] static double speedFromSlider(int value);
 
     QPointer<OpenGlWidget> m_gl{};

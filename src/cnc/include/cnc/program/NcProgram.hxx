@@ -73,12 +73,13 @@ namespace cnc
             }
             /* ok when program contains no errors */
             return std::ranges::none_of(diagnostics,
-                [this](const Diagnostic& diagnostic) {
-                    return diagnostic.type == DiagnosticMessageType::Error ||
-                           (flags & ParseResultFlags::WError && diagnostic.type ==
-                            DiagnosticMessageType::Warning);
-                }
-                );
+                                        [this](const Diagnostic& diagnostic)
+                                        {
+                                            return diagnostic.type == DiagnosticMessageType::Error ||
+                                            (flags & ParseResultFlags::WError && diagnostic.type ==
+                                                DiagnosticMessageType::Warning);
+                                        }
+            );
         }
     };
 

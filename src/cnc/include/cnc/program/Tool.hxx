@@ -22,14 +22,8 @@ struct Tool {
     }
 
     /// @brief Height of the cutting portion above the tool tip, in mm
-    ///
-    /// Material touching the tool above this height is hit by the
-    /// non-cutting shank. This is an advisory collision model: a ball mill
-    /// uses the hemisphere (one diameter), a flat mill a conservative flute
-    /// length
     [[nodiscard]] float cuttingLength() const;
 };
-
 } // namespace cnc
 
 

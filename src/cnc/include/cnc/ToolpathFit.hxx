@@ -10,8 +10,10 @@
 #include "cnc/Material.hxx"
 #include "program/NcProgram.hxx"
 
-namespace cnc {
-    struct ToolpathBounds {
+namespace cnc
+{
+    struct ToolpathBounds
+    {
         float minX{};
         float maxX{};
         float minY{};
@@ -20,13 +22,13 @@ namespace cnc {
         float maxZ{};
     };
 
-    [[nodiscard]] std::optional<ToolpathBounds> toolpathBounds(const Program &program);
+    [[nodiscard]] std::optional<ToolpathBounds> toolpathBounds(const Program& program);
 
     /// @brief Fit and centre a stock around a program's toolpath bounds
     /// Subdivision counts are taken from @p base
-    [[nodiscard]] MaterialConfig fitMaterialToProgram(
-        const Program &program,
-        const MaterialConfig &base = {}
+    [[nodiscard]] Material fitMaterialToProgram(
+        const Program& program,
+        const Material& base = {}
     );
 }
 

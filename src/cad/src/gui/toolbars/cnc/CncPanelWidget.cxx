@@ -84,9 +84,9 @@ void CncPanelWidget::buildUi() {
         {
             .parent = group,
             .spinBox = {
-                .minimum = cnc::MaterialConfig::gc_minSubdivisions,
-                .maximum = cnc::MaterialConfig::gc_maxSubdivisions,
-                .value = cnc::MaterialConfig::gc_defaultSubdivisions
+                .minimum = cnc::Material::gc_minSubdivisions,
+                .maximum = cnc::Material::gc_maxSubdivisions,
+                .value = cnc::Material::gc_defaultSubdivisions
             },
             .doubleSpinBox = {
                 .minimum = -1000.0,
@@ -95,16 +95,16 @@ void CncPanelWidget::buildUi() {
             },
         });
         m_width = controls.addDoubleSpinBox("Width [mm]", {
-            .minimum = 1.0, 
+            .minimum = 1.0,
             .value = 100.0
         });
         m_depth = controls.addDoubleSpinBox("Depth [mm]", {
-            .minimum = 1.0, 
+            .minimum = 1.0,
             .value = 100.0
         });
         m_thickness = controls.addDoubleSpinBox("Thickness [mm]", {
-            .minimum = 1.0, 
-            .maximum = 200.0, 
+            .minimum = 1.0,
+            .maximum = 200.0,
             .value = 20.0
         });
         m_centerX = controls.addDoubleSpinBox("Centre X [mm]");
@@ -224,8 +224,8 @@ double CncPanelWidget::speedFromSlider(const int value) {
     return 0.1 * std::pow(2000.0, t);
 }
 
-cnc::MaterialConfig CncPanelWidget::materialFromControls() const {
-    return cnc::MaterialConfig{
+cnc::Material CncPanelWidget::materialFromControls() const {
+    return cnc::Material{
         .width = static_cast<float>(m_width->value()),
         .depth = static_cast<float>(m_depth->value()),
         .thickness = static_cast<float>(m_thickness->value()),
@@ -237,7 +237,7 @@ cnc::MaterialConfig CncPanelWidget::materialFromControls() const {
     }.normalized();
 }
 
-void CncPanelWidget::setMaterialControls(const cnc::MaterialConfig& material) const {
+void CncPanelWidget::setMaterialControls(const cnc::Material& material) const {
     const MultiSignalBlocker blockers{
         m_width, m_depth, m_thickness, m_centerX, m_centerY, m_topZ,
         m_subdivisionsX, m_subdivisionsY,
@@ -253,7 +253,7 @@ void CncPanelWidget::setMaterialControls(const cnc::MaterialConfig& material) co
 }
 
 void CncPanelWidget::applyMaterial() {
-    const cnc::MaterialConfig material = materialFromControls();
+    const cnc::Material material = materialFromControls();
     m_gl->setCncMaterial(material);
     m_lastWarningCount = static_cast<std::size_t>(-1);
     m_lastSuppressedWarnings = static_cast<std::size_t>(-1);
@@ -328,7 +328,7 @@ void CncPanelWidget::loadPathFile(const QString& path) {
     const bool firstProgram = m_files->count() == 0;
 
     if (firstProgram && m_autoFit->isChecked()) {
-        const cnc::MaterialConfig fitted = cnc::fitMaterialToProgram(
+        const cnc::Material fitted = cnc::fitMaterialToProgram(
             program,
             materialFromControls()
             );

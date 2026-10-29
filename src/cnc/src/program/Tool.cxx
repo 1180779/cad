@@ -6,7 +6,6 @@
 #include "cnc/program/Tool.hxx"
 
 namespace cnc {
-
 float Tool::cuttingLength() const {
     switch (type) {
     case ToolType::ball:
@@ -16,5 +15,4 @@ float Tool::cuttingLength() const {
     }
     return 0.0f;
 }
-
 } // namespace cnc

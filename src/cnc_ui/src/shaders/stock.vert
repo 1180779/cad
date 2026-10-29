@@ -24,36 +24,36 @@ vec3 heightNormal(const ivec2 texel) {
 
     // CNC to scene ((X, Y, Z-up) to (X, Y=Z, Z=-Y))
     const vec3 normal = normalize(vec3(
-        -(right - left) / (2.0 * dx),
-        -(up - down) / (2.0 * dy),
-        1.0
+            -(right - left) / (2.0 * dx),
+            -(up - down) / (2.0 * dy),
+            1.0
     ));
     return vec3(normal.x, normal.z, -normal.y);
 }
 
 void main() {
     const ivec2 corner = ivec2(
-        gl_VertexID & 1,
-        (gl_VertexID >> 1) & 1
+            gl_VertexID & 1,
+            (gl_VertexID >> 1) & 1
     );
 
     const int cellsX = uSize.x - 1;
     const ivec2 cell = ivec2(
-            gl_InstanceID % cellsX, 
+            gl_InstanceID % cellsX,
             gl_InstanceID / cellsX
     );
     const ivec2 texel = clamp(
-            cell + corner, 
-            ivec2(0), 
+            cell + corner,
+            ivec2(0),
             uSize - 1
     );
 
     const float height = texelFetch(uHeights, texel, 0).r;
     const vec2 uv = vec2(texel) / vec2(uSize - 1);
     const vec3 cncPosition = vec3(
-        uMin.x + uv.x * uWorldSize.x,
-        uMin.y + uv.y * uWorldSize.y,
-        height
+            uMin.x + uv.x * uWorldSize.x,
+            uMin.y + uv.y * uWorldSize.y,
+            height
     );
 
     // CNC to scene ((X, Y, Z-up) to (X, Y=Z, Z=-Y))

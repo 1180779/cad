@@ -78,6 +78,9 @@ result); trimming applied)
 
 </details>
 
+## CNC Simulator
+Project features CNC milling simulator. Simulator architecture can be found in [docs/CNC.md](./docs/CNC.md)).
+
 ## Libraries and building
 The project uses CMake. You can use any CMake-compatible build system or IDE.
 The libraries used are:

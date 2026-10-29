@@ -47,7 +47,7 @@ namespace cnc
             const auto matchCommentEnding = [&inlineComments, &inlineCommentsStack](
                 const std::string_view remainder, std::size_t& i)
             {
-                if (const auto ending = std::get<1>(inlineComments[inlineCommentsStack.back()]);
+                if (const auto ending = std::get < 1 > (inlineComments[inlineCommentsStack.back()]);
                     remainder.starts_with(ending))
                 {
                     inlineCommentsStack.pop_back();
@@ -62,7 +62,7 @@ namespace cnc
                 bool commentBegins = false;
                 for (std::size_t index = 0; index < inlineComments.size(); ++index)
                 {
-                    if (const auto beginning = std::get<0>(inlineComments[index]);
+                    if (const auto beginning = std::get < 0 > (inlineComments[index]);
                         remainder.starts_with(beginning))
                     {
                         inlineCommentsStack.push_back(index);
@@ -122,7 +122,7 @@ namespace cnc
 
         [[maybe_unused]] constexpr auto addInfo = // NOLINT(*-identifier-naming)
             &addDiagnostic<DiagnosticMessageType::Info>;
-        [[maybe_unused]] constexpr auto addWarning = // NOLINT(*-identifier-naming) 
+        [[maybe_unused]] constexpr auto addWarning = // NOLINT(*-identifier-naming)
             &addDiagnostic<DiagnosticMessageType::Warning>;
         [[maybe_unused]] constexpr auto addError = // NOLINT(*-identifier-naming)
             &addDiagnostic<DiagnosticMessageType::Error>;
@@ -212,7 +212,7 @@ namespace cnc
                 if (index >= line.size())
                     break;
                 // input file may start with a percent sign program marker
-                // %G71 for mm 
+                // %G71 for mm
                 // %G70 for imperial
                 if (line[index] == '%')
                 {
@@ -384,7 +384,7 @@ namespace cnc
         };
 
         const auto processWords = [&program, &unitScale, &moveType, &lineNumber, &result, &stop, &feed
-            ](const std::vector<Word>& words, cadm::Vec3 &target)
+            ](const std::vector<Word>& words, cadm::Vec3& target)
         {
             bool error = false;
             bool sawCoordinate = false;
@@ -504,7 +504,8 @@ namespace cnc
 
             if (sawCoordinate)
             {
-                if (!position.has_value()) {
+                if (!position.has_value())
+                {
                     position = target;
                 }
                 else if (target != position.value())

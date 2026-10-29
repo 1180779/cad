@@ -5,10 +5,10 @@
 
 #ifndef CAD_HEADER_SRC_CNC_INCLUDE_CNC_TOOL_TYPE_HXX
 #define CAD_HEADER_SRC_CNC_INCLUDE_CNC_TOOL_TYPE_HXX
+
 #include <string_view>
 
 namespace cnc {
-
 /// @brief Geometry of the cutting tool
 enum class ToolType {
     ball,
@@ -16,7 +16,6 @@ enum class ToolType {
 };
 
 std::string_view toolTypeName(ToolType type);
-
 } // namespace cnc
 
 

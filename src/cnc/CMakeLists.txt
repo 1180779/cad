@@ -1,9 +1,11 @@
 file(GLOB_RECURSE CNC_SOURCES
         src/*.cxx
+        include/*.hxx
 )
 
 add_library(cnc_core STATIC
         ${CNC_SOURCES}
+        include/cnc/Snapshot.hxx
 )
 
 target_include_directories(cnc_core

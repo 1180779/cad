@@ -17,8 +17,8 @@ out vec4 FragColor;
 void main() {
     const vec3 light = normalize(vec3(0.45f, 1.0f, 0.35f));
     const vec3 normal = uFlatShading
-        ? normalize(cross(dFdx(vWorld), dFdy(vWorld)))
-        : normalize(vNormal);
+    ? normalize(cross(dFdx(vWorld), dFdy(vWorld)))
+    : normalize(vNormal);
     const vec3 toCamera = normalize(uCameraPos - vWorld);
     const vec3 reflected = reflect(-light, normal);
 
@@ -26,7 +26,7 @@ void main() {
     const float specular = pow(max(dot(reflected, toCamera), 0.0f), ALPHA);
 
     FragColor = vec4(
-        uColor * (K_AMBIENT + K_DIFFUSE * diffuse + K_SPECULAR * specular),
-        1.0f
+            uColor * (K_AMBIENT + K_DIFFUSE * diffuse + K_SPECULAR * specular),
+            1.0f
     );
 }

@@ -7,9 +7,12 @@
 #include <algorithm>
 #include <limits>
 
-namespace cnc {
-    std::optional<ToolpathBounds> toolpathBounds(const Program &program) {
-        if (program.moves.empty()) {
+namespace cnc
+{
+    std::optional<ToolpathBounds> toolpathBounds(const Program& program)
+    {
+        if (program.moves.empty())
+        {
             return std::nullopt;
         }
 
@@ -21,7 +24,8 @@ namespace cnc {
             .minZ = std::numeric_limits<float>::max(),
             .maxZ = std::numeric_limits<float>::lowest(),
         };
-        for (const Move &move : program.moves) {
+        for (const Move& move : program.moves)
+        {
             bounds.minX = std::min({bounds.minX, move.from.x, move.to.x});
             bounds.maxX = std::max({bounds.maxX, move.from.x, move.to.x});
             bounds.minY = std::min({bounds.minY, move.from.y, move.to.y});
@@ -32,13 +36,15 @@ namespace cnc {
         return bounds;
     }
 
-    MaterialConfig fitMaterialToProgram(
-        const Program &program,
-        const MaterialConfig &base
-    ) {
-        MaterialConfig result = base.normalized();
+    Material fitMaterialToProgram(
+        const Program& program,
+        const Material& base
+    )
+    {
+        Material result = base.normalized();
         const auto bounds = toolpathBounds(program);
-        if (!bounds) {
+        if (!bounds)
+        {
             return result;
         }
 
