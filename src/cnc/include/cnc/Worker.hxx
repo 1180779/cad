@@ -27,7 +27,6 @@ public:
     
     using Command = std::function<void(Simulator&)>;
     using CommandQueue = std::deque<Command>;
-    using MovesList = std::vector<Move>;
 
     explicit Worker(MaterialConfig material = {});
     ~Worker();
@@ -44,14 +43,14 @@ public:
     void setSpeed(double speed);
     void finishNow();
     [[nodiscard]] std::shared_ptr<const Snapshot> latestSnapshot() const;
-    [[nodiscard]] MovesList takeCutterMoves();
+    [[nodiscard]] ToolPath takeCutterMoves();
     [[nodiscard]] std::size_t pendingCutterMoveCount() const;
     [[nodiscard]] double speed() const;
 
 private:
     void post(Command command);
     void workerLoop(std::stop_token stopToken);
-    void queueCutterMoves(MovesList moves);
+    void queueCutterMoves(ToolPath moves);
 
     Simulator m_simulator;
 
@@ -59,7 +58,7 @@ private:
     std::condition_variable m_condition;
 
     CommandQueue m_commands;
-    MovesList m_pendingCutterMoves;
+    ToolPath m_pendingCutterMoves;
     std::shared_ptr<const Snapshot> m_latestSnapshot;
 
     std::atomic<double> m_speed{1.0};

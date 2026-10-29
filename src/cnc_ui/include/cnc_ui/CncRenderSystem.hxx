@@ -42,7 +42,7 @@ public:
 
     void shutdown();
     void setMaterial(const MaterialConfig& material);
-    void setPath(std::shared_ptr<const std::vector<Move>> path);
+    void setPath(std::shared_ptr<const ToolPath> path);
 
     void render(
         const gpu::GpuHeightMap& heightMap,
@@ -92,7 +92,7 @@ private:
     cadg::GpuMesh m_cylinderMesh;
 
     MaterialConfig m_material;
-    std::shared_ptr<const std::vector<Move>> m_path;
+    std::shared_ptr<const ToolPath> m_path;
     bool m_materialDirty{true};
     bool m_pathDirty{true};
 };

@@ -259,7 +259,7 @@ void CncRenderSystem::setMaterial(const MaterialConfig& material) {
     }
 }
 
-void CncRenderSystem::setPath(std::shared_ptr<const std::vector<Move>> path) {
+void CncRenderSystem::setPath(std::shared_ptr<const ToolPath> path) {
     if (m_path == path) {
         return;
     }

@@ -10,6 +10,8 @@
 #include "Tool.hxx"
 #include "cad_math/Vec3.hxx"
 
+#include <vector>
+
 namespace cnc {
 
 /// @brief Rapid move feed; in mm/min
@@ -35,6 +37,8 @@ struct Move
     [[nodiscard]] float length() const;
     [[nodiscard]] double durationSeconds() const;
 };
+
+using ToolPath = std::vector<Move>;
 
 } // namespace cnc
 

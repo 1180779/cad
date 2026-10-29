@@ -60,7 +60,7 @@ namespace cnc {
 
         /// @brief Shared immutable copy of the path, so the renderer can
         /// rebuild its line buffer without touching the live move list
-        std::shared_ptr<const std::vector<Move>> moves;
+        std::shared_ptr<const ToolPath> moves;
     };
 
     /// @brief Thread-confined toolpath timeline. One instance belongs to the
@@ -120,7 +120,7 @@ namespace cnc {
 
         /// @brief Cutter moves that still need to be rendered into the GPU
         /// height map. The caller submits them in fixed-size batches.
-        [[nodiscard]] std::vector<Move> takeCutterMoves();
+        [[nodiscard]] ToolPath takeCutterMoves();
 
         [[nodiscard]] std::size_t pendingCutterMoveCount() const {
             return m_pendingCutterMoves.size();
@@ -133,7 +133,7 @@ namespace cnc {
             return m_material;
         }
 
-        [[nodiscard]] const std::vector<Move>& moves() const {
+        [[nodiscard]] const ToolPath& moves() const {
             return m_moves;
         }
 
@@ -173,10 +173,10 @@ namespace cnc {
         [[nodiscard]] Tool currentTool() const;
 
         MaterialConfig m_material;
-        std::vector<Move> m_moves;
+        ToolPath m_moves;
         std::vector<Program> m_programs;
-        std::vector<Move> m_pendingCutterMoves;
-        std::shared_ptr<const std::vector<Move>> m_pathSnapshot;
+        ToolPath m_pendingCutterMoves;
+        std::shared_ptr<const ToolPath> m_pathSnapshot;
 
         std::size_t m_moveIndex{};
         double m_moveElapsed{};

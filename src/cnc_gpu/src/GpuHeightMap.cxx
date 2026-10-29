@@ -238,7 +238,7 @@ namespace cnc::gpu {
     }
 
     std::size_t GpuHeightMap::apply(
-        const std::vector<Move> &moves,
+        const ToolPath &moves,
         const std::size_t first,
         const std::size_t count
     ) {
@@ -254,7 +254,7 @@ namespace cnc::gpu {
         return consumed;
     }
 
-    std::size_t GpuHeightMap::applyAll(const std::vector<Move> &moves) {
+    std::size_t GpuHeightMap::applyAll(const ToolPath &moves) {
         return apply(moves, 0, moves.size());
     }
 
@@ -295,7 +295,7 @@ namespace cnc::gpu {
     }
 
     std::size_t GpuHeightMap::applyBatch(
-        const std::vector<Move> &moves,
+        const ToolPath &moves,
         const std::size_t first,
         const std::size_t count
     ) {

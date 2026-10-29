@@ -168,7 +168,7 @@ namespace cnc
 
     void Simulator::rebuildPathSnapshot()
     {
-        m_pathSnapshot = std::make_shared<const std::vector<Move>>(m_moves);
+        m_pathSnapshot = std::make_shared<const ToolPath>(m_moves);
         m_totalDuration = 0.0;
         for (const Move& move : m_moves)
         {
@@ -313,9 +313,9 @@ namespace cnc
         m_toolPosition = m_moves.back().to;
     }
 
-    std::vector<Move> Simulator::takeCutterMoves()
+    ToolPath Simulator::takeCutterMoves()
     {
-        std::vector<Move> result = std::move(m_pendingCutterMoves);
+        ToolPath result = std::move(m_pendingCutterMoves);
         m_pendingCutterMoves.clear();
         return result;
     }

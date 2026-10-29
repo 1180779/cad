@@ -29,7 +29,7 @@ namespace cnc
         std::string name;
         std::string sourcePath;
         Tool tool{};
-        std::vector<Move> moves;
+        ToolPath moves;
         double cuttingDistance{};
         double rapidDistance{};
         UnitType unitType{UnitType::Metric};

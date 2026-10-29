@@ -49,14 +49,14 @@ namespace cnc::gpu {
         /// texel rectangle
         /// @returns The number of cutting moves consumed
         std::size_t apply(
-            const std::vector<Move> &moves,
+            const ToolPath &moves,
             std::size_t first,
             std::size_t count
         );
 
         /// @brief Apply all cutting moves, batching them
         /// @returns The number of cutting moves consumed
-        std::size_t applyAll(const std::vector<Move> &moves);
+        std::size_t applyAll(const ToolPath &moves);
 
         /// @brief Read the current texture back to CPU
         [[nodiscard]] std::vector<float> readHeights() const;
@@ -93,7 +93,7 @@ namespace cnc::gpu {
 
         /// @brief Apply one batch. Returns the number of cutting moves consumed
         std::size_t applyBatch(
-            const std::vector<Move> &moves,
+            const ToolPath &moves,
             std::size_t first,
             std::size_t count
         );

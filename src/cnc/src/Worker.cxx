@@ -84,9 +84,9 @@ std::shared_ptr<const Snapshot> Worker::latestSnapshot() const {
     return m_latestSnapshot;
 }
 
-Worker::MovesList Worker::takeCutterMoves() {
+ToolPath Worker::takeCutterMoves() {
     std::lock_guard lock(m_mutex);
-    MovesList result = std::move(m_pendingCutterMoves);
+    ToolPath result = std::move(m_pendingCutterMoves);
     m_pendingCutterMoves.clear();
     return result;
 }
@@ -108,7 +108,7 @@ void Worker::post(Command command) {
     m_condition.notify_one();
 }
 
-void Worker::queueCutterMoves(MovesList moves) {
+void Worker::queueCutterMoves(ToolPath moves) {
     std::lock_guard lock(m_mutex);
     if (m_pendingCutterMoves.empty()) {
         m_pendingCutterMoves = std::move(moves);
@@ -178,7 +178,7 @@ void Worker::workerLoop(const std::stop_token stopToken) {
     };
 
     const auto flushCutterMoves = [&] {
-        if (std::vector<Move> cutterMoves = m_simulator.takeCutterMoves();
+        if (ToolPath cutterMoves = m_simulator.takeCutterMoves();
             !cutterMoves.empty()) {
             queueCutterMoves(std::move(cutterMoves));
             return true;
