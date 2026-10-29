@@ -10,7 +10,7 @@
 
 #include "../GeometryComponent.hpp"
 #include "GpuBuffer.hpp"
-#include "Vao.hxx"
+#include "cad_graphics/VertexArray.hxx"
 #include "PointRegistry.hpp"
 #include <cad_math/Vec3.hxx>
 
@@ -110,9 +110,9 @@ public:
     void ensureBernsteinUpToDate();
 
 private:
-    Vao m_patchVao;
-    Vao m_polylineVao;
-    Vao m_bernsteinPolyVao;
+    cadg::VertexArray m_patchVao;
+    cadg::VertexArray m_polylineVao;
+    cadg::VertexArray m_bernsteinPolyVao;
 
     PointRegistry *m_registry;
     std::vector<PointHandle> m_points;

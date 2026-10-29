@@ -11,7 +11,7 @@
 #include "../IPointReferrer.hpp"
 #include "GpuBuffer.hpp"
 #include "PointRegistry.hpp"
-#include "Vao.hxx"
+#include "cad_graphics/VertexArray.hxx"
 #include "utils/GregoryUtils.hxx"
 
 /// @brief Gregory patch filling a hole between C0 Bézier patches
@@ -118,8 +118,8 @@ private:
 
     CallbackId m_positionCallbackId = -1;
 
-    Vao m_patchVao;
-    Vao m_vectorsVao;
+    cadg::VertexArray m_patchVao;
+    cadg::VertexArray m_vectorsVao;
     GpuBuffer<cadm::Vec3, GL_ARRAY_BUFFER> m_vbo;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_ebo;
 

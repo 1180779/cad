@@ -16,7 +16,7 @@
 
 #include "../INewPointsTargetComponent.hpp"
 #include "../IPointReferrer.hpp"
-#include "Vao.hxx"
+#include "cad_graphics/VertexArray.hxx"
 
 /// @brief Multi-segment cubic Bézier curve with C2 continuity between segments
 ///
@@ -138,17 +138,17 @@ private:
     /// @brief Patch VAO
     /// @details Binds m_bernsteinVBO, 
     /// EBO holds 4 indices per segment
-    Vao m_patchVao;
+    cadg::VertexArray m_patchVao;
 
     /// @brief De Boor polygon VAO;
     /// @details Binds PointRegistry position VBO,
     /// EBO holds de Boor PointHandle indices
-    Vao m_deBoorVao;
+    cadg::VertexArray m_deBoorVao;
 
     /// @brief Bernstein polygon VAO
     /// @details binds m_bernsteinVBO,
     /// EBO = same patch indices
-    Vao m_bernsteinPolyVao;
+    cadg::VertexArray m_bernsteinPolyVao;
 
     PointRegistry *m_registry;
     std::vector<PointHandle> m_deBoorPoints;

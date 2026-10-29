@@ -16,7 +16,7 @@
 #include "PointRegistry.hpp"
 #include "SinglePatchView.hxx"
 #include "WrapDirection.hxx"
-#include "Vao.hxx"
+#include "cad_graphics/VertexArray.hxx"
 #include "utils/TrimMask.hxx"
 
 /// @brief Shared base for bicubic joined Bézier patches
@@ -250,8 +250,8 @@ protected:
 
     CallbackId m_positionCallbackId = -1;
 
-    Vao m_patchVao;
-    Vao m_netVao;
+    cadg::VertexArray m_patchVao;
+    cadg::VertexArray m_netVao;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_patchEbo;
     GpuBuffer<uint32_t, GL_ELEMENT_ARRAY_BUFFER> m_netEbo;
 

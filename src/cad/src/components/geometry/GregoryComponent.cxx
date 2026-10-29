@@ -25,8 +25,8 @@ GregoryComponent::~GregoryComponent() {
     m_vbo.deleteGpu(gl);
     m_ebo.deleteGpu(gl);
     m_vectorsEbo.deleteGpu(gl);
-    m_patchVao.deleteGpu(gl);
-    m_vectorsVao.deleteGpu(gl);
+    m_patchVao.destroy(gl);
+    m_vectorsVao.destroy(gl);
     m_registry->unsubscribeFromPositionChanges(m_positionCallbackId);
     for (const PointHandle h : m_handles) {
         m_registry->unlock(h);
@@ -158,10 +158,10 @@ void GregoryComponent::syncToGpu() {
     m_vbo.syncToGpu(gl);
     m_ebo.syncToGpu(gl);
     m_vectorsEbo.syncToGpu(gl);
-    if (!m_patchVao.created() && !m_ebo.empty()) {
-        m_patchVao.setup(gl, m_vbo.vboId(), m_ebo.vboId());
+    if (!m_patchVao.valid() && !m_ebo.empty()) {
+        m_patchVao = createPositionVertexArray(*gl, m_vbo.vboId(), m_ebo.vboId());
     }
-    if (!m_vectorsVao.created() && !m_vectorsEbo.empty()) {
-        m_vectorsVao.setup(gl, m_vbo.vboId(), m_vectorsEbo.vboId());
+    if (!m_vectorsVao.valid() && !m_vectorsEbo.empty()) {
+        m_vectorsVao = createPositionVertexArray(*gl, m_vbo.vboId(), m_vectorsEbo.vboId());
     }
 }
