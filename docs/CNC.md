@@ -6,7 +6,7 @@ The CNC simulator is split across four libraries:
     - [Move](../src/cnc/include/cnc/program/Move.hxx) &mdash; one linear machine move
     - [Tool](../src/cnc/include/cnc/program/Tool.hxx) &mdash; tool description: type and diameter
     - [ToolType](../src/cnc/include/cnc/program/ToolType.hxx) &mdash; tool geometry: ball or flat
-    - [Program](../src/cnc/include/cnc/program/NcProgram.hxx) &mdash; parsed NC program data and parser entry points
+    - [Program](../src/cnc/include/cnc/program/Program.hxx) &mdash; parsed NC program data and parser entry points
     - [Material](../src/cnc/include/cnc/Material.hxx) &mdash; stock and height-map grid configuration
     - [ToolpathFit](../src/cnc/include/cnc/ToolpathFit.hxx) &mdash; helpers to compute toolpath bounds and fit stock around them
     - [Snapshot](../src/cnc/include/cnc/Snapshot.hxx) &mdash; immutable snapshot of the current simulation state; does not hold the height map

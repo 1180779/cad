@@ -11,7 +11,7 @@
 namespace cnc {
 enum class ToolType;
 
-/// @brief Tool description (diameter in millimetres)
+/// @brief Tool description
 struct Tool {
     ToolType type{ToolType::ball};
     /// @brief Cutting diameter in mm

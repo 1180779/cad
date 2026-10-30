@@ -8,7 +8,7 @@
 #include <algorithm>
 #include "cad_math/Vec2.hxx"
 
-#include "program/NcProgram.hxx"
+#include "program/Program.hxx"
 
 namespace cnc {
 /// @brief Stock and grid configuration

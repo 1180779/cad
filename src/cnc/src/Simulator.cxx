@@ -309,7 +309,7 @@ void Simulator::checkWarnings(const Move& move, const std::size_t moveIndex) {
 
 void Simulator::reportStockCollision(Warning warning) {
     if ((warning.kind == WarningKind::nonCuttingPart ||
-        warning.kind == WarningKind::verticalPlunge) &&
+         warning.kind == WarningKind::verticalPlunge) &&
         warning.timeline == m_timeline &&
         warning.moveIndex < m_moves.size()) {
         addWarning(

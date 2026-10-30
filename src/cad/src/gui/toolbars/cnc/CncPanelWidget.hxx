@@ -58,6 +58,7 @@ private:
     void setPathsVisible(bool checked) const;
     void setToolVisible(bool checked) const;
     void setFlatShading(bool checked) const;
+    void startTimer();
     void setMaterialControls(const cnc::Material& material) const;
     void updateWarnings();
 
@@ -85,7 +86,6 @@ private:
     QDoubleSpinBox* m_topZ{};
     QSpinBox* m_subdivisionsX{};
     QSpinBox* m_subdivisionsY{};
-    QCheckBox* m_autoFit{};
     QCheckBox* m_showBlock{};
     QCheckBox* m_showPaths{};
     QCheckBox* m_showTool{};

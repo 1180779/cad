@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "cnc/Material.hxx"
-#include "program/NcProgram.hxx"
+#include "program/Program.hxx"
 
 namespace cnc {
 /// @brief Thread-confined toolpath timeline. One instance belongs to the

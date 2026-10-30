@@ -83,21 +83,18 @@ namespace cnc
         }
     };
 
-    /// @brief Infer the tool from the naming convention
     [[nodiscard]] std::optional<Tool> toolFromFilename(std::string_view filename);
 
-    /// @brief Parse an NC file from a stream
-    /// @param name Display name, also used to infer the tool when
-    /// @p toolOverride is empty
-    /// @param toolOverride When set, takes precedence over the filename hint
-    [[nodiscard]] ParseResult parseNcProgram(
+    /// @param name Display name
+    /// @param toolOverride When set, takes precedence over the filename
+    /// convention
+    [[nodiscard]] ParseResult parseProgram(
         std::istream& input,
         std::string name,
         std::optional<Tool> toolOverride = std::nullopt
     );
 
-    /// @brief Parse an NC file from the drive
-    [[nodiscard]] ParseResult parseNcProgramFile(
+    [[nodiscard]] ParseResult parseProgramFile(
         const std::filesystem::path& path,
         std::optional<Tool> toolOverride = std::nullopt
     );

@@ -16,7 +16,6 @@
 #include <QMessageBox>
 
 #include "OpenGLWidget.hpp"
-#include "cnc/ToolpathFit.hxx"
 #include <cad_common/util/MultiSignalBlocker.hxx>
 #include <cad_common/widgets/WidgetBuilders.hxx>
 
@@ -72,7 +71,6 @@ void CncPanelWidget::buildUi() {
         const widgets::LayoutBuilder controls(groupLayout, {.parent = group});
         m_loadButton = controls.addButton("Load toolpath files…");
         m_clearButton = controls.addButton("Clear programs");
-        m_autoFit = controls.addCheckBox("Auto-fit stock to first path", false);
         m_files = controls.addList(90);
     }
 
@@ -176,11 +174,7 @@ void CncPanelWidget::connectSignals() {
     connect(m_showPaths, &QCheckBox::toggled, this, &CNC::setPathsVisible);
     connect(m_showTool, &QCheckBox::toggled, this, &CNC::setToolVisible);
     connect(m_flatShading, &QCheckBox::toggled, this, &CNC::setFlatShading);
-    connect(m_gl, &OpenGlWidget::cncChanged, this, [this] {
-        if (isVisible() && !m_refreshTimer.isActive()) {
-            m_refreshTimer.start();
-        }
-    });
+    connect(m_gl, &OpenGlWidget::cncChanged, this, &CNC::startTimer);
 
     m_speedLabel->setText(QString::number(speedFromSlider(m_speed->value()), 'f', 2) + "x");
     m_gl->setCncSpeed(speedFromSlider(m_speed->value()));
@@ -218,6 +212,13 @@ void CncPanelWidget::setToolVisible(const bool checked) const {
 void CncPanelWidget::setFlatShading(const bool checked) const {
     m_gl->setCncFlatShading(checked);
 }
+
+void CncPanelWidget::startTimer() {
+    if (isVisible() && !m_refreshTimer.isActive()) {
+        m_refreshTimer.start();
+    }
+}
+
 
 double CncPanelWidget::speedFromSlider(const int value) {
     const double t = static_cast<double>(value) / 1000.0;
@@ -303,7 +304,7 @@ void CncPanelWidget::loadPathFiles() {
 }
 
 void CncPanelWidget::loadPathFile(const QString& path) {
-    const auto result = cnc::parseNcProgramFile(
+    const auto result = cnc::parseProgramFile(
         std::filesystem::path(path.toStdString()),
         std::nullopt
         );
@@ -326,15 +327,6 @@ void CncPanelWidget::loadPathFile(const QString& path) {
 
     const cnc::Program& program = result.program.value();
     const bool firstProgram = m_files->count() == 0;
-
-    if (firstProgram && m_autoFit->isChecked()) {
-        const cnc::Material fitted = cnc::fitMaterialToProgram(
-            program,
-            materialFromControls()
-            );
-        setMaterialControls(fitted);
-        m_gl->setCncMaterial(fitted);
-    }
 
     const QString displayName = QString::fromStdString(program.name);
     const auto [type, diameter] = program.tool;

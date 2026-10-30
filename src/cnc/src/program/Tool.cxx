@@ -6,6 +6,7 @@
 #include "cnc/program/Tool.hxx"
 
 namespace cnc {
+
 float Tool::cuttingLength() const {
     static constexpr float expectedMultiplier{3.0f};
     switch (type) {
@@ -16,4 +17,5 @@ float Tool::cuttingLength() const {
     }
     return 0.0f;
 }
+
 } // namespace cnc

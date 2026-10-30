@@ -9,6 +9,7 @@
 #include <string_view>
 
 namespace cnc {
+
 /// @brief Geometry of the cutting tool
 enum class ToolType {
     ball,
@@ -16,6 +17,7 @@ enum class ToolType {
 };
 
 std::string_view toolTypeName(ToolType type);
+
 } // namespace cnc
 
 
