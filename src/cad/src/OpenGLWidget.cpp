@@ -75,8 +75,8 @@ struct OpenGlWidget::CncState {
     std::shared_ptr<const cnc::Snapshot> snapshot;
     std::shared_ptr<const cnc::ToolPath> path;
     cnc::ToolPath pending;
-    std::set<std::size_t> flaggedShankMoves;
-    bool shankCollisions{false};
+    std::set<std::pair<cnc::WarningKind, std::size_t>> flaggedStockWarnings;
+    bool stockCollisions{false};
     bool initialized{};
     bool visible{false};
     std::string error;
@@ -385,7 +385,7 @@ void OpenGlWidget::setCncMaterial(const cnc::Material &material) {
     m_cnc->error.clear();
     m_cnc->worker.setMaterial(m_cnc->material);
     m_cnc->pending.clear();
-    m_cnc->flaggedShankMoves.clear();
+    m_cnc->flaggedStockWarnings.clear();
 
     if (m_cnc->initialized) {
         makeCurrent();
@@ -419,7 +419,7 @@ void OpenGlWidget::clearCncPrograms() {
     }
     m_cnc->worker.clearPrograms();
     m_cnc->pending.clear();
-    m_cnc->flaggedShankMoves.clear();
+    m_cnc->flaggedStockWarnings.clear();
     m_cnc->path.reset();
     m_cnc->snapshot.reset();
     if (m_cnc->initialized) {
@@ -437,7 +437,7 @@ void OpenGlWidget::resetCncMaterial() {
     }
     m_cnc->worker.resetMaterial();
     m_cnc->pending.clear();
-    m_cnc->flaggedShankMoves.clear();
+    m_cnc->flaggedStockWarnings.clear();
     if (m_cnc->initialized) {
         makeCurrent();
         m_cnc->heightMap.reset();
@@ -486,9 +486,9 @@ void OpenGlWidget::setCncFlatShading(const bool flat) {
     }
 }
 
-void OpenGlWidget::setCncShankCollisions(const bool enabled) {
+void OpenGlWidget::setCncStockCollisions(const bool enabled) {
     if (m_cnc) {
-        m_cnc->shankCollisions = enabled;
+        m_cnc->stockCollisions = enabled;
         update();
     }
 }
@@ -1208,25 +1208,29 @@ void OpenGlWidget::applyPendingCncCuts() {
     const std::size_t limit = std::max<std::size_t>(m_cnc->heightMap.batchSize() * 8, 1);
     const std::size_t count = std::min(m_cnc->pending.size(), limit);
     std::size_t first = 0;
-    if (m_cnc->shankCollisions) {
+    if (m_cnc->stockCollisions) {
         for (std::size_t i = 0; i < count; ++i) {
             const cnc::Move& move = m_cnc->pending[i];
-            if (m_cnc->flaggedShankMoves.contains(move.instructionIndex)) {
-                // don't duplicate warnings
-                continue;
-            }
-            const auto region = cnc::shankRegion(m_cnc->material, move);
-            if (!region) {
-                continue;
-            }
+            const auto plungeKey = std::make_pair(cnc::WarningKind::verticalPlunge, move.instructionIndex);
+            const auto shankKey = std::make_pair(cnc::WarningKind::nonCuttingPart, move.instructionIndex);
+            const auto plungeRegion = !m_cnc->flaggedStockWarnings.contains(plungeKey)
+                ? cnc::verticalPlungeRegion(m_cnc->material, move) : std::nullopt;
+            const auto shankRegion = !m_cnc->flaggedStockWarnings.contains(shankKey)
+                ? cnc::shankRegion(m_cnc->material, move) : std::nullopt;
+            const auto region = plungeRegion ? plungeRegion : shankRegion;
+            if (!region) continue;
 
+            // Check the stock left by earlier moves, before this move removes it.
             m_cnc->heightMap.apply(m_cnc->pending, first, i - first);
             first = i;
-            if (auto warning = cnc::checkShankCollision(
-                    m_cnc->material, move, *region, m_cnc->heightMap.readHeights(*region))) {
-                m_cnc->flaggedShankMoves.insert(move.instructionIndex);
-                m_cnc->worker.reportShankCollision(std::move(*warning));
-            }
+            const auto heights = m_cnc->heightMap.readHeights(*region);
+            const auto report = [&](std::optional<cnc::Warning> warning) {
+                if (!warning) return;
+                m_cnc->flaggedStockWarnings.emplace(warning->kind, move.instructionIndex);
+                m_cnc->worker.reportStockCollision(std::move(*warning));
+            };
+            if (plungeRegion) report(cnc::checkVerticalPlunge(m_cnc->material, move, *region, heights));
+            if (shankRegion) report(cnc::checkShankCollision(m_cnc->material, move, *region, heights));
         }
     }
     // apply all remaining moves

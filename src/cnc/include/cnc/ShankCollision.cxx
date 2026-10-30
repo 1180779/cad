@@ -10,10 +10,10 @@
 
 namespace cnc {
 
-std::optional<HeightRegion> shankRegion(const Material& material, const Move& move) {
+namespace {
+std::optional<HeightRegion> stockRegion(const Material& material, const Move& move) {
     const auto radius = move.tool.radius();
-    if (radius <= 0.0f ||
-        std::min(move.from.z, move.to.z) + move.tool.cuttingLength() >= material.topZ) {
+    if (radius <= 0.0f) {
         return std::nullopt;
     }
 
@@ -42,6 +42,68 @@ std::optional<HeightRegion> shankRegion(const Material& material, const Move& mo
         .width = x1 - x0 + 1,
         .height = y1 - y0 + 1
     };
+}
+
+} // namespace
+
+std::optional<HeightRegion> shankRegion(const Material& material, const Move& move) {
+    if (std::min(move.from.z, move.to.z) + move.tool.cuttingLength() >= material.topZ) {
+        return std::nullopt;
+    }
+    return stockRegion(material, move);
+}
+
+std::optional<HeightRegion> verticalPlungeRegion(const Material& material, const Move& move) {
+    if (move.from.xy() != move.to.xy() ||
+        move.to.z >= move.from.z ||
+        move.to.z >= material.topZ) {
+        return std::nullopt;
+    }
+    return stockRegion(material, move);
+}
+
+std::optional<Warning> checkVerticalPlunge(
+    const Material& material,
+    const Move& move,
+    const HeightRegion region,
+    const std::span<const float> heights) {
+    if (!verticalPlungeRegion(material, move) ||
+        region.width <= 0 ||
+        region.height <= 0 ||
+        heights.size() != region.sampleCount()) {
+        return std::nullopt;
+    }
+    const auto radius = move.tool.radius();
+    const auto radiusSq = radius * radius;
+    for (int y = 0; y < region.height; ++y) {
+        for (int x = 0; x < region.width; ++x) {
+            const auto height = heights[region.index(x, y)];
+            if (height <= material.bottomZ() + 1e-4f) {
+                continue;
+            }
+            const auto offset = material.samplePositionXY(region.sampleCoordinates(x, y)) - move.to.xy();
+            const auto distanceSq = offset.lengthSquared();
+            if (distanceSq > radiusSq) {
+                continue;
+            }
+            const auto cutterHeight = move.to.z + (move.tool.type == ToolType::ball
+                                                       ? radius - std::sqrt(std::max(0.0f, radiusSq - distanceSq))
+                                                       : 0.0f);
+            if (height > cutterHeight + 1e-4f) {
+                return Warning{
+                    .kind = WarningKind::verticalPlunge,
+                    .moveIndex = move.instructionIndex,
+                    .programIndex = move.programIndex,
+                    .position = move.to,
+                    .message = "Vertical plunge into remaining material at z="
+                               + std::to_string(height)
+                               + " mm.",
+                    .timeline = move.timeline
+                };
+            }
+        }
+    }
+    return std::nullopt;
 }
 
 std::optional<Warning> checkShankCollision(

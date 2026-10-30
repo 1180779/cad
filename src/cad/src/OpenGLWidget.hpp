@@ -270,7 +270,7 @@ public:
     void setCncShowPaths(bool show);
     void setCncShowTool(bool show);
     void setCncFlatShading(bool flat);
-    void setCncShankCollisions(bool enabled);
+    void setCncStockCollisions(bool enabled);
     void setCncVisible(bool visible);
     void focusCncView();
 

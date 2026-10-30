@@ -37,6 +37,13 @@ struct HeightRegion {
     const Move& move,
     HeightRegion region,
     std::span<const float> heights);
+[[nodiscard]] std::optional<HeightRegion> verticalPlungeRegion(const Material& material, const Move& move);
+[[nodiscard]] std::optional<Warning> checkVerticalPlunge(
+    const Material& material,
+    const Move& move,
+    HeightRegion region,
+    std::span<const float> heights);
+
 } // namespace cnc
 
 #endif // CAD_HEADER_SRC_CNC_INCLUDE_CNC_SHANK_COLLISION_HXX

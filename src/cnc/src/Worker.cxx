@@ -84,11 +84,11 @@ namespace cnc
         });
     }
 
-    void Worker::reportShankCollision(Warning warning)
+    void Worker::reportStockCollision(Warning warning)
     {
         post([warning = std::move(warning)](Simulator& simulator) mutable
         {
-            simulator.reportShankCollision(std::move(warning));
+            simulator.reportStockCollision(std::move(warning));
         });
     }
 
