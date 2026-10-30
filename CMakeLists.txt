@@ -61,7 +61,7 @@ FetchContent_MakeAvailable(cad_math)
 FetchContent_Declare(
         cad_graphics
         GIT_REPOSITORY https://github.com/1180779/cad_graphics.git
-        GIT_TAG v1.1.0
+        GIT_TAG v1.1.1
 )
 FetchContent_MakeAvailable(cad_graphics)
 

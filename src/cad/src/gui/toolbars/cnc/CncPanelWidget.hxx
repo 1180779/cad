@@ -31,7 +31,6 @@ class CncPanelWidget final : public ToolPanelWidget
 public:
     explicit CncPanelWidget(OpenGlWidget* glWidget, QWidget* parent = nullptr);
 
-    /// @brief Load one NC file (used by command-line preview helpers)
     void loadPathFile(const QString& path);
 
 protected:
@@ -58,7 +57,7 @@ private:
     void setPathsVisible(bool checked) const;
     void setToolVisible(bool checked) const;
     void setFlatShading(bool checked) const;
-    void setShankCollisions(bool checked) const;
+    void startTimer();
     void setMaterialControls(const cnc::Material& material) const;
     void updateWarnings();
 
@@ -86,12 +85,10 @@ private:
     QDoubleSpinBox* m_topZ{};
     QSpinBox* m_subdivisionsX{};
     QSpinBox* m_subdivisionsY{};
-    QCheckBox* m_autoFit{};
     QCheckBox* m_showBlock{};
     QCheckBox* m_showPaths{};
     QCheckBox* m_showTool{};
     QCheckBox* m_flatShading{};
-    QCheckBox* m_shankCollisions{};
     QSlider* m_speed{};
     QLabel* m_speedLabel{};
     QLabel* m_statusLabel{};

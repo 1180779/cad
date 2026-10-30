@@ -44,7 +44,7 @@ namespace cnc
         void setPlaying(bool playing);
         void setSpeed(double speed);
         void finishNow();
-        void reportShankCollision(Warning warning);
+        void reportStockCollision(Warning warning);
         [[nodiscard]] std::shared_ptr<const Snapshot> latestSnapshot() const;
         [[nodiscard]] ToolPath takeCutterMoves();
         [[nodiscard]] std::size_t pendingCutterMoveCount() const;

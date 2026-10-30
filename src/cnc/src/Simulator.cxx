@@ -5,6 +5,7 @@
 #include "cnc/program/Tool.hxx"
 #include "cnc/program/Move.hxx"
 #include "cnc/Simulator.hxx"
+#include "cnc/CompactMoves.hxx"
 
 #include <algorithm>
 #include <iomanip>
@@ -252,6 +253,7 @@ void Simulator::finishNow() {
         ++m_moveIndex;
     }
 
+    compactMoves(m_pendingCutterMoves);
     m_moveIndex = m_moves.size();
     m_moveElapsed = 0.0;
     m_elapsed = m_totalDuration;
@@ -280,9 +282,6 @@ void Simulator::applyMove(const Move& move, const std::size_t moveIndex) {
 }
 
 void Simulator::checkWarnings(const Move& move, const std::size_t moveIndex) {
-    const float midX = (move.from.x + move.to.x) * 0.5f;
-    const float midY = (move.from.y + move.to.y) * 0.5f;
-    const bool overStock = containsXY(m_material, midX, midY);
     const float bottom = m_material.topZ - m_material.thickness;
     const float lowestZ = std::min(move.from.z, move.to.z);
 
@@ -305,28 +304,12 @@ void Simulator::checkWarnings(const Move& move, const std::size_t moveIndex) {
             }
         }
     };
-    const auto checkIfVerticalPlunge = [&] {
-        if (overStock &&
-            move.from.xy() == move.to.xy() &&
-            move.to.z < move.from.z &&
-            lowestZ < m_material.topZ) {
-            addWarning(
-                WarningKind::verticalPlunge,
-                moveIndex,
-                move.programIndex,
-                move.to,
-                "Vertical plunge into material by "
-                + formatNumber(move.from.z - move.to.z)
-                + " mm."
-                );
-        }
-    };
     checkIfTooDeep();
-    checkIfVerticalPlunge();
 }
 
-void Simulator::reportShankCollision(Warning warning) {
-    if (warning.kind == WarningKind::nonCuttingPart &&
+void Simulator::reportStockCollision(Warning warning) {
+    if ((warning.kind == WarningKind::nonCuttingPart ||
+         warning.kind == WarningKind::verticalPlunge) &&
         warning.timeline == m_timeline &&
         warning.moveIndex < m_moves.size()) {
         addWarning(
