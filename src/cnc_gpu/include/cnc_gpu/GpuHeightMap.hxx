@@ -30,23 +30,14 @@ namespace cnc::gpu {
         GpuHeightMap(GpuHeightMap &&) = delete;
         GpuHeightMap &operator=(GpuHeightMap &&) = delete;
 
-        /// @brief Create the height texture, framebuffer and cutter program
-        /// @pre A current openGl context must exist
-        /// @param material Cutting material configuration
-        /// @param shaderDirectory Directory containing shader sources
-        /// @param error Optional failure description
         [[nodiscard]] bool initialize(
             const Material &material,
             const std::string &shaderDirectory,
             std::string *error = nullptr
         );
 
-        /// @brief Release Gl objects
-        /// @note A current context is required
         void shutdown();
-
-        /// @brief Clear the height texture to a flat top surface
-        void reset();
+        void reset() const;
 
         /// @brief Apply cutting moves at [first, first + count)
         /// @param issues one bitmask per input move
@@ -56,20 +47,16 @@ namespace cnc::gpu {
             std::size_t first,
             std::size_t count,
             std::vector<std::uint32_t>* issues = nullptr
-        );
+        ) const;
 
-        /// @brief Apply all cutting moves, batching them
+        /// @brief Apply all cutting move
         /// @returns The number of cutting moves consumed
-        std::size_t applyAll(const ToolPath &moves);
+        std::size_t applyAll(const ToolPath &moves) const;
 
-        /// @brief Read the texture to CPU
-        [[nodiscard]] std::vector<float> readHeights() const;
         [[nodiscard]] GLuint texture() const;
         [[nodiscard]] const Material &material() const;
         [[nodiscard]] bool initialized() const;
         [[nodiscard]] std::size_t batchSize() const;
-
-        /// @brief Segment count per render pass. Clamped.
         void setBatchSize(std::size_t batchSize);
 
     private:
@@ -87,7 +74,7 @@ namespace cnc::gpu {
             std::size_t first,
             std::size_t count,
             std::uint32_t* issues
-        );
+        ) const;
 
         [[nodiscard]] bool computeBounds(
             const Move &move,

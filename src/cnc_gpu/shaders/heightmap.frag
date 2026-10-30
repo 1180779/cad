@@ -23,7 +23,10 @@ out float fragHeight;
 
 void main() {
     const ivec2 texel = ivec2(gl_FragCoord.xy);
-    if (texel.x < 0 || texel.y < 0 || texel.x >= uStockSize.x || texel.y >= uStockSize.y) {
+    if (texel.x < 0 ||
+        texel.y < 0 ||
+        texel.x >= uStockSize.x ||
+        texel.y >= uStockSize.y) {
         discard;
     }
     const vec3 A = uCutterWFrom;

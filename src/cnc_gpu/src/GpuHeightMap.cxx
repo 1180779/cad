@@ -176,7 +176,7 @@ void GpuHeightMap::destroyResources() {
     }
 }
 
-void GpuHeightMap::reset() {
+void GpuHeightMap::reset() const {
     if (!m_initialized) {
         return;
     }
@@ -194,13 +194,17 @@ std::size_t GpuHeightMap::apply(
     const std::size_t first,
     const std::size_t count,
     std::vector<std::uint32_t>* issues
-    ) {
-    if (issues) issues->clear();
+    ) const {
+    if (issues) {
+        issues->clear();
+    }
     if (!m_initialized || count == 0 || first >= moves.size()) {
         return 0;
     }
     const std::size_t end = first + std::min(count, moves.size() - first);
-    if (issues) issues->resize(end - first, 0u);
+    if (issues) {
+        issues->resize(end - first, 0u);
+    }
     std::size_t consumed = 0;
     for (std::size_t start = first; start < end; start += m_batchSize) {
         const std::size_t batch = std::min(m_batchSize, end - start);
@@ -209,7 +213,7 @@ std::size_t GpuHeightMap::apply(
     return consumed;
 }
 
-std::size_t GpuHeightMap::applyAll(const ToolPath& moves) {
+std::size_t GpuHeightMap::applyAll(const ToolPath& moves) const {
     return apply(moves, 0, moves.size());
 }
 
@@ -221,7 +225,7 @@ bool GpuHeightMap::computeBounds(
     int& j1
     ) const {
     const float radius = move.tool.radius();
-    if (!(radius > 0.0f)) {
+    if (radius <= 0.0f) {
         return false;
     }
 
@@ -238,7 +242,10 @@ bool GpuHeightMap::computeBounds(
     const float maxPx = std::max(move.from.x, move.to.x) + radius;
     const float minPy = std::min(move.from.y, move.to.y) - radius;
     const float maxPy = std::max(move.from.y, move.to.y) + radius;
-    if (maxPx < minX || minPx > maxX || maxPy < minY || minPy > maxY) {
+    if (maxPx < minX ||
+        minPx > maxX ||
+        maxPy < minY ||
+        minPy > maxY) {
         return false;
     }
 
@@ -246,7 +253,8 @@ bool GpuHeightMap::computeBounds(
     i1 = std::clamp(static_cast<int>(std::ceil((maxPx - minX) / cellX)), 0, nx - 1);
     j0 = std::clamp(static_cast<int>(std::floor((minPy - minY) / cellY)), 0, ny - 1);
     j1 = std::clamp(static_cast<int>(std::ceil((maxPy - minY) / cellY)), 0, ny - 1);
-    return i0 <= i1 && j0 <= j1;
+    return i0 <= i1 &&
+           j0 <= j1;
 }
 
 std::size_t GpuHeightMap::applyBatch(
@@ -254,7 +262,7 @@ std::size_t GpuHeightMap::applyBatch(
     const std::size_t first,
     const std::size_t count,
     std::uint32_t* issues
-    ) {
+    ) const {
     const std::size_t end = std::min(first + count, moves.size());
 
     const int nx = m_material.resolutionX();
@@ -272,7 +280,8 @@ std::size_t GpuHeightMap::applyBatch(
         m_gl->glGetIntegeri_v(GL_SHADER_STORAGE_BUFFER_BINDING, 0, &oldIndexedBuffer);
         m_gl->glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_START, 0, &oldBufferStart);
         m_gl->glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_SIZE, 0, &oldBufferSize);
-        m_gl->glNamedBufferData(m_issueBuffer, count * sizeof(std::uint32_t), issues, GL_STREAM_READ);
+        m_gl->glNamedBufferData(m_issueBuffer, static_cast<GLsizeiptr>(count * sizeof(std::uint32_t)), issues,
+            GL_STREAM_READ);
         m_gl->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_issueBuffer);
     }
 
@@ -286,17 +295,17 @@ std::size_t GpuHeightMap::applyBatch(
     m_gl->glEnable(GL_BLEND);
     m_gl->glBlendEquation(GL_MIN);
 
-    const auto glBoundBorrow = cadg::ShaderProgramGlBoundBorrow(m_program, m_gl);
-    glBoundBorrow.bind();
+    const auto program = cadg::ShaderProgramGlBoundBorrow(m_program, m_gl);
+    program.bind();
     m_gl->glBindVertexArray(m_vao);
-    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform2i("uStockSize", nx, ny));
-    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uStockWMinX", m_material.centerX - m_material.width * 0.5f));
-    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uStockWMinY", m_material.centerY - m_material.depth * 0.5f));
+    SHADER_SET_UNIFORM_CHECK(program.uniform2i("uStockSize", nx, ny));
+    SHADER_SET_UNIFORM_CHECK(program.uniform1f("uStockWMinX", m_material.centerX - m_material.width * 0.5f));
+    SHADER_SET_UNIFORM_CHECK(program.uniform1f("uStockWMinY", m_material.centerY - m_material.depth * 0.5f));
     SHADER_SET_UNIFORM_CHECK(
-        glBoundBorrow.uniform1f("uStockCellWResolutionX", m_material.width / static_cast<float>(nx - 1)));
+        program.uniform1f("uStockCellWResolutionX", m_material.width / static_cast<float>(nx - 1)));
     SHADER_SET_UNIFORM_CHECK(
-        glBoundBorrow.uniform1f("uStockCellWResolutionY", m_material.depth / static_cast<float>(ny - 1)));
-    SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uStockWBottom", m_material.topZ - m_material.thickness));
+        program.uniform1f("uStockCellWResolutionY", m_material.depth / static_cast<float>(ny - 1)));
+    SHADER_SET_UNIFORM_CHECK(program.uniform1f("uStockWBottom", m_material.topZ - m_material.thickness));
 
     std::size_t consumed = 0;
     for (std::size_t i = first; i < end; ++i) {
@@ -316,37 +325,37 @@ std::size_t GpuHeightMap::applyBatch(
         m_gl->glScissor(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
         if (issues) {
             m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_issueFbo);
-            const cadg::ShaderProgramGlBoundBorrow glBoundIssue(m_issueProgram, m_gl);
-            glBoundIssue.bind();
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1i("uMoveSlot", static_cast<int>(i - first)));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform2f("uStockMin", m_material.minXY()));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform2f("uStockCellSize", m_material.cellSizeXY()));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1f("uStockBottom", m_material.bottomZ()));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1f("uStockTop", m_material.topZ));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform3f("uFrom", move.from));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform3f("uTo", move.to));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1f("uRadius", move.tool.radius()));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1f("uCuttingLength", move.tool.cuttingLength()));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1i("uBall", move.tool.type == ToolType::ball));
-            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1i("uRapid", move.type == MoveType::G00));
+            const cadg::ShaderProgramGlBoundBorrow issueProgram(m_issueProgram, m_gl);
+            issueProgram.bind();
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform1i("uMoveSlot", static_cast<int>(i - first)));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform2f("uStockMin", m_material.minXY()));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform2f("uStockCellSize", m_material.cellSizeXY()));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform1f("uStockBottom", m_material.bottomZ()));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform1f("uStockTop", m_material.topZ));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform3f("uFrom", move.from));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform3f("uTo", move.to));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform1f("uRadius", move.tool.radius()));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform1f("uCuttingLength", move.tool.cuttingLength()));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform1i("uBall", move.tool.type == ToolType::ball));
+            SHADER_SET_UNIFORM_CHECK(issueProgram.uniform1i("uRapid", move.type == MoveType::G00));
             m_gl->glDrawArrays(GL_TRIANGLES, 0, 3);
             m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-            glBoundBorrow.bind();
+            program.bind();
         }
         if (move.type == MoveType::G00) continue;
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCutterWFrom", move.from));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCutterWTo", move.to));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform2f("uCutterDelta", deltaX, deltaY));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uCutterLengthSquared", lengthSquared));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1f("uCutterRadius", move.tool.radius()));
-        SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform1i("uCutterType", move.tool.type == ToolType::ball ? 0 : 1));
+        SHADER_SET_UNIFORM_CHECK(program.uniform3f("uCutterWFrom", move.from));
+        SHADER_SET_UNIFORM_CHECK(program.uniform3f("uCutterWTo", move.to));
+        SHADER_SET_UNIFORM_CHECK(program.uniform2f("uCutterDelta", deltaX, deltaY));
+        SHADER_SET_UNIFORM_CHECK(program.uniform1f("uCutterLengthSquared", lengthSquared));
+        SHADER_SET_UNIFORM_CHECK(program.uniform1f("uCutterRadius", move.tool.radius()));
+        SHADER_SET_UNIFORM_CHECK(program.uniform1i("uCutterType", move.tool.type == ToolType::ball ? 0 : 1));
         m_gl->glDrawArrays(GL_TRIANGLES, 0, 3);
         ++consumed;
     }
 
     if (issues) {
         m_gl->glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
-        m_gl->glGetNamedBufferSubData(m_issueBuffer, 0, count * sizeof(std::uint32_t), issues);
+        m_gl->glGetNamedBufferSubData(m_issueBuffer, 0, static_cast<GLsizeiptr>(count * sizeof(std::uint32_t)), issues);
         if (oldIndexedBuffer != 0 && oldBufferSize > 0) {
             m_gl->glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, oldIndexedBuffer, oldBufferStart, oldBufferSize);
         } else {
@@ -362,21 +371,9 @@ std::size_t GpuHeightMap::applyBatch(
     m_gl->glBlendEquation(GL_FUNC_ADD);
     m_gl->glBindVertexArray(0);
     m_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBoundBorrow.unbind();
+    program.unbind();
     glSnapshot.restore(m_gl);
     return consumed;
-}
-
-std::vector<float> GpuHeightMap::readHeights() const {
-    if (!m_initialized) return {};
-    const int nx = m_material.resolutionX();
-    const int ny = m_material.resolutionY();
-    std::vector<float> heights(static_cast<std::size_t>(nx) * ny);
-    m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
-    m_gl->glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    m_gl->glReadPixels(0, 0, nx, ny, GL_RED, GL_FLOAT, heights.data());
-    m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-    return heights;
 }
 
 GLuint GpuHeightMap::texture() const {
