@@ -91,10 +91,15 @@ bool GpuHeightMap::compileProgram(
     auto program = cadg::ShaderProgram::fromFiles(m_gl, directory / "heightmap.vert", directory / "heightmap.frag");
     if (!program.has_value()) {
         return fail(
-            "GpuHeighMap shader compilation failed:  \"" + program.error() + "\"."
+            "GpuHeighMap heightmap shader compilation failed:  \"" + program.error() + "\"."
             );
     }
     m_program = std::move(program.value());
+    auto issues = cadg::ShaderProgram::fromFiles(m_gl, directory / "heightmap.vert", directory / "issues.frag");
+    if (!issues.has_value()) {
+        return fail("GpuHeighMap issues shader compilation failed: " + issues.error());
+    }
+    m_issueProgram = std::move(issues.value());
     return true;
 }
 
@@ -112,7 +117,7 @@ bool GpuHeightMap::createResources(std::string* error) {
     m_gl->glGenTextures(1, &m_texture);
     m_gl->glGenFramebuffers(1, &m_fbo);
     m_gl->glBindTexture(GL_TEXTURE_2D, m_texture);
-    m_gl->glTexImage2D(GL_TEXTURE_2D, 0,GL_R32F, nx, ny, 0,GL_RED,GL_FLOAT, nullptr);
+    m_gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, nx, ny, 0,GL_RED, GL_FLOAT, nullptr);
     m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     m_gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -128,6 +133,17 @@ bool GpuHeightMap::createResources(std::string* error) {
     m_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
     m_gl->glBindTexture(GL_TEXTURE_2D, 0);
 
+    m_gl->glGenFramebuffers(1, &m_issueFbo);
+    m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_issueFbo);
+    m_gl->glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, nx);
+    m_gl->glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_HEIGHT, ny);
+    m_gl->glDrawBuffer(GL_NONE);
+    m_gl->glReadBuffer(GL_NONE);
+    const bool complete = m_gl->glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    m_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (!complete) return fail("Could not create the issue-check framebuffer.");
+    m_gl->glCreateBuffers(1, &m_issueBuffer);
+
     m_gl->glGenVertexArrays(1, &m_vao);
     return true;
 }
@@ -137,18 +153,27 @@ void GpuHeightMap::destroyResources() {
         return;
     }
     m_program.destroy(m_gl);
+    m_issueProgram.destroy(m_gl);
+    if (m_issueFbo != 0) {
+        m_gl->glDeleteFramebuffers(1, &m_issueFbo);
+        m_issueFbo = 0;
+    }
+    if (m_issueBuffer != 0) {
+        m_gl->glDeleteBuffers(1, &m_issueBuffer);
+        m_issueBuffer = 0;
+    }
     if (m_texture != 0) {
         m_gl->glDeleteTextures(1, &m_texture);
+        m_texture = 0;
     }
     if (m_fbo != 0) {
         m_gl->glDeleteFramebuffers(1, &m_fbo);
+        m_fbo = 0;
     }
     if (m_vao != 0) {
         m_gl->glDeleteVertexArrays(1, &m_vao);
+        m_vao = 0;
     }
-    m_texture = 0;
-    m_fbo = 0;
-    m_vao = 0;
 }
 
 void GpuHeightMap::reset() {
@@ -167,16 +192,19 @@ void GpuHeightMap::reset() {
 std::size_t GpuHeightMap::apply(
     const ToolPath& moves,
     const std::size_t first,
-    const std::size_t count
+    const std::size_t count,
+    std::vector<std::uint32_t>* issues
     ) {
+    if (issues) issues->clear();
     if (!m_initialized || count == 0 || first >= moves.size()) {
         return 0;
     }
-    const std::size_t end = std::min(first + count, moves.size());
+    const std::size_t end = first + std::min(count, moves.size() - first);
+    if (issues) issues->resize(end - first, 0u);
     std::size_t consumed = 0;
     for (std::size_t start = first; start < end; start += m_batchSize) {
         const std::size_t batch = std::min(m_batchSize, end - start);
-        consumed += applyBatch(moves, start, batch);
+        consumed += applyBatch(moves, start, batch, issues ? issues->data() + start - first : nullptr);
     }
     return consumed;
 }
@@ -193,7 +221,7 @@ bool GpuHeightMap::computeBounds(
     int& j1
     ) const {
     const float radius = move.tool.radius();
-    if (move.type == MoveType::G00 || !(radius > 0.0f)) {
+    if (!(radius > 0.0f)) {
         return false;
     }
 
@@ -224,28 +252,35 @@ bool GpuHeightMap::computeBounds(
 std::size_t GpuHeightMap::applyBatch(
     const ToolPath& moves,
     const std::size_t first,
-    const std::size_t count
+    const std::size_t count,
+    std::uint32_t* issues
     ) {
     const std::size_t end = std::min(first + count, moves.size());
-    bool batchContainsValidCuttingMoves = false;
-    for (std::size_t i = first; i < end; ++i) {
-        if (moves[i].type == MoveType::G01 && moves[i].tool.radius() > 0.0f) {
-            batchContainsValidCuttingMoves = true;
-            break;
-        }
-    }
-    if (!batchContainsValidCuttingMoves) {
-        return 0;
-    }
 
     const int nx = m_material.resolutionX();
     const int ny = m_material.resolutionY();
-
     const auto glSnapshot = cadg::GlStateSnapshot::create(m_gl);
+    const GLboolean oldStencil = m_gl->glIsEnabled(GL_STENCIL_TEST);
+    GLint oldActiveTexture{}, oldTexture{}, oldBuffer{}, oldIndexedBuffer{};
+    GLint64 oldBufferStart{}, oldBufferSize{};
+    if (issues) {
+        m_gl->glGetIntegerv(GL_ACTIVE_TEXTURE, &oldActiveTexture);
+        m_gl->glActiveTexture(GL_TEXTURE0);
+        m_gl->glGetIntegerv(GL_TEXTURE_BINDING_2D, &oldTexture);
+        m_gl->glBindTexture(GL_TEXTURE_2D, m_texture);
+        m_gl->glGetIntegerv(GL_SHADER_STORAGE_BUFFER_BINDING, &oldBuffer);
+        m_gl->glGetIntegeri_v(GL_SHADER_STORAGE_BUFFER_BINDING, 0, &oldIndexedBuffer);
+        m_gl->glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_START, 0, &oldBufferStart);
+        m_gl->glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_SIZE, 0, &oldBufferSize);
+        m_gl->glNamedBufferData(m_issueBuffer, count * sizeof(std::uint32_t), issues, GL_STREAM_READ);
+        m_gl->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_issueBuffer);
+    }
 
     m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     m_gl->glViewport(0, 0, nx, ny);
+
     m_gl->glDisable(GL_DEPTH_TEST);
+    m_gl->glDisable(GL_STENCIL_TEST);
     m_gl->glDisable(GL_CULL_FACE);
     m_gl->glEnable(GL_SCISSOR_TEST);
     m_gl->glEnable(GL_BLEND);
@@ -279,6 +314,26 @@ std::size_t GpuHeightMap::applyBatch(
         const float lengthSquared = deltaX * deltaX + deltaY * deltaY;
 
         m_gl->glScissor(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
+        if (issues) {
+            m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_issueFbo);
+            const cadg::ShaderProgramGlBoundBorrow glBoundIssue(m_issueProgram, m_gl);
+            glBoundIssue.bind();
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1i("uMoveSlot", static_cast<int>(i - first)));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform2f("uStockMin", m_material.minXY()));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform2f("uStockCellSize", m_material.cellSizeXY()));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1f("uStockBottom", m_material.bottomZ()));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1f("uStockTop", m_material.topZ));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform3f("uFrom", move.from));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform3f("uTo", move.to));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1f("uRadius", move.tool.radius()));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1f("uCuttingLength", move.tool.cuttingLength()));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1i("uBall", move.tool.type == ToolType::ball));
+            SHADER_SET_UNIFORM_CHECK(glBoundIssue.uniform1i("uRapid", move.type == MoveType::G00));
+            m_gl->glDrawArrays(GL_TRIANGLES, 0, 3);
+            m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+            glBoundBorrow.bind();
+        }
+        if (move.type == MoveType::G00) continue;
         SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCutterWFrom", move.from));
         SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform3f("uCutterWTo", move.to));
         SHADER_SET_UNIFORM_CHECK(glBoundBorrow.uniform2f("uCutterDelta", deltaX, deltaY));
@@ -289,6 +344,19 @@ std::size_t GpuHeightMap::applyBatch(
         ++consumed;
     }
 
+    if (issues) {
+        m_gl->glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+        m_gl->glGetNamedBufferSubData(m_issueBuffer, 0, count * sizeof(std::uint32_t), issues);
+        if (oldIndexedBuffer != 0 && oldBufferSize > 0) {
+            m_gl->glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, oldIndexedBuffer, oldBufferStart, oldBufferSize);
+        } else {
+            m_gl->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, oldIndexedBuffer);
+        }
+        m_gl->glBindBuffer(GL_SHADER_STORAGE_BUFFER, oldBuffer);
+        m_gl->glBindTexture(GL_TEXTURE_2D, oldTexture);
+        m_gl->glActiveTexture(oldActiveTexture);
+    }
+    if (oldStencil) m_gl->glEnable(GL_STENCIL_TEST);
     m_gl->glDisable(GL_SCISSOR_TEST);
     m_gl->glDisable(GL_BLEND);
     m_gl->glBlendEquation(GL_FUNC_ADD);
@@ -300,29 +368,13 @@ std::size_t GpuHeightMap::applyBatch(
 }
 
 std::vector<float> GpuHeightMap::readHeights() const {
-    return readHeights({
-        .x = 0,
-        .y = 0,
-        .width = m_material.resolutionX(),
-        .height = m_material.resolutionY()
-    });
-}
-
-std::vector<float> GpuHeightMap::readHeights(const HeightRegion region) const {
-    if (!m_initialized ||
-        region.x < 0 ||
-        region.y < 0 ||
-        region.width <= 0 ||
-        region.height <= 0 ||
-        region.x + region.width > m_material.resolutionX() ||
-        region.y + region.height > m_material.resolutionY()) {
-        return {};
-    }
-
-    std::vector<float> heights(static_cast<std::size_t>(region.width) * region.height);
+    if (!m_initialized) return {};
+    const int nx = m_material.resolutionX();
+    const int ny = m_material.resolutionY();
+    std::vector<float> heights(static_cast<std::size_t>(nx) * ny);
     m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
     m_gl->glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    m_gl->glReadPixels(region.x, region.y, region.width, region.height, GL_RED, GL_FLOAT, heights.data());
+    m_gl->glReadPixels(0, 0, nx, ny, GL_RED, GL_FLOAT, heights.data());
     m_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
     return heights;
 }

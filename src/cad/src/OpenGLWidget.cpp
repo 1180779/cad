@@ -42,7 +42,6 @@
 #include "commands/Commands.hpp"
 #include "cad_math/Helpers.hxx"
 
-#include "cnc/ShankCollision.hxx"
 #include "cnc/Worker.hxx"
 #include "cnc_gpu/GpuHeightMap.hxx"
 #include "cnc_ui/CncRenderSystem.hxx"
@@ -76,7 +75,6 @@ struct OpenGlWidget::CncState {
     std::shared_ptr<const cnc::ToolPath> path;
     cnc::ToolPath pending;
     std::set<std::pair<cnc::WarningKind, std::size_t>> flaggedStockWarnings;
-    bool stockCollisions{false};
     bool initialized{};
     bool visible{false};
     std::string error;
@@ -482,13 +480,6 @@ void OpenGlWidget::setCncShowTool(const bool show) {
 void OpenGlWidget::setCncFlatShading(const bool flat) {
     if (m_cnc) {
         m_cnc->options.flatShading = flat;
-        update();
-    }
-}
-
-void OpenGlWidget::setCncStockCollisions(const bool enabled) {
-    if (m_cnc) {
-        m_cnc->stockCollisions = enabled;
         update();
     }
 }
@@ -1207,34 +1198,29 @@ void OpenGlWidget::applyPendingCncCuts() {
 
     const std::size_t limit = std::max<std::size_t>(m_cnc->heightMap.batchSize() * 8, 1);
     const std::size_t count = std::min(m_cnc->pending.size(), limit);
-    std::size_t first = 0;
-    if (m_cnc->stockCollisions) {
-        for (std::size_t i = 0; i < count; ++i) {
-            const cnc::Move& move = m_cnc->pending[i];
-            const auto plungeKey = std::make_pair(cnc::WarningKind::verticalPlunge, move.instructionIndex);
-            const auto shankKey = std::make_pair(cnc::WarningKind::nonCuttingPart, move.instructionIndex);
-            const auto plungeRegion = !m_cnc->flaggedStockWarnings.contains(plungeKey)
-                ? cnc::verticalPlungeRegion(m_cnc->material, move) : std::nullopt;
-            const auto shankRegion = !m_cnc->flaggedStockWarnings.contains(shankKey)
-                ? cnc::shankRegion(m_cnc->material, move) : std::nullopt;
-            const auto region = plungeRegion ? plungeRegion : shankRegion;
-            if (!region) continue;
+    std::vector<std::uint32_t> issues;
+    m_cnc->heightMap.apply(m_cnc->pending, 0, count, &issues);
+    for (std::size_t i = 0; i < count; ++i) {
+        const cnc::Move& move = m_cnc->pending[i];
+        const auto report = [&](const cnc::WarningKind kind, const char* message) {
+            if (!m_cnc->flaggedStockWarnings.emplace(kind, move.instructionIndex).second) return;
+            m_cnc->worker.reportStockCollision(cnc::Warning{
+                .kind = kind,
+                .moveIndex = move.instructionIndex,
+                .programIndex = move.programIndex,
+                .position = move.to,
+                .message = message,
+                .timeline = move.timeline
+            });
+        };
 
-            // Check the stock left by earlier moves, before this move removes it.
-            m_cnc->heightMap.apply(m_cnc->pending, first, i - first);
-            first = i;
-            const auto heights = m_cnc->heightMap.readHeights(*region);
-            const auto report = [&](std::optional<cnc::Warning> warning) {
-                if (!warning) return;
-                m_cnc->flaggedStockWarnings.emplace(warning->kind, move.instructionIndex);
-                m_cnc->worker.reportStockCollision(std::move(*warning));
-            };
-            if (plungeRegion) report(cnc::checkVerticalPlunge(m_cnc->material, move, *region, heights));
-            if (shankRegion) report(cnc::checkShankCollision(m_cnc->material, move, *region, heights));
+        if (issues[i] & cnc::gpu::GpuHeightMap::verticalPlunge) {
+            report(cnc::WarningKind::verticalPlunge, "Vertical plunge into remaining material");
+        }
+        if (issues[i] & cnc::gpu::GpuHeightMap::shankCollision) {
+            report(cnc::WarningKind::nonCuttingPart, "Remaining material overlaps the non-cutting part");
         }
     }
-    // apply all remaining moves
-    m_cnc->heightMap.apply(m_cnc->pending, first, count - first);
     m_cnc->pending.erase(
         m_cnc->pending.begin(),
         m_cnc->pending.begin() + static_cast<std::ptrdiff_t>(count)

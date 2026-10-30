@@ -29,6 +29,13 @@ struct Material {
     int subdivisionsX{gc_defaultSubdivisions};
     int subdivisionsY{gc_defaultSubdivisions};
 
+    [[nodiscard]] cadm::Vec2I resolutionXY() const {
+        return {
+            std::max(subdivisionsX, 1) + 1,
+            std::max(subdivisionsY, 1) + 1
+        };
+    }
+
     [[nodiscard]] int resolutionX() const {
         return std::max(subdivisionsX, 1) + 1;
     }

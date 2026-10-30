@@ -6,17 +6,22 @@
 #define CAD_GPUHEIGHTMAP_HXX
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
 #include "cnc/Material.hxx"
-#include "cnc/ShankCollision.hxx"
 #include "cnc/program/NcProgram.hxx"
 #include "cad_graphics/ShaderProgram.hxx"
 
 namespace cnc::gpu {
     class GpuHeightMap final {
     public:
+        enum Issue : std::uint32_t {
+            shankCollision = 1u,
+            verticalPlunge = 1u << 1,
+        };
+
         GpuHeightMap() = default;
         ~GpuHeightMap();
 
@@ -44,13 +49,13 @@ namespace cnc::gpu {
         void reset();
 
         /// @brief Apply cutting moves at [first, first + count)
-        /// Rapids are ignored. The moves are internally split into batches; and
-        /// each batch is one render pass over the affected texel rectangle
+        /// @param issues one bitmask per input move
         /// @returns The number of cutting moves consumed
         std::size_t apply(
             const ToolPath &moves,
             std::size_t first,
-            std::size_t count
+            std::size_t count,
+            std::vector<std::uint32_t>* issues = nullptr
         );
 
         /// @brief Apply all cutting moves, batching them
@@ -59,8 +64,6 @@ namespace cnc::gpu {
 
         /// @brief Read the texture to CPU
         [[nodiscard]] std::vector<float> readHeights() const;
-        /// @brief Read the texture region to CPU
-        [[nodiscard]] std::vector<float> readHeights(HeightRegion region) const;
         [[nodiscard]] GLuint texture() const;
         [[nodiscard]] const Material &material() const;
         [[nodiscard]] bool initialized() const;
@@ -82,7 +85,8 @@ namespace cnc::gpu {
         std::size_t applyBatch(
             const ToolPath &moves,
             std::size_t first,
-            std::size_t count
+            std::size_t count,
+            std::uint32_t* issues
         );
 
         [[nodiscard]] bool computeBounds(
@@ -99,8 +103,11 @@ namespace cnc::gpu {
 
         GLuint m_texture{};
         GLuint m_fbo{};
+        GLuint m_issueFbo{};
+        GLuint m_issueBuffer{};
 
         cadg::ShaderProgram m_program;
+        cadg::ShaderProgram m_issueProgram;
         GLuint m_vao{};
 
         using shaderNameTuple = std::tuple<GLint*, std::string_view>;
