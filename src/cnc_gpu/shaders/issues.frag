@@ -32,7 +32,7 @@ void main() {
         return;
     }
 
-    vec2 point = uStockMin + vec2(texel) * uStockCellSize;
+    vec2 P = uStockMin + vec2(texel) * uStockCellSize;
     vec2 delta = uTo.xy - uFrom.xy;
     float lengthSq = dot(delta, delta);
     float radiusSq = uRadius * uRadius;
@@ -41,7 +41,7 @@ void main() {
     if (all(equal(uFrom.xy, uTo.xy)) &&
         uTo.z < uFrom.z &&
         uTo.z < uStockTop) {
-        vec2 offset = point - uTo.xy;
+        vec2 offset = P - uTo.xy;
         float distanceSq = dot(offset, offset);
         float cutterHeight = uTo.z;
         if (uBall != 0) {
@@ -53,7 +53,7 @@ void main() {
     }
 
     if (min(uFrom.z, uTo.z) + uCuttingLength < uStockTop) {
-        vec2 offset = point - uFrom.xy;
+        vec2 offset = P - uFrom.xy;
         float enter = 0.0;
         float leave = 1.0;
         bool covered;

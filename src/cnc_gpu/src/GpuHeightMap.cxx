@@ -13,7 +13,6 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <vector>
 
 #include <QOpenGLContext>
@@ -208,7 +207,13 @@ std::size_t GpuHeightMap::apply(
     std::size_t consumed = 0;
     for (std::size_t start = first; start < end; start += m_batchSize) {
         const std::size_t batch = std::min(m_batchSize, end - start);
-        consumed += applyBatch(moves, start, batch, issues ? issues->data() + start - first : nullptr);
+        consumed += applyBatch(
+            moves,
+            start,
+            batch,
+            issues
+                ? issues->data() + start - first
+                : nullptr);
     }
     return consumed;
 }
@@ -269,8 +274,12 @@ std::size_t GpuHeightMap::applyBatch(
     const int ny = m_material.resolutionY();
     const auto glSnapshot = cadg::GlStateSnapshot::create(m_gl);
     const GLboolean oldStencil = m_gl->glIsEnabled(GL_STENCIL_TEST);
-    GLint oldActiveTexture{}, oldTexture{}, oldBuffer{}, oldIndexedBuffer{};
-    GLint64 oldBufferStart{}, oldBufferSize{};
+    GLint oldActiveTexture{},
+          oldTexture{},
+          oldBuffer{},
+          oldIndexedBuffer{};
+    GLint64 oldBufferStart{},
+            oldBufferSize{};
     if (issues) {
         m_gl->glGetIntegerv(GL_ACTIVE_TEXTURE, &oldActiveTexture);
         m_gl->glActiveTexture(GL_TEXTURE0);
@@ -280,8 +289,8 @@ std::size_t GpuHeightMap::applyBatch(
         m_gl->glGetIntegeri_v(GL_SHADER_STORAGE_BUFFER_BINDING, 0, &oldIndexedBuffer);
         m_gl->glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_START, 0, &oldBufferStart);
         m_gl->glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_SIZE, 0, &oldBufferSize);
-        m_gl->glNamedBufferData(m_issueBuffer, static_cast<GLsizeiptr>(count * sizeof(std::uint32_t)), issues,
-            GL_STREAM_READ);
+        m_gl->glNamedBufferData(m_issueBuffer,
+            static_cast<GLsizeiptr>(count * sizeof(std::uint32_t)), issues, GL_STREAM_READ);
         m_gl->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_issueBuffer);
     }
 
@@ -299,31 +308,27 @@ std::size_t GpuHeightMap::applyBatch(
     program.bind();
     m_gl->glBindVertexArray(m_vao);
     SHADER_SET_UNIFORM_CHECK(program.uniform2i("uStockSize", nx, ny));
-    SHADER_SET_UNIFORM_CHECK(program.uniform1f("uStockWMinX", m_material.centerX - m_material.width * 0.5f));
-    SHADER_SET_UNIFORM_CHECK(program.uniform1f("uStockWMinY", m_material.centerY - m_material.depth * 0.5f));
+    SHADER_SET_UNIFORM_CHECK(program.uniform1f("uStockMinX", m_material.centerX - m_material.width * 0.5f));
+    SHADER_SET_UNIFORM_CHECK(program.uniform1f("uStockMinY", m_material.centerY - m_material.depth * 0.5f));
     SHADER_SET_UNIFORM_CHECK(
-        program.uniform1f("uStockCellWResolutionX", m_material.width / static_cast<float>(nx - 1)));
+        program.uniform1f("uStockCellResX", m_material.width / static_cast<float>(nx - 1)));
     SHADER_SET_UNIFORM_CHECK(
-        program.uniform1f("uStockCellWResolutionY", m_material.depth / static_cast<float>(ny - 1)));
-    SHADER_SET_UNIFORM_CHECK(program.uniform1f("uStockWBottom", m_material.topZ - m_material.thickness));
+        program.uniform1f("uStockCellResY", m_material.depth / static_cast<float>(ny - 1)));
+    SHADER_SET_UNIFORM_CHECK(program.uniform1f("uStockBottom", m_material.topZ - m_material.thickness));
 
     std::size_t consumed = 0;
     for (std::size_t i = first; i < end; ++i) {
         const Move& move = moves[i];
-        int i0 = 0;
-        int i1 = 0;
-        int j0 = 0;
-        int j1 = 0;
+        int i0, i1, j0, j1;
+        i0 = i1 = j0 = j1 = 0;
         if (!computeBounds(move, i0, i1, j0, j1)) {
             continue;
         }
 
-        const float deltaX = move.to.x - move.from.x;
-        const float deltaY = move.to.y - move.from.y;
-        const float lengthSquared = deltaX * deltaX + deltaY * deltaY;
-
+        const auto delta = move.to.xy() - move.from.xy();
         m_gl->glScissor(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
         if (issues) {
+            // check for issues
             m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_issueFbo);
             const cadg::ShaderProgramGlBoundBorrow issueProgram(m_issueProgram, m_gl);
             issueProgram.bind();
@@ -342,13 +347,16 @@ std::size_t GpuHeightMap::applyBatch(
             m_gl->glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
             program.bind();
         }
-        if (move.type == MoveType::G00) continue;
-        SHADER_SET_UNIFORM_CHECK(program.uniform3f("uCutterWFrom", move.from));
-        SHADER_SET_UNIFORM_CHECK(program.uniform3f("uCutterWTo", move.to));
-        SHADER_SET_UNIFORM_CHECK(program.uniform2f("uCutterDelta", deltaX, deltaY));
-        SHADER_SET_UNIFORM_CHECK(program.uniform1f("uCutterLengthSquared", lengthSquared));
-        SHADER_SET_UNIFORM_CHECK(program.uniform1f("uCutterRadius", move.tool.radius()));
-        SHADER_SET_UNIFORM_CHECK(program.uniform1i("uCutterType", move.tool.type == ToolType::ball ? 0 : 1));
+        if (move.type == MoveType::G00) {
+            continue;
+        }
+        // cut stock
+        SHADER_SET_UNIFORM_CHECK(program.uniform3f("uFrom", move.from));
+        SHADER_SET_UNIFORM_CHECK(program.uniform3f("uTo", move.to));
+        SHADER_SET_UNIFORM_CHECK(program.uniform2f("uDelta", delta));
+        SHADER_SET_UNIFORM_CHECK(program.uniform1f("uDeltaLengthSq", delta.lengthSquared()));
+        SHADER_SET_UNIFORM_CHECK(program.uniform1f("uRadius", move.tool.radius()));
+        SHADER_SET_UNIFORM_CHECK(program.uniform1i("uType", move.tool.type == ToolType::ball ? 0 : 1));
         m_gl->glDrawArrays(GL_TRIANGLES, 0, 3);
         ++consumed;
     }
@@ -365,7 +373,9 @@ std::size_t GpuHeightMap::applyBatch(
         m_gl->glBindTexture(GL_TEXTURE_2D, oldTexture);
         m_gl->glActiveTexture(oldActiveTexture);
     }
-    if (oldStencil) m_gl->glEnable(GL_STENCIL_TEST);
+    if (oldStencil) {
+        m_gl->glEnable(GL_STENCIL_TEST);
+    }
     m_gl->glDisable(GL_SCISSOR_TEST);
     m_gl->glDisable(GL_BLEND);
     m_gl->glBlendEquation(GL_FUNC_ADD);
