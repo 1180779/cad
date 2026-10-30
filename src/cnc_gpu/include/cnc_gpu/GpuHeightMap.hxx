@@ -68,7 +68,8 @@ namespace cnc::gpu {
         bool compileProgram(const std::string &shaderDirectory, std::string *error);
         void destroyResources();
 
-        /// @brief Apply one batch. Returns the number of cutting moves consumed
+        /// @brief Apply one batch
+        /// @returns The number of cutting moves consumed
         std::size_t applyBatch(
             const ToolPath &moves,
             std::size_t first,
