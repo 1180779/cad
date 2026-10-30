@@ -4,6 +4,7 @@
  */
 
 #include "cnc/Worker.hxx"
+#include "cnc/CompactMoves.hxx"
 
 #include <algorithm>
 #include <chrono>
@@ -171,6 +172,10 @@ namespace cnc
                 std::make_move_iterator(moves.begin()),
                 std::make_move_iterator(moves.end())
             );
+        }
+        if (m_simulator.finished())
+        {
+            compactMoves(m_pendingCutterMoves);
         }
     }
 

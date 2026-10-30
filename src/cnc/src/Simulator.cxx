@@ -5,6 +5,7 @@
 #include "cnc/program/Tool.hxx"
 #include "cnc/program/Move.hxx"
 #include "cnc/Simulator.hxx"
+#include "cnc/CompactMoves.hxx"
 
 #include <algorithm>
 #include <iomanip>
@@ -252,6 +253,7 @@ void Simulator::finishNow() {
         ++m_moveIndex;
     }
 
+    compactMoves(m_pendingCutterMoves);
     m_moveIndex = m_moves.size();
     m_moveElapsed = 0.0;
     m_elapsed = m_totalDuration;
